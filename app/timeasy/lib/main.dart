@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timeasy/TimeEntryRepository.dart';
 
 void main() => runApp(MyApp());
 
@@ -42,13 +43,26 @@ class _MainPageState extends State<MainPage> {
 
   void _toggleState() {
     switch (_currentState) {
-      case AppState.RUNNING:
-        _setAppState(AppState.STOPPED);
-        break;
       case AppState.STOPPED:
-        _setAppState(AppState.RUNNING);
+        _startTiming();
+        break;
+      case AppState.RUNNING:
+        stopTiming();
         break;
     }
+  }
+
+  void _startTiming() async {
+    var repository = new TimeEntryRepository();
+    await repository.closeLatestTimeEntry();
+    await repository.getLatestOpenTimeEntryOrCreateNew();
+    _setAppState(AppState.RUNNING);
+  }
+
+  void stopTiming() async {
+    var repository = new TimeEntryRepository();
+    await repository.closeLatestTimeEntry();
+    _setAppState(AppState.STOPPED);
   }
 
   @override
