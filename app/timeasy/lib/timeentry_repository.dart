@@ -1,16 +1,11 @@
-import 'package:timeasy/Database.dart';
-import 'package:timeasy/TimeEntry.dart';
+import 'package:timeasy/database.dart';
+import 'package:timeasy/timeentry.dart';
 
 class TimeEntryRepository {
 
   addTimeEntry(TimeEntry timeEntry) async {
     final db = await DBProvider.dbProvider.database;
     return await db.insert(TimeEntry.tableName, timeEntry.toMap());
-    /*
-    return await db.rawInsert("INSERT INTO ${timeEntry.tableName} "
-      "(${timeEntry.idColumn}, ${timeEntry.startTimeColumn}, ${timeEntry.endTimeColumn}, ${timeEntry.descriptionColumn}) "
-      "VALUES (\"${timeEntry.id}\", \"${timeEntry.startTime}\", \"${timeEntry.endTime}\", \"${timeEntry.description}\") ");
-  */
   }
 
   updateTimeEntry(TimeEntry timeEntry) async {

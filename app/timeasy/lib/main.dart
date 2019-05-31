@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:timeasy/TimeEntryRepository.dart';
+import 'package:timeasy/timeentry_repository.dart';
 
 void main() => runApp(MyApp());
 
