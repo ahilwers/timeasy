@@ -36,4 +36,10 @@ class TimeEntryRepository {
     var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.endTimeColumn} = ?", whereArgs: [0]);
     return queryResult.isNotEmpty ? TimeEntry.fromMap(queryResult.first) : null;
   }
+
+  Future<List<TimeEntry>> getAllTimeEntries() async {
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.query(TimeEntry.tableName);
+    return queryResult.isNotEmpty ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList() : [];
+  }
 }

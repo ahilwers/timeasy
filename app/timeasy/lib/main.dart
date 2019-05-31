@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'package:timeasy/timeentry_repository.dart';
+import 'package:timeasy/timeentrylist.dart';
 
 void main() => runApp(MyApp());
 
@@ -70,6 +72,34 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('timeasy'),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Text('Drawer Header'),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+            ),
+            ListTile(
+              title: Text('Zeiteinträge'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryList()));
+              },
+            ),
+            ListTile(
+              title: Text('Projekte'),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        )
       ),
       body: Center(
         child : new RawMaterialButton(
