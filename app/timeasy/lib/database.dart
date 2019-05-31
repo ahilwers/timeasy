@@ -12,27 +12,27 @@ class DBProvider {
 
   Future<Database> get database async {
     if (_database==null) {
-      _database = await initDB();
+      _database = await _initDB();
     }
     return _database;
   }
 
-  initDB() async {
+  _initDB() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = join(documentsDirectory.path, join("timeasy", "timeasy.db"));
     return await openDatabase(path, version: 1,
         onOpen: (dbProvider)  async {},
         onCreate: (Database db, int version) async {
-          await createTables(db);
+          await _createTables(db);
         }
     );
   }
 
-  createTables(Database db) async {
-    createTimeEntryTable(db);
+  _createTables(Database db) async {
+    _createTimeEntryTable(db);
   }
 
-  createTimeEntryTable(Database db) async {
+  _createTimeEntryTable(Database db) async {
     db.execute("CREATE TABLE TimeEntries ("
       "id TEXT, "
       "startTime INTEGER, "

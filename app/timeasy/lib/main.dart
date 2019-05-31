@@ -47,7 +47,7 @@ class _MainPageState extends State<MainPage> {
         _startTiming();
         break;
       case AppState.RUNNING:
-        stopTiming();
+        _stopTiming();
         break;
     }
   }
@@ -59,7 +59,7 @@ class _MainPageState extends State<MainPage> {
     _setAppState(AppState.RUNNING);
   }
 
-  void stopTiming() async {
+  void _stopTiming() async {
     var repository = new TimeEntryRepository();
     await repository.closeLatestTimeEntry();
     _setAppState(AppState.STOPPED);
