@@ -82,6 +82,11 @@ class _DataListState extends State<DataList> {
             numeric: false,
             tooltip: "The end time"
         ),
+        DataColumn(
+            label: Text("Stunden"),
+            numeric: true,
+            tooltip: "Anzahl der Stunden"
+        ),
       ],
       rows: timeEntries.map((timeEntry) => DataRow(
         cells: [
@@ -90,6 +95,9 @@ class _DataListState extends State<DataList> {
           ),
           DataCell(
             Text(timeEntry.endTime != null ? timeEntry.endTime.toLocal().toIso8601String() : ""),
+          ),
+          DataCell(
+            Text(timeEntry.endTime != null ? timeEntry.endTime.difference(timeEntry.startTime).inMinutes.toString() : ""),
           )
         ]
       )).toList()
