@@ -24,7 +24,9 @@ class TimeEntry {
     int startTimeMillis = map[startTimeColumn];
     startTime = new DateTime.fromMillisecondsSinceEpoch(startTimeMillis, isUtc: true);
     int endTimeMillis = map[endTimeColumn];
-    endTime = new DateTime.fromMillisecondsSinceEpoch(endTimeMillis, isUtc: true);
+    if (endTimeMillis>0) {
+      endTime = new DateTime.fromMillisecondsSinceEpoch(endTimeMillis, isUtc: true);
+    }
     description = map[descriptionColumn];
   }
 
