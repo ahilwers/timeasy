@@ -4,13 +4,13 @@ A simple time tracker application.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### Application icon
 
-A few resources to get you started if this is your first Flutter project:
+For setting the application icon the package "flutter_launcher_icons"
+(https://pub.dev/packages/flutter_launcher_icons) is used. The configuration can be found in the
+pubspec.yaml.
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+Just place your icon in the path configured in the pubspec.yaml and run
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+flutter pub run flutter_launcher_icons:main
+
