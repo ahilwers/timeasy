@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'package:timeasy/timeentry.dart';
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentrylist.dart';
 import 'package:timeasy/weeklyview.dart';
@@ -43,6 +44,13 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     initializeDateFormatting();
+    var timeEntryRepository = new TimeEntryRepository();
+    // Set the current state if there's a timing already running:
+    timeEntryRepository.getLatestOpenTimeEntry().then((TimeEntry entry) {
+      if (entry != null) {
+        _setAppState(AppState.RUNNING);
+      }
+    });
   }
 
   void _setAppState(AppState state) {
