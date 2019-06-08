@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:timeasy/weekly_statistics_builder.dart';
+import 'package:timeasy/weeklystatistics_widget.dart';
 
 class WeeklyView extends StatelessWidget {
 
@@ -31,10 +31,10 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
 
   int _calendarWeek = 0;
   int _lastPosition = -1;
-  // Need to define a page controller with a high initial page because otherwise
-  // we could not swipe below the current week
-  final _pageController = new PageController(initialPage: 10000);
-  final _weeklyStatisticsBuilder = new WeeklyStatisticsBuilder();
+
+  // Need to initialize the first page to such a high value to be able to swipe
+  // backwards from the current week:
+  final _pageController = new PageController(initialPage: 100000);
 
   @override
   void initState() {
@@ -51,31 +51,16 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
       body: PageView.builder(
         controller: _pageController,
         itemBuilder: (context, position) {
-          var oldCalendarWeek = _calendarWeek;
-          if (position>_lastPosition) {
+          if (position > _lastPosition) {
             _calendarWeek++;
-          } else if (_calendarWeek>1) {
+          } else if ((position < _lastPosition) && (_calendarWeek > 1)) {
             _calendarWeek--;
           }
           _lastPosition = position;
-          if (_calendarWeek!=oldCalendarWeek) {
-            return _buildLayout(context);
-          }
+          return new WeeklyStatisticsWidget(_calendarWeek);
         }
       )
     );
-  }
-
-  _buildLayout(BuildContext context) {
-
-    Locale locale = Localizations.localeOf(context);
-    var formatter = new DateFormat.yMd(locale.toString());
-
-
-    var startDate = formatter.format(_weeklyStatisticsBuilder.getFirstDayOfWeek(_calendarWeek));
-    var endDate = formatter.format(_weeklyStatisticsBuilder.getLastDayOfWeek(_calendarWeek));
-
-    return Text("Woche "+_calendarWeek.toString()+" "+startDate+" - "+endDate);
   }
 
   /// Calculates week number from a date as per https://en.wikipedia.org/wiki/ISO_week_date#Calculation
@@ -83,6 +68,4 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
     int dayOfYear = int.parse(DateFormat("D").format(date));
     return ((dayOfYear - date.weekday + 10) / 7).floor();
   }
-
-
 }

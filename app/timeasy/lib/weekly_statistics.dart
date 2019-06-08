@@ -1,6 +1,6 @@
 class WeeklyStatistics {
 
-  Map<int, WeeklyStatisticsEntry> _entries;
+  Map<int, WeeklyStatisticsEntry> _entries = new Map();
 
   WeeklyStatisticsEntry getEntryForWeekDay(int weekDay) {
     return _entries[weekDay];
@@ -14,7 +14,7 @@ class WeeklyStatistics {
 
 class WeeklyStatisticsEntry {
   DateTime date;
-  int seconds;
+  int seconds = 0;
 
   double getMinutes() {
     return seconds/60;
