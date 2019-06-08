@@ -112,7 +112,7 @@ class _MainPageState extends State<MainPage> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
-              child: Text('Drawer Header'),
+              child: Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500)),
               decoration: BoxDecoration(
                 color: Colors.blue,
               ),
