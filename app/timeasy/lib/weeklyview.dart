@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:timeasy/weekly_statistics_builder.dart';
+
 class WeeklyView extends StatelessWidget {
 
   @override
@@ -32,6 +34,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   // Need to define a page controller with a high initial page because otherwise
   // we could not swipe below the current week
   final _pageController = new PageController(initialPage: 10000);
+  final _weeklyStatisticsBuilder = new WeeklyStatisticsBuilder();
 
   @override
   void initState() {
@@ -69,8 +72,8 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
     var formatter = new DateFormat.yMd(locale.toString());
 
 
-    var startDate = formatter.format(_getFirstDayOfWeek(_calendarWeek));
-    var endDate = formatter.format(_getLastDayOfWeek(_calendarWeek));
+    var startDate = formatter.format(_weeklyStatisticsBuilder.getFirstDayOfWeek(_calendarWeek));
+    var endDate = formatter.format(_weeklyStatisticsBuilder.getLastDayOfWeek(_calendarWeek));
 
     return Text("Woche "+_calendarWeek.toString()+" "+startDate+" - "+endDate);
   }
@@ -81,15 +84,5 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
     return ((dayOfYear - date.weekday + 10) / 7).floor();
   }
 
-  DateTime _getFirstDayOfWeek(int weekNumber) {
-    var daysInYear = (weekNumber-1)*7;
-    var firstDayOfYear = new DateTime(2019, 1, 1);
-    return firstDayOfYear.add(new Duration(days: daysInYear-1));
-  }
-
-  DateTime _getLastDayOfWeek(int weekNumber) {
-    var firstDayOfWeek = _getFirstDayOfWeek(weekNumber);
-    return firstDayOfWeek.add(new Duration(days: 6));
-  }
 
 }

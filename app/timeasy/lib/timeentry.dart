@@ -41,5 +41,13 @@ class TimeEntry {
     return map;
   }
 
+  int getSeconds() {
+    var myEndTime = endTime;
+    if (myEndTime==null) {
+      myEndTime = DateTime.now();
+    }
+    return myEndTime.difference(startTime).inSeconds;
+  }
+
 
 }
