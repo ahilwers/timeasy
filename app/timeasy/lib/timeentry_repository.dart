@@ -9,46 +9,47 @@ class TimeEntryRepository {
   }
 
   updateTimeEntry(TimeEntry timeEntry) async {
+    timeEntry.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
     return await db.update(TimeEntry.tableName, timeEntry.toMap(), where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
 
   }
 
-  closeLatestTimeEntry() async {
-    var latestTimeEntry = await getLatestOpenTimeEntry();
+  closeLatestTimeEntry(String projectId) async {
+    var latestTimeEntry = await getLatestOpenTimeEntry(projectId);
     if (latestTimeEntry != null) {
       latestTimeEntry.endTime = DateTime.now().toUtc();
       await updateTimeEntry(latestTimeEntry);
     }
   }
 
-  Future<TimeEntry> getLatestOpenTimeEntryOrCreateNew() async {
-    var latestEntry = await getLatestOpenTimeEntry();
+  Future<TimeEntry> getLatestOpenTimeEntryOrCreateNew(String projectId) async {
+    var latestEntry = await getLatestOpenTimeEntry(projectId);
     if (latestEntry==null) {
-      latestEntry = new TimeEntry();
+      latestEntry = new TimeEntry(projectId);
       await addTimeEntry(latestEntry);
     }
     return latestEntry;
   }
 
-  Future<TimeEntry> getLatestOpenTimeEntry() async {
+  Future<TimeEntry> getLatestOpenTimeEntry(String projectId) async {
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.endTimeColumn} = ?", whereArgs: [0]);
+    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.endTimeColumn} = ? AND ${TimeEntry.projectIdColumn} = ?", whereArgs: [0, projectId]);
     return queryResult.isNotEmpty ? TimeEntry.fromMap(queryResult.first) : null;
   }
 
-  Future<List<TimeEntry>> getAllTimeEntries() async {
+  Future<List<TimeEntry>> getAllTimeEntries(String projectId) async {
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(TimeEntry.tableName);
+    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.projectIdColumn} = ?", whereArgs: [projectId]);
     return queryResult.isNotEmpty ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList() : [];
   }
 
-  Future<List<TimeEntry>> getTimeEntries(DateTime startDate, DateTime endDate) async {
+  Future<List<TimeEntry>> getTimeEntries(String projectId, DateTime startDate, DateTime endDate) async {
     var startMillis = getDateWithoutTime(startDate).millisecondsSinceEpoch;
     var endMillis = getDateWithoutTime(endDate).add(new Duration(days: 1)).millisecondsSinceEpoch;
 
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ?", whereArgs: [startMillis, endMillis], orderBy: TimeEntry.startTimeColumn);
+    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.projectIdColumn} = ? AND ${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ?", whereArgs: [projectId, startMillis, endMillis], orderBy: TimeEntry.startTimeColumn);
     return queryResult.isNotEmpty ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList() : [];
 
   }

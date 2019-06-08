@@ -1,16 +1,17 @@
 import 'package:timeasy/weekly_statistics.dart';
 import 'package:timeasy/timeentry_repository.dart';
+import 'package:timeasy/project.dart';
 
 class WeeklyStatisticsBuilder {
 
   final TimeEntryRepository _timeEntryRepository =  new TimeEntryRepository();
 
-  Future<WeeklyStatistics> build(int weekNumber) async {
+  Future<WeeklyStatistics> build(Project project, int weekNumber) async {
     var weeklyStatistics = new WeeklyStatistics();
 
     var startDate = getFirstDayOfWeek(weekNumber);
     var endDate = getLastDayOfWeek(weekNumber);
-    var timeEntries = await _timeEntryRepository.getTimeEntries(startDate, endDate);
+    var timeEntries = await _timeEntryRepository.getTimeEntries(project.id, startDate, endDate);
 
     var lastDay = 0;
     WeeklyStatisticsEntry statisticsEntry;

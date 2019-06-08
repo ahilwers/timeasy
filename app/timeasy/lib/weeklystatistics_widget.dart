@@ -3,20 +3,22 @@ import 'package:intl/intl.dart';
 
 import 'package:timeasy/weekly_statistics_builder.dart';
 import 'package:timeasy/weekly_statistics.dart';
+import 'package:timeasy/project.dart';
 
 
 class WeeklyStatisticsWidget extends StatefulWidget {
 
-  final String title;
   int _calendarWeek;
+  Project _project;
 
-  WeeklyStatisticsWidget(int calendarWeek, {Key key, this.title}) : super(key: key) {
+  WeeklyStatisticsWidget(Project project, int calendarWeek, {Key key}) : super(key: key) {
     _calendarWeek = calendarWeek;
+    _project = project;
   }
 
   @override
   _WeeklyStatisticsState createState() {
-    return new _WeeklyStatisticsState(_calendarWeek);
+    return new _WeeklyStatisticsState(_project, _calendarWeek);
   }
 
 }
@@ -24,13 +26,15 @@ class WeeklyStatisticsWidget extends StatefulWidget {
 class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
 
   int _calendarWeek = 0;
+  Project _project;
   WeeklyStatistics _weeklyStatistics;
   // Need to define a page controller with a high initial page because otherwise
   // we could not swipe below the current week
   final _weeklyStatisticsBuilder = new WeeklyStatisticsBuilder();
 
-  _WeeklyStatisticsState(int calendarWeek) {
+  _WeeklyStatisticsState(Project project, int calendarWeek) {
     _calendarWeek = calendarWeek;
+    _project = project;
   }
 
   @override
@@ -41,7 +45,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   }
 
   _getData() {
-    _weeklyStatisticsBuilder.build(_calendarWeek).then((WeeklyStatistics statistics) {
+    _weeklyStatisticsBuilder.build(_project, _calendarWeek).then((WeeklyStatistics statistics) {
       setState(() {
         _weeklyStatistics = statistics;
       });

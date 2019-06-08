@@ -29,16 +29,25 @@ class DBProvider {
   }
 
   _createTables(Database db) async {
-    _createTimeEntryTable(db);
-  }
+    db.execute("CREATE TABLE Projects ("
+        "id TEXT, "
+        "name TEXT, "
+        "created INTEGER, "
+        "updated INTEGER "
+        ")"
+    );
 
-  _createTimeEntryTable(Database db) async {
     db.execute("CREATE TABLE TimeEntries ("
-      "id TEXT, "
-      "startTime INTEGER, "
-      "endTime INTEGER, "
-      "description TEXT "
-      ")");
+        "id TEXT, "
+        "startTime INTEGER, "
+        "endTime INTEGER, "
+        "description TEXT, "
+        "created INTEGER, "
+        "updated INTEGER, "
+        "projectId TEXT, "
+        "FOREIGN KEY(projectId) REFERENCES Projects(id) "
+        ")"
+    );
   }
 
 }

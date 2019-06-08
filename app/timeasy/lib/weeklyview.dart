@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:timeasy/weeklystatistics_widget.dart';
+import 'package:timeasy/project.dart';
 
 class WeeklyView extends StatelessWidget {
+
+  Project _project;
+
+  WeeklyView(Project project) {
+    _project = project;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: WeeklyViewWidget(title: "timeasy - Wochenübersicht"),
+      body: WeeklyViewWidget(_project),
     );
   }
 
@@ -16,25 +23,32 @@ class WeeklyView extends StatelessWidget {
 
 class WeeklyViewWidget extends StatefulWidget {
 
-  final String title;
+  Project _project;
 
-  WeeklyViewWidget({Key key, this.title}) : super(key: key);
+  WeeklyViewWidget(Project project, {Key key}) : super(key: key) {
+    _project = project;
+  }
 
   @override
   _WeeklyViewState createState() {
-    return new _WeeklyViewState();
+    return new _WeeklyViewState(_project);
   }
 
 }
 
 class _WeeklyViewState extends State<WeeklyViewWidget> {
 
+  Project _project;
   int _calendarWeek = 0;
   int _lastPosition = -1;
 
   // Need to initialize the first page to such a high value to be able to swipe
   // backwards from the current week:
   final _pageController = new PageController(initialPage: 100000);
+
+  _WeeklyViewState(Project project) {
+    _project = project;
+  }
 
   @override
   void initState() {
@@ -46,7 +60,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("timeasy - Wochenübersicht"),
+        title: Text(_getTitle()),
       ),
       body: PageView.builder(
         controller: _pageController,
@@ -57,7 +71,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
             _calendarWeek--;
           }
           _lastPosition = position;
-          return new WeeklyStatisticsWidget(_calendarWeek);
+          return new WeeklyStatisticsWidget(_project, _calendarWeek);
         }
       )
     );
@@ -68,4 +82,9 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
     int dayOfYear = int.parse(DateFormat("D").format(date));
     return ((dayOfYear - date.weekday + 10) / 7).floor();
   }
+
+  String _getTitle() {
+    return "Wochenübersicht (${_project.name})";
+  }
+
 }

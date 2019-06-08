@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
+import 'package:timeasy/project.dart';
 
 class TimeEntryList extends StatelessWidget {
+
+  Project _project;
+
+  TimeEntryList(Project project) {
+    _project = project;
+  }
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: new DataList(title: "timeasy - Zeiten")
+      body: new DataList(_project)
     );
   }
 
@@ -16,13 +23,15 @@ class TimeEntryList extends StatelessWidget {
 
 class DataList extends StatefulWidget {
 
-  final String title;
+  Project _project;
 
-  DataList({Key key, this.title}) : super(key: key);
+  DataList(Project project, {Key key}) : super(key: key) {
+    _project = project;
+  }
 
   @override
   _DataListState createState() {
-    return new _DataListState();
+    return new _DataListState(_project);
   }
 
 }
@@ -30,12 +39,17 @@ class DataList extends StatefulWidget {
 class _DataListState extends State<DataList> {
 
   List<TimeEntry> timeEntries;
+  Project _project;
+
+  _DataListState(Project project) {
+    _project = project;
+  }
 
   @override
   void initState() {
     super.initState();
     var timeEntryRepository = new TimeEntryRepository();
-    timeEntryRepository.getAllTimeEntries().then((List<TimeEntry> value) {
+    timeEntryRepository.getAllTimeEntries(_project.id).then((List<TimeEntry> value) {
       setState(() {
         timeEntries = value;
       });
@@ -53,7 +67,7 @@ class _DataListState extends State<DataList> {
     } else {
       return Scaffold(
         appBar: AppBar(
-          title: Text("timeasy - Zeiten"),
+          title: Text(_getTitle()),
         ),
         body: Column(
           mainAxisSize: MainAxisSize.min,
@@ -103,6 +117,10 @@ class _DataListState extends State<DataList> {
       )).toList()
     );
 
+  }
+
+  String _getTitle() {
+    return "Zeiten (${_project.name})";
   }
 
 
