@@ -27,6 +27,7 @@ dependencies:
   sqflite: ^1.1.0
   path_provider: ^1.1.0
   uuid: ^2.0.0
+  intl: ^0.15.8
 
 dev_dependencies:
   flutter_test:

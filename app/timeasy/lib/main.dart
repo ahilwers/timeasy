@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentrylist.dart';
+import 'package:timeasy/weeklyview.dart';
 
 void main() => runApp(MyApp());
 
@@ -36,6 +38,12 @@ enum AppState {
 class _MainPageState extends State<MainPage> {
 
   AppState _currentState = AppState.STOPPED;
+
+  @override
+  void initState() {
+    super.initState();
+    initializeDateFormatting();
+  }
 
   void _setAppState(AppState state) {
     setState(() {
@@ -82,6 +90,12 @@ class _MainPageState extends State<MainPage> {
               decoration: BoxDecoration(
                 color: Colors.blue,
               ),
+            ),
+            ListTile(
+              title: Text('Wochenübersicht'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView()));
+              },
             ),
             ListTile(
               title: Text('Zeiteinträge'),
