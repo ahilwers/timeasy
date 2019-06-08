@@ -1,5 +1,6 @@
 import 'package:timeasy/weekly_statistics.dart';
 import 'package:timeasy/timeentry_repository.dart';
+import 'package:timeasy/timeentry.dart';
 import 'package:timeasy/project.dart';
 
 class WeeklyStatisticsBuilder {
@@ -14,18 +15,28 @@ class WeeklyStatisticsBuilder {
     var timeEntries = await _timeEntryRepository.getTimeEntries(project.id, startDate, endDate);
 
     var lastDay = 0;
-    WeeklyStatisticsEntry statisticsEntry;
     for (var timeEntry in timeEntries) {
+      if (!_isTimeEntryValid(timeEntry, endDate))
+        continue;
       var currentDay = timeEntry.startTime.day;
       // A new day has started and a new statistics entry must be created:
+      var statisticsEntry = weeklyStatistics.getEntryForWeekDay(timeEntry.startTime.weekday);
       if ((currentDay>lastDay) || (statisticsEntry==null)) {
         statisticsEntry = new WeeklyStatisticsEntry();
         statisticsEntry.date = timeEntry.startTime;
         weeklyStatistics.addEntryForWeekDay(timeEntry.startTime.weekday, statisticsEntry);
       }
       statisticsEntry.seconds+=timeEntry.getSeconds();
+      lastDay = currentDay;
     }
     return weeklyStatistics;
+  }
+
+  bool _isTimeEntryValid(TimeEntry timeEntry, DateTime endDate) {
+    // The query may return time entries without end date although they don't
+    // fit into this time period. We must check this here:
+    var nextDate = endDate.add(Duration(days: 1));
+    return timeEntry.startTime.isBefore(nextDate);
   }
 
   DateTime getFirstDayOfWeek(int weekNumber) {
