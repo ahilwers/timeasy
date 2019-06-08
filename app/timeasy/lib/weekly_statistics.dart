@@ -10,6 +10,12 @@ class WeeklyStatistics {
     _entries[weekDay] = entry;
   }
 
+  int getSumInSeconds() {
+    var _sum = 0;
+    _entries.forEach((weekday, entry) => _sum+=entry.seconds);
+    return _sum;
+  }
+
 }
 
 class WeeklyStatisticsEntry {

@@ -56,26 +56,39 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     var startDate = formatter.format(_weeklyStatisticsBuilder.getFirstDayOfWeek(_calendarWeek));
     var endDate = formatter.format(_weeklyStatisticsBuilder.getLastDayOfWeek(_calendarWeek));
 
-    return Column(
-      children: <Widget>[
-        Text("Woche "+_calendarWeek.toString()+" "+startDate+" - "+endDate),
-        _buildDayEntry(1),
-        _buildDayEntry(2),
-        _buildDayEntry(3),
-        _buildDayEntry(4),
-        _buildDayEntry(5),
-        _buildDayEntry(6),
-        _buildDayEntry(7),
-      ],
+    return Card (
+      child: ListView(
+        children: <Widget>[
+          ListTile(
+            title: Text("${_calendarWeek.toString()}. Kalenderwoche", style: TextStyle(fontWeight: FontWeight.w500)),
+            subtitle: Text("$startDate - $endDate"),
+          ),
+          Divider(),
+          _buildDayEntry(1),
+          _buildDayEntry(2),
+          _buildDayEntry(3),
+          _buildDayEntry(4),
+          _buildDayEntry(5),
+          _buildDayEntry(6),
+          _buildDayEntry(7),
+          Divider(),
+          _buildSumEntry()
+        ]
+      ),
     );
   }
 
   _buildDayEntry(int weekday) {
-    return Row(
-      children: <Widget>[
-        Text(_getNameOfDay(weekday)),
-        Text(_getHours(weekday))
-      ],
+    return ListTile(
+      title: Text(_getNameOfDay(weekday)),
+      trailing: Text(_getHoursAsString(weekday)),
+    );
+  }
+
+  _buildSumEntry() {
+    return ListTile(
+      title: Text("Summe:", style: TextStyle(fontWeight: FontWeight.w500)),
+      trailing: Text("${getSumAsString()} Stunden", style: TextStyle(fontWeight: FontWeight.w500))
     );
   }
 
@@ -100,7 +113,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     }
   }
 
-  String _getHours(int weekday) {
+  String _getHoursAsString(int weekday) {
     if (_weeklyStatistics==null) {
       return "";
     }
@@ -108,7 +121,11 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     if ((dayEntry==null) || (dayEntry.seconds==0)) {
       return "";
     }
-    return (dayEntry.seconds/60/60).toString();
+    return (dayEntry.seconds/60/60).toStringAsFixed(2);
+  }
+
+  String getSumAsString() {
+    return (_weeklyStatistics.getSumInSeconds()/60/60).toStringAsFixed(2);
   }
 
 }
