@@ -46,6 +46,7 @@ class _MainPageState extends State<MainPage> {
   List<Project> _projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
+  final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
 
 
   @override
@@ -54,19 +55,12 @@ class _MainPageState extends State<MainPage> {
     initializeDateFormatting();
 
     var projectRepository = new ProjectRepository();
-    projectRepository.createDefaultProjectIfNotExists().then((Project project) {
-      // Create the default project if it does not exist
+    projectRepository.getLastUsedProjectOrDefault().then((Project project) {
       setState(() {
-        _currentProject = project;
+        _setCurrentProject(project);
       });
       _loadProjects();
-      var timeEntryRepository = new TimeEntryRepository();
-      // Set the current state if there's a timing already running:
-      timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry entry) {
-        if (entry != null) {
-          _setAppState(AppState.RUNNING);
-        }
-      });
+      _updateAppState();
     });
   }
 
@@ -132,12 +126,18 @@ class _MainPageState extends State<MainPage> {
               title: Text('Zeiteinträge'),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject)));
-              },
+              }
             ),
             ListTile(
               title: Text('Projekte'),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView()));
+                Navigator.push(context,
+                  MaterialPageRoute(
+                      builder: (context) => ProjectListView()
+                  )
+                ).then((_) {
+                  _loadProjects();
+                });
               },
             ),
           ],
@@ -174,8 +174,9 @@ class _MainPageState extends State<MainPage> {
                 onChanged: (String value) {
                   _projectRepository.getProjectById(value).then((Project projectFromDb) {
                     setState(() {
-                      _currentProject = projectFromDb;
+                      _setCurrentProject(projectFromDb);
                     });
+                    _updateAppState();
                   });
                 },
               ),
@@ -206,6 +207,23 @@ class _MainPageState extends State<MainPage> {
         _projects = projectsFromDb;
       });
     });
+  }
+
+  _setCurrentProject(Project project) {
+    _currentProject = project;
+    _projectRepository.saveLastUsedProject(project);
+  }
+
+  _updateAppState() {
+    // Set the current state if there's a timing already running:
+    _timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry entry) {
+      if (entry != null) {
+        _setAppState(AppState.RUNNING);
+      } else {
+        _setAppState(AppState.STOPPED);
+      }
+    });
+
   }
 
 }

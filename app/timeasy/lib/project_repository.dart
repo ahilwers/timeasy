@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:timeasy/database.dart';
 import 'package:timeasy/project.dart';
 
@@ -39,6 +41,24 @@ class ProjectRepository {
     } else {
       return projects[0];
     }
+  }
+
+  Future<Project> getLastUsedProjectOrDefault() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String lastUsedProjectId = prefs.getString("currentProjectId");
+    Project lastUsedProject;
+    if (lastUsedProjectId!=null) {
+      lastUsedProject = await getProjectById(lastUsedProjectId);
+    }
+    if (lastUsedProjectId==null) {
+      lastUsedProject = await createDefaultProjectIfNotExists();
+    }
+    return lastUsedProject;
+  }
+
+  void saveLastUsedProject(Project project) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString("currentProjectId", project.id);
   }
 
 }
