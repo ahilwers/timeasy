@@ -43,6 +43,9 @@ class _MainPageState extends State<MainPage> {
 
   AppState _currentState = AppState.STOPPED;
   Project _currentProject;
+  List<Project> _projects;
+
+  final ProjectRepository _projectRepository = new ProjectRepository();
 
 
   @override
@@ -56,6 +59,7 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _currentProject = project;
       });
+      _loadProjects();
       var timeEntryRepository = new TimeEntryRepository();
       // Set the current state if there's a timing already running:
       timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry entry) {
@@ -140,18 +144,43 @@ class _MainPageState extends State<MainPage> {
         )
       ),
       body: Center(
-        child : new RawMaterialButton(
-          onPressed: _toggleState,
-          child: new Icon(
-            _getIcon(),
-            color: Colors.blue,
-            size: 128.0,
-          ),
-          shape: new CircleBorder(),
-          elevation: 2.0,
-          fillColor: Colors.white,
-          padding: const EdgeInsets.all(15.0),
-        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+
+            new RawMaterialButton(
+              onPressed: _toggleState,
+              child: new Icon(
+                _getIcon(),
+                color: Colors.blue,
+                size: 128.0,
+              ),
+              shape: new CircleBorder(),
+              elevation: 2.0,
+              fillColor: Colors.white,
+              padding: const EdgeInsets.all(15.0),
+            ),
+            _projects == null ?
+              Text("Lade Projekte...") :
+              new DropdownButton<String>(
+                value: _currentProject.id,
+                items: _projects.map((Project value) {
+                  return new DropdownMenuItem<String>(
+                    value: value.id,
+                    child: new Text(value.name),
+                  );
+                }).toList(),
+
+                onChanged: (String value) {
+                  _projectRepository.getProjectById(value).then((Project projectFromDb) {
+                    setState(() {
+                      _currentProject = projectFromDb;
+                    });
+                  });
+                },
+              ),
+          ],
+        )
       ),
     );
   }
@@ -169,6 +198,14 @@ class _MainPageState extends State<MainPage> {
       }
     }
     return icon;
+  }
+
+  _loadProjects() {
+    _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
+      setState(() {
+        _projects = projectsFromDb;
+      });
+    });
   }
 
 }
