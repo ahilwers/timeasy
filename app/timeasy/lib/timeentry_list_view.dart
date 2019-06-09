@@ -3,11 +3,11 @@ import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
 import 'package:timeasy/project.dart';
 
-class TimeEntryList extends StatelessWidget {
+class TimeEntryListView extends StatelessWidget {
 
   Project _project;
 
-  TimeEntryList(Project project) {
+  TimeEntryListView(Project project) {
     _project = project;
   }
 

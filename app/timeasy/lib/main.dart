@@ -3,11 +3,11 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:timeasy/timeentry.dart';
 import 'package:timeasy/timeentry_repository.dart';
-import 'package:timeasy/timeentrylist.dart';
-import 'package:timeasy/weeklyview.dart';
+import 'package:timeasy/timeentry_list_view.dart';
+import 'package:timeasy/weekly_view.dart';
 import 'package:timeasy/project.dart';
 import 'package:timeasy/project_repository.dart';
-import 'package:timeasy/projectlist.dart';
+import 'package:timeasy/project_list_view.dart';
 
 void main() => runApp(MyApp());
 
@@ -127,13 +127,13 @@ class _MainPageState extends State<MainPage> {
             ListTile(
               title: Text('Zeiteinträge'),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryList(_currentProject)));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject)));
               },
             ),
             ListTile(
               title: Text('Projekte'),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectList()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView()));
               },
             ),
           ],

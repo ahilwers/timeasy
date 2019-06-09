@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:timeasy/project_repository.dart';
 import 'package:timeasy/project.dart';
 
-class ProjectList extends StatelessWidget {
+class ProjectListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
