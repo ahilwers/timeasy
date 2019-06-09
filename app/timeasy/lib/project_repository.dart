@@ -8,11 +8,17 @@ class ProjectRepository {
     return await db.insert(Project.tableName, project.toMap());
   }
 
-  updateTimeEntry(Project project) async {
+  updateProject(Project project) async {
     project.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
     return await db.update(Project.tableName, project.toMap(),
         where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+  }
+
+  Future<Project> getProjectById(String id) async {
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.query(Project.tableName, where: "${Project.idColumn} = ?", whereArgs: [id]);
+    return queryResult.isNotEmpty ? queryResult.map((entry) => Project.fromMap(entry)).toList().first : null;
   }
 
   Future<List<Project>> getAllProjects() async {

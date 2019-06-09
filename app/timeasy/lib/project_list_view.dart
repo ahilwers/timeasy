@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:timeasy/project_repository.dart';
 import 'package:timeasy/project.dart';
+import 'package:timeasy/project_edit_view.dart';
 
 class ProjectListView extends StatelessWidget {
 
@@ -28,16 +29,14 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
 
   List<Project> projects;
 
+  final ProjectRepository _projectRepository = new ProjectRepository();
+
   @override
   void initState() {
     super.initState();
-    var projectRepository = new ProjectRepository();
-    projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
-      setState(() {
-        projects = projectsFromDb;
-      });
-    });
+    _loadProjects();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +54,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
         body: _dataBody(context),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            // Add your onPressed code here!
+            _addProject();
           },
           child: Icon(Icons.add),
           backgroundColor: Colors.blue,
@@ -73,6 +72,26 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
         );
       },
     );
+  }
+
+  _addProject() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProjectEditView(),
+        fullscreenDialog: true,
+      ),
+    ).then((value) {
+      _loadProjects();
+    });
+  }
+
+  _loadProjects() {
+    _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
+      setState(() {
+        projects = projectsFromDb;
+      });
+    });
+
   }
 
   String _getTitle() {
