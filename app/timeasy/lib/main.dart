@@ -7,6 +7,7 @@ import 'package:timeasy/timeentrylist.dart';
 import 'package:timeasy/weeklyview.dart';
 import 'package:timeasy/project.dart';
 import 'package:timeasy/project_repository.dart';
+import 'package:timeasy/projectlist.dart';
 
 void main() => runApp(MyApp());
 
@@ -132,10 +133,7 @@ class _MainPageState extends State<MainPage> {
             ListTile(
               title: Text('Projekte'),
               onTap: () {
-                // Update the state of the app
-                // ...
-                // Then close the drawer
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectList()));
               },
             ),
           ],
