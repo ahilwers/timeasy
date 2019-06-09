@@ -54,7 +54,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
         body: _dataBody(context),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            _addProject();
+            _addOrEditProject();
           },
           child: Icon(Icons.add),
           backgroundColor: Colors.blue,
@@ -69,15 +69,18 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
       itemBuilder: (context, index) {
         return ListTile(
           title: Text(projects[index].name),
+          onTap: () {
+            _addOrEditProject(projectIdToEdit: projects[index].id);
+          },
         );
       },
     );
   }
 
-  _addProject() {
+  void _addOrEditProject({String projectIdToEdit}) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ProjectEditView(),
+        builder: (context) => ProjectEditView(projectId: projectIdToEdit),
         fullscreenDialog: true,
       ),
     ).then((value) {
@@ -85,7 +88,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     });
   }
 
-  _loadProjects() {
+  void _loadProjects() {
     _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
       setState(() {
         projects = projectsFromDb;
