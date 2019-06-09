@@ -52,7 +52,14 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
         appBar: AppBar(
           title: Text(_getTitle()),
         ),
-        body: _dataBody(context)
+        body: _dataBody(context),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            // Add your onPressed code here!
+          },
+          child: Icon(Icons.add),
+          backgroundColor: Colors.blue,
+        ),
       );
     }
   }
