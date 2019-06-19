@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
 import 'package:timeasy/project.dart';
+import 'package:timeasy/timeentry_edit_view.dart';
 
 class TimeEntryListView extends StatelessWidget {
 
@@ -41,6 +42,8 @@ class _DataListState extends State<DataList> {
   List<TimeEntry> timeEntries;
   Project _project;
 
+  final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
+
   _DataListState(Project project) {
     _project = project;
   }
@@ -48,12 +51,7 @@ class _DataListState extends State<DataList> {
   @override
   void initState() {
     super.initState();
-    var timeEntryRepository = new TimeEntryRepository();
-    timeEntryRepository.getAllTimeEntries(_project.id).then((List<TimeEntry> value) {
-      setState(() {
-        timeEntries = value;
-      });
-    });
+    _loadTimeEntries();
   }
 
   @override
@@ -78,6 +76,13 @@ class _DataListState extends State<DataList> {
                 child: _dataBody()
             ),
           ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _addOrEditTimeEntry();
+          },
+          child: Icon(Icons.add),
+          backgroundColor: Colors.blue,
         ),
       );
     }
@@ -106,18 +111,47 @@ class _DataListState extends State<DataList> {
         cells: [
           DataCell(
             Text(timeEntry.startTime.toLocal().toIso8601String()),
+            onTap: () {
+              _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
+            }
           ),
           DataCell(
             Text(timeEntry.endTime != null ? timeEntry.endTime.toLocal().toIso8601String() : ""),
+              onTap: () {
+                _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
+              }
           ),
           DataCell(
             Text(timeEntry.endTime != null ? timeEntry.endTime.difference(timeEntry.startTime).inMinutes.toString() : ""),
+              onTap: () {
+                _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
+              }
           )
-        ]
+        ],
       )).toList()
     );
 
   }
+
+  void _addOrEditTimeEntry({String timeEntryIdToEdit}) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TimeEntryEditView(_project.id, timeEntryId: timeEntryIdToEdit),
+        fullscreenDialog: true,
+      ),
+    ).then((value) {
+      _loadTimeEntries();
+    });
+  }
+
+  void _loadTimeEntries() {
+    _timeEntryRepository.getAllTimeEntries(_project.id).then((List<TimeEntry> value) {
+      setState(() {
+        timeEntries = value;
+      });
+    });
+  }
+
 
   String _getTitle() {
     return "Zeiten (${_project.name})";
