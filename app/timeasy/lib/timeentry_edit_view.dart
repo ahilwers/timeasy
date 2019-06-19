@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
@@ -76,6 +77,9 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
         ),
       );
     } else {
+      Locale locale = Localizations.localeOf(context);
+      var dateFormatter = new DateFormat.yMd(locale.toString());
+      var timeFormatter = new DateFormat.Hm(locale.toString());
       return Scaffold(
         appBar: AppBar(
           title: Text(_getTitle()),
@@ -84,7 +88,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
               onPressed: () {
                 final form = _formEditTimeEntryKey.currentState;
                 if (form.validate()) {
-                  _saveTimeEntry(form);
+                  _saveProject(form);
                   Navigator.pop(context);
                 }
               },
@@ -103,21 +107,118 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
           margin: EdgeInsets.all(16.0),
           child: Form(
             key: _formEditTimeEntryKey,
-            child: TextFormField(
-              decoration: InputDecoration(
-                labelText: 'Beschreibung',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.text,
-              initialValue: _timeEntry.description,
-              onSaved: (value) => _timeEntry.description = value,
-            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Beschreibung',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.text,
+                  initialValue: _timeEntry.description,
+                  onSaved: (value) => _timeEntry.description = value,
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    FlatButton(
+                      onPressed: () {
+                        _selectDate(context, _timeEntry.startTime).then((DateTime picked) {
+                          if (picked != null) {
+                            setState(() {
+                              var localStartTime = _timeEntry.startTime.toLocal();
+                              _timeEntry.startTime = new DateTime(picked.year, picked.month, picked.day, localStartTime.hour, localStartTime.minute).toUtc();
+                            });
+                          }
+                        });
 
+                      },
+                      child: Text(dateFormatter.format(_timeEntry.startTime.toLocal())),
+
+                    ),
+                    FlatButton(
+                      onPressed: () {
+                        var startTime = TimeOfDay.fromDateTime(_timeEntry.startTime.toLocal());
+                        _selectTime(context, startTime).then((TimeOfDay picked) {
+                          if (picked!=null) {
+                            setState(() {
+                              var localStartTime = _timeEntry.startTime.toLocal();
+                              _timeEntry.startTime = new DateTime(localStartTime.year, localStartTime.month, localStartTime.day, picked.hour, picked.minute).toUtc();
+                            });
+                          }
+                        });
+
+                      },
+                      child: Text(timeFormatter.format(_timeEntry.startTime.toLocal())),
+
+                    ),
+                  ],
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    FlatButton(
+                      onPressed: () {
+                        var endTime = _timeEntry.endTime!=null ? _timeEntry.endTime : DateTime.now().toUtc();
+                        _selectDate(context, endTime).then((DateTime picked) {
+                          if (picked != null) {
+                            setState(() {
+                              var localEndTime = _timeEntry.endTime!=null ? _timeEntry.endTime.toLocal() : DateTime.now();
+                              _timeEntry.endTime = new DateTime(picked.year, picked.month, picked.day, localEndTime.hour, localEndTime.minute).toUtc();
+                            });
+                          }
+                        });
+                      },
+                      child: Text(_timeEntry.endTime != null ? dateFormatter.format(_timeEntry.endTime.toLocal()) : dateFormatter.format(DateTime.now())),
+
+                    ),
+                    FlatButton(
+                      onPressed: () {
+                        var endTime = TimeOfDay.fromDateTime(_timeEntry.endTime!=null ? _timeEntry.endTime.toLocal() : DateTime.now());
+                        _selectTime(context, endTime).then((TimeOfDay picked) {
+                          if (picked!=null) {
+                            setState(() {
+                              var localEndTime = _timeEntry.endTime!=null ? _timeEntry.endTime.toLocal() : DateTime.now();
+                              _timeEntry.endTime = new DateTime(localEndTime.year, localEndTime.month, localEndTime.day, picked.hour, picked.minute).toUtc();
+                            });
+                          }
+                        });
+
+                      },
+                      child: Text(_timeEntry.endTime!=null ? timeFormatter.format(_timeEntry.endTime.toLocal()) : dateFormatter.format(DateTime.now())),
+
+                    ),
+                  ],
+                )
+
+              ],
+            )
           ),
         )
       );
     }
   }
+
+  Future<DateTime> _selectDate(BuildContext context, DateTime initialDate) async {
+    final DateTime picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2010),
+      lastDate: DateTime(2201),
+    );
+    return picked;
+  }
+
+  Future<TimeOfDay> _selectTime(BuildContext context, TimeOfDay initialSelectedTime) async {
+    final TimeOfDay picked = await showTimePicker(
+      context: context,
+      initialTime: initialSelectedTime,
+    );
+    return picked;
+  }
+
+
 
   String _getTitle() {
     if (_timeEntryId==null) {
@@ -127,7 +228,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     }
   }
 
-  void _saveTimeEntry(FormState form) {
+  void _saveProject(FormState form) {
     form.save();
     if (_timeEntryId!=null) {
       _timeEntryRepository.updateTimeEntry(_timeEntry);
