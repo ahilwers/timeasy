@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:timeasy/database.dart';
 import 'package:timeasy/timeentry.dart';
 
@@ -13,6 +14,12 @@ class TimeEntryRepository {
     final db = await DBProvider.dbProvider.database;
     return await db.update(TimeEntry.tableName, timeEntry.toMap(), where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
 
+  }
+
+  deleteTimeEntry(TimeEntry timeEntry) async {
+    timeEntry.updated = DateTime.now().toUtc();
+    final db = await DBProvider.dbProvider.database;
+    return await db.delete(TimeEntry.tableName, where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
   }
 
   closeLatestTimeEntry(String projectId) async {

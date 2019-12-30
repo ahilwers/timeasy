@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
 
+enum ConfirmAction { CANCEL, ACCEPT }
+
 class TimeEntryEditView extends StatelessWidget {
 
   String _timeEntryId;
@@ -113,6 +115,18 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                   .copyWith(color: Colors.white),
               ),
             ),
+            _timeEntryId != null ?
+              FlatButton(
+                onPressed: () {
+                  deleteTimeEntryWithRequest(context);
+                },
+                child: Text("Löschen",
+                  style: Theme.of(context)
+                      .textTheme
+                      .subhead
+                      .copyWith(color: Colors.white),
+                ),
+              ) : Container(),
 
           ],
 
@@ -274,6 +288,42 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       _timeEntryRepository.updateTimeEntry(_timeEntry);
     } else {
       _timeEntryRepository.addTimeEntry(_timeEntry);
+    }
+  }
+
+  Future<ConfirmAction> deleteTimeEntryWithRequest(BuildContext context) async {
+    return showDialog<ConfirmAction>(
+      context: context,
+      barrierDismissible: false, // user must tap button for close dialog!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Löschen'),
+          content: const Text(
+              'Möchten Sie den Zeiteintrag wirklich löschen?'),
+          actions: <Widget>[
+            FlatButton(
+              child: const Text('Nein'),
+              onPressed: () {
+                Navigator.of(context).pop(ConfirmAction.CANCEL);
+              },
+            ),
+            FlatButton(
+              child: const Text('Ja'),
+              onPressed: () {
+                deleteTimeEntry();
+                Navigator.of(context).pop(ConfirmAction.ACCEPT);
+                Navigator.pop(context);
+              },
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void deleteTimeEntry() {
+    if (_timeEntryId!=null) {
+      _timeEntryRepository.deleteTimeEntry(_timeEntry);
     }
   }
 
