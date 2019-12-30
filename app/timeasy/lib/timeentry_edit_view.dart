@@ -140,7 +140,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                             setState(() {
                               var localStartTime = _timeEntry.startTime.toLocal();
                               _timeEntry.startTime = new DateTime(picked.year, picked.month, picked.day, localStartTime.hour, localStartTime.minute).toUtc();
-                              // Also set te end time automatically if it's not already set:
+                              // Also set the end time automatically if it's not already set:
                               if (_timeEntry.endTime==null) {
                                 _timeEntry.endTime = _timeEntry.startTime;
                               }
@@ -160,6 +160,10 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                             setState(() {
                               var localStartTime = _timeEntry.startTime.toLocal();
                               _timeEntry.startTime = new DateTime(localStartTime.year, localStartTime.month, localStartTime.day, picked.hour, picked.minute).toUtc();
+                              // Also set the end time automatically if it's not already set:
+                              if (_timeEntry.endTime==null) {
+                                _timeEntry.endTime = _timeEntry.startTime;
+                              }
                             });
                           }
                         });
