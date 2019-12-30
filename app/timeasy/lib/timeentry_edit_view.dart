@@ -119,6 +119,14 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                   initialValue: _timeEntry.description,
                   onSaved: (value) => _timeEntry.description = value,
                 ),
+                SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Text('Start:', style: TextStyle(fontWeight: FontWeight.bold))
+                  ]
+                ),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -129,6 +137,10 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                             setState(() {
                               var localStartTime = _timeEntry.startTime.toLocal();
                               _timeEntry.startTime = new DateTime(picked.year, picked.month, picked.day, localStartTime.hour, localStartTime.minute).toUtc();
+                              // Also set te end time automatically if it's not already set:
+                              if (_timeEntry.endTime==null) {
+                                _timeEntry.endTime = _timeEntry.startTime;
+                              }
                             });
                           }
                         });
@@ -156,6 +168,13 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                   ],
                 ),
                 Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: <Widget>[
+                      Text('Ende:', style: TextStyle(fontWeight: FontWeight.bold))
+                    ]
+                ),
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     FlatButton(
@@ -170,7 +189,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                           }
                         });
                       },
-                      child: Text(_timeEntry.endTime != null ? dateFormatter.format(_timeEntry.endTime.toLocal()) : dateFormatter.format(DateTime.now())),
+                      child: Text(_timeEntry.endTime != null ? dateFormatter.format(_timeEntry.endTime.toLocal()) : "Enddatum"),
 
                     ),
                     FlatButton(
@@ -186,7 +205,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                         });
 
                       },
-                      child: Text(_timeEntry.endTime!=null ? timeFormatter.format(_timeEntry.endTime.toLocal()) : dateFormatter.format(DateTime.now())),
+                      child: Text(_timeEntry.endTime!=null ? timeFormatter.format(_timeEntry.endTime.toLocal()) : "Endzeit"),
 
                     ),
                   ],
