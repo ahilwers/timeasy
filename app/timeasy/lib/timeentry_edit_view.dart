@@ -88,8 +88,22 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
               onPressed: () {
                 final form = _formEditTimeEntryKey.currentState;
                 if (form.validate()) {
-                  _saveProject(form);
-                  Navigator.pop(context);
+                  // We need to validate the timeEntry separately
+                  var errorMessage = "";
+                  if (_timeEntry.startTime==null) {
+                    errorMessage = "Bitte geben Sie eine Startzeit an.";
+                  } else if (_timeEntry.endTime==null) {
+                    errorMessage = "Bitte geben Sie eine Endzeit an.";
+                  } else if (_timeEntry.endTime.isBefore(_timeEntry.startTime)) {
+                    errorMessage = "Die Startzeit muss vor der Endzeit liegen.";
+                  }
+                  if (errorMessage!="") {
+                    Scaffold.of(context)
+                        .showSnackBar(SnackBar(content: Text(errorMessage)));
+                  } else {
+                    _saveProject(form);
+                    Navigator.pop(context);
+                  }
                 }
               },
               child: Text("Speichern",
