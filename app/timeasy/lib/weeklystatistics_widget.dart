@@ -9,16 +9,18 @@ import 'package:timeasy/project.dart';
 class WeeklyStatisticsWidget extends StatefulWidget {
 
   int _calendarWeek;
+  int _year;
   Project _project;
 
-  WeeklyStatisticsWidget(Project project, int calendarWeek, {Key key}) : super(key: key) {
+  WeeklyStatisticsWidget(Project project, int calendarWeek, int year, {Key key}) : super(key: key) {
     _calendarWeek = calendarWeek;
+    _year = year;
     _project = project;
   }
 
   @override
   _WeeklyStatisticsState createState() {
-    return new _WeeklyStatisticsState(_project, _calendarWeek);
+    return new _WeeklyStatisticsState(_project, _calendarWeek, _year);
   }
 
 }
@@ -26,14 +28,16 @@ class WeeklyStatisticsWidget extends StatefulWidget {
 class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
 
   int _calendarWeek = 0;
+  int _year = 0;
   Project _project;
   WeeklyStatistics _weeklyStatistics;
   // Need to define a page controller with a high initial page because otherwise
   // we could not swipe below the current week
   final _weeklyStatisticsBuilder = new WeeklyStatisticsBuilder();
 
-  _WeeklyStatisticsState(Project project, int calendarWeek) {
+  _WeeklyStatisticsState(Project project, int calendarWeek, int year) {
     _calendarWeek = calendarWeek;
+    _year = year;
     _project = project;
   }
 
@@ -45,7 +49,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   }
 
   _getData() {
-    _weeklyStatisticsBuilder.build(_project, _calendarWeek).then((WeeklyStatistics statistics) {
+    _weeklyStatisticsBuilder.build(_project, _calendarWeek, _year).then((WeeklyStatistics statistics) {
       setState(() {
         _weeklyStatistics = statistics;
       });
@@ -57,8 +61,8 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     Locale locale = Localizations.localeOf(context);
     var formatter = new DateFormat.yMd(locale.toString());
 
-    var startDate = formatter.format(_weeklyStatisticsBuilder.getFirstDayOfWeek(_calendarWeek));
-    var endDate = formatter.format(_weeklyStatisticsBuilder.getLastDayOfWeek(_calendarWeek));
+    var startDate = formatter.format(_weeklyStatisticsBuilder.getFirstDayOfWeek(_calendarWeek, _year));
+    var endDate = formatter.format(_weeklyStatisticsBuilder.getLastDayOfWeek(_calendarWeek, _year));
 
     return Card (
       child: ListView(

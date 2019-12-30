@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:timeasy/weekly_statistics.dart';
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
@@ -7,11 +8,11 @@ class WeeklyStatisticsBuilder {
 
   final TimeEntryRepository _timeEntryRepository =  new TimeEntryRepository();
 
-  Future<WeeklyStatistics> build(Project project, int weekNumber) async {
+  Future<WeeklyStatistics> build(Project project, int weekNumber, int year) async {
     var weeklyStatistics = new WeeklyStatistics();
 
-    var startDate = getFirstDayOfWeek(weekNumber);
-    var endDate = getLastDayOfWeek(weekNumber);
+    var startDate = getFirstDayOfWeek(weekNumber, year);
+    var endDate = getLastDayOfWeek(weekNumber, year);
     var timeEntries = await _timeEntryRepository.getTimeEntries(project.id, startDate, endDate);
 
     var lastDay = 0;
@@ -39,14 +40,14 @@ class WeeklyStatisticsBuilder {
     return timeEntry.startTime.isBefore(nextDate);
   }
 
-  DateTime getFirstDayOfWeek(int weekNumber) {
+  DateTime getFirstDayOfWeek(int weekNumber, int year) {
     var daysInYear = (weekNumber-1)*7;
-    var firstDayOfYear = new DateTime(2019, 1, 1);
+    var firstDayOfYear = new DateTime(year, 1, 1);
     return firstDayOfYear.add(new Duration(days: daysInYear-1));
   }
 
-  DateTime getLastDayOfWeek(int weekNumber) {
-    var firstDayOfWeek = getFirstDayOfWeek(weekNumber);
+  DateTime getLastDayOfWeek(int weekNumber, int year) {
+    var firstDayOfWeek = getFirstDayOfWeek(weekNumber, year);
     return firstDayOfWeek.add(new Duration(days: 6));
   }
 

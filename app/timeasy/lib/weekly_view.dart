@@ -40,6 +40,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
 
   Project _project;
   int _calendarWeek = 0;
+  int _year = 0;
   int _lastPosition = -1;
 
   // Need to initialize the first page to such a high value to be able to swipe
@@ -54,6 +55,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   void initState() {
     super.initState();
     _calendarWeek = _weekNumber(DateTime.now())-1; //need to subtract one because the page is flipped forward once on startup.
+    _year = DateTime.now().year;
   }
 
   @override
@@ -67,11 +69,19 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
         itemBuilder: (context, position) {
           if (position > _lastPosition) {
             _calendarWeek++;
-          } else if ((position < _lastPosition) && (_calendarWeek > 1)) {
+            if (_calendarWeek>52) {
+              _calendarWeek = 1;
+              _year++;
+            }
+          } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
             _calendarWeek--;
+            if (_calendarWeek<1) {
+              _calendarWeek = 52;
+              _year--;
+            }
           }
           _lastPosition = position;
-          return new WeeklyStatisticsWidget(_project, _calendarWeek);
+          return new WeeklyStatisticsWidget(_project, _calendarWeek, _year);
         }
       )
     );
