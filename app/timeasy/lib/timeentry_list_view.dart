@@ -70,18 +70,6 @@ class _DataListState extends State<DataList> {
         appBar: AppBar(
           title: Text(_getTitle()),
         ),
-        /*
-        body: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          verticalDirection: VerticalDirection.down,
-          children: <Widget>[
-            Center (
-                child: _dataBody()
-            ),
-          ],
-        ),
-        */
         body: SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: _dataBody()
