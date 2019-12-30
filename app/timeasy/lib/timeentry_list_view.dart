@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
 import 'package:timeasy/project.dart';
@@ -41,6 +42,7 @@ class _DataListState extends State<DataList> {
 
   List<TimeEntry> timeEntries;
   Project _project;
+  Locale locale;
 
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
 
@@ -63,10 +65,12 @@ class _DataListState extends State<DataList> {
         ),
       );
     } else {
+      locale = Localizations.localeOf(context);
       return Scaffold(
         appBar: AppBar(
           title: Text(_getTitle()),
         ),
+        /*
         body: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -76,6 +80,11 @@ class _DataListState extends State<DataList> {
                 child: _dataBody()
             ),
           ],
+        ),
+        */
+        body: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: _dataBody()
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
@@ -89,6 +98,8 @@ class _DataListState extends State<DataList> {
   }
 
   _dataBody() {
+
+    var timeFormatter = new DateFormat.yMd(locale.toString()).add_Hm();
     return DataTable(
       columns: [
         DataColumn(
@@ -110,19 +121,19 @@ class _DataListState extends State<DataList> {
       rows: timeEntries.map((timeEntry) => DataRow(
         cells: [
           DataCell(
-            Text(timeEntry.startTime.toLocal().toIso8601String()),
+            Text(timeFormatter.format(timeEntry.startTime.toLocal())),
             onTap: () {
               _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
             }
           ),
           DataCell(
-            Text(timeEntry.endTime != null ? timeEntry.endTime.toLocal().toIso8601String() : ""),
+            Text(timeEntry.endTime != null ? timeFormatter.format(timeEntry.endTime.toLocal()) : ""),
               onTap: () {
                 _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
               }
           ),
           DataCell(
-            Text(timeEntry.endTime != null ? timeEntry.endTime.difference(timeEntry.startTime).inMinutes.toString() : ""),
+            Text(timeEntry.endTime != null ?  timeEntry.endTime.difference(timeEntry.startTime).inHours.toString() : ""),
               onTap: () {
                 _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
               }
