@@ -46,7 +46,7 @@ class TimeEntryRepository {
 
   Future<List<TimeEntry>> getAllTimeEntries(String projectId) async {
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.projectIdColumn} = ?", whereArgs: [projectId]);
+    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.projectIdColumn} = ?", whereArgs: [projectId], orderBy: "${TimeEntry.startTimeColumn}, ${TimeEntry.endTimeColumn}");
     return queryResult.isNotEmpty ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList() : [];
   }
 
