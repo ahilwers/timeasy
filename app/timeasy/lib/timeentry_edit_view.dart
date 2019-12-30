@@ -110,6 +110,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                /*
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: 'Beschreibung',
@@ -120,6 +121,8 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                   onSaved: (value) => _timeEntry.description = value,
                 ),
                 SizedBox(height: 12),
+
+                 */
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.start,
