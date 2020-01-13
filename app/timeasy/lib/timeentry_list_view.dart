@@ -121,7 +121,7 @@ class _DataListState extends State<DataList> {
               }
           ),
           DataCell(
-            Text(timeEntry.endTime != null ?  timeEntry.endTime.difference(timeEntry.startTime).inHours.toString() : ""),
+            Text(timeEntry.endTime != null ? _formatDuration(timeEntry.endTime.difference(timeEntry.startTime)) : ""),
               onTap: () {
                 _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
               }
@@ -129,7 +129,16 @@ class _DataListState extends State<DataList> {
         ],
       )).toList()
     );
+  }
 
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) {
+      if (n >= 10) return "$n";
+      return "0$n";
+    }
+
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    return "${twoDigits(duration.inHours)}:$twoDigitMinutes";
   }
 
   void _addOrEditTimeEntry({String timeEntryIdToEdit}) {
