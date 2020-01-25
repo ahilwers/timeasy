@@ -42,8 +42,17 @@ class WeeklyStatisticsBuilder {
 
   DateTime getFirstDayOfWeek(int weekNumber, int year) {
     var daysInYear = (weekNumber-1)*7;
-    var firstDayOfYear = new DateTime(year, 1, 1);
-    return firstDayOfYear.add(new Duration(days: daysInYear-1));
+    var firstDayOfFirstWeek = getFirstDayOfFirstWeek(year);
+    return firstDayOfFirstWeek.add(new Duration(days: daysInYear));
+  }
+
+  DateTime getFirstDayOfFirstWeek(int year) {
+    var firstDay = new DateTime(year, 1, 1);
+    // If this day is not a monday, the first day of the week must be in the last year:
+    if (firstDay.weekday!=0) {
+      firstDay = firstDay.subtract(new Duration(days: firstDay.weekday-1));
+    }
+    return firstDay;
   }
 
   DateTime getLastDayOfWeek(int weekNumber, int year) {
