@@ -1,4 +1,4 @@
-package de.gsn.timeasy;
+package com.hilwerssoftware.timeasy;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
