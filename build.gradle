@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.hilwerssoftware.timeeasy'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '15'
+sourceCompatibility = '14'
 
 repositories {
 	mavenCentral()
