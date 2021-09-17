@@ -46,7 +46,7 @@ android {
         versionName flutterVersionName
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
-
+/*
     signingConfigs {
         release {
             keyAlias keystoreProperties['keyAlias']
@@ -55,7 +55,6 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }
-
 
     buildTypes {
         release {
@@ -69,6 +68,7 @@ android {
             }
         }
     }
+*/
 }
 
 flutter {
