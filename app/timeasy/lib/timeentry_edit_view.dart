@@ -111,7 +111,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
               child: Text("Speichern",
                 style: Theme.of(context)
                   .textTheme
-                  .subhead
+                  .subtitle1
                   .copyWith(color: Colors.white),
               ),
             ),
@@ -123,7 +123,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                 child: Text("Löschen",
                   style: Theme.of(context)
                       .textTheme
-                      .subhead
+                      .subtitle1
                       .copyWith(color: Colors.white),
                 ),
               ) : Container(),

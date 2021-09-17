@@ -87,7 +87,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
               child: Text("Speichern",
                 style: Theme.of(context)
                   .textTheme
-                  .subhead
+                  .subtitle1
                   .copyWith(color: Colors.white),
               ),
             ),
