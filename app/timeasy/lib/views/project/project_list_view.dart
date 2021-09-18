@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:timeasy/project_repository.dart';
+import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/project.dart';
-import 'package:timeasy/project_edit_view.dart';
+import 'package:timeasy/views/project/project_edit_view.dart';
 
 class ProjectListView extends StatelessWidget {
   @override

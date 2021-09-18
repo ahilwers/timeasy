@@ -6,8 +6,8 @@ import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry_list_view.dart';
 import 'package:timeasy/weekly_view.dart';
 import 'package:timeasy/project.dart';
-import 'package:timeasy/project_repository.dart';
-import 'package:timeasy/project_list_view.dart';
+import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 
 void main() => runApp(MyApp());
