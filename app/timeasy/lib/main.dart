@@ -17,9 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'timeasy',
-      // The Mandy red, light theme.
       theme: FlexColorScheme.light(scheme: FlexScheme.deepBlue).toTheme,
-      // The Mandy red, dark theme.
       darkTheme: FlexColorScheme.dark(scheme: FlexScheme.deepBlue).toTheme,
       // Use dark or light theme based on system setting.
       themeMode: ThemeMode.system,
