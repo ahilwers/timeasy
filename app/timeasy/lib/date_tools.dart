@@ -21,7 +21,7 @@ class DateTools {
   }
 
   DateTime getFirstDayOfWeek(int weekNumber, int year) {
-    var daysInYear = (weekNumber) * 7;
+    var daysInYear = (weekNumber - 1) * 7;
     var firstDayOfFirstWeek = getFirstDayOfFirstWeek(year);
     return firstDayOfFirstWeek.add(new Duration(days: daysInYear));
   }
