@@ -49,12 +49,36 @@ void main() {
 
     firstDayOfWeek = dateTools.getFirstDayOfWeek(24, 2005);
     expect(firstDayOfWeek.year, 2005);
-    expect(firstDayOfWeek.month, 06);
+    expect(firstDayOfWeek.month, 6);
     expect(firstDayOfWeek.day, 13);
 
     firstDayOfWeek = dateTools.getFirstDayOfWeek(52, 2007);
     expect(firstDayOfWeek.year, 2007);
     expect(firstDayOfWeek.month, 12);
     expect(firstDayOfWeek.day, 24);
+  });
+
+  test('Last day of week is calculated correctly', () {
+    final dateTools = new DateTools();
+
+    var lastDayOfWeek = dateTools.getLastDayOfWeek(37, 2021);
+    expect(lastDayOfWeek.year, 2021);
+    expect(lastDayOfWeek.month, 9);
+    expect(lastDayOfWeek.day, 19);
+
+    lastDayOfWeek = dateTools.getLastDayOfWeek(53, 2020);
+    expect(lastDayOfWeek.year, 2021);
+    expect(lastDayOfWeek.month, 1);
+    expect(lastDayOfWeek.day, 3);
+
+    lastDayOfWeek = dateTools.getLastDayOfWeek(24, 2005);
+    expect(lastDayOfWeek.year, 2005);
+    expect(lastDayOfWeek.month, 6);
+    expect(lastDayOfWeek.day, 19);
+
+    lastDayOfWeek = dateTools.getLastDayOfWeek(52, 2007);
+    expect(lastDayOfWeek.year, 2007);
+    expect(lastDayOfWeek.month, 12);
+    expect(lastDayOfWeek.day, 30);
   });
 }
