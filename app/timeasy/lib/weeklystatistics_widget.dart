@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:timeasy/duration_formatter.dart';
 
 import 'package:timeasy/weekly_statistics_builder.dart';
 import 'package:timeasy/weekly_statistics.dart';
@@ -11,8 +12,7 @@ class WeeklyStatisticsWidget extends StatefulWidget {
   int _year;
   Project _project;
 
-  WeeklyStatisticsWidget(Project project, int calendarWeek, int year, {Key key})
-      : super(key: key) {
+  WeeklyStatisticsWidget(Project project, int calendarWeek, int year, {Key key}) : super(key: key) {
     _calendarWeek = calendarWeek;
     _year = year;
     _project = project;
@@ -32,6 +32,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   // Need to define a page controller with a high initial page because otherwise
   // we could not swipe below the current week
   final _weeklyStatisticsBuilder = new WeeklyStatisticsBuilder();
+  final DurationFormatter _durationFormatter = new DurationFormatter();
 
   _WeeklyStatisticsState(Project project, int calendarWeek, int year) {
     _calendarWeek = calendarWeek;
@@ -41,14 +42,11 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: _weeklyStatistics == null ? _getData() : _buildLayout(context));
+    return Scaffold(body: _weeklyStatistics == null ? _getData() : _buildLayout(context));
   }
 
   _getData() {
-    _weeklyStatisticsBuilder
-        .build(_project, _calendarWeek, _year)
-        .then((WeeklyStatistics statistics) {
+    _weeklyStatisticsBuilder.build(_project, _calendarWeek, _year).then((WeeklyStatistics statistics) {
       setState(() {
         _weeklyStatistics = statistics;
       });
@@ -61,16 +59,13 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     final formatter = new DateFormat.yMd(locale.toString());
     final dateTools = new DateTools();
 
-    var startDate =
-        formatter.format(dateTools.getFirstDayOfWeek(_calendarWeek, _year));
-    var endDate =
-        formatter.format(dateTools.getLastDayOfWeek(_calendarWeek, _year));
+    var startDate = formatter.format(dateTools.getFirstDayOfWeek(_calendarWeek, _year));
+    var endDate = formatter.format(dateTools.getLastDayOfWeek(_calendarWeek, _year));
 
     return Card(
       child: ListView(children: <Widget>[
         ListTile(
-          title: Text("${_calendarWeek.toString()}. Kalenderwoche",
-              style: TextStyle(fontWeight: FontWeight.w500)),
+          title: Text("${_calendarWeek.toString()}. Kalenderwoche", style: TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text("$startDate - $endDate"),
         ),
         Divider(),
@@ -95,10 +90,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   }
 
   _buildSumEntry() {
-    return ListTile(
-        title: Text("Summe:", style: TextStyle(fontWeight: FontWeight.w500)),
-        trailing: Text("${getSumAsString()} Stunden",
-            style: TextStyle(fontWeight: FontWeight.w500)));
+    return ListTile(title: Text("Summe:", style: TextStyle(fontWeight: FontWeight.w500)), trailing: Text("${getSumAsString()}", style: TextStyle(fontWeight: FontWeight.w500)));
   }
 
   String _getNameOfDay(int weekday) {
@@ -130,10 +122,10 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     if ((dayEntry == null) || (dayEntry.seconds == 0)) {
       return "";
     }
-    return (dayEntry.seconds / 60 / 60).toStringAsFixed(2);
+    return _durationFormatter.formatDuration(new Duration(seconds: dayEntry.seconds));
   }
 
   String getSumAsString() {
-    return (_weeklyStatistics.getSumInSeconds() / 60 / 60).toStringAsFixed(2);
+    return _durationFormatter.formatDuration(new Duration(seconds: _weeklyStatistics.getSumInSeconds()));
   }
 }

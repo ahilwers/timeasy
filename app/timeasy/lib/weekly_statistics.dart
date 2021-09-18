@@ -1,5 +1,4 @@
 class WeeklyStatistics {
-
   Map<int, WeeklyStatisticsEntry> _entries = new Map();
 
   WeeklyStatisticsEntry getEntryForWeekDay(int weekDay) {
@@ -12,10 +11,9 @@ class WeeklyStatistics {
 
   int getSumInSeconds() {
     var _sum = 0;
-    _entries.forEach((weekday, entry) => _sum+=entry.seconds);
+    _entries.forEach((weekday, entry) => _sum += entry.seconds);
     return _sum;
   }
-
 }
 
 class WeeklyStatisticsEntry {
@@ -23,10 +21,10 @@ class WeeklyStatisticsEntry {
   int seconds = 0;
 
   double getMinutes() {
-    return seconds/60;
+    return seconds / 60;
   }
 
   double getHours() {
-    return getMinutes()/60;
+    return getMinutes() / 60;
   }
 }
