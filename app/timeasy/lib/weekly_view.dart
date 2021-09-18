@@ -38,6 +38,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   int _calendarWeek = 0;
   int _year = 0;
   int _lastPosition = -1;
+  final _dateTools = new DateTools();
 
   // Need to initialize the first page to such a high value to be able to swipe
   // backwards from the current week:
@@ -50,8 +51,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   @override
   void initState() {
     super.initState();
-    final dateTools = new DateTools();
-    _calendarWeek = dateTools.getWeekNumber(DateTime.now()) -
+    _calendarWeek = _dateTools.getWeekNumber(DateTime.now()) -
         1; //need to subtract one because the page is flipped forward once on startup.
     _year = DateTime.now().year;
   }
@@ -67,15 +67,15 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
             itemBuilder: (context, position) {
               if (position > _lastPosition) {
                 _calendarWeek++;
-                if (_calendarWeek > 52) {
+                if (_calendarWeek > _dateTools.getNumberOfWeeks(_year)) {
                   _calendarWeek = 1;
                   _year++;
                 }
               } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
                 _calendarWeek--;
                 if (_calendarWeek < 1) {
-                  _calendarWeek = 52;
                   _year--;
+                  _calendarWeek = _dateTools.getNumberOfWeeks(_year);
                 }
               }
               _lastPosition = position;
