@@ -70,7 +70,7 @@ class _DataListState extends State<DataList> {
             _addOrEditTimeEntry();
           },
           child: Icon(Icons.add),
-          backgroundColor: Colors.blue,
+          backgroundColor: Theme.of(context).primaryColor,
         ),
       );
     }

@@ -5,28 +5,20 @@ import 'package:timeasy/project.dart';
 import 'package:timeasy/project_edit_view.dart';
 
 class ProjectListView extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(
-        body: new ProjectListWidget()
-    );
+    return Scaffold(body: new ProjectListWidget());
   }
-
 }
 
 class ProjectListWidget extends StatefulWidget {
-
   @override
   _ProjectListWidgetState createState() {
     return new _ProjectListWidgetState();
   }
-
 }
 
 class _ProjectListWidgetState extends State<ProjectListWidget> {
-
   List<Project> projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
@@ -36,7 +28,6 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     super.initState();
     _loadProjects();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +48,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
             _addOrEditProject();
           },
           child: Icon(Icons.add),
-          backgroundColor: Colors.blue,
+          backgroundColor: Theme.of(context).primaryColor,
         ),
       );
     }
@@ -78,12 +69,14 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
   }
 
   void _addOrEditProject({String projectIdToEdit}) {
-    Navigator.of(context).push(
+    Navigator.of(context)
+        .push(
       MaterialPageRoute(
         builder: (context) => ProjectEditView(projectId: projectIdToEdit),
         fullscreenDialog: true,
       ),
-    ).then((value) {
+    )
+        .then((value) {
       _loadProjects();
     });
   }
@@ -94,12 +87,9 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
         projects = projectsFromDb;
       });
     });
-
   }
 
   String _getTitle() {
     return "Projekte";
   }
-
-
 }

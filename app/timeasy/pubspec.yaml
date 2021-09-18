@@ -29,6 +29,7 @@ dependencies:
   uuid: ^3.0.4
   intl: ^0.17.0
   shared_preferences: ^2.0.7
+  flex_color_scheme: ^3.0.1 
 
 dev_dependencies:
   flutter_test:
