@@ -2,3 +2,6 @@
 app/timeasy/\.gradle/
 
 app/timeasy/android/key\.properties
+
+.flutter-plugins-dependencies
+
