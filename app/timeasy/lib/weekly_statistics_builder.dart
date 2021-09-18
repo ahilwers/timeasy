@@ -1,33 +1,35 @@
-import 'package:intl/intl.dart';
 import 'package:timeasy/weekly_statistics.dart';
 import 'package:timeasy/timeentry_repository.dart';
 import 'package:timeasy/timeentry.dart';
 import 'package:timeasy/project.dart';
+import 'package:timeasy/date_tools.dart';
 
 class WeeklyStatisticsBuilder {
+  final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
 
-  final TimeEntryRepository _timeEntryRepository =  new TimeEntryRepository();
-
-  Future<WeeklyStatistics> build(Project project, int weekNumber, int year) async {
+  Future<WeeklyStatistics> build(
+      Project project, int weekNumber, int year) async {
     var weeklyStatistics = new WeeklyStatistics();
-
-    var startDate = getFirstDayOfWeek(weekNumber, year);
-    var endDate = getLastDayOfWeek(weekNumber, year);
-    var timeEntries = await _timeEntryRepository.getTimeEntries(project.id, startDate, endDate);
+    final dateTools = new DateTools();
+    var startDate = dateTools.getFirstDayOfWeek(weekNumber, year);
+    var endDate = dateTools.getLastDayOfWeek(weekNumber, year);
+    var timeEntries = await _timeEntryRepository.getTimeEntries(
+        project.id, startDate, endDate);
 
     var lastDay = 0;
     for (var timeEntry in timeEntries) {
-      if (!_isTimeEntryValid(timeEntry, endDate))
-        continue;
+      if (!_isTimeEntryValid(timeEntry, endDate)) continue;
       var currentDay = timeEntry.startTime.day;
       // A new day has started and a new statistics entry must be created:
-      var statisticsEntry = weeklyStatistics.getEntryForWeekDay(timeEntry.startTime.weekday);
-      if ((currentDay>lastDay) || (statisticsEntry==null)) {
+      var statisticsEntry =
+          weeklyStatistics.getEntryForWeekDay(timeEntry.startTime.weekday);
+      if ((currentDay > lastDay) || (statisticsEntry == null)) {
         statisticsEntry = new WeeklyStatisticsEntry();
         statisticsEntry.date = timeEntry.startTime;
-        weeklyStatistics.addEntryForWeekDay(timeEntry.startTime.weekday, statisticsEntry);
+        weeklyStatistics.addEntryForWeekDay(
+            timeEntry.startTime.weekday, statisticsEntry);
       }
-      statisticsEntry.seconds+=timeEntry.getSeconds();
+      statisticsEntry.seconds += timeEntry.getSeconds();
       lastDay = currentDay;
     }
     return weeklyStatistics;
@@ -39,25 +41,4 @@ class WeeklyStatisticsBuilder {
     var nextDate = endDate.add(Duration(days: 1));
     return timeEntry.startTime.isBefore(nextDate);
   }
-
-  DateTime getFirstDayOfWeek(int weekNumber, int year) {
-    var daysInYear = (weekNumber-1)*7;
-    var firstDayOfFirstWeek = getFirstDayOfFirstWeek(year);
-    return firstDayOfFirstWeek.add(new Duration(days: daysInYear));
-  }
-
-  DateTime getFirstDayOfFirstWeek(int year) {
-    var firstDay = new DateTime(year, 1, 1);
-    // If this day is not a monday, the first day of the week must be in the last year:
-    if (firstDay.weekday!=0) {
-      firstDay = firstDay.subtract(new Duration(days: firstDay.weekday-1));
-    }
-    return firstDay;
-  }
-
-  DateTime getLastDayOfWeek(int weekNumber, int year) {
-    var firstDayOfWeek = getFirstDayOfWeek(weekNumber, year);
-    return firstDayOfWeek.add(new Duration(days: 6));
-  }
-
 }

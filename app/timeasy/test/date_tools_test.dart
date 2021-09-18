@@ -14,4 +14,19 @@ void main() {
     weekNumber = dateTools.getWeekNumber(new DateTime(2021, 1, 4));
     expect(weekNumber, equals(1));
   });
+
+  test('First day of week is calculated correctly', () {
+    final dateTools = new DateTools();
+
+    var firstDayOfWeek = dateTools.getFirstDayOfWeek(37, 2021);
+    expect(firstDayOfWeek.year, 2021);
+    expect(firstDayOfWeek.month, 9);
+    expect(firstDayOfWeek.day, 13);
+
+    firstDayOfWeek = dateTools.getFirstDayOfWeek(53, 2020);
+    expect(firstDayOfWeek.year, 2021);
+    expect(firstDayOfWeek.month, 12);
+    expect(firstDayOfWeek.day, 28);
+
+  })
 }

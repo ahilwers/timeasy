@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 
 import 'package:timeasy/weeklystatistics_widget.dart';
 import 'package:timeasy/project.dart';
+import 'package:timeasy/date_tools.dart';
 
 class WeeklyView extends StatelessWidget {
-
   Project _project;
 
   WeeklyView(Project project) {
@@ -18,11 +18,9 @@ class WeeklyView extends StatelessWidget {
       body: WeeklyViewWidget(_project),
     );
   }
-
 }
 
 class WeeklyViewWidget extends StatefulWidget {
-
   Project _project;
 
   WeeklyViewWidget(Project project, {Key key}) : super(key: key) {
@@ -33,11 +31,9 @@ class WeeklyViewWidget extends StatefulWidget {
   _WeeklyViewState createState() {
     return new _WeeklyViewState(_project);
   }
-
 }
 
 class _WeeklyViewState extends State<WeeklyViewWidget> {
-
   Project _project;
   int _calendarWeek = 0;
   int _year = 0;
@@ -54,47 +50,40 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   @override
   void initState() {
     super.initState();
-    _calendarWeek = _weekNumber(DateTime.now())-1; //need to subtract one because the page is flipped forward once on startup.
+    final dateTools = new DateTools();
+    _calendarWeek = dateTools.getWeekNumber(DateTime.now()) -
+        1; //need to subtract one because the page is flipped forward once on startup.
     _year = DateTime.now().year;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitle()),
-      ),
-      body: PageView.builder(
-        controller: _pageController,
-        itemBuilder: (context, position) {
-          if (position > _lastPosition) {
-            _calendarWeek++;
-            if (_calendarWeek>52) {
-              _calendarWeek = 1;
-              _year++;
-            }
-          } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
-            _calendarWeek--;
-            if (_calendarWeek<1) {
-              _calendarWeek = 52;
-              _year--;
-            }
-          }
-          _lastPosition = position;
-          return new WeeklyStatisticsWidget(_project, _calendarWeek, _year);
-        }
-      )
-    );
-  }
-
-  /// Calculates week number from a date as per https://en.wikipedia.org/wiki/ISO_week_date#Calculation
-  int _weekNumber(DateTime date) {
-    int dayOfYear = int.parse(DateFormat("D").format(date));
-    return ((dayOfYear - date.weekday + 10) / 7).floor();
+        appBar: AppBar(
+          title: Text(_getTitle()),
+        ),
+        body: PageView.builder(
+            controller: _pageController,
+            itemBuilder: (context, position) {
+              if (position > _lastPosition) {
+                _calendarWeek++;
+                if (_calendarWeek > 52) {
+                  _calendarWeek = 1;
+                  _year++;
+                }
+              } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
+                _calendarWeek--;
+                if (_calendarWeek < 1) {
+                  _calendarWeek = 52;
+                  _year--;
+                }
+              }
+              _lastPosition = position;
+              return new WeeklyStatisticsWidget(_project, _calendarWeek, _year);
+            }));
   }
 
   String _getTitle() {
     return "Wochenübersicht (${_project.name})";
   }
-
 }
