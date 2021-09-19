@@ -72,7 +72,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     Navigator.of(context)
         .push(
       MaterialPageRoute(
-        builder: (context) => ProjectEditView(projectId: projectIdToEdit),
+        builder: (context) => ProjectEditView(projectIdToEdit),
         fullscreenDialog: true,
       ),
     )

@@ -7,13 +7,10 @@ import 'package:timeasy/models/timeentry.dart';
 enum ConfirmAction { CANCEL, ACCEPT }
 
 class TimeEntryEditView extends StatelessWidget {
-  String _timeEntryId;
-  String _projectId;
+  final String _timeEntryId;
+  final String _projectId;
 
-  TimeEntryEditView(String projectId, {String timeEntryId}) {
-    _timeEntryId = timeEntryId;
-    _projectId = projectId;
-  }
+  TimeEntryEditView(this._projectId, [this._timeEntryId]) {}
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +19,10 @@ class TimeEntryEditView extends StatelessWidget {
 }
 
 class TimeEntryEditWidget extends StatefulWidget {
-  String _timeEntryId;
-  String _projectId;
+  final String _timeEntryId;
+  final String _projectId;
 
-  TimeEntryEditWidget(String projectId, String timeEntryId) {
-    _timeEntryId = timeEntryId;
-    _projectId = projectId;
-  }
+  TimeEntryEditWidget(this._projectId, this._timeEntryId) {}
 
   @override
   _TimeEntryEditWidgetState createState() {
@@ -37,16 +31,13 @@ class TimeEntryEditWidget extends StatefulWidget {
 }
 
 class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
-  String _timeEntryId;
-  String _projectId;
   TimeEntry _timeEntry;
+  final String _timeEntryId;
+  final String _projectId;
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final _formEditTimeEntryKey = GlobalKey<FormState>();
 
-  _TimeEntryEditWidgetState(String projectId, String timeEntryId) {
-    _timeEntryId = timeEntryId;
-    _projectId = projectId;
-  }
+  _TimeEntryEditWidgetState(this._projectId, this._timeEntryId) {}
 
   @override
   void initState() {

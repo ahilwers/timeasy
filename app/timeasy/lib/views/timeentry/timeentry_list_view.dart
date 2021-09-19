@@ -7,11 +7,9 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/views/timeentry/timeentry_edit_view.dart';
 
 class TimeEntryListView extends StatelessWidget {
-  Project _project;
+  final Project _project;
 
-  TimeEntryListView(Project project) {
-    _project = project;
-  }
+  TimeEntryListView(this._project) {}
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +18,9 @@ class TimeEntryListView extends StatelessWidget {
 }
 
 class DataList extends StatefulWidget {
-  Project _project;
+  final Project _project;
 
-  DataList(Project project, {Key key}) : super(key: key) {
-    _project = project;
-  }
+  DataList(this._project, {Key key}) : super(key: key) {}
 
   @override
   _DataListState createState() {
@@ -105,7 +101,7 @@ class _DataListState extends State<DataList> {
     Navigator.of(context)
         .push(
       MaterialPageRoute(
-        builder: (context) => TimeEntryEditView(_project.id, timeEntryId: timeEntryIdToEdit),
+        builder: (context) => TimeEntryEditView(_project.id, timeEntryIdToEdit),
         fullscreenDialog: true,
       ),
     )

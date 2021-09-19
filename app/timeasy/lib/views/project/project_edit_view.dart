@@ -6,11 +6,9 @@ import 'package:timeasy/models/project.dart';
 enum ConfirmAction { CANCEL, ACCEPT }
 
 class ProjectEditView extends StatelessWidget {
-  String _projectId;
+  final String _projectId;
 
-  ProjectEditView({String projectId}) {
-    _projectId = projectId;
-  }
+  ProjectEditView([this._projectId]) {}
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +17,9 @@ class ProjectEditView extends StatelessWidget {
 }
 
 class ProjectEditWidget extends StatefulWidget {
-  String _projectId;
+  final String _projectId;
 
-  ProjectEditWidget(String projectId) {
-    _projectId = projectId;
-  }
+  ProjectEditWidget(this._projectId) {}
 
   @override
   _ProjectEditWidgetState createState() {

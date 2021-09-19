@@ -8,15 +8,11 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/tools/date_tools.dart';
 
 class WeeklyStatisticsWidget extends StatefulWidget {
-  int _calendarWeek;
-  int _year;
-  Project _project;
+  final int _calendarWeek;
+  final int _year;
+  final Project _project;
 
-  WeeklyStatisticsWidget(Project project, int calendarWeek, int year, {Key key}) : super(key: key) {
-    _calendarWeek = calendarWeek;
-    _year = year;
-    _project = project;
-  }
+  WeeklyStatisticsWidget(this._project, this._calendarWeek, this._year, {Key key}) : super(key: key) {}
 
   @override
   _WeeklyStatisticsState createState() {
