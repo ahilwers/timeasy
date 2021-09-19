@@ -153,12 +153,12 @@ class _MainPageState extends State<MainPage> {
             onPressed: _toggleState,
             child: new Icon(
               _getIcon(),
-              color: Theme.of(context).primaryColor,
+              color: Theme.of(context).backgroundColor,
               size: 128.0,
             ),
             shape: new CircleBorder(),
             elevation: 2.0,
-            fillColor: Theme.of(context).backgroundColor,
+            fillColor: Theme.of(context).primaryColor,
             padding: const EdgeInsets.all(15.0),
           ),
           _projects == null
