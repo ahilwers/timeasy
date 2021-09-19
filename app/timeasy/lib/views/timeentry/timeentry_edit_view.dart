@@ -83,7 +83,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                       errorMessage = "Die Startzeit muss vor der Endzeit liegen.";
                     }
                     if (errorMessage != "") {
-                      Scaffold.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
                     } else {
                       _saveProject(form);
                       Navigator.pop(context);
