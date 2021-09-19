@@ -27,7 +27,7 @@ class Project {
     int updatedMillis = map[updatedColumn];
     updated = new DateTime.fromMillisecondsSinceEpoch(updatedMillis, isUtc: true);
     int deletedInt = map[deletedColumn];
-    deletedInt == 0 ? deleted = true : deleted = false;
+    deletedInt == 0 ? deleted = false : deleted = true;
   }
 
   Map<String, dynamic> toMap() {

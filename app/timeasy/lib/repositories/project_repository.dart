@@ -53,7 +53,7 @@ class ProjectRepository {
     if (lastUsedProjectId != null) {
       lastUsedProject = await getProjectById(lastUsedProjectId);
     }
-    if (lastUsedProjectId == null) {
+    if ((lastUsedProjectId == null) || (lastUsedProject != null) && (lastUsedProject.deleted)) {
       lastUsedProject = await createDefaultProjectIfNotExists();
     }
     return lastUsedProject;
