@@ -78,7 +78,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
           appBar: AppBar(
             title: Text(_getTitle()),
             actions: <Widget>[
-              FlatButton(
+              TextButton(
                 onPressed: () {
                   final form = _formEditTimeEntryKey.currentState;
                   if (form.validate()) {
@@ -105,7 +105,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                 ),
               ),
               _timeEntryId != null
-                  ? FlatButton(
+                  ? TextButton(
                       onPressed: () {
                         deleteTimeEntryWithRequest(context);
                       },
@@ -144,7 +144,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        FlatButton(
+                        TextButton(
                           onPressed: () {
                             _selectDate(context, _timeEntry.startTime).then((DateTime picked) {
                               if (picked != null) {
@@ -161,7 +161,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                           },
                           child: Text(dateFormatter.format(_timeEntry.startTime.toLocal())),
                         ),
-                        FlatButton(
+                        TextButton(
                           onPressed: () {
                             var startTime = TimeOfDay.fromDateTime(_timeEntry.startTime.toLocal());
                             _selectTime(context, startTime).then((TimeOfDay picked) {
@@ -188,7 +188,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        FlatButton(
+                        TextButton(
                           onPressed: () {
                             var endTime = _timeEntry.endTime != null ? _timeEntry.endTime : DateTime.now().toUtc();
                             _selectDate(context, endTime).then((DateTime picked) {
@@ -202,7 +202,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                           },
                           child: Text(_timeEntry.endTime != null ? dateFormatter.format(_timeEntry.endTime.toLocal()) : "Enddatum"),
                         ),
-                        FlatButton(
+                        TextButton(
                           onPressed: () {
                             var endTime = TimeOfDay.fromDateTime(_timeEntry.endTime != null ? _timeEntry.endTime.toLocal() : DateTime.now());
                             _selectTime(context, endTime).then((TimeOfDay picked) {
@@ -268,13 +268,13 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
           title: Text('Löschen'),
           content: const Text('Möchten Sie den Zeiteintrag wirklich löschen?'),
           actions: <Widget>[
-            FlatButton(
+            TextButton(
               child: const Text('Nein'),
               onPressed: () {
                 Navigator.of(context).pop(ConfirmAction.CANCEL);
               },
             ),
-            FlatButton(
+            TextButton(
               child: const Text('Ja'),
               onPressed: () {
                 deleteTimeEntry();

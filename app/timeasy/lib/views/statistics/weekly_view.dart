@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'package:timeasy/views/statistics/weeklystatistics_widget.dart';
 import 'package:timeasy/models/project.dart';

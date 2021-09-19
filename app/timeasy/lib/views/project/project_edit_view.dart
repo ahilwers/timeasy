@@ -70,7 +70,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
           appBar: AppBar(
             title: Text(_getTitle()),
             actions: <Widget>[
-              FlatButton(
+              TextButton(
                 onPressed: () {
                   final form = _formEditProjectKey.currentState;
                   if (form.validate()) {
@@ -84,7 +84,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                 ),
               ),
               _projectId != null
-                  ? FlatButton(
+                  ? TextButton(
                       onPressed: () {
                         deleteProjectWithRequest(context);
                       },
@@ -151,13 +151,13 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
           title: Text('Löschen'),
           content: const Text('Möchten Sie das Projekt wirklich löschen?'),
           actions: <Widget>[
-            FlatButton(
+            TextButton(
               child: const Text('Nein'),
               onPressed: () {
                 Navigator.of(context).pop(ConfirmAction.CANCEL);
               },
             ),
-            FlatButton(
+            TextButton(
               child: const Text('Ja'),
               onPressed: () {
                 deleteProject();
