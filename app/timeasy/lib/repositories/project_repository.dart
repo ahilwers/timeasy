@@ -15,6 +15,11 @@ class ProjectRepository {
     return await db.update(Project.tableName, project.toMap(), where: "${Project.idColumn} = ?", whereArgs: [project.id]);
   }
 
+  deleteProject(Project project) async {
+    project.deleted = true;
+    return await updateProject(project);
+  }
+
   Future<Project> getProjectById(String id) async {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.query(Project.tableName, where: "${Project.idColumn} = ?", whereArgs: [id]);
@@ -23,7 +28,7 @@ class ProjectRepository {
 
   Future<List<Project>> getAllProjects() async {
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(Project.tableName, orderBy: "${Project.nameColumn}");
+    var queryResult = await db.query(Project.tableName, where: "${Project.deletedColumn} = 0", orderBy: "${Project.nameColumn}");
     return queryResult.isNotEmpty ? queryResult.map((entry) => Project.fromMap(entry)).toList() : [];
   }
 

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/models/project.dart';
 
+enum ConfirmAction { CANCEL, ACCEPT }
+
 class ProjectEditView extends StatelessWidget {
   String _projectId;
 
@@ -81,6 +83,17 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                   style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
                 ),
               ),
+              _projectId != null
+                  ? FlatButton(
+                      onPressed: () {
+                        deleteProjectWithRequest(context);
+                      },
+                      child: Text(
+                        "Löschen",
+                        style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
+                      ),
+                    )
+                  : Container(),
             ],
           ),
           body: Container(
@@ -126,6 +139,41 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
       _projectRepository.updateProject(_project);
     } else {
       _projectRepository.addProject(_project);
+    }
+  }
+
+  Future<ConfirmAction> deleteProjectWithRequest(BuildContext context) async {
+    return showDialog<ConfirmAction>(
+      context: context,
+      barrierDismissible: false, // user must tap button for close dialog!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Löschen'),
+          content: const Text('Möchten Sie das Projekt wirklich löschen?'),
+          actions: <Widget>[
+            FlatButton(
+              child: const Text('Nein'),
+              onPressed: () {
+                Navigator.of(context).pop(ConfirmAction.CANCEL);
+              },
+            ),
+            FlatButton(
+              child: const Text('Ja'),
+              onPressed: () {
+                deleteProject();
+                Navigator.of(context).pop(ConfirmAction.ACCEPT);
+                Navigator.pop(context);
+              },
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void deleteProject() {
+    if (_projectId != null) {
+      _projectRepository.deleteProject(_project);
     }
   }
 }
