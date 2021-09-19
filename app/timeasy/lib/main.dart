@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'package:timeasy/timeentry.dart';
-import 'package:timeasy/timeentry_repository.dart';
-import 'package:timeasy/timeentry_list_view.dart';
-import 'package:timeasy/weekly_view.dart';
-import 'package:timeasy/project.dart';
+import 'package:timeasy/models/timeentry.dart';
+import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
+import 'package:timeasy/views/statistics/weekly_view.dart';
+import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';

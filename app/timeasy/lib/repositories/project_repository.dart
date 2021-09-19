@@ -1,10 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:timeasy/database.dart';
-import 'package:timeasy/project.dart';
+import 'package:timeasy/dataaccess/database.dart';
+import 'package:timeasy/models/project.dart';
 
 class ProjectRepository {
-
   addProject(Project project) async {
     final db = await DBProvider.dbProvider.database;
     return await db.insert(Project.tableName, project.toMap());
@@ -13,8 +12,7 @@ class ProjectRepository {
   updateProject(Project project) async {
     project.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
-    return await db.update(Project.tableName, project.toMap(),
-        where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+    return await db.update(Project.tableName, project.toMap(), where: "${Project.idColumn} = ?", whereArgs: [project.id]);
   }
 
   Future<Project> getProjectById(String id) async {
@@ -29,8 +27,8 @@ class ProjectRepository {
     return queryResult.isNotEmpty ? queryResult.map((entry) => Project.fromMap(entry)).toList() : [];
   }
 
-   /// Creates a default poject if no project exists. Otherwise it returns the first
-   /// one.
+  /// Creates a default poject if no project exists. Otherwise it returns the first
+  /// one.
   Future<Project> createDefaultProjectIfNotExists() async {
     var projects = await getAllProjects();
     if (projects.isEmpty) {
@@ -47,10 +45,10 @@ class ProjectRepository {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String lastUsedProjectId = prefs.getString("currentProjectId");
     Project lastUsedProject;
-    if (lastUsedProjectId!=null) {
+    if (lastUsedProjectId != null) {
       lastUsedProject = await getProjectById(lastUsedProjectId);
     }
-    if (lastUsedProjectId==null) {
+    if (lastUsedProjectId == null) {
       lastUsedProject = await createDefaultProjectIfNotExists();
     }
     return lastUsedProject;
@@ -60,5 +58,4 @@ class ProjectRepository {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString("currentProjectId", project.id);
   }
-
 }

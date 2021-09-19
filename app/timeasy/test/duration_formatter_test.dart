@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:timeasy/duration_formatter.dart';
+import 'package:timeasy/tools/duration_formatter.dart';
 
 void main() {
   test('Durations are formatted correctly.', () {

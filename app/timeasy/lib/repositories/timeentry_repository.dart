@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:timeasy/database.dart';
-import 'package:timeasy/timeentry.dart';
+import 'package:timeasy/dataaccess/database.dart';
+import 'package:timeasy/models/timeentry.dart';
 
 class TimeEntryRepository {
-
   addTimeEntry(TimeEntry timeEntry) async {
     final db = await DBProvider.dbProvider.database;
     return await db.insert(TimeEntry.tableName, timeEntry.toMap());
@@ -13,7 +12,6 @@ class TimeEntryRepository {
     timeEntry.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
     return await db.update(TimeEntry.tableName, timeEntry.toMap(), where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
-
   }
 
   deleteTimeEntry(TimeEntry timeEntry) async {
@@ -32,7 +30,7 @@ class TimeEntryRepository {
 
   Future<TimeEntry> getLatestOpenTimeEntryOrCreateNew(String projectId) async {
     var latestEntry = await getLatestOpenTimeEntry(projectId);
-    if (latestEntry==null) {
+    if (latestEntry == null) {
       latestEntry = new TimeEntry(projectId);
       await addTimeEntry(latestEntry);
     }
@@ -53,7 +51,8 @@ class TimeEntryRepository {
 
   Future<List<TimeEntry>> getAllTimeEntries(String projectId) async {
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.projectIdColumn} = ?", whereArgs: [projectId], orderBy: "${TimeEntry.startTimeColumn} desc, ${TimeEntry.endTimeColumn} desc");
+    var queryResult = await db.query(TimeEntry.tableName,
+        where: "${TimeEntry.projectIdColumn} = ?", whereArgs: [projectId], orderBy: "${TimeEntry.startTimeColumn} desc, ${TimeEntry.endTimeColumn} desc");
     return queryResult.isNotEmpty ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList() : [];
   }
 
@@ -62,11 +61,13 @@ class TimeEntryRepository {
     var endMillis = getDateWithoutTime(endDate).add(new Duration(days: 1)).millisecondsSinceEpoch;
 
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(TimeEntry.tableName, where: "${TimeEntry.projectIdColumn} = ? AND ${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ?", whereArgs: [projectId, startMillis, endMillis], orderBy: TimeEntry.startTimeColumn);
+    var queryResult = await db.query(TimeEntry.tableName,
+        where: "${TimeEntry.projectIdColumn} = ? AND ${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ?",
+        whereArgs: [projectId, startMillis, endMillis],
+        orderBy: TimeEntry.startTimeColumn);
     return queryResult.isNotEmpty ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList() : [];
-
   }
-  
+
   DateTime getDateWithoutTime(DateTime date) {
     return new DateTime(date.year, date.month, date.day);
   }

@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
 
 class DateTools {
-  /// Calculates week number from a date as per https://en.wikipedia.org/wiki/ISO_week_date#Calculation
+  /// Returns week number for a date (https://en.wikipedia.org/wiki/ISO_week_date#Calculation)
   int getWeekNumber(DateTime date) {
     int dayOfYear = int.parse(DateFormat("D").format(date));
     int weekNumber = ((dayOfYear - date.weekday + 10) / 7).floor();
@@ -13,11 +13,11 @@ class DateTools {
     return weekNumber;
   }
 
-  /// Calculates number of weeks for a given year as per https://en.wikipedia.org/wiki/ISO_week_date#Weeks_per_year
+  /// Returns number of weeks in a given year (https://en.wikipedia.org/wiki/ISO_week_date#Weeks_per_year)
   int getNumberOfWeeks(int year) {
-    DateTime dec28 = DateTime(year, 12, 28);
-    int dayOfDec28 = int.parse(DateFormat("D").format(dec28));
-    return ((dayOfDec28 - dec28.weekday + 10) / 7).floor();
+    final december28 = DateTime(year, 12, 28);
+    int dayOfDecember28 = int.parse(DateFormat("D").format(december28));
+    return ((dayOfDecember28 - december28.weekday + 10) / 7).floor();
   }
 
   DateTime getFirstDayOfWeek(int weekNumber, int year) {

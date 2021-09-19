@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:timeasy/duration_formatter.dart';
+import 'package:timeasy/tools/duration_formatter.dart';
 
-import 'package:timeasy/weekly_statistics_builder.dart';
-import 'package:timeasy/weekly_statistics.dart';
-import 'package:timeasy/project.dart';
-import 'package:timeasy/date_tools.dart';
+import 'package:timeasy/tools/weekly_statistics_builder.dart';
+import 'package:timeasy/tools/weekly_statistics.dart';
+import 'package:timeasy/models/project.dart';
+import 'package:timeasy/tools/date_tools.dart';
 
 class WeeklyStatisticsWidget extends StatefulWidget {
   int _calendarWeek;

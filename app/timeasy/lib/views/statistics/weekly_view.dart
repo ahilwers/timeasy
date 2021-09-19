@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:timeasy/weeklystatistics_widget.dart';
-import 'package:timeasy/project.dart';
-import 'package:timeasy/date_tools.dart';
+import 'package:timeasy/views/statistics/weeklystatistics_widget.dart';
+import 'package:timeasy/models/project.dart';
+import 'package:timeasy/tools/date_tools.dart';
 
 class WeeklyView extends StatelessWidget {
   Project _project;
@@ -51,8 +51,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   @override
   void initState() {
     super.initState();
-    _calendarWeek = _dateTools.getWeekNumber(DateTime.now()) -
-        1; //need to subtract one because the page is flipped forward once on startup.
+    _calendarWeek = _dateTools.getWeekNumber(DateTime.now()) - 1; //need to subtract one because the page is flipped forward once on startup.
     _year = DateTime.now().year;
   }
 

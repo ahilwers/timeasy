@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:timeasy/date_tools.dart';
+import 'package:timeasy/tools/date_tools.dart';
 
 void main() {
   test('Week number is calculated correctly.', () {

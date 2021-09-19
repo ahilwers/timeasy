@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:timeasy/duration_formatter.dart';
-import 'package:timeasy/timeentry_repository.dart';
-import 'package:timeasy/timeentry.dart';
-import 'package:timeasy/project.dart';
-import 'package:timeasy/timeentry_edit_view.dart';
+import 'package:timeasy/tools/duration_formatter.dart';
+import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/models/timeentry.dart';
+import 'package:timeasy/models/project.dart';
+import 'package:timeasy/views/timeentry/timeentry_edit_view.dart';
 
 class TimeEntryListView extends StatelessWidget {
   Project _project;
