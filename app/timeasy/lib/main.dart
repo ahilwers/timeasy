@@ -49,18 +49,24 @@ class MainPage extends StatefulWidget {
 
 enum AppState { RUNNING, STOPPED }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin {
   AppState _currentState = AppState.STOPPED;
   Project _currentProject;
   List<Project> _projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
+  AnimationController buttonAnimationController;
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting();
+
+    buttonAnimationController = new AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1000),
+    );
 
     var projectRepository = new ProjectRepository();
     projectRepository.getLastUsedProjectOrDefault().then((Project project) {
@@ -73,6 +79,18 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _setAppState(AppState state) {
+    switch (state) {
+      case AppState.RUNNING:
+        if (_currentState == AppState.STOPPED) {
+          buttonAnimationController.forward();
+        }
+        break;
+      case AppState.STOPPED:
+        if (_currentState == AppState.RUNNING) {
+          buttonAnimationController.reverse();
+        }
+        break;
+    }
     setState(() {
       _currentState = state;
     });
@@ -151,10 +169,11 @@ class _MainPageState extends State<MainPage> {
         children: <Widget>[
           new RawMaterialButton(
             onPressed: _toggleState,
-            child: new Icon(
-              _getIcon(),
+            child: new AnimatedIcon(
+              icon: AnimatedIcons.play_pause,
               color: Theme.of(context).backgroundColor,
               size: 128.0,
+              progress: buttonAnimationController,
             ),
             shape: new CircleBorder(),
             elevation: 2.0,
@@ -183,21 +202,6 @@ class _MainPageState extends State<MainPage> {
         ],
       )),
     );
-  }
-
-  _getIcon() {
-    var icon = Icons.add_circle_outline;
-    if (_currentProject != null) {
-      switch (_currentState) {
-        case AppState.STOPPED:
-          icon = Icons.play_arrow;
-          break;
-        case AppState.RUNNING:
-          icon = Icons.stop;
-          break;
-      }
-    }
-    return icon;
   }
 
   _loadProjects() {
