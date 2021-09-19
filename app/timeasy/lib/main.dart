@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
@@ -17,6 +18,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'timeasy',
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        Locale('en', ''),
+        Locale('de', ''),
+      ],
       theme: FlexColorScheme.light(scheme: FlexScheme.deepBlue).toTheme,
       darkTheme: FlexColorScheme.dark(scheme: FlexScheme.deepBlue).toTheme,
       // Use dark or light theme based on system setting.
