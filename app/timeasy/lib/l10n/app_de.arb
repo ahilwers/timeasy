@@ -1,0 +1,23 @@
+{
+    "weeklyOverview": "Wochenübersicht",
+    "timeEntries": "Zeiteinträge",
+    "projects": "Projekte",
+    "loadingWeek": "Lade Woche",
+    "weekTitle": "{weekNumber}. Kalenderwoche",
+    "weeklyHourSum": "Summe:",
+    "monday": "Montag",
+    "tuesday": "Dienstag",
+    "wednesday": "Mittwoch",
+    "thursday": "Donnerstag",
+    "friday": "Freitag",
+    "saturday": "Samstag",
+    "sunday": "Sonntag",
+    "times": "Zeiten",
+    "loadingTimes": "Lade Zeiten...",
+    "columnTimeStart": "Start",
+    "columnTimeEnd": "Ende",
+    "columnTimeHours": "Stunden",
+    "tooltipTimeStart": "Startzeit",
+    "tooltipTimeEnd": "Endzeit",
+    "tooltipHours": "Anzahl Stunden"
+}

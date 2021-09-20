@@ -32,6 +32,7 @@ class TimeEntryEditWidget extends StatefulWidget {
 
 class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
   TimeEntry _timeEntry;
+  bool _endTimeWasEmpty = false;
   final String _timeEntryId;
   final String _projectId;
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
@@ -46,6 +47,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       _timeEntryRepository.getTimeEntryById(_timeEntryId).then((TimeEntry timeEntryFromDb) {
         setState(() {
           _timeEntry = timeEntryFromDb;
+          _endTimeWasEmpty = _timeEntry.endTime == null; // Indicates that we're editing a time entry that is not completed yet
         });
       });
     } else {
@@ -77,9 +79,9 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                     var errorMessage = "";
                     if (_timeEntry.startTime == null) {
                       errorMessage = "Bitte geben Sie eine Startzeit an.";
-                    } else if (_timeEntry.endTime == null) {
+                    } else if (_needToSetEndTime()) {
                       errorMessage = "Bitte geben Sie eine Endzeit an.";
-                    } else if (_timeEntry.endTime.isBefore(_timeEntry.startTime)) {
+                    } else if ((_timeEntry.endTime != null) && (_timeEntry.endTime.isBefore(_timeEntry.startTime))) {
                       errorMessage = "Die Startzeit muss vor der Endzeit liegen.";
                     }
                     if (errorMessage != "") {
@@ -115,19 +117,6 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    /*
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Beschreibung',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.text,
-                  initialValue: _timeEntry.description,
-                  onSaved: (value) => _timeEntry.description = value,
-                ),
-                SizedBox(height: 12),
-
-                 */
                     Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -143,7 +132,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                                   var localStartTime = _timeEntry.startTime.toLocal();
                                   _timeEntry.startTime = new DateTime(picked.year, picked.month, picked.day, localStartTime.hour, localStartTime.minute).toUtc();
                                   // Also set the end time automatically if it's not already set:
-                                  if (_timeEntry.endTime == null) {
+                                  if (_needToSetEndTime()) {
                                     _timeEntry.endTime = _timeEntry.startTime;
                                   }
                                 });
@@ -161,7 +150,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                                   var localStartTime = _timeEntry.startTime.toLocal();
                                   _timeEntry.startTime = new DateTime(localStartTime.year, localStartTime.month, localStartTime.day, picked.hour, picked.minute).toUtc();
                                   // Also set the end time automatically if it's not already set:
-                                  if (_timeEntry.endTime == null) {
+                                  if (_needToSetEndTime()) {
                                     _timeEntry.endTime = _timeEntry.startTime;
                                   }
                                 });
@@ -213,6 +202,10 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                 )),
           ));
     }
+  }
+
+  bool _needToSetEndTime() {
+    return (!_endTimeWasEmpty) && (_timeEntry.endTime == null);
   }
 
   Future<DateTime> _selectDate(BuildContext context, DateTime initialDate) async {

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:timeasy/tools/duration_formatter.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/models/timeentry.dart';
@@ -51,7 +54,7 @@ class _DataListState extends State<DataList> {
     if (timeEntries == null) {
       return Scaffold(
         appBar: new AppBar(
-          title: new Text("Lade Zeiten..."),
+          title: new Text(AppLocalizations.of(context).loadingTimes),
         ),
       );
     } else {
@@ -76,9 +79,9 @@ class _DataListState extends State<DataList> {
     var timeFormatter = new DateFormat.yMd(locale.toString()).add_Hm();
     return DataTable(
         columns: [
-          DataColumn(label: Text("Start"), numeric: false, tooltip: "The start time"),
-          DataColumn(label: Text("Ende"), numeric: false, tooltip: "The end time"),
-          DataColumn(label: Text("Stunden"), numeric: true, tooltip: "Anzahl der Stunden"),
+          DataColumn(label: Text(AppLocalizations.of(context).columnTimeStart), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeStart),
+          DataColumn(label: Text(AppLocalizations.of(context).columnTimeEnd), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeEnd),
+          DataColumn(label: Text(AppLocalizations.of(context).columnTimeHours), numeric: true, tooltip: AppLocalizations.of(context).tooltipHours),
         ],
         rows: timeEntries
             .map((timeEntry) => DataRow(
@@ -119,6 +122,6 @@ class _DataListState extends State<DataList> {
   }
 
   String _getTitle() {
-    return "Zeiten (${_project.name})";
+    return "${AppLocalizations.of(context).times} (${_project.name})";
   }
 }

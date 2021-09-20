@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
@@ -19,6 +21,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'timeasy',
       localizationsDelegates: [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -143,18 +146,18 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             ),
           ),
           ListTile(
-            title: Text('Wochenübersicht'),
+            title: Text(AppLocalizations.of(context).weeklyOverview),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
             },
           ),
           ListTile(
-              title: Text('Zeiteinträge'),
+              title: Text(AppLocalizations.of(context).timeEntries),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject)));
               }),
           ListTile(
-            title: Text('Projekte'),
+            title: Text(AppLocalizations.of(context).projects),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then((_) {
                 _loadProjects();

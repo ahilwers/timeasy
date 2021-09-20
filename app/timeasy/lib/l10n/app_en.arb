@@ -1,0 +1,49 @@
+{
+    "weeklyOverview": "Weekly Overview",
+    "@weeklyOverview": {
+        "description": "The menu item for accessing and the headline of the weekly overview."
+    },
+    "timeEntries": "Time Entries",
+    "@timeEntries": {
+        "description": "The menu item for accessing the time entries."
+    },
+    "projects": "Projects",
+    "@projects": {
+        "description": "The menu item for accessing the projects."
+    },
+    "loadingWeek": "Loading week",
+    "@loadingWeek": {
+        "description": "Displayed while loading statistics for a specific week."
+    },
+    "weekTitle": "Week {weekNumber}",
+    "@weekTitle": {
+        "description": "Displayed while loading statistics for a specific week.",
+        "placeholders": {
+            "weekNumber": {
+                "type": "int"
+            }
+        }
+    },
+    "weeklyHourSum": "Sum:",
+    "@weeklyHourSum": {
+        "description": "Sum that is displayed below the weekly statistics."
+    },
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
+    "times": "Times",
+    "loadingTimes": "Loading times...",
+    "@loadingTimes" : {
+        "description": "Displayed while loading the time entries."
+    },
+    "columnTimeStart": "Start",
+    "columnTimeEnd": "End",
+    "columnTimeHours": "Hours",
+    "tooltipTimeStart": "The start time",
+    "tooltipTimeEnd": "The end time",
+    "tooltipHours": "Amount of hours"
+}

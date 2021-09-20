@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:timeasy/views/statistics/weeklystatistics_widget.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/tools/date_tools.dart';
@@ -76,6 +78,6 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   }
 
   String _getTitle() {
-    return "Wochenübersicht (${_project.name})";
+    return "${AppLocalizations.of(context).weeklyOverview} (${_project.name})";
   }
 }

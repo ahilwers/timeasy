@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timeasy/tools/duration_formatter.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:timeasy/tools/weekly_statistics_builder.dart';
 import 'package:timeasy/tools/weekly_statistics.dart';
 import 'package:timeasy/models/project.dart';
@@ -47,7 +49,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
         _weeklyStatistics = statistics;
       });
     });
-    Text("Lade Woche ${_calendarWeek.toString()}...");
+    Text("${AppLocalizations.of(context).loadingWeek} ${_calendarWeek.toString()}...");
   }
 
   _buildLayout(BuildContext context) {
@@ -61,7 +63,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     return Card(
       child: ListView(children: <Widget>[
         ListTile(
-          title: Text("${_calendarWeek.toString()}. Kalenderwoche", style: TextStyle(fontWeight: FontWeight.w500)),
+          title: Text(AppLocalizations.of(context).weekTitle(_calendarWeek), style: TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text("$startDate - $endDate"),
         ),
         Divider(),
@@ -86,25 +88,27 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   }
 
   _buildSumEntry() {
-    return ListTile(title: Text("Summe:", style: TextStyle(fontWeight: FontWeight.w500)), trailing: Text("${getSumAsString()}", style: TextStyle(fontWeight: FontWeight.w500)));
+    return ListTile(
+        title: Text(AppLocalizations.of(context).weeklyHourSum, style: TextStyle(fontWeight: FontWeight.w500)),
+        trailing: Text("${getSumAsString()}", style: TextStyle(fontWeight: FontWeight.w500)));
   }
 
   String _getNameOfDay(int weekday) {
     switch (weekday) {
       case 1:
-        return "Montag";
+        return AppLocalizations.of(context).monday;
       case 2:
-        return "Dienstag";
+        return AppLocalizations.of(context).tuesday;
       case 3:
-        return "Mittwoch";
+        return AppLocalizations.of(context).wednesday;
       case 4:
-        return "Donnerstag";
+        return AppLocalizations.of(context).thursday;
       case 5:
-        return "Freitag";
+        return AppLocalizations.of(context).friday;
       case 6:
-        return "Samstag";
+        return AppLocalizations.of(context).saturday;
       case 7:
-        return "Sonntag";
+        return AppLocalizations.of(context).sunday;
       default:
         return "";
     }
