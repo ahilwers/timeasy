@@ -6,6 +6,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/views/imprint.dart';
 import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/models/project.dart';
@@ -164,6 +165,12 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
               Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then((_) {
                 _loadProjects();
               });
+            },
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context).imprint),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
             },
           ),
         ],
