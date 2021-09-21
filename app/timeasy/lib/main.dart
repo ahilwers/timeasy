@@ -154,7 +154,9 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
           ListTile(
               title: Text(AppLocalizations.of(context).timeEntries),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject)));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then((_) {
+                  _updateAppState();
+                });
               }),
           ListTile(
             title: Text(AppLocalizations.of(context).projects),
@@ -184,7 +186,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             padding: const EdgeInsets.all(15.0),
           ),
           _projects == null
-              ? Text("Lade Projekte...")
+              ? Text(AppLocalizations.of(context).loadingProject)
               : new DropdownButton<String>(
                   value: _currentProject.id,
                   items: _projects.map((Project value) {
