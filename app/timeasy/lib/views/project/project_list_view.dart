@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
@@ -34,7 +36,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     if (projects == null) {
       return Scaffold(
         appBar: new AppBar(
-          title: new Text("Lade Projekte..."),
+          title: new Text(AppLocalizations.of(context).loadingProjects),
         ),
       );
     } else {
@@ -90,6 +92,6 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
   }
 
   String _getTitle() {
-    return "Projekte";
+    return AppLocalizations.of(context).projects;
   }
 }

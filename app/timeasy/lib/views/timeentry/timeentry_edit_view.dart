@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/models/timeentry.dart';
 
@@ -60,7 +62,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     if (_timeEntry == null) {
       return Scaffold(
         appBar: new AppBar(
-          title: new Text("Lade Zeiteintrag..."),
+          title: new Text(AppLocalizations.of(context).loadingTimeEntry),
         ),
       );
     } else {
@@ -78,11 +80,11 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                     // We need to validate the timeEntry separately
                     var errorMessage = "";
                     if (_timeEntry.startTime == null) {
-                      errorMessage = "Bitte geben Sie eine Startzeit an.";
+                      errorMessage = AppLocalizations.of(context).errorMissingStartTime;
                     } else if (_needToSetEndTime()) {
-                      errorMessage = "Bitte geben Sie eine Endzeit an.";
+                      errorMessage = AppLocalizations.of(context).errorMissingEndTime;
                     } else if ((_timeEntry.endTime != null) && (_timeEntry.endTime.isBefore(_timeEntry.startTime))) {
-                      errorMessage = "Die Startzeit muss vor der Endzeit liegen.";
+                      errorMessage = AppLocalizations.of(context).errorEndtimeNotAfterStartTime;
                     }
                     if (errorMessage != "") {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
@@ -93,7 +95,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                   }
                 },
                 child: Text(
-                  "Speichern",
+                  AppLocalizations.of(context).save,
                   style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
                 ),
               ),
@@ -103,7 +105,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                         deleteTimeEntryWithRequest(context);
                       },
                       child: Text(
-                        "Löschen",
+                        AppLocalizations.of(context).delete,
                         style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
                       ),
                     )
@@ -120,7 +122,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                     Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.start,
-                        children: <Widget>[Text('Start:', style: TextStyle(fontWeight: FontWeight.bold))]),
+                        children: <Widget>[Text('${AppLocalizations.of(context).start}:', style: TextStyle(fontWeight: FontWeight.bold))]),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -164,7 +166,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                     Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.start,
-                        children: <Widget>[Text('Ende:', style: TextStyle(fontWeight: FontWeight.bold))]),
+                        children: <Widget>[Text('${AppLocalizations.of(context).end}:', style: TextStyle(fontWeight: FontWeight.bold))]),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -180,7 +182,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                               }
                             });
                           },
-                          child: Text(_timeEntry.endTime != null ? dateFormatter.format(_timeEntry.endTime.toLocal()) : "Enddatum"),
+                          child: Text(_timeEntry.endTime != null ? dateFormatter.format(_timeEntry.endTime.toLocal()) : AppLocalizations.of(context).endDate),
                         ),
                         TextButton(
                           onPressed: () {
@@ -194,7 +196,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                               }
                             });
                           },
-                          child: Text(_timeEntry.endTime != null ? timeFormatter.format(_timeEntry.endTime.toLocal()) : "Endzeit"),
+                          child: Text(_timeEntry.endTime != null ? timeFormatter.format(_timeEntry.endTime.toLocal()) : AppLocalizations.of(context).endTime),
                         ),
                       ],
                     )
@@ -228,9 +230,9 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
 
   String _getTitle() {
     if (_timeEntryId == null) {
-      return "Zeiteintrag hinzufügen";
+      return AppLocalizations.of(context).addTimeEntry;
     } else {
-      return "Zeiteintrag bearbeiten";
+      return AppLocalizations.of(context).editTimeEntry;
     }
   }
 
@@ -249,17 +251,17 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       barrierDismissible: false, // user must tap button for close dialog!
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Löschen'),
-          content: const Text('Möchten Sie den Zeiteintrag wirklich löschen?'),
+          title: Text(AppLocalizations.of(context).delete),
+          content: Text(AppLocalizations.of(context).deleteTimeEntryRequest),
           actions: <Widget>[
             TextButton(
-              child: const Text('Nein'),
+              child: Text(AppLocalizations.of(context).no),
               onPressed: () {
                 Navigator.of(context).pop(ConfirmAction.CANCEL);
               },
             ),
             TextButton(
-              child: const Text('Ja'),
+              child: Text(AppLocalizations.of(context).yes),
               onPressed: () {
                 deleteTimeEntry();
                 Navigator.of(context).pop(ConfirmAction.ACCEPT);

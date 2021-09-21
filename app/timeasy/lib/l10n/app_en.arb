@@ -40,10 +40,39 @@
     "@loadingTimes" : {
         "description": "Displayed while loading the time entries."
     },
-    "columnTimeStart": "Start",
-    "columnTimeEnd": "End",
-    "columnTimeHours": "Hours",
+    "start": "Start",
+    "end": "End",
+    "hours": "Hours",
     "tooltipTimeStart": "The start time",
     "tooltipTimeEnd": "The end time",
-    "tooltipHours": "Amount of hours"
+    "tooltipHours": "Amount of hours",
+    "loadingTimeEntry": "Loading time entry...",
+    "@loadingTimeEntry" : {
+        "description": "Displayed while loading one time entry from the database."
+    },
+    "errorMissingStartTime": "Please specify a start time.",
+    "errorMissingEndTime": "Please specify an end time.",
+    "errorEndtimeNotAfterStartTime": "The start time must be before the end time.",
+    "save": "Save",
+    "delete": "Delete",
+    "endDate": "End date",
+    "endTime": "End time",
+    "addTimeEntry": "Add Time Entry",
+    "editTimeEntry": "Edit Time Entry",
+    "yes": "Yes",
+    "no": "No",
+    "deleteTimeEntryRequest": "Do you really want to delete this time entry?",
+    "loadingProjects": "Loading projects...",
+    "@loadingProjects" : {
+        "description": "Displayed while loading the project list."
+    },
+    "loadingProject": "Loading project...",
+    "@loadingProject" : {
+        "description": "Displayed while loading a single project."
+    },
+    "projectName": "Project name",
+    "addProject": "Add Project",
+    "editProject": "Edit Project",
+    "errorMissingProjectName": "Please specify a name for your project.",
+    "deleteProjectRequest": "Do your really want to delete the project?"
 }

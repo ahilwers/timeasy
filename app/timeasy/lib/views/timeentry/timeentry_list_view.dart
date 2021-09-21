@@ -79,9 +79,9 @@ class _DataListState extends State<DataList> {
     var timeFormatter = new DateFormat.yMd(locale.toString()).add_Hm();
     return DataTable(
         columns: [
-          DataColumn(label: Text(AppLocalizations.of(context).columnTimeStart), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeStart),
-          DataColumn(label: Text(AppLocalizations.of(context).columnTimeEnd), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeEnd),
-          DataColumn(label: Text(AppLocalizations.of(context).columnTimeHours), numeric: true, tooltip: AppLocalizations.of(context).tooltipHours),
+          DataColumn(label: Text(AppLocalizations.of(context).start), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeStart),
+          DataColumn(label: Text(AppLocalizations.of(context).end), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeEnd),
+          DataColumn(label: Text(AppLocalizations.of(context).hours), numeric: true, tooltip: AppLocalizations.of(context).tooltipHours),
         ],
         rows: timeEntries
             .map((timeEntry) => DataRow(

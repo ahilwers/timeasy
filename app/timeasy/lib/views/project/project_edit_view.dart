@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/models/project.dart';
 
@@ -58,7 +60,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     if (_project == null) {
       return Scaffold(
         appBar: new AppBar(
-          title: new Text("Lade Projekt..."),
+          title: new Text(AppLocalizations.of(context).loadingProject),
         ),
       );
     } else {
@@ -75,7 +77,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                   }
                 },
                 child: Text(
-                  "Speichern",
+                  AppLocalizations.of(context).save,
                   style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
                 ),
               ),
@@ -85,7 +87,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                         deleteProjectWithRequest(context);
                       },
                       child: Text(
-                        "Löschen",
+                        AppLocalizations.of(context).delete,
                         style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
                       ),
                     )
@@ -98,7 +100,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
               key: _formEditProjectKey,
               child: TextFormField(
                 decoration: InputDecoration(
-                  labelText: 'Projektname',
+                  labelText: AppLocalizations.of(context).projectName,
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.text,
@@ -115,15 +117,15 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
 
   String _getTitle() {
     if (_projectId == null) {
-      return "Projekt hinzufügen";
+      return AppLocalizations.of(context).addProject;
     } else {
-      return "Projekt bearbeiten";
+      return AppLocalizations.of(context).editProject;
     }
   }
 
   String _validateProjectName(String value) {
     if (value.isEmpty) {
-      return "Bitte geben Sie Ihrem Projekt einen Namen.";
+      return AppLocalizations.of(context).errorMissingProjectName;
     } else {
       return null;
     }
@@ -144,17 +146,17 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
       barrierDismissible: false, // user must tap button for close dialog!
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Löschen'),
-          content: const Text('Möchten Sie das Projekt wirklich löschen?'),
+          title: Text(AppLocalizations.of(context).delete),
+          content: Text(AppLocalizations.of(context).deleteProjectRequest),
           actions: <Widget>[
             TextButton(
-              child: const Text('Nein'),
+              child: Text(AppLocalizations.of(context).no),
               onPressed: () {
                 Navigator.of(context).pop(ConfirmAction.CANCEL);
               },
             ),
             TextButton(
-              child: const Text('Ja'),
+              child: Text(AppLocalizations.of(context).yes),
               onPressed: () {
                 deleteProject();
                 Navigator.of(context).pop(ConfirmAction.ACCEPT);
