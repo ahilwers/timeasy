@@ -75,5 +75,5 @@
     "editProject": "Edit Project",
     "errorMissingProjectName": "Please specify a name for your project.",
     "deleteProjectRequest": "Do your really want to delete the project?",
-    "imprint": "Imprint"
+    "info": "Info"
 }

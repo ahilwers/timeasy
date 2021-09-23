@@ -168,7 +168,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             },
           ),
           ListTile(
-            title: Text(AppLocalizations.of(context).imprint),
+            title: Text(AppLocalizations.of(context).info),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
             },
