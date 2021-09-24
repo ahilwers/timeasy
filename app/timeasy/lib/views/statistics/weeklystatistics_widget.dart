@@ -25,17 +25,16 @@ class WeeklyStatisticsWidget extends StatefulWidget {
 class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   int _calendarWeek = 0;
   int _year = 0;
-  Project _project;
-  WeeklyStatistics _weeklyStatistics;
+  final Project _project;
+  WeeklyStatistics? _weeklyStatistics;
   // Need to define a page controller with a high initial page because otherwise
   // we could not swipe below the current week
   final _weeklyStatisticsBuilder = new WeeklyStatisticsBuilder();
   final DurationFormatter _durationFormatter = new DurationFormatter();
 
-  _WeeklyStatisticsState(Project project, int calendarWeek, int year) {
+  _WeeklyStatisticsState(this._project, int calendarWeek, int year) {
     _calendarWeek = calendarWeek;
     _year = year;
-    _project = project;
   }
 
   @override
@@ -118,7 +117,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     if (_weeklyStatistics == null) {
       return "";
     }
-    var dayEntry = _weeklyStatistics.getEntryForWeekDay(weekday);
+    var dayEntry = _weeklyStatistics?.getEntryForWeekDay(weekday);
     if ((dayEntry == null) || (dayEntry.seconds == 0)) {
       return "";
     }
@@ -126,6 +125,6 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   }
 
   String getSumAsString() {
-    return _durationFormatter.formatDuration(new Duration(seconds: _weeklyStatistics.getSumInSeconds()));
+    return _durationFormatter.formatDuration(new Duration(seconds: _weeklyStatistics?.getSumInSeconds() ?? 0));
   }
 }

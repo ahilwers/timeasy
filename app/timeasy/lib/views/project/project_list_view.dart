@@ -21,7 +21,7 @@ class ProjectListWidget extends StatefulWidget {
 }
 
 class _ProjectListWidgetState extends State<ProjectListWidget> {
-  List<Project> projects;
+  List<Project>? projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
 
@@ -58,7 +58,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
 
   _dataBody(BuildContext context) {
     return ListView.builder(
-      itemCount: projects.length,
+      itemCount: projects?.length,
       itemBuilder: (context, index) {
         return ListTile(
           title: Text(projects[index].name),
@@ -70,7 +70,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     );
   }
 
-  void _addOrEditProject({String projectIdToEdit}) {
+  void _addOrEditProject({String? projectIdToEdit}) {
     Navigator.of(context)
         .push(
       MaterialPageRoute(

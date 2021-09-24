@@ -21,8 +21,7 @@ class WeeklyStatisticsBuilder {
       // A new day has started and a new statistics entry must be created:
       var statisticsEntry = weeklyStatistics.getEntryForWeekDay(timeEntry.startTime.weekday);
       if ((currentDay > lastDay) || (statisticsEntry == null)) {
-        statisticsEntry = new WeeklyStatisticsEntry();
-        statisticsEntry.date = timeEntry.startTime;
+        statisticsEntry = new WeeklyStatisticsEntry(timeEntry.startTime);
         weeklyStatistics.addEntryForWeekDay(timeEntry.startTime.weekday, statisticsEntry);
       }
       statisticsEntry.seconds += timeEntry.getSeconds();

@@ -9,7 +9,7 @@ import 'package:timeasy/models/timeentry.dart';
 enum ConfirmAction { CANCEL, ACCEPT }
 
 class TimeEntryEditView extends StatelessWidget {
-  final String _timeEntryId;
+  final String? _timeEntryId;
   final String _projectId;
 
   TimeEntryEditView(this._projectId, [this._timeEntryId]) {}
@@ -21,7 +21,7 @@ class TimeEntryEditView extends StatelessWidget {
 }
 
 class TimeEntryEditWidget extends StatefulWidget {
-  final String _timeEntryId;
+  final String? _timeEntryId;
   final String _projectId;
 
   TimeEntryEditWidget(this._projectId, this._timeEntryId) {}
@@ -33,9 +33,9 @@ class TimeEntryEditWidget extends StatefulWidget {
 }
 
 class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
-  TimeEntry _timeEntry;
+  TimeEntry? _timeEntry;
   bool _endTimeWasEmpty = false;
-  final String _timeEntryId;
+  final String? _timeEntryId;
   final String _projectId;
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final _formEditTimeEntryKey = GlobalKey<FormState>();
@@ -46,10 +46,10 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
   void initState() {
     super.initState();
     if (_timeEntryId != null) {
-      _timeEntryRepository.getTimeEntryById(_timeEntryId).then((TimeEntry timeEntryFromDb) {
+      _timeEntryRepository.getTimeEntryById(_timeEntryId!).then((TimeEntry? timeEntryFromDb) {
         setState(() {
           _timeEntry = timeEntryFromDb;
-          _endTimeWasEmpty = _timeEntry.endTime == null; // Indicates that we're editing a time entry that is not completed yet
+          _endTimeWasEmpty = _timeEntry!.endTime == null; // Indicates that we're editing a time entry that is not completed yet
         });
       });
     } else {
@@ -76,14 +76,14 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
               TextButton(
                 onPressed: () {
                   final form = _formEditTimeEntryKey.currentState;
-                  if (form.validate()) {
+                  if (form!.validate()) {
                     // We need to validate the timeEntry separately
                     var errorMessage = "";
-                    if (_timeEntry.startTime == null) {
+                    if (_timeEntry?.startTime == null) {
                       errorMessage = AppLocalizations.of(context).errorMissingStartTime;
                     } else if (_needToSetEndTime()) {
                       errorMessage = AppLocalizations.of(context).errorMissingEndTime;
-                    } else if ((_timeEntry.endTime != null) && (_timeEntry.endTime.isBefore(_timeEntry.startTime))) {
+                    } else if ((_timeEntry!.endTime != null) && (_timeEntry!.endTime!.isBefore(_timeEntry!.startTime))) {
                       errorMessage = AppLocalizations.of(context).errorEndtimeNotAfterStartTime;
                     }
                     if (errorMessage != "") {
@@ -96,7 +96,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                 },
                 child: Text(
                   AppLocalizations.of(context).save,
-                  style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
+                  style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
                 ),
               ),
               _timeEntryId != null
@@ -106,7 +106,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                       },
                       child: Text(
                         AppLocalizations.of(context).delete,
-                        style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
+                        style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
                       ),
                     )
                   : Container(),
@@ -128,38 +128,38 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                       children: <Widget>[
                         TextButton(
                           onPressed: () {
-                            _selectDate(context, _timeEntry.startTime).then((DateTime picked) {
+                            _selectDate(context, _timeEntry!.startTime).then((DateTime? picked) {
                               if (picked != null) {
                                 setState(() {
-                                  var localStartTime = _timeEntry.startTime.toLocal();
-                                  _timeEntry.startTime = new DateTime(picked.year, picked.month, picked.day, localStartTime.hour, localStartTime.minute).toUtc();
+                                  var localStartTime = _timeEntry!.startTime.toLocal();
+                                  _timeEntry!.startTime = new DateTime(picked.year, picked.month, picked.day, localStartTime.hour, localStartTime.minute).toUtc();
                                   // Also set the end time automatically if it's not already set:
                                   if (_needToSetEndTime()) {
-                                    _timeEntry.endTime = _timeEntry.startTime;
+                                    _timeEntry!.endTime = _timeEntry!.startTime;
                                   }
                                 });
                               }
                             });
                           },
-                          child: Text(dateFormatter.format(_timeEntry.startTime.toLocal())),
+                          child: Text(dateFormatter.format(_timeEntry!.startTime.toLocal())),
                         ),
                         TextButton(
                           onPressed: () {
-                            var startTime = TimeOfDay.fromDateTime(_timeEntry.startTime.toLocal());
-                            _selectTime(context, startTime).then((TimeOfDay picked) {
+                            var startTime = TimeOfDay.fromDateTime(_timeEntry!.startTime.toLocal());
+                            _selectTime(context, startTime).then((TimeOfDay? picked) {
                               if (picked != null) {
                                 setState(() {
-                                  var localStartTime = _timeEntry.startTime.toLocal();
-                                  _timeEntry.startTime = new DateTime(localStartTime.year, localStartTime.month, localStartTime.day, picked.hour, picked.minute).toUtc();
+                                  var localStartTime = _timeEntry!.startTime.toLocal();
+                                  _timeEntry!.startTime = new DateTime(localStartTime.year, localStartTime.month, localStartTime.day, picked.hour, picked.minute).toUtc();
                                   // Also set the end time automatically if it's not already set:
                                   if (_needToSetEndTime()) {
-                                    _timeEntry.endTime = _timeEntry.startTime;
+                                    _timeEntry!.endTime = _timeEntry!.startTime;
                                   }
                                 });
                               }
                             });
                           },
-                          child: Text(timeFormatter.format(_timeEntry.startTime.toLocal())),
+                          child: Text(timeFormatter.format(_timeEntry!.startTime.toLocal())),
                         ),
                       ],
                     ),
@@ -172,31 +172,31 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                       children: <Widget>[
                         TextButton(
                           onPressed: () {
-                            var endTime = _timeEntry.endTime != null ? _timeEntry.endTime : DateTime.now().toUtc();
-                            _selectDate(context, endTime).then((DateTime picked) {
+                            var endTime = _timeEntry!.endTime != null ? _timeEntry!.endTime : DateTime.now().toUtc();
+                            _selectDate(context, endTime!).then((DateTime? picked) {
                               if (picked != null) {
                                 setState(() {
-                                  var localEndTime = _timeEntry.endTime != null ? _timeEntry.endTime.toLocal() : DateTime.now();
-                                  _timeEntry.endTime = new DateTime(picked.year, picked.month, picked.day, localEndTime.hour, localEndTime.minute).toUtc();
+                                  var localEndTime = _timeEntry!.endTime != null ? _timeEntry!.endTime?.toLocal() : DateTime.now();
+                                  _timeEntry!.endTime = new DateTime(picked.year, picked.month, picked.day, localEndTime!.hour, localEndTime.minute).toUtc();
                                 });
                               }
                             });
                           },
-                          child: Text(_timeEntry.endTime != null ? dateFormatter.format(_timeEntry.endTime.toLocal()) : AppLocalizations.of(context).endDate),
+                          child: Text(_timeEntry!.endTime != null ? dateFormatter.format(_timeEntry!.endTime!.toLocal()) : AppLocalizations.of(context).endDate),
                         ),
                         TextButton(
                           onPressed: () {
-                            var endTime = TimeOfDay.fromDateTime(_timeEntry.endTime != null ? _timeEntry.endTime.toLocal() : DateTime.now());
-                            _selectTime(context, endTime).then((TimeOfDay picked) {
+                            var endTime = TimeOfDay.fromDateTime(_timeEntry!.endTime != null ? _timeEntry!.endTime!.toLocal() : DateTime.now());
+                            _selectTime(context, endTime).then((TimeOfDay? picked) {
                               if (picked != null) {
                                 setState(() {
-                                  var localEndTime = _timeEntry.endTime != null ? _timeEntry.endTime.toLocal() : DateTime.now();
-                                  _timeEntry.endTime = new DateTime(localEndTime.year, localEndTime.month, localEndTime.day, picked.hour, picked.minute).toUtc();
+                                  var localEndTime = _timeEntry!.endTime != null ? _timeEntry!.endTime!.toLocal() : DateTime.now();
+                                  _timeEntry!.endTime = new DateTime(localEndTime.year, localEndTime.month, localEndTime.day, picked.hour, picked.minute).toUtc();
                                 });
                               }
                             });
                           },
-                          child: Text(_timeEntry.endTime != null ? timeFormatter.format(_timeEntry.endTime.toLocal()) : AppLocalizations.of(context).endTime),
+                          child: Text(_timeEntry!.endTime != null ? timeFormatter.format(_timeEntry!.endTime!.toLocal()) : AppLocalizations.of(context).endTime),
                         ),
                       ],
                     )
@@ -210,8 +210,8 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     return (!_endTimeWasEmpty) && (_timeEntry.endTime == null);
   }
 
-  Future<DateTime> _selectDate(BuildContext context, DateTime initialDate) async {
-    final DateTime picked = await showDatePicker(
+  Future<DateTime?> _selectDate(BuildContext context, DateTime initialDate) async {
+    final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: DateTime(2010),
@@ -220,8 +220,8 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     return picked;
   }
 
-  Future<TimeOfDay> _selectTime(BuildContext context, TimeOfDay initialSelectedTime) async {
-    final TimeOfDay picked = await showTimePicker(
+  Future<TimeOfDay?> _selectTime(BuildContext context, TimeOfDay initialSelectedTime) async {
+    final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: initialSelectedTime,
     );
@@ -245,7 +245,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     }
   }
 
-  Future<ConfirmAction> deleteTimeEntryWithRequest(BuildContext context) async {
+  Future<ConfirmAction?> deleteTimeEntryWithRequest(BuildContext context) async {
     return showDialog<ConfirmAction>(
       context: context,
       barrierDismissible: false, // user must tap button for close dialog!

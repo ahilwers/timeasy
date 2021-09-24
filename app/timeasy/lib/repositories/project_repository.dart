@@ -20,7 +20,7 @@ class ProjectRepository {
     return await updateProject(project);
   }
 
-  Future<Project> getProjectById(String id) async {
+  Future<Project?> getProjectById(String id) async {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.query(Project.tableName, where: "${Project.idColumn} = ?", whereArgs: [id]);
     return queryResult.isNotEmpty ? queryResult.map((entry) => Project.fromMap(entry)).toList().first : null;
@@ -48,15 +48,15 @@ class ProjectRepository {
 
   Future<Project> getLastUsedProjectOrDefault() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String lastUsedProjectId = prefs.getString("currentProjectId");
-    Project lastUsedProject;
+    String? lastUsedProjectId = prefs.getString("currentProjectId");
+    Project? lastUsedProject;
     if (lastUsedProjectId != null) {
       lastUsedProject = await getProjectById(lastUsedProjectId);
     }
     if ((lastUsedProjectId == null) || (lastUsedProject != null) && (lastUsedProject.deleted)) {
       lastUsedProject = await createDefaultProjectIfNotExists();
     }
-    return lastUsedProject;
+    return lastUsedProject!;
   }
 
   void saveLastUsedProject(Project project) async {

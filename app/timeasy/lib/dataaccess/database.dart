@@ -10,7 +10,7 @@ class DBProvider {
   DBProvider._();
   static final DBProvider dbProvider = DBProvider._();
 
-  static Database _database;
+  static late Database _database;
 
   final initScript = [
     '''

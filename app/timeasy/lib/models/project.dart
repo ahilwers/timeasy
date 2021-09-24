@@ -8,7 +8,7 @@ class Project {
   static final String updatedColumn = "updated";
   static final String deletedColumn = "deleted";
 
-  String id;
+  late String id;
   String name = "";
   DateTime created = DateTime.now().toUtc();
   DateTime updated = DateTime.now().toUtc();

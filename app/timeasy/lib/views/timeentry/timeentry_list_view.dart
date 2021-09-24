@@ -23,7 +23,7 @@ class TimeEntryListView extends StatelessWidget {
 class DataList extends StatefulWidget {
   final Project _project;
 
-  DataList(this._project, {Key key}) : super(key: key) {}
+  DataList(this._project, {Key? key}) : super(key: key) {}
 
   @override
   _DataListState createState() {
@@ -32,16 +32,14 @@ class DataList extends StatefulWidget {
 }
 
 class _DataListState extends State<DataList> {
-  List<TimeEntry> timeEntries;
-  Project _project;
-  Locale locale;
+  late List<TimeEntry> timeEntries;
+  final Project _project;
+  Locale? locale;
 
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final DurationFormatter _durationFormatter = new DurationFormatter();
 
-  _DataListState(Project project) {
-    _project = project;
-  }
+  _DataListState(this._project) {}
 
   @override
   void initState() {
@@ -100,7 +98,7 @@ class _DataListState extends State<DataList> {
             .toList());
   }
 
-  void _addOrEditTimeEntry({String timeEntryIdToEdit}) {
+  void _addOrEditTimeEntry({String? timeEntryIdToEdit}) {
     Navigator.of(context)
         .push(
       MaterialPageRoute(

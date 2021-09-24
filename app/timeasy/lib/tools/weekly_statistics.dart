@@ -1,7 +1,7 @@
 class WeeklyStatistics {
   Map<int, WeeklyStatisticsEntry> _entries = new Map();
 
-  WeeklyStatisticsEntry getEntryForWeekDay(int weekDay) {
+  WeeklyStatisticsEntry? getEntryForWeekDay(int weekDay) {
     return _entries[weekDay];
   }
 
@@ -17,8 +17,10 @@ class WeeklyStatistics {
 }
 
 class WeeklyStatisticsEntry {
-  DateTime date;
+  final DateTime date;
   int seconds = 0;
+
+  WeeklyStatisticsEntry(this.date) {}
 
   double getMinutes() {
     return seconds / 60;

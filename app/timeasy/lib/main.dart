@@ -41,9 +41,9 @@ class MyApp extends StatelessWidget {
 }
 
 class MainPage extends StatefulWidget {
-  final String title;
+  final String? title;
 
-  MainPage({Key key, this.title}) : super(key: key);
+  MainPage({Key? key, this.title}) : super(key: key);
 
   @override
   _MainPageState createState() {
@@ -55,12 +55,12 @@ enum AppState { RUNNING, STOPPED }
 
 class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin {
   AppState _currentState = AppState.STOPPED;
-  Project _currentProject;
-  List<Project> _projects;
+  late Project _currentProject;
+  late List<Project> _projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
-  AnimationController buttonAnimationController;
+  late AnimationController buttonAnimationController;
 
   @override
   void initState() {
@@ -202,10 +202,10 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
                       child: new Text(value.name),
                     );
                   }).toList(),
-                  onChanged: (String value) {
-                    _projectRepository.getProjectById(value).then((Project projectFromDb) {
+                  onChanged: (String? value) {
+                    _projectRepository.getProjectById(value!).then((Project? projectFromDb) {
                       setState(() {
-                        _setCurrentProject(projectFromDb);
+                        _setCurrentProject(projectFromDb!);
                       });
                       _updateAppState();
                     });
@@ -231,7 +231,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
 
   _updateAppState() {
     // Set the current state if there's a timing already running:
-    _timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry entry) {
+    _timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry? entry) {
       if (entry != null) {
         _setAppState(AppState.RUNNING);
       } else {

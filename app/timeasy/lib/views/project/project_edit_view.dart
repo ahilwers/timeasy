@@ -8,7 +8,7 @@ import 'package:timeasy/models/project.dart';
 enum ConfirmAction { CANCEL, ACCEPT }
 
 class ProjectEditView extends StatelessWidget {
-  final String _projectId;
+  final String? _projectId;
 
   ProjectEditView([this._projectId]) {}
 
@@ -19,7 +19,7 @@ class ProjectEditView extends StatelessWidget {
 }
 
 class ProjectEditWidget extends StatefulWidget {
-  final String _projectId;
+  final String? _projectId;
 
   ProjectEditWidget(this._projectId) {}
 
@@ -30,24 +30,22 @@ class ProjectEditWidget extends StatefulWidget {
 }
 
 class _ProjectEditWidgetState extends State<ProjectEditWidget> {
-  String _projectId;
-  Project _project;
+  String? _projectId;
+  late Project _project;
   final ProjectRepository _projectRepository = new ProjectRepository();
   final _formEditProjectKey = GlobalKey<FormState>();
 
-  _ProjectEditWidgetState(String projectId) {
+  _ProjectEditWidgetState([String? projectId]) {
     _projectId = projectId;
   }
-
-  List<Project> projects;
 
   @override
   void initState() {
     super.initState();
     if (_projectId != null) {
-      _projectRepository.getProjectById(_projectId).then((Project projectFromDb) {
+      _projectRepository.getProjectById(_projectId!).then((Project? projectFromDb) {
         setState(() {
-          _project = projectFromDb;
+          _project = projectFromDb!;
         });
       });
     } else {
@@ -71,14 +69,14 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
               TextButton(
                 onPressed: () {
                   final form = _formEditProjectKey.currentState;
-                  if (form.validate()) {
+                  if (form!.validate()) {
                     _saveProject(form);
                     Navigator.pop(context);
                   }
                 },
                 child: Text(
                   AppLocalizations.of(context).save,
-                  style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
+                  style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
                 ),
               ),
               _projectId != null
@@ -88,7 +86,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                       },
                       child: Text(
                         AppLocalizations.of(context).delete,
-                        style: Theme.of(context).textTheme.subtitle1.copyWith(color: Colors.white),
+                        style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
                       ),
                     )
                   : Container(),
@@ -106,9 +104,9 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                 keyboardType: TextInputType.text,
                 initialValue: _project.name,
                 validator: (value) {
-                  return _validateProjectName(value);
+                  return _validateProjectName(value!);
                 },
-                onSaved: (value) => _project.name = value,
+                onSaved: (value) => _project.name = value!,
               ),
             ),
           ));
@@ -123,7 +121,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     }
   }
 
-  String _validateProjectName(String value) {
+  String? _validateProjectName(String value) {
     if (value.isEmpty) {
       return AppLocalizations.of(context).errorMissingProjectName;
     } else {
@@ -140,7 +138,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     }
   }
 
-  Future<ConfirmAction> deleteProjectWithRequest(BuildContext context) async {
+  Future<ConfirmAction?> deleteProjectWithRequest(BuildContext context) async {
     return showDialog<ConfirmAction>(
       context: context,
       barrierDismissible: false, // user must tap button for close dialog!
