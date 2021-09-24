@@ -10,7 +10,7 @@ class DBProvider {
   DBProvider._();
   static final DBProvider dbProvider = DBProvider._();
 
-  static late Database _database;
+  static Database? _database;
 
   final initScript = [
     '''
@@ -45,7 +45,7 @@ class DBProvider {
     if (_database == null) {
       _database = await _initDB();
     }
-    return _database;
+    return _database!;
   }
 
   _initDB() async {

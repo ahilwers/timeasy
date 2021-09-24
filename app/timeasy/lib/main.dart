@@ -56,7 +56,7 @@ enum AppState { RUNNING, STOPPED }
 class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin {
   AppState _currentState = AppState.STOPPED;
   late Project _currentProject;
-  late List<Project> _projects;
+  List<Project>? _projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
@@ -112,9 +112,6 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
   }
 
   void _startTiming() async {
-    if (_currentProject == null) {
-      return;
-    }
     var repository = new TimeEntryRepository();
     await repository.closeLatestTimeEntry(_currentProject.id);
     await repository.getLatestOpenTimeEntryOrCreateNew(_currentProject.id);
@@ -122,9 +119,6 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
   }
 
   void _stopTiming() async {
-    if (_currentProject == null) {
-      return;
-    }
     var repository = new TimeEntryRepository();
     await repository.closeLatestTimeEntry(_currentProject.id);
     _setAppState(AppState.STOPPED);
@@ -147,20 +141,20 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             ),
           ),
           ListTile(
-            title: Text(AppLocalizations.of(context).weeklyOverview),
+            title: Text(AppLocalizations.of(context)!.weeklyOverview),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
             },
           ),
           ListTile(
-              title: Text(AppLocalizations.of(context).timeEntries),
+              title: Text(AppLocalizations.of(context)!.timeEntries),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then((_) {
                   _updateAppState();
                 });
               }),
           ListTile(
-            title: Text(AppLocalizations.of(context).projects),
+            title: Text(AppLocalizations.of(context)!.projects),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then((_) {
                 _loadProjects();
@@ -168,7 +162,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             },
           ),
           ListTile(
-            title: Text(AppLocalizations.of(context).info),
+            title: Text(AppLocalizations.of(context)!.info),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
             },
@@ -193,10 +187,10 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             padding: const EdgeInsets.all(15.0),
           ),
           _projects == null
-              ? Text(AppLocalizations.of(context).loadingProject)
+              ? Text(AppLocalizations.of(context)!.loadingProject)
               : new DropdownButton<String>(
                   value: _currentProject.id,
-                  items: _projects.map((Project value) {
+                  items: _projects!.map((Project value) {
                     return new DropdownMenuItem<String>(
                       value: value.id,
                       child: new Text(value.name),

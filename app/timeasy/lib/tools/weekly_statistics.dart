@@ -20,7 +20,7 @@ class WeeklyStatisticsEntry {
   final DateTime date;
   int seconds = 0;
 
-  WeeklyStatisticsEntry(this.date) {}
+  WeeklyStatisticsEntry(this.date);
 
   double getMinutes() {
     return seconds / 60;

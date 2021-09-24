@@ -10,7 +10,7 @@ enum ConfirmAction { CANCEL, ACCEPT }
 class ProjectEditView extends StatelessWidget {
   final String? _projectId;
 
-  ProjectEditView([this._projectId]) {}
+  ProjectEditView([this._projectId]);
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class ProjectEditView extends StatelessWidget {
 class ProjectEditWidget extends StatefulWidget {
   final String? _projectId;
 
-  ProjectEditWidget(this._projectId) {}
+  ProjectEditWidget(this._projectId);
 
   @override
   _ProjectEditWidgetState createState() {
@@ -31,7 +31,7 @@ class ProjectEditWidget extends StatefulWidget {
 
 class _ProjectEditWidgetState extends State<ProjectEditWidget> {
   String? _projectId;
-  late Project _project;
+  Project? _project;
   final ProjectRepository _projectRepository = new ProjectRepository();
   final _formEditProjectKey = GlobalKey<FormState>();
 
@@ -58,7 +58,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     if (_project == null) {
       return Scaffold(
         appBar: new AppBar(
-          title: new Text(AppLocalizations.of(context).loadingProject),
+          title: new Text(AppLocalizations.of(context)!.loadingProject),
         ),
       );
     } else {
@@ -75,7 +75,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                   }
                 },
                 child: Text(
-                  AppLocalizations.of(context).save,
+                  AppLocalizations.of(context)!.save,
                   style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
                 ),
               ),
@@ -85,7 +85,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                         deleteProjectWithRequest(context);
                       },
                       child: Text(
-                        AppLocalizations.of(context).delete,
+                        AppLocalizations.of(context)!.delete,
                         style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
                       ),
                     )
@@ -98,15 +98,15 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
               key: _formEditProjectKey,
               child: TextFormField(
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).projectName,
+                  labelText: AppLocalizations.of(context)!.projectName,
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.text,
-                initialValue: _project.name,
+                initialValue: _project!.name,
                 validator: (value) {
                   return _validateProjectName(value!);
                 },
-                onSaved: (value) => _project.name = value!,
+                onSaved: (value) => _project!.name = value!,
               ),
             ),
           ));
@@ -115,15 +115,15 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
 
   String _getTitle() {
     if (_projectId == null) {
-      return AppLocalizations.of(context).addProject;
+      return AppLocalizations.of(context)!.addProject;
     } else {
-      return AppLocalizations.of(context).editProject;
+      return AppLocalizations.of(context)!.editProject;
     }
   }
 
   String? _validateProjectName(String value) {
     if (value.isEmpty) {
-      return AppLocalizations.of(context).errorMissingProjectName;
+      return AppLocalizations.of(context)!.errorMissingProjectName;
     } else {
       return null;
     }
@@ -132,9 +132,9 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
   void _saveProject(FormState form) {
     form.save();
     if (_projectId != null) {
-      _projectRepository.updateProject(_project);
+      _projectRepository.updateProject(_project!);
     } else {
-      _projectRepository.addProject(_project);
+      _projectRepository.addProject(_project!);
     }
   }
 
@@ -144,17 +144,17 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
       barrierDismissible: false, // user must tap button for close dialog!
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context).delete),
-          content: Text(AppLocalizations.of(context).deleteProjectRequest),
+          title: Text(AppLocalizations.of(context)!.delete),
+          content: Text(AppLocalizations.of(context)!.deleteProjectRequest),
           actions: <Widget>[
             TextButton(
-              child: Text(AppLocalizations.of(context).no),
+              child: Text(AppLocalizations.of(context)!.no),
               onPressed: () {
                 Navigator.of(context).pop(ConfirmAction.CANCEL);
               },
             ),
             TextButton(
-              child: Text(AppLocalizations.of(context).yes),
+              child: Text(AppLocalizations.of(context)!.yes),
               onPressed: () {
                 deleteProject();
                 Navigator.of(context).pop(ConfirmAction.ACCEPT);
@@ -169,7 +169,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
 
   void deleteProject() {
     if (_projectId != null) {
-      _projectRepository.deleteProject(_project);
+      _projectRepository.deleteProject(_project!);
     }
   }
 }

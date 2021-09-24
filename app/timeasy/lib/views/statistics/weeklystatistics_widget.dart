@@ -14,7 +14,7 @@ class WeeklyStatisticsWidget extends StatefulWidget {
   final int _year;
   final Project _project;
 
-  WeeklyStatisticsWidget(this._project, this._calendarWeek, this._year, {Key key}) : super(key: key) {}
+  WeeklyStatisticsWidget(this._project, this._calendarWeek, this._year, {Key? key}) : super(key: key);
 
   @override
   _WeeklyStatisticsState createState() {
@@ -48,7 +48,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
         _weeklyStatistics = statistics;
       });
     });
-    Text("${AppLocalizations.of(context).loadingWeek} ${_calendarWeek.toString()}...");
+    Text("${AppLocalizations.of(context)!.loadingWeek} ${_calendarWeek.toString()}...");
   }
 
   _buildLayout(BuildContext context) {
@@ -62,7 +62,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     return Card(
       child: ListView(children: <Widget>[
         ListTile(
-          title: Text(AppLocalizations.of(context).weekTitle(_calendarWeek), style: TextStyle(fontWeight: FontWeight.w500)),
+          title: Text(AppLocalizations.of(context)!.weekTitle(_calendarWeek), style: TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text("$startDate - $endDate"),
         ),
         Divider(),
@@ -88,26 +88,26 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
 
   _buildSumEntry() {
     return ListTile(
-        title: Text(AppLocalizations.of(context).weeklyHourSum, style: TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(AppLocalizations.of(context)!.weeklyHourSum, style: TextStyle(fontWeight: FontWeight.w500)),
         trailing: Text("${getSumAsString()}", style: TextStyle(fontWeight: FontWeight.w500)));
   }
 
   String _getNameOfDay(int weekday) {
     switch (weekday) {
       case 1:
-        return AppLocalizations.of(context).monday;
+        return AppLocalizations.of(context)!.monday;
       case 2:
-        return AppLocalizations.of(context).tuesday;
+        return AppLocalizations.of(context)!.tuesday;
       case 3:
-        return AppLocalizations.of(context).wednesday;
+        return AppLocalizations.of(context)!.wednesday;
       case 4:
-        return AppLocalizations.of(context).thursday;
+        return AppLocalizations.of(context)!.thursday;
       case 5:
-        return AppLocalizations.of(context).friday;
+        return AppLocalizations.of(context)!.friday;
       case 6:
-        return AppLocalizations.of(context).saturday;
+        return AppLocalizations.of(context)!.saturday;
       case 7:
-        return AppLocalizations.of(context).sunday;
+        return AppLocalizations.of(context)!.sunday;
       default:
         return "";
     }

@@ -12,7 +12,7 @@ import 'package:timeasy/views/timeentry/timeentry_edit_view.dart';
 class TimeEntryListView extends StatelessWidget {
   final Project _project;
 
-  TimeEntryListView(this._project) {}
+  TimeEntryListView(this._project);
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class TimeEntryListView extends StatelessWidget {
 class DataList extends StatefulWidget {
   final Project _project;
 
-  DataList(this._project, {Key? key}) : super(key: key) {}
+  DataList(this._project, {Key? key}) : super(key: key);
 
   @override
   _DataListState createState() {
@@ -32,14 +32,14 @@ class DataList extends StatefulWidget {
 }
 
 class _DataListState extends State<DataList> {
-  late List<TimeEntry> timeEntries;
+  List<TimeEntry>? timeEntries;
   final Project _project;
   Locale? locale;
 
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final DurationFormatter _durationFormatter = new DurationFormatter();
 
-  _DataListState(this._project) {}
+  _DataListState(this._project);
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class _DataListState extends State<DataList> {
     if (timeEntries == null) {
       return Scaffold(
         appBar: new AppBar(
-          title: new Text(AppLocalizations.of(context).loadingTimes),
+          title: new Text(AppLocalizations.of(context)!.loadingTimes),
         ),
       );
     } else {
@@ -77,20 +77,20 @@ class _DataListState extends State<DataList> {
     var timeFormatter = new DateFormat.yMd(locale.toString()).add_Hm();
     return DataTable(
         columns: [
-          DataColumn(label: Text(AppLocalizations.of(context).start), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeStart),
-          DataColumn(label: Text(AppLocalizations.of(context).end), numeric: false, tooltip: AppLocalizations.of(context).tooltipTimeEnd),
-          DataColumn(label: Text(AppLocalizations.of(context).hours), numeric: true, tooltip: AppLocalizations.of(context).tooltipHours),
+          DataColumn(label: Text(AppLocalizations.of(context)!.start), numeric: false, tooltip: AppLocalizations.of(context)!.tooltipTimeStart),
+          DataColumn(label: Text(AppLocalizations.of(context)!.end), numeric: false, tooltip: AppLocalizations.of(context)!.tooltipTimeEnd),
+          DataColumn(label: Text(AppLocalizations.of(context)!.hours), numeric: true, tooltip: AppLocalizations.of(context)!.tooltipHours),
         ],
-        rows: timeEntries
+        rows: timeEntries!
             .map((timeEntry) => DataRow(
                   cells: [
                     DataCell(Text(timeFormatter.format(timeEntry.startTime.toLocal())), onTap: () {
                       _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
                     }),
-                    DataCell(Text(timeEntry.endTime != null ? timeFormatter.format(timeEntry.endTime.toLocal()) : ""), onTap: () {
+                    DataCell(Text(timeEntry.endTime != null ? timeFormatter.format(timeEntry.endTime!.toLocal()) : ""), onTap: () {
                       _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
                     }),
-                    DataCell(Text(timeEntry.endTime != null ? _durationFormatter.formatDuration(timeEntry.endTime.difference(timeEntry.startTime)) : ""), onTap: () {
+                    DataCell(Text(timeEntry.endTime != null ? _durationFormatter.formatDuration(timeEntry.endTime!.difference(timeEntry.startTime)) : ""), onTap: () {
                       _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
                     })
                   ],
@@ -120,6 +120,6 @@ class _DataListState extends State<DataList> {
   }
 
   String _getTitle() {
-    return "${AppLocalizations.of(context).times} (${_project.name})";
+    return "${AppLocalizations.of(context)!.times} (${_project.name})";
   }
 }

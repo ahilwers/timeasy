@@ -9,7 +9,7 @@ class Imprint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(AppLocalizations.of(context).info),
+          title: Text(AppLocalizations.of(context)!.info),
         ),
         body: Container(
           margin: EdgeInsets.all(10),

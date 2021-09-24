@@ -36,7 +36,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     if (projects == null) {
       return Scaffold(
         appBar: new AppBar(
-          title: new Text(AppLocalizations.of(context).loadingProjects),
+          title: new Text(AppLocalizations.of(context)!.loadingProjects),
         ),
       );
     } else {
@@ -58,12 +58,12 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
 
   _dataBody(BuildContext context) {
     return ListView.builder(
-      itemCount: projects?.length,
+      itemCount: projects!.length,
       itemBuilder: (context, index) {
         return ListTile(
-          title: Text(projects[index].name),
+          title: Text(projects![index].name),
           onTap: () {
-            _addOrEditProject(projectIdToEdit: projects[index].id);
+            _addOrEditProject(projectIdToEdit: projects![index].id);
           },
         );
       },
@@ -92,6 +92,6 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
   }
 
   String _getTitle() {
-    return AppLocalizations.of(context).projects;
+    return AppLocalizations.of(context)!.projects;
   }
 }

@@ -13,7 +13,7 @@ class TimeEntry {
   late String id;
   DateTime startTime = DateTime.now().toUtc();
   DateTime? endTime;
-  String description = "";
+  String? description = "";
   late String projectId;
   DateTime created = DateTime.now().toUtc();
   DateTime updated = DateTime.now().toUtc();
