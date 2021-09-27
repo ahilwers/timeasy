@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         Locale('de', ''),
       ],
       theme: FlexColorScheme.light(scheme: FlexScheme.deepBlue).toTheme,
-      darkTheme: FlexColorScheme.dark(scheme: FlexScheme.deepBlue).toTheme,
+      darkTheme: FlexColorScheme.dark(scheme: FlexScheme.bahamaBlue).toTheme,
       // Use dark or light theme based on system setting.
       themeMode: ThemeMode.system,
       home: MainPage(title: 'timeasy'),
@@ -73,7 +73,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
     );
 
     var projectRepository = new ProjectRepository();
-    projectRepository.getLastUsedProjectOrDefault().then((Project project) {
+    projectRepository.getLastUsedProjectOrDefault("Project 1").then((Project project) {
       setState(() {
         _setCurrentProject(project);
       });
@@ -177,7 +177,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             onPressed: _toggleState,
             child: new AnimatedIcon(
               icon: AnimatedIcons.play_pause,
-              color: Theme.of(context).backgroundColor,
+              color: Colors.white,
               size: 128.0,
               progress: buttonAnimationController,
             ),

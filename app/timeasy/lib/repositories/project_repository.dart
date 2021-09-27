@@ -34,11 +34,11 @@ class ProjectRepository {
 
   /// Creates a default poject if no project exists. Otherwise it returns the first
   /// one.
-  Future<Project> createDefaultProjectIfNotExists() async {
+  Future<Project> createDefaultProjectIfNotExists(String defaultProjectName) async {
     var projects = await getAllProjects();
     if (projects.isEmpty) {
       var newProject = new Project();
-      newProject.name = "Default";
+      newProject.name = defaultProjectName;
       addProject(newProject);
       return newProject;
     } else {
@@ -46,7 +46,7 @@ class ProjectRepository {
     }
   }
 
-  Future<Project> getLastUsedProjectOrDefault() async {
+  Future<Project> getLastUsedProjectOrDefault(String defaultProjectName) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? lastUsedProjectId = prefs.getString("currentProjectId");
     Project? lastUsedProject;
@@ -54,7 +54,7 @@ class ProjectRepository {
       lastUsedProject = await getProjectById(lastUsedProjectId);
     }
     if ((lastUsedProjectId == null) || (lastUsedProject != null) && (lastUsedProject.deleted)) {
-      lastUsedProject = await createDefaultProjectIfNotExists();
+      lastUsedProject = await createDefaultProjectIfNotExists(defaultProjectName);
     }
     return lastUsedProject!;
   }
