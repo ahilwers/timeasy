@@ -40,5 +40,5 @@
     "editProject": "Projekt bearbeiten",
     "errorMissingProjectName": "Bitte geben Sie einen Namen für das Projekt an.",
     "deleteProjectRequest": "Möchten Sie das Projekt wirklich löschen?",
-    "imprint": "Impressum"
+    "info": "Info"
 }    

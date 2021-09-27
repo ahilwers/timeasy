@@ -1,7 +1,6 @@
 import 'package:uuid/uuid.dart';
 
 class TimeEntry {
-
   static final String tableName = "TimeEntries";
   static final String idColumn = "id";
   static final String startTimeColumn = "startTime";
@@ -11,11 +10,11 @@ class TimeEntry {
   static final String createdColumn = "created";
   static final String updatedColumn = "updated";
 
-  String id;
-  DateTime startTime;
-  DateTime endTime;
-  String description;
-  String projectId;
+  late String id;
+  DateTime startTime = DateTime.now().toUtc();
+  DateTime? endTime;
+  String? description = "";
+  late String projectId;
   DateTime created = DateTime.now().toUtc();
   DateTime updated = DateTime.now().toUtc();
 
@@ -31,7 +30,7 @@ class TimeEntry {
     int startTimeMillis = map[startTimeColumn];
     startTime = new DateTime.fromMillisecondsSinceEpoch(startTimeMillis, isUtc: true);
     int endTimeMillis = map[endTimeColumn];
-    if (endTimeMillis>0) {
+    if (endTimeMillis > 0) {
       endTime = new DateTime.fromMillisecondsSinceEpoch(endTimeMillis, isUtc: true);
     }
     description = map[descriptionColumn];
@@ -44,27 +43,25 @@ class TimeEntry {
 
   Map<String, dynamic> toMap() {
     var map = <String, dynamic>{
-      idColumn : id,
-      startTimeColumn : startTime.millisecondsSinceEpoch,
-      endTimeColumn : 0,
-      descriptionColumn : description,
+      idColumn: id,
+      startTimeColumn: startTime.millisecondsSinceEpoch,
+      endTimeColumn: 0,
+      descriptionColumn: description,
       projectIdColumn: projectId,
-      createdColumn : created.millisecondsSinceEpoch,
-      updatedColumn : updated.millisecondsSinceEpoch,
+      createdColumn: created.millisecondsSinceEpoch,
+      updatedColumn: updated.millisecondsSinceEpoch,
     };
-    if (endTime!=null) {
-      map[endTimeColumn] = endTime.millisecondsSinceEpoch;
+    if (endTime != null) {
+      map[endTimeColumn] = endTime?.millisecondsSinceEpoch;
     }
     return map;
   }
 
   int getSeconds() {
     var myEndTime = endTime;
-    if (myEndTime==null) {
+    if (myEndTime == null) {
       myEndTime = DateTime.now();
     }
     return myEndTime.difference(startTime).inSeconds;
   }
-
-
 }

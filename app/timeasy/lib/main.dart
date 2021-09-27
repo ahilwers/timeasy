@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         Locale('de', ''),
       ],
       theme: FlexColorScheme.light(scheme: FlexScheme.deepBlue).toTheme,
-      darkTheme: FlexColorScheme.dark(scheme: FlexScheme.deepBlue).toTheme,
+      darkTheme: FlexColorScheme.dark(scheme: FlexScheme.bahamaBlue).toTheme,
       // Use dark or light theme based on system setting.
       themeMode: ThemeMode.system,
       home: MainPage(title: 'timeasy'),
@@ -41,9 +41,9 @@ class MyApp extends StatelessWidget {
 }
 
 class MainPage extends StatefulWidget {
-  final String title;
+  final String? title;
 
-  MainPage({Key key, this.title}) : super(key: key);
+  MainPage({Key? key, this.title}) : super(key: key);
 
   @override
   _MainPageState createState() {
@@ -55,12 +55,12 @@ enum AppState { RUNNING, STOPPED }
 
 class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin {
   AppState _currentState = AppState.STOPPED;
-  Project _currentProject;
-  List<Project> _projects;
+  late Project _currentProject;
+  List<Project>? _projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
-  AnimationController buttonAnimationController;
+  late AnimationController buttonAnimationController;
 
   @override
   void initState() {
@@ -73,7 +73,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
     );
 
     var projectRepository = new ProjectRepository();
-    projectRepository.getLastUsedProjectOrDefault().then((Project project) {
+    projectRepository.getLastUsedProjectOrDefault("Project 1").then((Project project) {
       setState(() {
         _setCurrentProject(project);
       });
@@ -112,9 +112,6 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
   }
 
   void _startTiming() async {
-    if (_currentProject == null) {
-      return;
-    }
     var repository = new TimeEntryRepository();
     await repository.closeLatestTimeEntry(_currentProject.id);
     await repository.getLatestOpenTimeEntryOrCreateNew(_currentProject.id);
@@ -122,9 +119,6 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
   }
 
   void _stopTiming() async {
-    if (_currentProject == null) {
-      return;
-    }
     var repository = new TimeEntryRepository();
     await repository.closeLatestTimeEntry(_currentProject.id);
     _setAppState(AppState.STOPPED);
@@ -147,20 +141,20 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             ),
           ),
           ListTile(
-            title: Text(AppLocalizations.of(context).weeklyOverview),
+            title: Text(AppLocalizations.of(context)!.weeklyOverview),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
             },
           ),
           ListTile(
-              title: Text(AppLocalizations.of(context).timeEntries),
+              title: Text(AppLocalizations.of(context)!.timeEntries),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then((_) {
                   _updateAppState();
                 });
               }),
           ListTile(
-            title: Text(AppLocalizations.of(context).projects),
+            title: Text(AppLocalizations.of(context)!.projects),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then((_) {
                 _loadProjects();
@@ -168,7 +162,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             },
           ),
           ListTile(
-            title: Text(AppLocalizations.of(context).imprint),
+            title: Text(AppLocalizations.of(context)!.info),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
             },
@@ -183,7 +177,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             onPressed: _toggleState,
             child: new AnimatedIcon(
               icon: AnimatedIcons.play_pause,
-              color: Theme.of(context).backgroundColor,
+              color: Colors.white,
               size: 128.0,
               progress: buttonAnimationController,
             ),
@@ -193,19 +187,19 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             padding: const EdgeInsets.all(15.0),
           ),
           _projects == null
-              ? Text(AppLocalizations.of(context).loadingProject)
+              ? Text(AppLocalizations.of(context)!.loadingProject)
               : new DropdownButton<String>(
                   value: _currentProject.id,
-                  items: _projects.map((Project value) {
+                  items: _projects!.map((Project value) {
                     return new DropdownMenuItem<String>(
                       value: value.id,
                       child: new Text(value.name),
                     );
                   }).toList(),
-                  onChanged: (String value) {
-                    _projectRepository.getProjectById(value).then((Project projectFromDb) {
+                  onChanged: (String? value) {
+                    _projectRepository.getProjectById(value!).then((Project? projectFromDb) {
                       setState(() {
-                        _setCurrentProject(projectFromDb);
+                        _setCurrentProject(projectFromDb!);
                       });
                       _updateAppState();
                     });
@@ -231,7 +225,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
 
   _updateAppState() {
     // Set the current state if there's a timing already running:
-    _timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry entry) {
+    _timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry? entry) {
       if (entry != null) {
         _setAppState(AppState.RUNNING);
       } else {

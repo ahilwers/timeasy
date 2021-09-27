@@ -9,7 +9,7 @@ import 'package:timeasy/tools/date_tools.dart';
 class WeeklyView extends StatelessWidget {
   final Project _project;
 
-  WeeklyView(this._project) {}
+  WeeklyView(this._project);
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class WeeklyView extends StatelessWidget {
 class WeeklyViewWidget extends StatefulWidget {
   final Project _project;
 
-  WeeklyViewWidget(this._project, {Key key}) : super(key: key) {}
+  WeeklyViewWidget(this._project, {Key? key}) : super(key: key);
 
   @override
   _WeeklyViewState createState() {
@@ -41,7 +41,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   // backwards from the current week:
   final _pageController = new PageController(initialPage: 100000);
 
-  _WeeklyViewState(this._project) {}
+  _WeeklyViewState(this._project);
 
   @override
   void initState() {
@@ -78,6 +78,6 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   }
 
   String _getTitle() {
-    return "${AppLocalizations.of(context).weeklyOverview} (${_project.name})";
+    return "${AppLocalizations.of(context)!.weeklyOverview} (${_project.name})";
   }
 }

@@ -14,7 +14,7 @@ class WeeklyStatisticsWidget extends StatefulWidget {
   final int _year;
   final Project _project;
 
-  WeeklyStatisticsWidget(this._project, this._calendarWeek, this._year, {Key key}) : super(key: key) {}
+  WeeklyStatisticsWidget(this._project, this._calendarWeek, this._year, {Key? key}) : super(key: key);
 
   @override
   _WeeklyStatisticsState createState() {
@@ -25,17 +25,16 @@ class WeeklyStatisticsWidget extends StatefulWidget {
 class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   int _calendarWeek = 0;
   int _year = 0;
-  Project _project;
-  WeeklyStatistics _weeklyStatistics;
+  final Project _project;
+  WeeklyStatistics? _weeklyStatistics;
   // Need to define a page controller with a high initial page because otherwise
   // we could not swipe below the current week
   final _weeklyStatisticsBuilder = new WeeklyStatisticsBuilder();
   final DurationFormatter _durationFormatter = new DurationFormatter();
 
-  _WeeklyStatisticsState(Project project, int calendarWeek, int year) {
+  _WeeklyStatisticsState(this._project, int calendarWeek, int year) {
     _calendarWeek = calendarWeek;
     _year = year;
-    _project = project;
   }
 
   @override
@@ -49,7 +48,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
         _weeklyStatistics = statistics;
       });
     });
-    Text("${AppLocalizations.of(context).loadingWeek} ${_calendarWeek.toString()}...");
+    Text("${AppLocalizations.of(context)!.loadingWeek} ${_calendarWeek.toString()}...");
   }
 
   _buildLayout(BuildContext context) {
@@ -63,7 +62,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     return Card(
       child: ListView(children: <Widget>[
         ListTile(
-          title: Text(AppLocalizations.of(context).weekTitle(_calendarWeek), style: TextStyle(fontWeight: FontWeight.w500)),
+          title: Text(AppLocalizations.of(context)!.weekTitle(_calendarWeek), style: TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text("$startDate - $endDate"),
         ),
         Divider(),
@@ -89,26 +88,26 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
 
   _buildSumEntry() {
     return ListTile(
-        title: Text(AppLocalizations.of(context).weeklyHourSum, style: TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(AppLocalizations.of(context)!.weeklyHourSum, style: TextStyle(fontWeight: FontWeight.w500)),
         trailing: Text("${getSumAsString()}", style: TextStyle(fontWeight: FontWeight.w500)));
   }
 
   String _getNameOfDay(int weekday) {
     switch (weekday) {
       case 1:
-        return AppLocalizations.of(context).monday;
+        return AppLocalizations.of(context)!.monday;
       case 2:
-        return AppLocalizations.of(context).tuesday;
+        return AppLocalizations.of(context)!.tuesday;
       case 3:
-        return AppLocalizations.of(context).wednesday;
+        return AppLocalizations.of(context)!.wednesday;
       case 4:
-        return AppLocalizations.of(context).thursday;
+        return AppLocalizations.of(context)!.thursday;
       case 5:
-        return AppLocalizations.of(context).friday;
+        return AppLocalizations.of(context)!.friday;
       case 6:
-        return AppLocalizations.of(context).saturday;
+        return AppLocalizations.of(context)!.saturday;
       case 7:
-        return AppLocalizations.of(context).sunday;
+        return AppLocalizations.of(context)!.sunday;
       default:
         return "";
     }
@@ -118,7 +117,7 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     if (_weeklyStatistics == null) {
       return "";
     }
-    var dayEntry = _weeklyStatistics.getEntryForWeekDay(weekday);
+    var dayEntry = _weeklyStatistics?.getEntryForWeekDay(weekday);
     if ((dayEntry == null) || (dayEntry.seconds == 0)) {
       return "";
     }
@@ -126,6 +125,6 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   }
 
   String getSumAsString() {
-    return _durationFormatter.formatDuration(new Duration(seconds: _weeklyStatistics.getSumInSeconds()));
+    return _durationFormatter.formatDuration(new Duration(seconds: _weeklyStatistics?.getSumInSeconds() ?? 0));
   }
 }
