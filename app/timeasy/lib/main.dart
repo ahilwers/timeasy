@@ -131,64 +131,71 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
         title: Text('timeasy'),
       ),
       drawer: Drawer(
-          child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            child: Image.asset("assets/hourglass_lightgrey.png"), // Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
-            decoration: BoxDecoration(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Image.asset("assets/hourglass_lightgrey.png"), // Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-              begin: Alignment.centerRight,
-              end: Alignment.centerLeft,
-              colors: [
-                Color(0xff28b0fe),
-                Color(0xffc80eef),
-              ],
-            )),
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.weeklyOverview),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
-            },
-          ),
-          ListTile(
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                  colors: [
+                    Color(0xff28b0fe),
+                    Color(0xffc80eef),
+                  ],
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.weeklyOverview),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
+              },
+            ),
+            ListTile(
               title: Text(AppLocalizations.of(context)!.timeEntries),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then((_) {
-                  _updateAppState();
-                });
-              }),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.projects),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then((_) {
-                _loadProjects();
-              });
-            },
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.info),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
-            },
-          ),
-        ],
-      )),
+                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then(
+                  (_) {
+                    _updateAppState();
+                  },
+                );
+              },
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.projects),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then(
+                  (_) {
+                    _loadProjects();
+                  },
+                );
+              },
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.info),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
+              },
+            ),
+          ],
+        ),
+      ),
       body: Center(
-          child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          new RawMaterialButton(
-            onPressed: _toggleState,
-            child: Container(
-              child: new AnimatedIcon(
-                icon: AnimatedIcons.play_pause,
-                color: Colors.white,
-                size: 148.0,
-                progress: buttonAnimationController,
-              ),
-              decoration: ShapeDecoration(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            new RawMaterialButton(
+              onPressed: _toggleState,
+              child: Container(
+                child: new AnimatedIcon(
+                  icon: AnimatedIcons.play_pause,
+                  color: Colors.white,
+                  size: 148.0,
+                  progress: buttonAnimationController,
+                ),
+                decoration: ShapeDecoration(
                   shape: new CircleBorder(),
                   gradient: LinearGradient(
                     begin: Alignment.centerRight,
@@ -197,34 +204,42 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
                       Color(0xff28b0fe),
                       Color(0xffc80eef),
                     ],
-                  )),
-            ),
-            shape: new CircleBorder(),
-            elevation: 2.0,
-            //fillColor: Theme.of(context).primaryColor,
-            //padding: const EdgeInsets.all(15.0),
-          ),
-          _projects == null
-              ? Text(AppLocalizations.of(context)!.loadingProject)
-              : new DropdownButton<String>(
-                  value: _currentProject.id,
-                  items: _projects!.map((Project value) {
-                    return new DropdownMenuItem<String>(
-                      value: value.id,
-                      child: new Text(value.name),
-                    );
-                  }).toList(),
-                  onChanged: (String? value) {
-                    _projectRepository.getProjectById(value!).then((Project? projectFromDb) {
-                      setState(() {
-                        _setCurrentProject(projectFromDb!);
-                      });
-                      _updateAppState();
-                    });
-                  },
+                  ),
                 ),
-        ],
-      )),
+              ),
+              shape: new CircleBorder(),
+              elevation: 2.0,
+              //fillColor: Theme.of(context).primaryColor,
+              //padding: const EdgeInsets.all(15.0),
+            ),
+            _projects == null
+                ? Text(AppLocalizations.of(context)!.loadingProject)
+                : new DropdownButton<String>(
+                    value: _currentProject.id,
+                    items: _projects!.map(
+                      (Project value) {
+                        return new DropdownMenuItem<String>(
+                          value: value.id,
+                          child: new Text(value.name),
+                        );
+                      },
+                    ).toList(),
+                    onChanged: (String? value) {
+                      _projectRepository.getProjectById(value!).then(
+                        (Project? projectFromDb) {
+                          setState(
+                            () {
+                              _setCurrentProject(projectFromDb!);
+                            },
+                          );
+                          _updateAppState();
+                        },
+                      );
+                    },
+                  ),
+          ],
+        ),
+      ),
     );
   }
 
