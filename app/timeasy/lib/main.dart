@@ -135,10 +135,16 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
         padding: EdgeInsets.zero,
         children: <Widget>[
           DrawerHeader(
-            child: Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
+            child: Image.asset("assets/hourglass_lightgrey.png"), // Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColorDark,
-            ),
+                gradient: LinearGradient(
+              begin: Alignment.centerRight,
+              end: Alignment.centerLeft,
+              colors: [
+                Color(0xff28b0fe),
+                Color(0xffc80eef),
+              ],
+            )),
           ),
           ListTile(
             title: Text(AppLocalizations.of(context)!.weeklyOverview),
@@ -175,16 +181,28 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
         children: <Widget>[
           new RawMaterialButton(
             onPressed: _toggleState,
-            child: new AnimatedIcon(
-              icon: AnimatedIcons.play_pause,
-              color: Colors.white,
-              size: 128.0,
-              progress: buttonAnimationController,
+            child: Container(
+              child: new AnimatedIcon(
+                icon: AnimatedIcons.play_pause,
+                color: Colors.white,
+                size: 148.0,
+                progress: buttonAnimationController,
+              ),
+              decoration: ShapeDecoration(
+                  shape: new CircleBorder(),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerRight,
+                    end: Alignment.centerLeft,
+                    colors: [
+                      Color(0xff28b0fe),
+                      Color(0xffc80eef),
+                    ],
+                  )),
             ),
             shape: new CircleBorder(),
             elevation: 2.0,
-            fillColor: Theme.of(context).primaryColor,
-            padding: const EdgeInsets.all(15.0),
+            //fillColor: Theme.of(context).primaryColor,
+            //padding: const EdgeInsets.all(15.0),
           ),
           _projects == null
               ? Text(AppLocalizations.of(context)!.loadingProject)
