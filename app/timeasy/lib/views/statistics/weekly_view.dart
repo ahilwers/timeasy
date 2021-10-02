@@ -55,6 +55,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitle()),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: PageView.builder(
         controller: _pageController,

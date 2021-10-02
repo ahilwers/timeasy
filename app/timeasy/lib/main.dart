@@ -13,6 +13,7 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:timeasy/views/theme.dart';
 
 void main() => runApp(MyApp());
 
@@ -31,8 +32,8 @@ class MyApp extends StatelessWidget {
         Locale('en', ''),
         Locale('de', ''),
       ],
-      theme: FlexColorScheme.light(scheme: FlexScheme.deepBlue).toTheme,
-      darkTheme: FlexColorScheme.dark(scheme: FlexScheme.bahamaBlue).toTheme,
+      theme: FlexColorScheme.light(colors: timeasyTheme.light).toTheme,
+      darkTheme: FlexColorScheme.dark(colors: timeasyTheme.dark).toTheme,
       // Use dark or light theme based on system setting.
       themeMode: ThemeMode.system,
       home: MainPage(title: 'timeasy'),
@@ -129,6 +130,7 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
     return Scaffold(
       appBar: AppBar(
         title: Text('timeasy'),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       drawer: Drawer(
         child: ListView(

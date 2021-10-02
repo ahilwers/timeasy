@@ -60,6 +60,7 @@ class _DataListState extends State<DataList> {
       return Scaffold(
         appBar: AppBar(
           title: Text(_getTitle()),
+          backgroundColor: Theme.of(context).primaryColor,
         ),
         body: SingleChildScrollView(scrollDirection: Axis.vertical, child: _dataBody()),
         floatingActionButton: FloatingActionButton(

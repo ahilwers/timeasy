@@ -43,6 +43,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
       return Scaffold(
         appBar: AppBar(
           title: Text(_getTitle()),
+          backgroundColor: Theme.of(context).primaryColor,
         ),
         body: _dataBody(context),
         floatingActionButton: FloatingActionButton(
