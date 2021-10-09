@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Imprint extends StatelessWidget {
-  const Imprint({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: new ImprintWidget());
+  }
+}
+
+class ImprintWidget extends StatefulWidget {
+  @override
+  _ImprintWidgetState createState() {
+    return new _ImprintWidgetState();
+  }
+}
+
+class _ImprintWidgetState extends State<ImprintWidget> {
+  _VersionInfo _versionInfo = new _VersionInfo();
+
+  @override
+  initState() {
+    super.initState();
+    _loadVersionInfo();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +42,8 @@ class Imprint extends StatelessWidget {
               Center(
                 child: _isDarkMode(context) ? Image.asset('assets/hourglass_gradient_lightgrey.png') : Image.asset('assets/hourglass_gradient_black.png'),
               ),
+              Text('\nVersion: ${_versionInfo.version}, Build: ${_versionInfo.buildNumber}\n',
+                  textAlign: TextAlign.left, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
               Text('\n(c) 2021 Achim Hilwers Software\n', textAlign: TextAlign.left, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
               Text('\nAchim Hilwers Software\n', textAlign: TextAlign.left, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               Text('Schützenstraße 17', textAlign: TextAlign.left, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
@@ -34,8 +57,26 @@ class Imprint extends StatelessWidget {
     );
   }
 
+  void _loadVersionInfo() {
+    PackageInfo.fromPlatform().then((packageInfo) => {
+          setState(() {
+            _versionInfo.appName = packageInfo.appName;
+            _versionInfo.packageName = packageInfo.packageName;
+            _versionInfo.version = packageInfo.version;
+            _versionInfo.buildNumber = packageInfo.buildNumber;
+          })
+        });
+  }
+
   bool _isDarkMode(BuildContext context) {
     var brightness = MediaQuery.of(context).platformBrightness;
     return brightness == Brightness.dark;
   }
+}
+
+class _VersionInfo {
+  String appName = '';
+  String packageName = '';
+  String version = '';
+  String buildNumber = '';
 }
