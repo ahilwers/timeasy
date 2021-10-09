@@ -13,6 +13,7 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:timeasy/views/theme.dart';
 
 void main() => runApp(MyApp());
 
@@ -31,8 +32,8 @@ class MyApp extends StatelessWidget {
         Locale('en', ''),
         Locale('de', ''),
       ],
-      theme: FlexColorScheme.light(scheme: FlexScheme.deepBlue).toTheme,
-      darkTheme: FlexColorScheme.dark(scheme: FlexScheme.bahamaBlue).toTheme,
+      theme: FlexColorScheme.light(colors: timeasyTheme.light).toTheme,
+      darkTheme: FlexColorScheme.dark(colors: timeasyTheme.dark).toTheme,
       // Use dark or light theme based on system setting.
       themeMode: ThemeMode.system,
       home: MainPage(title: 'timeasy'),
@@ -129,84 +130,105 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
     return Scaffold(
       appBar: AppBar(
         title: Text('timeasy'),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       drawer: Drawer(
-          child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            child: Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColorDark,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Image.asset("assets/hourglass_lightgrey.png"), // Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                  colors: [
+                    Color(0xff28b0fe),
+                    Color(0xffc80eef),
+                  ],
+                ),
+              ),
             ),
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.weeklyOverview),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
-            },
-          ),
-          ListTile(
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.weeklyOverview),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
+              },
+            ),
+            ListTile(
               title: Text(AppLocalizations.of(context)!.timeEntries),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then((_) {
-                  _updateAppState();
-                });
-              }),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.projects),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then((_) {
-                _loadProjects();
-              });
-            },
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.info),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
-            },
-          ),
-        ],
-      )),
-      body: Center(
-          child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          new RawMaterialButton(
-            onPressed: _toggleState,
-            child: new AnimatedIcon(
-              icon: AnimatedIcons.play_pause,
-              color: Colors.white,
-              size: 128.0,
-              progress: buttonAnimationController,
-            ),
-            shape: new CircleBorder(),
-            elevation: 2.0,
-            fillColor: Theme.of(context).primaryColor,
-            padding: const EdgeInsets.all(15.0),
-          ),
-          _projects == null
-              ? Text(AppLocalizations.of(context)!.loadingProject)
-              : new DropdownButton<String>(
-                  value: _currentProject.id,
-                  items: _projects!.map((Project value) {
-                    return new DropdownMenuItem<String>(
-                      value: value.id,
-                      child: new Text(value.name),
-                    );
-                  }).toList(),
-                  onChanged: (String? value) {
-                    _projectRepository.getProjectById(value!).then((Project? projectFromDb) {
-                      setState(() {
-                        _setCurrentProject(projectFromDb!);
-                      });
-                      _updateAppState();
-                    });
+                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then(
+                  (_) {
+                    _updateAppState();
                   },
-                ),
-        ],
-      )),
+                );
+              },
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.projects),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then(
+                  (_) {
+                    _loadProjects();
+                  },
+                );
+              },
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.info),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
+              },
+            ),
+          ],
+        ),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            new RawMaterialButton(
+              onPressed: _toggleState,
+              child: new AnimatedIcon(
+                icon: AnimatedIcons.play_pause,
+                color: Colors.white,
+                size: 128.0,
+                progress: buttonAnimationController,
+              ),
+              shape: new CircleBorder(),
+              elevation: 2.0,
+              fillColor: Theme.of(context).primaryColor,
+              padding: const EdgeInsets.all(15.0),
+            ),
+            _projects == null
+                ? Text(AppLocalizations.of(context)!.loadingProject)
+                : new DropdownButton<String>(
+                    value: _currentProject.id,
+                    items: _projects!.map(
+                      (Project value) {
+                        return new DropdownMenuItem<String>(
+                          value: value.id,
+                          child: new Text(value.name),
+                        );
+                      },
+                    ).toList(),
+                    onChanged: (String? value) {
+                      _projectRepository.getProjectById(value!).then(
+                        (Project? projectFromDb) {
+                          setState(
+                            () {
+                              _setCurrentProject(projectFromDb!);
+                            },
+                          );
+                          _updateAppState();
+                        },
+                      );
+                    },
+                  ),
+          ],
+        ),
+      ),
     );
   }
 

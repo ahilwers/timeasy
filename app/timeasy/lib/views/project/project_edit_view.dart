@@ -43,11 +43,15 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
   void initState() {
     super.initState();
     if (_projectId != null) {
-      _projectRepository.getProjectById(_projectId!).then((Project? projectFromDb) {
-        setState(() {
-          _project = projectFromDb!;
-        });
-      });
+      _projectRepository.getProjectById(_projectId!).then(
+        (Project? projectFromDb) {
+          setState(
+            () {
+              _project = projectFromDb!;
+            },
+          );
+        },
+      );
     } else {
       _project = new Project();
     }
@@ -63,53 +67,55 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
       );
     } else {
       return Scaffold(
-          appBar: AppBar(
-            title: Text(_getTitle()),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  final form = _formEditProjectKey.currentState;
-                  if (form!.validate()) {
-                    _saveProject(form);
-                    Navigator.pop(context);
-                  }
-                },
-                child: Text(
-                  AppLocalizations.of(context)!.save,
-                  style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
-                ),
-              ),
-              _projectId != null
-                  ? TextButton(
-                      onPressed: () {
-                        deleteProjectWithRequest(context);
-                      },
-                      child: Text(
-                        AppLocalizations.of(context)!.delete,
-                        style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
-                      ),
-                    )
-                  : Container(),
-            ],
-          ),
-          body: Container(
-            margin: EdgeInsets.all(16.0),
-            child: Form(
-              key: _formEditProjectKey,
-              child: TextFormField(
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.projectName,
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.text,
-                initialValue: _project!.name,
-                validator: (value) {
-                  return _validateProjectName(value!);
-                },
-                onSaved: (value) => _project!.name = value!,
+        appBar: AppBar(
+          title: Text(_getTitle()),
+          backgroundColor: Theme.of(context).primaryColor,
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                final form = _formEditProjectKey.currentState;
+                if (form!.validate()) {
+                  _saveProject(form);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text(
+                AppLocalizations.of(context)!.save,
+                style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
               ),
             ),
-          ));
+            _projectId != null
+                ? TextButton(
+                    onPressed: () {
+                      deleteProjectWithRequest(context);
+                    },
+                    child: Text(
+                      AppLocalizations.of(context)!.delete,
+                      style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
+                    ),
+                  )
+                : Container(),
+          ],
+        ),
+        body: Container(
+          margin: EdgeInsets.all(16.0),
+          child: Form(
+            key: _formEditProjectKey,
+            child: TextFormField(
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.projectName,
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.text,
+              initialValue: _project!.name,
+              validator: (value) {
+                return _validateProjectName(value!);
+              },
+              onSaved: (value) => _project!.name = value!,
+            ),
+          ),
+        ),
+      );
     }
   }
 

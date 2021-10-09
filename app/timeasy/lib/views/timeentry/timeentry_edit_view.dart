@@ -72,6 +72,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       return Scaffold(
           appBar: AppBar(
             title: Text(_getTitle()),
+            backgroundColor: Theme.of(context).primaryColor,
             actions: <Widget>[
               TextButton(
                 onPressed: () {

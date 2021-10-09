@@ -53,28 +53,31 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(_getTitle()),
-        ),
-        body: PageView.builder(
-            controller: _pageController,
-            itemBuilder: (context, position) {
-              if (position > _lastPosition) {
-                _calendarWeek++;
-                if (_calendarWeek > _dateTools.getNumberOfWeeks(_year)) {
-                  _calendarWeek = 1;
-                  _year++;
-                }
-              } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
-                _calendarWeek--;
-                if (_calendarWeek < 1) {
-                  _year--;
-                  _calendarWeek = _dateTools.getNumberOfWeeks(_year);
-                }
-              }
-              _lastPosition = position;
-              return new WeeklyStatisticsWidget(_project, _calendarWeek, _year);
-            }));
+      appBar: AppBar(
+        title: Text(_getTitle()),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemBuilder: (context, position) {
+          if (position > _lastPosition) {
+            _calendarWeek++;
+            if (_calendarWeek > _dateTools.getNumberOfWeeks(_year)) {
+              _calendarWeek = 1;
+              _year++;
+            }
+          } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
+            _calendarWeek--;
+            if (_calendarWeek < 1) {
+              _year--;
+              _calendarWeek = _dateTools.getNumberOfWeeks(_year);
+            }
+          }
+          _lastPosition = position;
+          return new WeeklyStatisticsWidget(_project, _calendarWeek, _year);
+        },
+      ),
+    );
   }
 
   String _getTitle() {
