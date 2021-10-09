@@ -190,29 +190,16 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
           children: <Widget>[
             new RawMaterialButton(
               onPressed: _toggleState,
-              child: Container(
-                child: new AnimatedIcon(
-                  icon: AnimatedIcons.play_pause,
-                  color: Colors.white,
-                  size: 148.0,
-                  progress: buttonAnimationController,
-                ),
-                decoration: ShapeDecoration(
-                  shape: new CircleBorder(),
-                  gradient: LinearGradient(
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft,
-                    colors: [
-                      Color(0xff28b0fe),
-                      Color(0xffc80eef),
-                    ],
-                  ),
-                ),
+              child: new AnimatedIcon(
+                icon: AnimatedIcons.play_pause,
+                color: Colors.white,
+                size: 128.0,
+                progress: buttonAnimationController,
               ),
               shape: new CircleBorder(),
               elevation: 2.0,
-              //fillColor: Theme.of(context).primaryColor,
-              //padding: const EdgeInsets.all(15.0),
+              fillColor: Theme.of(context).primaryColor,
+              padding: const EdgeInsets.all(15.0),
             ),
             _projects == null
                 ? Text(AppLocalizations.of(context)!.loadingProject)
