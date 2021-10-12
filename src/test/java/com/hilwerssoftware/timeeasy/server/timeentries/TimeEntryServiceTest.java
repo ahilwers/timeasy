@@ -1,6 +1,7 @@
 package com.hilwerssoftware.timeeasy.server.timeentries;
 
 import com.hilwerssoftware.timeeasy.server.exceptions.OwnerMissingException;
+import com.hilwerssoftware.timeeasy.server.exceptions.OwnerNotInDatabaseException;
 import com.hilwerssoftware.timeeasy.server.models.Account;
 import com.hilwerssoftware.timeeasy.server.models.TimeEntry;
 import com.hilwerssoftware.timeeasy.server.repositories.AccountRepository;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.util.Assert;
 
 import java.sql.Time;
@@ -27,7 +29,7 @@ public class TimeEntryServiceTest {
     private AccountRepository accountRepository;
 
     @Test
-    public void canTimeEntryBeAdded() throws OwnerMissingException {
+    public void canTimeEntryBeAdded() throws OwnerMissingException, OwnerNotInDatabaseException {
         Account account = new Account();
         accountRepository.insert(account);
         TimeEntry timeEntry = new TimeEntry();
@@ -69,6 +71,15 @@ public class TimeEntryServiceTest {
         Assertions.assertThrows(OwnerMissingException.class, () -> {
             var timeEntry = new TimeEntry();
             timeEntryService.addTimeEntry(timeEntry);
+        });
+    }
+
+    @Test
+    public void addingTimeEntryWithNonExistingOwnerFails() {
+        Assertions.assertThrows(OwnerNotInDatabaseException.class, () -> {
+           var timeEntry = new TimeEntry();
+           timeEntry.setOwner(new Account());
+           timeEntryService.addTimeEntry(timeEntry);
         });
     }
 }
