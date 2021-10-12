@@ -1,10 +1,12 @@
 package com.hilwerssoftware.timeeasy.server.timeentries;
 
+import com.hilwerssoftware.timeeasy.server.exceptions.OwnerMissingException;
 import com.hilwerssoftware.timeeasy.server.models.Account;
 import com.hilwerssoftware.timeeasy.server.models.TimeEntry;
 import com.hilwerssoftware.timeeasy.server.repositories.AccountRepository;
 import com.hilwerssoftware.timeeasy.server.repositories.TimeEntryRepository;
 import com.hilwerssoftware.timeeasy.server.services.TimeEntryService;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,8 +27,11 @@ public class TimeEntryServiceTest {
     private AccountRepository accountRepository;
 
     @Test
-    public void canTimeEntryBeAdded() {
+    public void canTimeEntryBeAdded() throws OwnerMissingException {
+        Account account = new Account();
+        accountRepository.insert(account);
         TimeEntry timeEntry = new TimeEntry();
+        timeEntry.setOwner(account);
         timeEntryService.addTimeEntry(timeEntry);
         Assert.hasText(timeEntry.getId(), "The time entry needs to have an id.");
         var addedTimeEntry = timeEntryRepository.findById(timeEntry.getId());
@@ -57,5 +62,13 @@ public class TimeEntryServiceTest {
         Assert.notEmpty(timeEntries, "The time entries of account 2 should not be emppty.");
         Assert.state(timeEntries.size()==1, "The amount of time entries for account 2 should be 1");
         Assert.state(timeEntries.get(0).getOwner().getId().equals(account2.getId()), "The time entry should belong to account 2.");
+    }
+
+    @Test
+    public void addingTimeEntryWithoutOwnerFails() {
+        Assertions.assertThrows(OwnerMissingException.class, () -> {
+            var timeEntry = new TimeEntry();
+            timeEntryService.addTimeEntry(timeEntry);
+        });
     }
 }

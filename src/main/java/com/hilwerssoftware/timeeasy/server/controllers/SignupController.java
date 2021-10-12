@@ -1,7 +1,7 @@
 package com.hilwerssoftware.timeeasy.server.controllers;
 
 import com.hilwerssoftware.timeeasy.server.models.Account;
-import com.hilwerssoftware.timeeasy.server.repositories.AccountRepository;
+import com.hilwerssoftware.timeeasy.server.services.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.*;
 public class SignupController {
 
     @Autowired
-    private AccountRepository accountRepository;
+    private AccountService accountService;
 
     @PostMapping
     public String signup(@RequestBody Account account) {
-        accountRepository.insert(account);
+        accountService.addAccount(account);
         return "OK";
     }
 

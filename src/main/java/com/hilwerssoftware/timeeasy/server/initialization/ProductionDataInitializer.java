@@ -1,7 +1,7 @@
 package com.hilwerssoftware.timeeasy.server.initialization;
 
 import com.hilwerssoftware.timeeasy.server.models.Account;
-import com.hilwerssoftware.timeeasy.server.repositories.AccountRepository;
+import com.hilwerssoftware.timeeasy.server.services.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -10,9 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class ProductionDataInitializer implements ApplicationListener<ContextRefreshedEvent> {
 
     @Autowired
-    private AccountRepository accountRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private AccountService accountService;
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
@@ -20,13 +18,13 @@ public class ProductionDataInitializer implements ApplicationListener<ContextRef
     }
 
     private void initializeRootAccount() {
-        var rootUser = accountRepository.findByUsername("root");
-        if (rootUser.isEmpty()) {
+
+        if (!accountService.accountExists("root")) {
             Account rootAccount = new Account();
             rootAccount.setUsername("root");
-            rootAccount.setPassword(passwordEncoder.encode("root"));
+            rootAccount.setPassword("root");
             rootAccount.setUserRole(Account.UserRole.ADMIN);
-            accountRepository.insert(rootAccount);
+            accountService.addAccount(rootAccount);
         }
     }
 }

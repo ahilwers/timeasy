@@ -1,6 +1,7 @@
 package com.hilwerssoftware.timeeasy.server.models;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import java.time.Instant;
 
@@ -13,6 +14,7 @@ public class TimeEntry {
     private String projectId;
     private Instant created = Instant.now();
     private Instant updated = Instant.now();
+    @DBRef
     private Account owner;
 
 
