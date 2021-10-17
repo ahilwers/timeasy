@@ -30,3 +30,5 @@ services:
         JGROUPS_DISCOVERY_PROTOCOL: JDBC_PING
       depends_on:
         - mariadb
+      ports:
+        - 8180:8080
