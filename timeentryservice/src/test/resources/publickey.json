@@ -1,0 +1,18 @@
+{
+  "name": "public_keys_stub",
+  "request": {
+    "method": "GET",
+    "url": "/v1/keys"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json;charset=UTF-8"
+    },
+    "jsonBody": {
+      "keys": [
+        $keys
+      ]
+    }
+  }
+}
