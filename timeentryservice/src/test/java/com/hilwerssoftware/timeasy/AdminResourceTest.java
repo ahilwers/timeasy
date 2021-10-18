@@ -1,25 +1,30 @@
 package com.hilwerssoftware.timeasy;
 
-import com.hilwerssoftware.timeasy.mocks.MockAuthorizationServer;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
 
 @QuarkusTest
-@QuarkusTestResource(MockAuthorizationServer.class)
-public class AdminResourceTest extends BaseResourceTest {
+public class AdminResourceTest {
 
-    private static final String BEARER_TOKEN = "337aab0f-b547-489b-9dbd-a54dc7bdf20d";
+    @InjectMock
+    SecurityIdentity securityIdentity;
+
+    @BeforeEach
+    public void setup() {
+        Mockito.when(securityIdentity.hasRole("user")).thenReturn(true);
+    }
 
     @Test
     public void TestAdminEndpoint() {
         given()
                 .contentType("application/json")
-                .auth()
-                .oauth2(generateJWT("user"))
                 .get("/api/admin")
                 .then()
                 .statusCode(200)
