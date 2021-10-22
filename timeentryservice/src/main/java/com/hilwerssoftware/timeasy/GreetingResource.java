@@ -24,10 +24,10 @@ public class GreetingResource {
     @Transactional
     public String hello() {
         TimeEntry timeEntry = new TimeEntry();
-        timeEntry.name = "Testname";
-        timeEntry.startTime = Instant.now();
+        timeEntry.setDescription("Testname");
+        timeEntry.setStartTime(Instant.now());
         timeEntryRepository.persist(timeEntry);
-        return String.format("Timeentry created - Id: %s", timeEntry.id);
+        return String.format("Timeentry created - Id: %s", timeEntry.getId());
     }
 
 
@@ -37,7 +37,7 @@ public class GreetingResource {
     @Transactional
     public String update(@PathParam String id) {
         TimeEntry timeEntry = timeEntryRepository.findById(UUID.fromString(id));
-        timeEntry.name = "Testname2";
+        timeEntry.setDescription("Testname2");;
         return String.format("Enitty %s updated", id);
     }
 }
