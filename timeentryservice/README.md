@@ -1,4 +1,4 @@
-# server Project
+# Timeasy Server
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
@@ -54,3 +54,11 @@ If you want to learn more about building native executables, please consult http
 Easily start your RESTful Web Services
 
 [Related guide section...](https://quarkus.io/guides/getting-started#the-jax-rs-resources)
+
+## Testing
+
+This project uses testcontainers (https://www.testcontainers.org/) as described in the tutorial https://medium.com/swlh/quarkus-testcontainers-and-storages-10534b3c79dc. 
+
+Due to a problem that Quarkus sets the database driver at compile time instead of runtime you have to define a environment variable before executing any tests:
+
+_TEST_QUARKUS_DATASOURCE_JDBC_DRIVER=org.testcontainers.jdbc.ContainerDatabaseDriver

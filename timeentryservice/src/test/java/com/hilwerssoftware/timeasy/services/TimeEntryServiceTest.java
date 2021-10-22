@@ -8,10 +8,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.inject.Inject;
 
 @QuarkusTest
+@Testcontainers
 public class TimeEntryServiceTest {
 
     @InjectMock
