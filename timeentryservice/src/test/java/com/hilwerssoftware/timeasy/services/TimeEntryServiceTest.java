@@ -15,7 +15,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.sql.Time;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
