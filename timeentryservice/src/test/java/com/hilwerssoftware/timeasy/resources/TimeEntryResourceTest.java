@@ -21,6 +21,8 @@ import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -81,4 +83,50 @@ public class TimeEntryResourceTest {
                 .statusCode(HttpStatus.SC_CONFLICT);
     }
 
+    @Test
+    public void canTimEntriesBeFetchedViaService() throws EntityExistsException {
+        TimeEntry entryOfUser1 = new TimeEntry();
+        entryOfUser1.setUserId("user1");
+        timeEntryService.add(entryOfUser1);
+        TimeEntry entryOfUser2 = new TimeEntry();
+        entryOfUser2.setUserId("user2");
+        timeEntryService.add(entryOfUser2);
+
+        given()
+                .contentType("application/json")
+                .get("/api/v1/timeentries")
+                .then()
+                .statusCode(200)
+                .body(
+                    "timeEntries.size()", is(1),
+                    "timeEntries.id", hasItems(entryOfUser1.getId().toString())
+                );
+    }
+
+    @Test
+    public void canTimEntriesOfProjectBeFetchedViaService() throws EntityExistsException {
+        TimeEntry entryOfUser1 = new TimeEntry();
+        entryOfUser1.setUserId("user1");
+        entryOfUser1.setProjectId("project1");
+        timeEntryService.add(entryOfUser1);
+        TimeEntry entryOfUser2 = new TimeEntry();
+        entryOfUser2.setUserId("user2");
+        entryOfUser2.setProjectId("project1");
+        timeEntryService.add(entryOfUser2);
+        TimeEntry secondEntryOfUser1 = new TimeEntry();
+        secondEntryOfUser1.setUserId("user1");
+        secondEntryOfUser1.setProjectId("project2");
+        timeEntryService.add(secondEntryOfUser1);
+
+        given()
+                .contentType("application/json")
+                .queryParam("project", "project1")
+                .get("/api/v1/timeentries")
+                .then()
+                .statusCode(200)
+                .body(
+                        "timeEntries.size()", is(1),
+                        "timeEntries.id", hasItems(entryOfUser1.getId().toString())
+                );
+    }
 }

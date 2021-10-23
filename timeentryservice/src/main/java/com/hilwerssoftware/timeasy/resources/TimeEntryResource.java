@@ -4,14 +4,15 @@ import com.hilwerssoftware.timeasy.models.TimeEntry;
 import com.hilwerssoftware.timeasy.services.TimeEntryService;
 import com.hilwerssoftware.timeasy.services.UserDataService;
 import com.hilwerssoftware.timeasy.tools.EntityExistsException;
+import io.quarkus.runtime.util.StringUtil;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
+import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
 import java.util.UUID;
 
 @Path("/api/v1/timeentries")
@@ -32,8 +33,12 @@ public class TimeEntryResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<TimeEntry> getTimeEntries() {
-        return timeEntryService.listAll();
+    public TimeEntryList getTimeEntries(@QueryParam String project) {
+        String userId = userDataService.getUserId(token);
+        if (project!=null)
+            return new TimeEntryList(timeEntryService.listAllOfUserAndProject(userId, project));
+        else
+            return new TimeEntryList(timeEntryService.listAllOfUser(userId));
     }
 
     @GET
