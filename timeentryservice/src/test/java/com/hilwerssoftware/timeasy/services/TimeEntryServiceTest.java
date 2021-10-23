@@ -15,7 +15,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.sql.Time;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @QuarkusTest
@@ -105,6 +108,132 @@ public class TimeEntryServiceTest {
         TimeEntry timeEntry = new TimeEntry();
         Assertions.assertThrows(EntityNotFoundException.class, () -> {
             timeEntryService.update(timeEntry);
+        });
+    }
+
+    @Test
+    @Transactional
+    public void canListOfAllTimeEntriesBeFetched() {
+        createTimeEntries(10);
+        List<TimeEntry> timeEntries = timeEntryService.listAll();
+        Assertions.assertEquals(10, timeEntries.size());
+        timeEntries.sort(new Comparator<TimeEntry>() {
+            @Override
+            public int compare(TimeEntry timeEntry1, TimeEntry timeEntry2) {
+                return timeEntry1.getDescription().compareTo(timeEntry2.getDescription());
+            }
+        });
+        for (int i=0; i<10; i++) {
+            TimeEntry timeEntry = timeEntries.get(i);
+            Assertions.assertEquals(String.format("Timeentry %s", i), timeEntry.getDescription());
+        }
+    }
+
+    @Test
+    @Transactional
+    public void canSpecificTimeEntryBeFetched() {
+        List<TimeEntry> timeEntries = createTimeEntries(3);
+        TimeEntry timeEntryFromDb = timeEntryService.findById(timeEntries.get(1).getId());
+        Assertions.assertEquals(timeEntries.get(1).getId(), timeEntryFromDb.getId());
+        Assertions.assertEquals("Timeentry 1", timeEntryFromDb.getDescription());
+    }
+
+
+    private List<TimeEntry> createTimeEntries(int count) {
+        List<TimeEntry> timeEntries = new ArrayList<>();
+        for (int i=0; i<count; i++) {
+            TimeEntry timeEntry = new TimeEntry();
+            timeEntry.setDescription(String.format("Timeentry %s", i));
+            timeEntry.setUserId(String.format("user %s", i));
+            timeEntry.setProjectId(String.format("project %s", i));
+            timeEntryRepository.persist(timeEntry);
+            timeEntries.add(timeEntry);
+        }
+        return timeEntries;
+    }
+
+    @Test
+    @Transactional
+    public void canTimeEntriesOfSpecificUserBeFetched() {
+        List<TimeEntry> timeEntries = createTimeEntries(3);
+        List<TimeEntry> timeEntriesOfUser = timeEntryService.listAllOfUser("user 1");
+        Assertions.assertEquals(1, timeEntriesOfUser.size());
+        Assertions.assertEquals(timeEntries.get(1).getId(), timeEntriesOfUser.get(0).getId());
+        Assertions.assertEquals("user 1", timeEntriesOfUser.get(0).getUserId());
+    }
+
+    @Test
+    @Transactional
+    public void canTimeEntriesOfSpecificProjectBeFetched() {
+        List<TimeEntry> timeEntries = createTimeEntries(3);
+        List<TimeEntry> timeEntriesOfUser = timeEntryService.listAllOfProject("project 1");
+        Assertions.assertEquals(1, timeEntriesOfUser.size());
+        Assertions.assertEquals(timeEntries.get(1).getId(), timeEntriesOfUser.get(0).getId());
+        Assertions.assertEquals("project 1", timeEntriesOfUser.get(0).getProjectId());
+    }
+
+    @Test
+    public void canTimeEntriesOfUserAndProjectBeFetched() throws EntityExistsException {
+        TimeEntry timeEntry1 = new TimeEntry();
+        timeEntry1.setUserId("user1");
+        timeEntry1.setProjectId("project1");
+        timeEntryService.add(timeEntry1);
+        TimeEntry timeEntry2 = new TimeEntry();
+        timeEntry2.setUserId("user1");
+        timeEntry2.setProjectId("project2");
+        timeEntryService.add(timeEntry2);
+        TimeEntry timeEntry3 = new TimeEntry();
+        timeEntry3.setUserId("user2");
+        timeEntry3.setProjectId("project2");
+        timeEntryService.add(timeEntry3);
+        List<TimeEntry> timeEntries = timeEntryService.listAllOfUserAndProject("user1", "project2");
+        Assertions.assertEquals(1, timeEntries.size());
+        Assertions.assertEquals(timeEntry2.getId(), timeEntries.get(0).getId());
+        Assertions.assertEquals("user1", timeEntries.get(0).getUserId());
+        Assertions.assertEquals("project2", timeEntries.get(0).getProjectId());
+    }
+
+    @Test
+    public void canTimeEntrybeDeleted() throws EntityExistsException, EntityNotFoundException {
+        TimeEntry timeEntry1 = new TimeEntry();
+        timeEntry1.setUserId("user1");
+        timeEntry1.setProjectId("project1");
+        timeEntryService.add(timeEntry1);
+        TimeEntry timeEntry2 = new TimeEntry();
+        timeEntry2.setUserId("user1");
+        timeEntry2.setProjectId("project2");
+        timeEntryService.add(timeEntry2);
+        TimeEntry timeEntry3 = new TimeEntry();
+        timeEntry3.setUserId("user2");
+        timeEntry3.setProjectId("project2");
+        timeEntryService.add(timeEntry3);
+
+        Assertions.assertEquals(3, timeEntryService.listAll().size());
+
+        timeEntryService.delete(timeEntry2);
+        List<TimeEntry> allTimeEntries = timeEntryService.listAll();
+        Assertions.assertEquals(2, allTimeEntries.size());
+        for (TimeEntry timeEntry: allTimeEntries) {
+            Assertions.assertNotEquals(timeEntry2.getId(), timeEntry.getId());
+        }
+
+        List<TimeEntry> timeEntriesOfUser = timeEntryService.listAllOfUser("user1");
+        Assertions.assertEquals(1, timeEntriesOfUser.size());
+        Assertions.assertEquals(timeEntry1.getId(), timeEntriesOfUser.get(0).getId());
+
+        List<TimeEntry> timeEntriesOfProject = timeEntryService.listAllOfProject("project2");
+        Assertions.assertEquals(1, timeEntriesOfProject.size());
+        Assertions.assertEquals(timeEntry3.getId(), timeEntriesOfProject.get(0).getId());
+
+        List<TimeEntry> timeEntriesOfUserAndProject = timeEntryService.listAllOfUserAndProject("user1", "project2");
+        Assertions.assertEquals(0, timeEntriesOfUserAndProject.size());
+    }
+
+    @Test
+    public void deletingATimeEntryFailsIfItDoesNotExist() {
+        TimeEntry timeEntry = new TimeEntry();
+        Assertions.assertThrows(EntityNotFoundException.class, () -> {
+           timeEntryService.delete(timeEntry);
         });
     }
 

@@ -20,6 +20,7 @@ public class TimeEntry {
     private String userId;
     private Instant createdTimeStamp = Instant.now();
     private Instant updatedTimeStamp = Instant.now();
+    private boolean deleted;
 
     public TimeEntry() {
         id = UUID.randomUUID();
@@ -87,5 +88,13 @@ public class TimeEntry {
 
     public void setUpdatedTimeStamp(Instant updatedTimeStamp) {
         this.updatedTimeStamp = updatedTimeStamp;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

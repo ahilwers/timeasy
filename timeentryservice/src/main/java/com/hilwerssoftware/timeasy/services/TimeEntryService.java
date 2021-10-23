@@ -9,6 +9,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -30,6 +31,10 @@ public class TimeEntryService {
 
     @Transactional
     public void update(TimeEntry timeEntry) throws EntityNotFoundException {
+        doUpdate(timeEntry);
+    }
+
+    private void doUpdate(TimeEntry timeEntry) throws EntityNotFoundException {
         TimeEntry existingTimeentry = timeEntryRepository.findById(timeEntry.getId(), LockModeType.PESSIMISTIC_WRITE);
         if (existingTimeentry==null) {
             throw new EntityNotFoundException(String.format("A time entry with the id %s does not exist.", timeEntry.getId().toString()));
@@ -40,6 +45,7 @@ public class TimeEntryService {
         existingTimeentry.setEndTime(timeEntry.getEndTime());
         existingTimeentry.setProjectId(timeEntry.getProjectId());
         existingTimeentry.setUserId(timeEntry.getUserId());
+        existingTimeentry.setDeleted(timeEntry.isDeleted());
         existingTimeentry.setCreatedTimeStamp(timeEntry.getCreatedTimeStamp());
         existingTimeentry.setUpdatedTimeStamp(Instant.now());
     }
@@ -50,5 +56,29 @@ public class TimeEntryService {
     }
 
 
+    @Transactional
+    public List<TimeEntry> listAll() {
+        return timeEntryRepository.list("deleted", false);
+    }
 
+    @Transactional
+    public List<TimeEntry> listAllOfUser(String userId) {
+        return timeEntryRepository.list("userid=?1 and deleted=?2", userId, false);
+    }
+
+    @Transactional
+    public List<TimeEntry> listAllOfProject(String projectId) {
+        return timeEntryRepository.list("projectid=?1 and deleted=?2", projectId, false);
+    }
+
+    @Transactional
+    public List<TimeEntry> listAllOfUserAndProject(String userId, String projectId) {
+        return timeEntryRepository.list("userid=?1 and projectid=?2 and deleted=?3", userId, projectId, false);
+    }
+
+    @Transactional
+    public void delete(TimeEntry timeEntry) throws EntityNotFoundException {
+        timeEntry.setDeleted(true);
+        doUpdate(timeEntry);
+    }
 }
