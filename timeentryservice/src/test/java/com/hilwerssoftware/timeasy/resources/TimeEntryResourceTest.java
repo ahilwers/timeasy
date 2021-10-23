@@ -4,10 +4,12 @@ import com.hilwerssoftware.timeasy.models.TimeEntry;
 import com.hilwerssoftware.timeasy.repositories.TimeEntryRepository;
 import com.hilwerssoftware.timeasy.services.TimeEntryService;
 import com.hilwerssoftware.timeasy.services.UserDataService;
+import com.hilwerssoftware.timeasy.tools.EntityExistsException;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.vertx.core.json.JsonObject;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -54,13 +56,29 @@ public class TimeEntryResourceTest {
                 .post("/api/v1/timeentries")
                 .then()
                 .assertThat()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
         List<TimeEntry> timeEntries = timeEntryService.listAll();
         assertEquals(1, timeEntries.size());
         TimeEntry timeEntry = timeEntries.get(0);
         assertEquals("Timeentry", timeEntry.getDescription());
         // the time entry should belong to the correct user:
         assertEquals("user1", timeEntry.getUserId());
+    }
+
+    @Test
+    public void addingATimeEntryViaServiceFailsIfTimeEntryExists() throws EntityExistsException {
+        TimeEntry timeEntry = new TimeEntry();
+        timeEntryService.add(timeEntry);
+        JsonObject jsonObject = new JsonObject()
+                .put("id", timeEntry.getId());
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .post("/api/v1/timeentries")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_CONFLICT);
     }
 
 }
