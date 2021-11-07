@@ -1,4 +1,4 @@
-package com.hilwerssoftware.timeasy.services;
+package org.timeasy.services;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 

@@ -1,4 +1,4 @@
-package com.hilwerssoftware.timeasy;
+package org.timeasy;
 
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.junit.QuarkusTest;

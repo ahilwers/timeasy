@@ -1,4 +1,4 @@
-package com.hilwerssoftware.timeasy;
+package org.timeasy;
 
 import io.quarkus.security.identity.SecurityIdentity;
 import org.jboss.resteasy.annotations.cache.NoCache;

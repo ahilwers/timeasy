@@ -1,6 +1,6 @@
-package com.hilwerssoftware.timeasy.resources.exceptions;
+package org.timeasy.resources.exceptions;
 
-import com.hilwerssoftware.timeasy.tools.EntityExistsException;
+import org.timeasy.tools.EntityExistsException;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;

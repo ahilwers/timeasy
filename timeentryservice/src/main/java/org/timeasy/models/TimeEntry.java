@@ -1,4 +1,4 @@
-package com.hilwerssoftware.timeasy.models;
+package org.timeasy.models;
 
 import org.hibernate.annotations.Type;
 

@@ -1,6 +1,6 @@
-package com.hilwerssoftware.timeasy.resources;
+package org.timeasy.resources;
 
-import com.hilwerssoftware.timeasy.models.TimeEntry;
+import org.timeasy.models.TimeEntry;
 
 import java.util.List;
 

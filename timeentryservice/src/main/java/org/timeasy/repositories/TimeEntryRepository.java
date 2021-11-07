@@ -1,6 +1,6 @@
-package com.hilwerssoftware.timeasy.repositories;
+package org.timeasy.repositories;
 
-import com.hilwerssoftware.timeasy.models.TimeEntry;
+import org.timeasy.models.TimeEntry;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 
 import javax.enterprise.context.ApplicationScoped;

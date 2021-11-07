@@ -1,9 +1,9 @@
-package com.hilwerssoftware.timeasy.services;
+package org.timeasy.services;
 
-import com.hilwerssoftware.timeasy.models.TimeEntry;
-import com.hilwerssoftware.timeasy.repositories.TimeEntryRepository;
-import com.hilwerssoftware.timeasy.tools.EntityExistsException;
-import com.hilwerssoftware.timeasy.tools.EntityNotFoundException;
+import org.timeasy.models.TimeEntry;
+import org.timeasy.repositories.TimeEntryRepository;
+import org.timeasy.tools.EntityExistsException;
+import org.timeasy.tools.EntityNotFoundException;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;

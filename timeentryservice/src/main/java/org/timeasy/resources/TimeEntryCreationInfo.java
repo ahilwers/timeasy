@@ -1,4 +1,4 @@
-package com.hilwerssoftware.timeasy.resources;
+package org.timeasy.resources;
 
 public class TimeEntryCreationInfo {
 

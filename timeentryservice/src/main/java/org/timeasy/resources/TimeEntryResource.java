@@ -1,10 +1,9 @@
-package com.hilwerssoftware.timeasy.resources;
+package org.timeasy.resources;
 
-import com.hilwerssoftware.timeasy.models.TimeEntry;
-import com.hilwerssoftware.timeasy.services.TimeEntryService;
-import com.hilwerssoftware.timeasy.services.UserDataService;
-import com.hilwerssoftware.timeasy.tools.EntityExistsException;
-import io.quarkus.runtime.util.StringUtil;
+import org.timeasy.models.TimeEntry;
+import org.timeasy.services.TimeEntryService;
+import org.timeasy.services.UserDataService;
+import org.timeasy.tools.EntityExistsException;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import org.eclipse.microprofile.jwt.JsonWebToken;
