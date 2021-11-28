@@ -1,6 +1,18 @@
 # timeasy
 
-A simple time tracker application.
+A time tracker application that ist build for simplicity.
+
+<p>
+    <a href="https://play.google.com/store/apps/details?id=com.hilwerssoftware.timeasy">
+        <img alt="Get it on Google Play"
+            height="80"
+            src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" />
+    </a> 
+</p>
+
+![](assets-readme/screenshot_01.png)
+![](assets-readme/screenshot_02.png)
+![](assets-readme/screenshot_03.png)
 
 ## Getting Started
 
