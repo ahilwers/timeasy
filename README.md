@@ -8,7 +8,7 @@ A simple time tracker application.
 
 In order to compile for Android the app needs to be signed with an appropriate key. To create a keystore and reference it please refer to the flutter documentation: https://docs.flutter.dev/deployment/android
 
-After generating the keystore create a file named "key.properties" in the folder "app/timeasy/android":
+After generating the keystore create a file named "key.properties" in the "android"-folder:
 
     storePassword=<password for your keystore>
     keyPassword=<password for your key>
