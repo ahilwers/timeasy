@@ -14,7 +14,7 @@ public class AdminResource {
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @RolesAllowed("user")
+    @RolesAllowed("admin")
     public String admin() {
         return "granted";
     }
