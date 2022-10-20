@@ -18,4 +18,6 @@ To send a HTTP-request to the service with the token you can do it like so:
 
     http localhost:8080/api/admin "Authorization:Bearer $TOKEN"
 
- 
+To send a POST-Request you can just add the file to POST via pipe:
+
+    http localhost:8080/api/v1/timeentries "Authorization:Bearer $TOKEN" < timeentry.json

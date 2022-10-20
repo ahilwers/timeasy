@@ -18,7 +18,7 @@ echo $username
 echo $password
 
 export TOKEN=`http --form \
-    --auth timeasy:356038e2-6469-4c9c-b861-8ed5f0cda283 \
+    --auth timeasy:d5636c60-3486-4311-81ba-cf8c119b66bf \
     http://localhost:8180/auth/realms/timeasy/protocol/openid-connect/token \
     'Content-Type:application/x-www-form-urlencoded' \
     username=$username \
@@ -26,4 +26,4 @@ export TOKEN=`http --form \
     grant_type=password | jq --raw-output '.access_token'`
 
 echo $TOKEN
-fish
+bash
