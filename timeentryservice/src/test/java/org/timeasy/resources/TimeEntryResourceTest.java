@@ -1,5 +1,6 @@
 package org.timeasy.resources;
 
+import io.quarkus.test.security.TestSecurity;
 import org.timeasy.models.TimeEntry;
 import org.timeasy.repositories.TimeEntryRepository;
 import org.timeasy.services.TimeEntryService;
@@ -47,6 +48,7 @@ public class TimeEntryResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "user1", roles = {"user"})
     public void canTimeEntryBeAddedViaService() {
         JsonObject jsonObject = new JsonObject()
                 .put("description", "Timeentry")
@@ -68,6 +70,7 @@ public class TimeEntryResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "user1", roles = {"user"})
     public void addingATimeEntryViaServiceFailsIfTimeEntryExists() throws EntityExistsException {
         TimeEntry timeEntry = new TimeEntry();
         timeEntryService.add(timeEntry);
@@ -84,6 +87,7 @@ public class TimeEntryResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "user1", roles = {"user"})
     public void canTimEntriesBeFetchedViaService() throws EntityExistsException {
         TimeEntry entryOfUser1 = new TimeEntry();
         entryOfUser1.setUserId("user1");
@@ -104,6 +108,7 @@ public class TimeEntryResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "user1", roles = {"user"})
     public void canTimEntriesOfProjectBeFetchedViaService() throws EntityExistsException {
         TimeEntry entryOfUser1 = new TimeEntry();
         entryOfUser1.setUserId("user1");
