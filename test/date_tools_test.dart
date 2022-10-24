@@ -32,6 +32,12 @@ void main() {
     expect(firstDayOfFirstWeek.year, 2005);
     expect(firstDayOfFirstWeek.month, 01);
     expect(firstDayOfFirstWeek.day, 03);
+
+    firstDayOfFirstWeek = dateTools.getFirstDayOfFirstWeek(2022);
+    expect(firstDayOfFirstWeek.year, 2022);
+    expect(firstDayOfFirstWeek.month, 01);
+    expect(firstDayOfFirstWeek.day, 03);
+
   });
 
   test('First day of week is calculated correctly', () {
