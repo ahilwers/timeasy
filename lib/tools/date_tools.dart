@@ -27,14 +27,9 @@ class DateTools {
   }
 
   DateTime getFirstDayOfFirstWeek(int year) {
-    var firstDay = new DateTime(year, 1, 1);
-    final numberOfWeeksInLastYear = getNumberOfWeeks(year - 1);
-    if (numberOfWeeksInLastYear == 53) {
-      final december28 = new DateTime(year - 1, 12, 28);
-      // As devember 28th is always in the last wekk of the last year, a day one week later must be in the first week of the next year:
-      firstDay = december28.add(new Duration(days: 7));
-    }
-
+    final december28 = new DateTime(year - 1, 12, 28);
+    // As december 28th is always in the last week of the last year, a day one week later must be in the first week of the next year:
+    var firstDay = december28.add(new Duration(days: 7));
     // If this day is not a monday, the first day of the week must be in the last year:
     if (firstDay.weekday != 1) {
       firstDay = firstDay.subtract(new Duration(days: firstDay.weekday - 1));
