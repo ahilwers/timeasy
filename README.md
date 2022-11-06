@@ -2,6 +2,8 @@
 
 A time tracker application that ist build for simplicity.
 
+Visit the timeasy website: <https://timeasy.org>
+
 <p>
     <a href="https://apps.apple.com/us/app/timeasy-time-tracking/id1620757668?itsct=apps_box_badge&amp;itscg=30200">
       <img src="assets-readme/appstore_logo.png" alt="Download on the App Store"/>
