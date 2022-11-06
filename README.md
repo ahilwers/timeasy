@@ -4,10 +4,12 @@ A time tracker application that ist build for simplicity.
 
 <p>
     <a href="https://play.google.com/store/apps/details?id=com.hilwerssoftware.timeasy">
-        <img alt="Get it on Google Play"
-            height="80"
-            src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" />
-    </a> 
+        <img alt="Get it on Google Play" src="assets-readme/google_play_logo.png" />
+    </a>
+
+    <a href="https://apps.apple.com/us/app/timeasy-time-tracking/id1620757668?itsct=apps_box_badge&amp;itscg=30200">
+      <img src="assets-readme/appstore_logo.png" alt="Download on the App Store">
+    </a>
 </p>
 
 ![](assets-readme/screenshot_01.png)
