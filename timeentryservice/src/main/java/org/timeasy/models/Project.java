@@ -10,64 +10,65 @@ import org.hibernate.annotations.Type;
 
 @Entity
 public class Project {
-  @Id
-  @Type(type = "pg-uuid")
-  private UUID id;
-  private String description;
-  private String userId;
-  private Instant createdTimeStamp = Instant.now();
-  private Instant updatedTimeStamp = Instant.now();
-  private boolean deleted;
+    @Id
+    @Type(type = "pg-uuid")
+    private UUID id;
+    private String description;
+    private String userId;
+    private Instant createdTimeStamp = Instant.now();
+    private Instant updatedTimeStamp = Instant.now();
+    private boolean deleted;
 
-  public Project() {
-    id = UUID.randomUUID();
-  }
+    public Project() {
+        id = UUID.randomUUID();
+    }
 
-  public UUID getId() {
-    return id;
-  }
+    public UUID getId() {
+        return id;
+    }
 
-  public void setId(UUID id) {
-    this.id = id;
-  }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-  public String getDescription() {
-    return description;
-  }
+    public String getDescription() {
+        return description;
+    }
 
-  public void setDescription(String description) {
-    this.description = description;
-  }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-  public String getUserId() {
-    return userId;
-  }
+    public String getUserId() {
+        return userId;
+    }
 
-  public void setUserId(String userId) {
-    this.userId = userId;
-  }
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
 
-  public Instant getCreatedTimeStamp() {
-    return createdTimeStamp;
-  }
+    public Instant getCreatedTimeStamp() {
+        return createdTimeStamp;
+    }
 
-  public void setCreatedTimeStamp(Instant createdTimeStamp) {
-    this.createdTimeStamp = createdTimeStamp;
-  }
+    public void setCreatedTimeStamp(Instant createdTimeStamp) {
 
-  public Instant getUpdatedTimeStamp() {
-    return updatedTimeStamp;
-  }
+        this.createdTimeStamp = createdTimeStamp;
+    }
 
-  public void setUpdatedTimeStamp(Instant updatedTimeStamp) {
-    this.updatedTimeStamp = updatedTimeStamp;
-  }
+    public Instant getUpdatedTimeStamp() {
+        return updatedTimeStamp;
+    }
 
-  public boolean isDeleted() {
-    return deleted;
-  }
+    public void setUpdatedTimeStamp(Instant updatedTimeStamp) {
+        this.updatedTimeStamp = updatedTimeStamp;
+    }
 
-  public void setDeleted(boolean deleted) {
-    this.deleted = deleted;
-  }
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 }
