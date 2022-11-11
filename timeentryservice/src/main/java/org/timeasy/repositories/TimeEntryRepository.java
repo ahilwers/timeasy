@@ -1,10 +1,12 @@
 package org.timeasy.repositories;
 
-import org.timeasy.models.TimeEntry;
-import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
-import java.util.UUID;
+
+import org.timeasy.models.TimeEntry;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 
 @ApplicationScoped
 public class TimeEntryRepository implements PanacheRepositoryBase<TimeEntry, UUID> {
