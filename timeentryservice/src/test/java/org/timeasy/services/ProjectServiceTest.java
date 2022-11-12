@@ -118,7 +118,6 @@ public class ProjectServiceTest {
     }
 
     @Test
-    @Transactional
     public void deleteProjectAreNotContainedInProjectList() throws EntityNotFoundException, EntityExistsException {
         createProjects(2);
         createProjects(1, 2, true);
@@ -127,6 +126,14 @@ public class ProjectServiceTest {
         for (Project project : projectsFromDb) {
             Assertions.assertNotEquals("Project 2", project.getDescription());
         }
+    }
+
+    @Test
+    public void canSpecificProjectBeFetched() throws EntityExistsException {
+        List<Project> projectList = createProjects(3);
+        Project projectFromDb = projectService.findById(projectList.get(1).getId());
+        Assertions.assertEquals(projectList.get(1).getId(), projectFromDb.getId());
+        Assertions.assertEquals(projectList.get(1).getDescription(), projectFromDb.getDescription());
     }
 
     private List<Project> createProjects(int count) throws EntityExistsException {
