@@ -1,11 +1,11 @@
 package org.timeasy.resources;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 
 import java.util.List;
 
@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.ws.rs.core.MediaType;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.HttpStatus;
 
 import org.junit.jupiter.api.Assertions;
@@ -203,4 +204,86 @@ public class ProjectResourceTest {
 
         Assertions.assertEquals(1, projectService.listAll().size());
     }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void canProjectBeUpdatedViaService() throws EntityExistsException, JsonProcessingException {
+        Project project = new Project();
+        project.setUserId("user1");
+        project.setDescription("Project");
+        projectService.add(project);
+
+        JsonObject jsonObject = new JsonObject()
+                .put("id", project.getId().toString())
+                .put("description", "Updated Project")
+                .put("userId", "user1");
+
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .put(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK);
+        List<Project> projects = projectService.listAll();
+        assertEquals(1, projects.size());
+        Project updatedProject = projects.get(0);
+        assertEquals("Updated Project", updatedProject.getDescription());
+        // The project should still belong to the correct user:
+        assertEquals("user1", updatedProject.getUserId());
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void updatingAProjectFailsIfItDoesNotExist() throws EntityExistsException, JsonProcessingException {
+        Project project = new Project();
+        project.setUserId("user1");
+        project.setDescription("Project");
+
+        JsonObject jsonObject = new JsonObject()
+                .put("id", project.getId().toString())
+                .put("description", "Updated Project")
+                .put("userId", "user1");
+
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .put(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void updatingAProjectFailsIfItDoesNotBelongToTheUser()
+            throws EntityExistsException, JsonProcessingException {
+        Project project = new Project();
+        project.setUserId("user2");
+        project.setDescription("Project");
+        projectService.add(project);
+
+        JsonObject jsonObject = new JsonObject()
+                .put("id", project.getId().toString())
+                .put("description", "Updated Project")
+                .put("userId", "user2");
+
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .put(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+        List<Project> projects = projectService.listAll();
+        assertEquals(1, projects.size());
+        Project updatedProject = projects.get(0);
+        // The project in the database should not be changed at all:
+        assertEquals("Project", updatedProject.getDescription());
+        assertEquals("user2", updatedProject.getUserId());
+    }
+
 }

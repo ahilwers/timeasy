@@ -10,6 +10,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -66,7 +67,6 @@ public class ProjectResource {
     }
 
     @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
     @Path("/{id}")
     public Response deleteProject(@PathParam String id) throws EntityNotFoundException {
         Project project = projectService.findById(UUID.fromString(id));
@@ -75,6 +75,19 @@ public class ProjectResource {
             throw new EntityNotFoundException(String.format("A project with the id %s could not be found.", id));
         }
         projectService.delete(project);
+        return Response.status(Response.Status.OK).build();
+    }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/{id}")
+    public Response updateProject(@PathParam String id, Project project) throws EntityNotFoundException {
+        Project existingProject = projectService.findById(UUID.fromString(id));
+        String userId = userDataService.getUserId(token);
+        if (!existingProject.getUserId().equals(userId)) {
+            throw new EntityNotFoundException(String.format("A project with the id %s could not be found.", id));
+        }
+        projectService.update(project);
         return Response.status(Response.Status.OK).build();
     }
 
