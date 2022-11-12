@@ -66,4 +66,10 @@ public class ProjectService {
         return projectRepository.list("userid=?1 and deleted=?2", Sort.by("description"), userId, false);
     }
 
+    @Transactional
+    public void delete(Project projectToBeDeleted) throws EntityNotFoundException {
+        projectToBeDeleted.setDeleted(true);
+        doUpdate(projectToBeDeleted);
+    }
+
 }

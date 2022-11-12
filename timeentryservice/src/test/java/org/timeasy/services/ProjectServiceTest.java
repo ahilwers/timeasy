@@ -2,7 +2,6 @@ package org.timeasy.services;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -142,6 +141,29 @@ public class ProjectServiceTest {
         List<Project> projectsOfUser = projectService.listAllOfUser("user 1");
         Assertions.assertEquals(1, projectsOfUser.size());
         Assertions.assertEquals("Project 1", projectsOfUser.get(0).getDescription());
+    }
+
+    @Test
+    public void canProjectsBeDeleted() throws EntityExistsException, EntityNotFoundException {
+        List<Project> projectList = createProjects(3);
+        Assertions.assertEquals(3, projectService.listAll().size());
+
+        Project projectToBeDeleted = projectList.get(1);
+        projectService.delete(projectToBeDeleted);
+
+        List<Project> projectsFromDb = projectService.listAll();
+        Assertions.assertEquals(2, projectsFromDb.size());
+        for (Project project : projectsFromDb) {
+            Assertions.assertNotEquals(projectToBeDeleted.getId(), project.getId());
+        }
+    }
+
+    @Test
+    public void deletingAProjectFailsIfItDoesNotExist() {
+        Project project = new Project();
+        Assertions.assertThrows(EntityNotFoundException.class, () -> {
+            projectService.delete(project);
+        });
     }
 
     private List<Project> createProjects(int count) throws EntityExistsException {
