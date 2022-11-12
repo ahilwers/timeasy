@@ -3,6 +3,7 @@ package org.timeasy.resources;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 
@@ -36,6 +37,13 @@ public class ProjectResource {
         project.setUserId(userId);
         projectService.add(project);
         return new EntityCreationInfo(project.getId().toString());
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public ProjectList getProjects() {
+        String userId = userDataService.getUserId(token);
+        return new ProjectList(projectService.listAllOfUser(userId));
     }
 
 }

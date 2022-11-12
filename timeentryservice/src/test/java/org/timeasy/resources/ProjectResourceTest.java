@@ -3,6 +3,8 @@ package org.timeasy.resources;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 
 import java.util.List;
 
@@ -19,6 +21,7 @@ import org.timeasy.models.Project;
 import org.timeasy.repositories.ProjectRepository;
 import org.timeasy.services.ProjectService;
 import org.timeasy.services.UserDataService;
+import org.timeasy.tools.EntityExistsException;
 
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.junit.QuarkusTest;
@@ -65,5 +68,42 @@ public class ProjectResourceTest {
         assertEquals("Project", project.getDescription());
         // The project should belong to the correct user:
         assertEquals("user1", project.getUserId());
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void addingAProjectViaServiceFailsIfItExists() throws EntityExistsException {
+        Project project = new Project();
+        projectService.add(project);
+        JsonObject jsonObject = new JsonObject()
+                .put("id", project.getId());
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .post("/api/v1/projects")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_CONFLICT);
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void canProjectsBeFetchedViaService() throws EntityExistsException {
+        Project projectOfUser1 = new Project();
+        projectOfUser1.setUserId("user1");
+        projectService.add(projectOfUser1);
+        Project projectOfUser2 = new Project();
+        projectOfUser2.setUserId("user2");
+        projectService.add(projectOfUser2);
+
+        given()
+                .contentType("application/json")
+                .get("/api/v1/projects")
+                .then()
+                .statusCode(200)
+                .body(
+                        "projects.size()", is(1),
+                        "projects.id", hasItems(projectOfUser1.getId().toString()));
     }
 }
