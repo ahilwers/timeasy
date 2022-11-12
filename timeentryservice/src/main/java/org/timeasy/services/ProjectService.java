@@ -61,4 +61,9 @@ public class ProjectService {
         return projectRepository.list("deleted", Sort.by("description"), false);
     }
 
+    @Transactional
+    public List<Project> listAllOfUser(String userId) {
+        return projectRepository.list("userid=?1 and deleted=?2", Sort.by("description"), userId, false);
+    }
+
 }

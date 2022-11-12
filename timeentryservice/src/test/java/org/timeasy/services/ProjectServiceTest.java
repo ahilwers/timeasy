@@ -136,6 +136,14 @@ public class ProjectServiceTest {
         Assertions.assertEquals(projectList.get(1).getDescription(), projectFromDb.getDescription());
     }
 
+    @Test
+    public void canProjectsOfSpecificUserBeFetched() throws EntityExistsException {
+        createProjects(3);
+        List<Project> projectsOfUser = projectService.listAllOfUser("user 1");
+        Assertions.assertEquals(1, projectsOfUser.size());
+        Assertions.assertEquals("Project 1", projectsOfUser.get(0).getDescription());
+    }
+
     private List<Project> createProjects(int count) throws EntityExistsException {
         return createProjects(count, 0, false);
     }
@@ -145,7 +153,7 @@ public class ProjectServiceTest {
         for (int i = 0; i < count; i++) {
             Project project = new Project();
             project.setDescription(String.format("Project %s", startIndex + i));
-            project.setUserId(String.format("User %s", startIndex + i));
+            project.setUserId(String.format("user %s", startIndex + i));
             project.setDeleted(deleted);
             projectService.add(project);
             projectList.add(project);
