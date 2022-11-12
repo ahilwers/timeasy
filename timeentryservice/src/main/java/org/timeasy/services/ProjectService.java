@@ -1,6 +1,7 @@
 package org.timeasy.services;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -11,6 +12,8 @@ import org.timeasy.models.Project;
 import org.timeasy.repositories.ProjectRepository;
 import org.timeasy.tools.EntityExistsException;
 import org.timeasy.tools.EntityNotFoundException;
+
+import io.quarkus.panache.common.Sort;
 
 @ApplicationScoped
 public class ProjectService {
@@ -51,6 +54,11 @@ public class ProjectService {
     @Transactional
     public Project findById(UUID id) {
         return projectRepository.findById(id);
+    }
+
+    @Transactional
+    public List<Project> listAll() {
+        return projectRepository.list("deleted", Sort.by("description"), false);
     }
 
 }

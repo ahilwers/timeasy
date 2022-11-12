@@ -1,6 +1,8 @@
 package org.timeasy.services;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -101,5 +103,46 @@ public class ProjectServiceTest {
         Assertions.assertThrows(EntityNotFoundException.class, () -> {
             projectService.update(project);
         });
+    }
+
+    @Test
+    @Transactional
+    public void canListOfAllProjectBeFetched() throws EntityExistsException {
+        createProjects(10);
+        List<Project> projectList = projectService.listAll();
+        Assertions.assertEquals(10, projectList.size());
+        for (int i = 0; i < 10; i++) {
+            Project project = projectList.get(i);
+            Assertions.assertEquals(String.format("Project %s", i), project.getDescription());
+        }
+    }
+
+    @Test
+    @Transactional
+    public void deleteProjectAreNotContainedInProjectList() throws EntityNotFoundException, EntityExistsException {
+        createProjects(2);
+        createProjects(1, 2, true);
+        List<Project> projectsFromDb = projectService.listAll();
+        Assertions.assertEquals(2, projectsFromDb.size());
+        for (Project project : projectsFromDb) {
+            Assertions.assertNotEquals("Project 2", project.getDescription());
+        }
+    }
+
+    private List<Project> createProjects(int count) throws EntityExistsException {
+        return createProjects(count, 0, false);
+    }
+
+    private List<Project> createProjects(int count, int startIndex, boolean deleted) throws EntityExistsException {
+        List<Project> projectList = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Project project = new Project();
+            project.setDescription(String.format("Project %s", startIndex + i));
+            project.setUserId(String.format("User %s", startIndex + i));
+            project.setDeleted(deleted);
+            projectService.add(project);
+            projectList.add(project);
+        }
+        return projectList;
     }
 }
