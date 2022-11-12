@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.HttpStatus;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -105,5 +107,100 @@ public class ProjectResourceTest {
                 .body(
                         "projects.size()", is(1),
                         "projects.id", hasItems(projectOfUser1.getId().toString()));
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void canSpecificProjectBeFetchedViaService() throws EntityExistsException {
+        Project project1 = new Project();
+        project1.setUserId("user1");
+        projectService.add(project1);
+        Project project2 = new Project();
+        project2.setUserId("user1");
+        projectService.add(project2);
+
+        given()
+                .contentType("application/json")
+                .get(String.format("/api/v1/projects/%s", project2.getId()))
+                .then()
+                .statusCode(200)
+                .body(
+                        "id", equalTo(project2.getId().toString()));
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void fetchingAProjectFailsIfItDoesNotExist() throws EntityExistsException {
+        Project project = new Project();
+        project.setUserId("user1");
+
+        given()
+                .contentType("application/json")
+                .get(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void fetchingAProjectFailsIfItDoesNotBelongToUser() throws EntityExistsException {
+        Project project = new Project();
+        project.setUserId("user2");
+        projectService.add(project);
+
+        given()
+                .contentType("application/json")
+                .get(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void projectCanBeDeletedViaService() throws EntityExistsException {
+        Project project = new Project();
+        project.setUserId("user1");
+        projectService.add(project);
+
+        Assertions.assertEquals(1, projectService.listAll().size());
+
+        given()
+                .contentType("application/json")
+                .delete(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(200);
+
+        Assertions.assertEquals(0, projectService.listAll().size());
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void deletingAProjectFailsIfItDoesNotExist() throws EntityExistsException {
+        Project project = new Project();
+        project.setUserId("user1");
+
+        given()
+                .contentType("application/json")
+                .delete(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "user" })
+    public void deletingAProjectFailsIfItDoesNotBelongToUser() throws EntityExistsException {
+        Project project = new Project();
+        project.setUserId("user2");
+        projectService.add(project);
+
+        Assertions.assertEquals(1, projectService.listAll().size());
+
+        given()
+                .contentType("application/json")
+                .delete(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(404);
+
+        Assertions.assertEquals(1, projectService.listAll().size());
     }
 }
