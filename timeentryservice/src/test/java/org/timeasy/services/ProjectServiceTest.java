@@ -128,7 +128,7 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void canSpecificProjectBeFetched() throws EntityExistsException {
+    public void canSpecificProjectBeFetched() throws EntityExistsException, EntityNotFoundException {
         List<Project> projectList = createProjects(3);
         Project projectFromDb = projectService.findById(projectList.get(1).getId());
         Assertions.assertEquals(projectList.get(1).getId(), projectFromDb.getId());

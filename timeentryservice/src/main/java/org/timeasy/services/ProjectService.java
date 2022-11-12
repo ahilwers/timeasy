@@ -52,8 +52,13 @@ public class ProjectService {
     }
 
     @Transactional
-    public Project findById(UUID id) {
-        return projectRepository.findById(id);
+    public Project findById(UUID id) throws EntityNotFoundException {
+        Project project = projectRepository.findById(id);
+        if (project == null) {
+            throw new EntityNotFoundException(
+                    String.format("A Project with the id %s could not be found.", id));
+        }
+        return project;
     }
 
     @Transactional

@@ -1,10 +1,10 @@
 package org.timeasy.resources;
 
-public class TimeEntryCreationInfo {
+public class EntityCreationInfo {
 
     private String id;
 
-    public TimeEntryCreationInfo(String id) {
+    public EntityCreationInfo(String id) {
         this.id = id;
     }
 

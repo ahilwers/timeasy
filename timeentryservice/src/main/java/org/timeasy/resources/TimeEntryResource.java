@@ -23,7 +23,8 @@ public class TimeEntryResource {
     private TimeEntryService timeEntryService;
     private SecurityIdentity securityIdentity;
 
-    public TimeEntryResource(TimeEntryService timeEntryService, SecurityIdentity securityIdentity, JsonWebToken token, UserDataService userDataService) {
+    public TimeEntryResource(TimeEntryService timeEntryService, SecurityIdentity securityIdentity, JsonWebToken token,
+            UserDataService userDataService) {
         this.timeEntryService = timeEntryService;
         this.securityIdentity = securityIdentity;
         this.token = token;
@@ -34,7 +35,7 @@ public class TimeEntryResource {
     @Produces(MediaType.APPLICATION_JSON)
     public TimeEntryList getTimeEntries(@QueryParam String project) {
         String userId = userDataService.getUserId(token);
-        if (project!=null)
+        if (project != null)
             return new TimeEntryList(timeEntryService.listAllOfUserAndProject(userId, project));
         else
             return new TimeEntryList(timeEntryService.listAllOfUser(userId));
@@ -50,11 +51,11 @@ public class TimeEntryResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public TimeEntryCreationInfo addTimeEntry(TimeEntry timeEntry) throws EntityExistsException {
+    public EntityCreationInfo addTimeEntry(TimeEntry timeEntry) throws EntityExistsException {
         String userId = userDataService.getUserId(token);
         timeEntry.setUserId(userId);
         timeEntryService.add(timeEntry);
-        return new TimeEntryCreationInfo(timeEntry.getId().toString());
+        return new EntityCreationInfo(timeEntry.getId().toString());
     }
 
 }

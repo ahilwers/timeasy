@@ -6,7 +6,8 @@ import java.util.List;
 
 /**
  * Wrapper class to be returned by the service.
- * We use this class to avoid returning the array directly because this way we're abled to add more informations later
+ * We use this class to avoid returning the array directly because this way
+ * we're able to add more informations later
  * on if we need to.
  */
 public class TimeEntryList {
