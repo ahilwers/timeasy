@@ -203,6 +203,22 @@ public class ProjectResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "user1", roles = { "admin" })
+    public void projectOfOtherUserCanBeFetchedIfAdmin() throws EntityExistsException {
+        Mockito.when(securityIdentity.hasRole("admin")).thenReturn(true);
+
+        Project project = new Project();
+        project.setUserId("user2");
+        projectService.add(project);
+
+        given()
+                .contentType("application/json")
+                .get(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(HttpStatus.SC_OK);
+    }
+
+    @Test
     @TestSecurity(user = "user1", roles = { "user" })
     public void projectCanBeDeletedViaService() throws EntityExistsException {
         Project project = new Project();
@@ -266,6 +282,26 @@ public class ProjectResourceTest {
                 .statusCode(HttpStatus.SC_UNAUTHORIZED);
 
         Assertions.assertEquals(1, projectService.listAll().size());
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "admin" })
+    public void projectOfOtherUserCanBeDeletedIfAdmin() throws EntityExistsException {
+        Mockito.when(securityIdentity.hasRole("admin")).thenReturn(true);
+
+        Project project = new Project();
+        project.setUserId("user2");
+        projectService.add(project);
+
+        Assertions.assertEquals(1, projectService.listAll().size());
+
+        given()
+                .contentType("application/json")
+                .delete(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(HttpStatus.SC_OK);
+
+        Assertions.assertEquals(0, projectService.listAll().size());
     }
 
     @Test
@@ -376,6 +412,38 @@ public class ProjectResourceTest {
         // The project in the database should not be changed at all:
         assertEquals("Project", updatedProject.getDescription());
         assertEquals("user1", updatedProject.getUserId());
+    }
+
+    @Test
+    @TestSecurity(user = "user1", roles = { "admin" })
+    public void projectOfOtherUserCanBeUpdatedIfAdmin()
+            throws EntityExistsException, JsonProcessingException {
+
+        Mockito.when(securityIdentity.hasRole("admin")).thenReturn(true);
+
+        Project project = new Project();
+        project.setUserId("user2");
+        project.setDescription("Project");
+        projectService.add(project);
+
+        JsonObject jsonObject = new JsonObject()
+                .put("id", project.getId().toString())
+                .put("description", "Updated Project")
+                .put("userId", "user2");
+
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .put(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK);
+        List<Project> projects = projectService.listAll();
+        assertEquals(1, projects.size());
+        Project updatedProject = projects.get(0);
+        assertEquals("Updated Project", updatedProject.getDescription());
+        assertEquals("user2", updatedProject.getUserId());
     }
 
 }

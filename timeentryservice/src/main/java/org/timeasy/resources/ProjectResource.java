@@ -4,6 +4,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.Set;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -19,8 +20,12 @@ import org.timeasy.services.ProjectService;
 import org.timeasy.services.UserDataService;
 import org.timeasy.tools.EntityExistsException;
 import org.timeasy.tools.EntityNotFoundException;
+import org.timeasy.tools.Roles;
 
 import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.SecurityIdentity;
+import io.quarkus.security.runtime.SecurityProviderRecorder;
+
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 
 @Path("/api/v1/projects")
@@ -30,9 +35,12 @@ public class ProjectResource {
     private final ProjectService projectService;
     private final JsonWebToken token;
     private final UserDataService userDataService;
+    private SecurityIdentity securityIdentity;
 
-    public ProjectResource(ProjectService projectService, JsonWebToken token, UserDataService userDataService) {
+    public ProjectResource(ProjectService projectService, SecurityIdentity securityIdentity, JsonWebToken token,
+            UserDataService userDataService) {
         this.projectService = projectService;
+        this.securityIdentity = securityIdentity;
         this.token = token;
         this.userDataService = userDataService;
     }
@@ -60,7 +68,7 @@ public class ProjectResource {
     public Project getProject(@PathParam String id) throws EntityNotFoundException {
         Project project = projectService.findById(UUID.fromString(id));
         String userId = userDataService.getUserId(token);
-        if (!project.getUserId().equals(userId)) {
+        if ((!securityIdentity.hasRole(Roles.ADMIN)) && (!project.getUserId().equals(userId))) {
             throw new EntityNotFoundException(String.format("A project with the id %s could not be found.", id));
         }
         return project;
@@ -71,7 +79,7 @@ public class ProjectResource {
     public Response deleteProject(@PathParam String id) throws EntityNotFoundException {
         Project project = projectService.findById(UUID.fromString(id));
         String userId = userDataService.getUserId(token);
-        if (!project.getUserId().equals(userId)) {
+        if ((!securityIdentity.hasRole(Roles.ADMIN)) && (!project.getUserId().equals(userId))) {
             throw new EntityNotFoundException(String.format("A project with the id %s could not be found.", id));
         }
         projectService.delete(project);
@@ -84,7 +92,7 @@ public class ProjectResource {
     public Response updateProject(@PathParam String id, Project project) throws EntityNotFoundException {
         Project existingProject = projectService.findById(UUID.fromString(id));
         String userId = userDataService.getUserId(token);
-        if (!existingProject.getUserId().equals(userId)) {
+        if ((!securityIdentity.hasRole(Roles.ADMIN)) && (!existingProject.getUserId().equals(userId))) {
             throw new EntityNotFoundException(String.format("A project with the id %s could not be found.", id));
         }
         projectService.update(project);
