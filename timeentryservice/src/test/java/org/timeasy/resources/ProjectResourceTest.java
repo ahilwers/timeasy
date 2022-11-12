@@ -19,6 +19,7 @@ import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.authorization.client.util.Http;
 import org.mockito.Mockito;
 import org.timeasy.models.Project;
 import org.timeasy.repositories.ProjectRepository;
@@ -91,6 +92,22 @@ public class ProjectResourceTest {
     }
 
     @Test
+    public void addingAProjectViaServiceFailsIfNotAuthenticated() throws EntityExistsException {
+        Project project = new Project();
+        projectService.add(project);
+        JsonObject jsonObject = new JsonObject()
+                .put("id", project.getId());
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .post("/api/v1/projects")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
+    }
+
+    @Test
     @TestSecurity(user = "user1", roles = { "user" })
     public void canProjectsBeFetchedViaService() throws EntityExistsException {
         Project projectOfUser1 = new Project();
@@ -108,6 +125,22 @@ public class ProjectResourceTest {
                 .body(
                         "projects.size()", is(1),
                         "projects.id", hasItems(projectOfUser1.getId().toString()));
+    }
+
+    @Test
+    public void fetchingPtojectsFailsIfNotAuthorized() throws EntityExistsException {
+        Project projectOfUser1 = new Project();
+        projectOfUser1.setUserId("user1");
+        projectService.add(projectOfUser1);
+        Project projectOfUser2 = new Project();
+        projectOfUser2.setUserId("user2");
+        projectService.add(projectOfUser2);
+
+        given()
+                .contentType("application/json")
+                .get("/api/v1/projects")
+                .then()
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
     }
 
     @Test
@@ -157,6 +190,19 @@ public class ProjectResourceTest {
     }
 
     @Test
+    public void fetchingAProjectFailsIfNotAuthorized() throws EntityExistsException {
+        Project project = new Project();
+        project.setUserId("user1");
+        projectService.add(project);
+
+        given()
+                .contentType("application/json")
+                .get(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
+    }
+
+    @Test
     @TestSecurity(user = "user1", roles = { "user" })
     public void projectCanBeDeletedViaService() throws EntityExistsException {
         Project project = new Project();
@@ -201,6 +247,23 @@ public class ProjectResourceTest {
                 .delete(String.format("/api/v1/projects/%s", project.getId()))
                 .then()
                 .statusCode(404);
+
+        Assertions.assertEquals(1, projectService.listAll().size());
+    }
+
+    @Test
+    public void deletingAProjectFailsIfNotAuthorized() throws EntityExistsException {
+        Project project = new Project();
+        project.setUserId("user1");
+        projectService.add(project);
+
+        Assertions.assertEquals(1, projectService.listAll().size());
+
+        given()
+                .contentType("application/json")
+                .delete(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
 
         Assertions.assertEquals(1, projectService.listAll().size());
     }
@@ -284,6 +347,35 @@ public class ProjectResourceTest {
         // The project in the database should not be changed at all:
         assertEquals("Project", updatedProject.getDescription());
         assertEquals("user2", updatedProject.getUserId());
+    }
+
+    @Test
+    public void updatingAProjectFailsIfNotAuthorized()
+            throws EntityExistsException, JsonProcessingException {
+        Project project = new Project();
+        project.setUserId("user1");
+        project.setDescription("Project");
+        projectService.add(project);
+
+        JsonObject jsonObject = new JsonObject()
+                .put("id", project.getId().toString())
+                .put("description", "Updated Project")
+                .put("userId", "user1");
+
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonObject.toString())
+                .when()
+                .put(String.format("/api/v1/projects/%s", project.getId()))
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
+        List<Project> projects = projectService.listAll();
+        assertEquals(1, projects.size());
+        Project updatedProject = projects.get(0);
+        // The project in the database should not be changed at all:
+        assertEquals("Project", updatedProject.getDescription());
+        assertEquals("user1", updatedProject.getUserId());
     }
 
 }
