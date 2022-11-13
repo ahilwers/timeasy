@@ -33,12 +33,14 @@ public class TimeEntryResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public TimeEntryList getTimeEntries(@QueryParam String project) {
+    public TimeEntryList getTimeEntries(@QueryParam String projectId) {
         String userId = userDataService.getUserId(token);
-        if (project != null)
-            return new TimeEntryList(timeEntryService.listAllOfUserAndProject(userId, project));
-        else
+        if (projectId != null) {
+            UUID projectUUID = UUID.fromString(projectId);
+            return new TimeEntryList(timeEntryService.listAllOfUserAndProject(userId, projectUUID));
+        } else {
             return new TimeEntryList(timeEntryService.listAllOfUser(userId));
+        }
     }
 
     @GET

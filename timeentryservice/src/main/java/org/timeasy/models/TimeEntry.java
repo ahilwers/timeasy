@@ -4,6 +4,9 @@ import org.hibernate.annotations.Type;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -16,7 +19,9 @@ public class TimeEntry {
     private String description;
     private Instant startTime;
     private Instant endTime;
-    private String projectId;
+    @ManyToOne
+    @JoinColumn(name = "project_id", columnDefinition = "UUID")
+    private Project project;
     private String userId;
     private Instant createdTimeStamp = Instant.now();
     private Instant updatedTimeStamp = Instant.now();
@@ -58,12 +63,12 @@ public class TimeEntry {
         this.endTime = endTime;
     }
 
-    public String getProjectId() {
-        return projectId;
+    public Project getProject() {
+        return project;
     }
 
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
+    public void setProject(Project project) {
+        this.project = project;
     }
 
     public String getUserId() {

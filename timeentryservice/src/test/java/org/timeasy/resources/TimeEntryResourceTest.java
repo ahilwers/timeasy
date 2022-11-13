@@ -1,8 +1,12 @@
 package org.timeasy.resources;
 
 import io.quarkus.test.security.TestSecurity;
+
+import org.timeasy.models.Project;
 import org.timeasy.models.TimeEntry;
+import org.timeasy.repositories.ProjectRepository;
 import org.timeasy.repositories.TimeEntryRepository;
+import org.timeasy.services.ProjectService;
 import org.timeasy.services.TimeEntryService;
 import org.timeasy.services.UserDataService;
 import org.timeasy.tools.EntityExistsException;
@@ -38,17 +42,22 @@ public class TimeEntryResourceTest {
     TimeEntryRepository timeEntryRepository;
     @Inject
     TimeEntryService timeEntryService;
+    @Inject
+    ProjectRepository projectRepository;
+    @Inject
+    ProjectService projectService;
 
     @BeforeEach
     @Transactional
     public void setup() {
         timeEntryRepository.deleteAll();
+        projectRepository.deleteAll();
         Mockito.when(securityIdentity.hasRole("user")).thenReturn(true);
         Mockito.when(userDataService.getUserId(any())).thenReturn("user1");
     }
 
     @Test
-    @TestSecurity(user = "user1", roles = {"user"})
+    @TestSecurity(user = "user1", roles = { "user" })
     public void canTimeEntryBeAddedViaService() {
         JsonObject jsonObject = new JsonObject()
                 .put("description", "Timeentry")
@@ -70,7 +79,7 @@ public class TimeEntryResourceTest {
     }
 
     @Test
-    @TestSecurity(user = "user1", roles = {"user"})
+    @TestSecurity(user = "user1", roles = { "user" })
     public void addingATimeEntryViaServiceFailsIfTimeEntryExists() throws EntityExistsException {
         TimeEntry timeEntry = new TimeEntry();
         timeEntryService.add(timeEntry);
@@ -87,7 +96,7 @@ public class TimeEntryResourceTest {
     }
 
     @Test
-    @TestSecurity(user = "user1", roles = {"user"})
+    @TestSecurity(user = "user1", roles = { "user" })
     public void canTimEntriesBeFetchedViaService() throws EntityExistsException {
         TimeEntry entryOfUser1 = new TimeEntry();
         entryOfUser1.setUserId("user1");
@@ -102,36 +111,39 @@ public class TimeEntryResourceTest {
                 .then()
                 .statusCode(200)
                 .body(
-                    "timeEntries.size()", is(1),
-                    "timeEntries.id", hasItems(entryOfUser1.getId().toString())
-                );
+                        "timeEntries.size()", is(1),
+                        "timeEntries.id", hasItems(entryOfUser1.getId().toString()));
     }
 
     @Test
-    @TestSecurity(user = "user1", roles = {"user"})
+    @TestSecurity(user = "user1", roles = { "user" })
     public void canTimEntriesOfProjectBeFetchedViaService() throws EntityExistsException {
+        Project project1 = new Project();
+        projectService.add(project1);
+        Project project2 = new Project();
+        projectService.add(project2);
+
         TimeEntry entryOfUser1 = new TimeEntry();
         entryOfUser1.setUserId("user1");
-        entryOfUser1.setProjectId("project1");
+        entryOfUser1.setProject(project1);
         timeEntryService.add(entryOfUser1);
         TimeEntry entryOfUser2 = new TimeEntry();
         entryOfUser2.setUserId("user2");
-        entryOfUser2.setProjectId("project1");
+        entryOfUser2.setProject(project1);
         timeEntryService.add(entryOfUser2);
         TimeEntry secondEntryOfUser1 = new TimeEntry();
         secondEntryOfUser1.setUserId("user1");
-        secondEntryOfUser1.setProjectId("project2");
+        secondEntryOfUser1.setProject(project2);
         timeEntryService.add(secondEntryOfUser1);
 
         given()
                 .contentType("application/json")
-                .queryParam("project", "project1")
+                .queryParam("projectId", project1.getId())
                 .get("/api/v1/timeentries")
                 .then()
                 .statusCode(200)
                 .body(
                         "timeEntries.size()", is(1),
-                        "timeEntries.id", hasItems(entryOfUser1.getId().toString())
-                );
+                        "timeEntries.id", hasItems(entryOfUser1.getId().toString()));
     }
 }
