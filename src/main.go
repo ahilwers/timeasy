@@ -27,6 +27,11 @@ func main() {
 		panic(err)
 	}
 
+	var projectService project.ProjectService
+	projectService.Init(databaseService.Database)
+	var projectController project.ProjectController
+	projectController.Init(&projectService)
+
 	var keycloakconfig = ginkeycloak.KeycloakConfig{
 		Url:           configuration.KeyCloakHost,
 		Realm:         configuration.KeyCloakRealm,
@@ -42,7 +47,7 @@ func main() {
 	privateGroup := router.Group("/api/v1")
 	privateGroup.Use(ginkeycloak.Auth(ginkeycloak.AuthCheck(), keycloakconfig))
 	privateGroup.GET("/private", getPrivate)
-	privateGroup.POST("/projects", addProject)
+	privateGroup.POST("/projects", projectController.AddProject)
 
 	router.GET("/public", getPublic)
 
@@ -59,17 +64,4 @@ func getPrivate(context *gin.Context) {
 	token := ginToken.(ginkeycloak.KeyCloakToken)
 
 	glog.Info(token.RealmAccess.Roles)
-}
-
-func addProject(context *gin.Context) {
-	var prj project.Project
-	if err := context.ShouldBindJSON(&prj); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	createdProject, err := project.AddProject(databaseService.Database, &prj)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
-	context.JSON(http.StatusOK, createdProject)
 }

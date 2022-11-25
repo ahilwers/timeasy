@@ -7,8 +7,9 @@ import (
 
 type Project struct {
 	gorm.Model
-	ID   uuid.UUID `gorm:"type:uuid;primaryKey;"`
-	Name string
+	ID     uuid.UUID `gorm:"type:uuid;primaryKey;"`
+	Name   string
+	UserId string
 }
 
 func (project *Project) BeforeCreate(db *gorm.DB) error {
