@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"timeasy-server/projects"
+	"timeasy-server/pkg/projects"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

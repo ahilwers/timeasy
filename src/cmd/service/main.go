@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 	"time"
-	"timeasy-server/configuration"
-	"timeasy-server/database"
-	"timeasy-server/projects"
+	"timeasy-server/pkg/configuration"
+	"timeasy-server/pkg/database"
+	"timeasy-server/pkg/projects"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
