@@ -5,6 +5,7 @@ import (
 	"time"
 	"timeasy-server/configuration"
 	"timeasy-server/database"
+	"timeasy-server/project"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
@@ -12,13 +13,14 @@ import (
 	"github.com/tbaehler/gin-keycloak/pkg/ginkeycloak"
 )
 
+var databaseService database.DatabaseService
+
 func main() {
 	configuration, err := configuration.GetConfiguration()
 	if err != nil {
 		panic(err)
 	}
 
-	databaseService := new(database.DatabaseService)
 	err = databaseService.Init(configuration.DbHost, configuration.DbName, configuration.DbUser,
 		configuration.DbPassword, configuration.DbPort)
 	if err != nil {
@@ -37,9 +39,10 @@ func main() {
 	router.Use(ginkeycloak.RequestLogger([]string{"uid"}, "data"))
 	router.Use(gin.Recovery())
 
-	privateGroup := router.Group("/api")
+	privateGroup := router.Group("/api/v1")
 	privateGroup.Use(ginkeycloak.Auth(ginkeycloak.AuthCheck(), keycloakconfig))
 	privateGroup.GET("/private", getPrivate)
+	privateGroup.POST("/projects", addProject)
 
 	router.GET("/public", getPublic)
 
@@ -56,4 +59,17 @@ func getPrivate(context *gin.Context) {
 	token := ginToken.(ginkeycloak.KeyCloakToken)
 
 	glog.Info(token.RealmAccess.Roles)
+}
+
+func addProject(context *gin.Context) {
+	var prj project.Project
+	if err := context.ShouldBindJSON(&prj); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	createdProject, err := project.AddProject(databaseService.Database, &prj)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	context.JSON(http.StatusOK, createdProject)
 }
