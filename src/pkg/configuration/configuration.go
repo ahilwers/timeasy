@@ -10,7 +10,6 @@ import (
 )
 
 type Configuration struct {
-	ImagePath     string
 	DbHost        string
 	DbPort        int
 	DbName        string
@@ -23,7 +22,6 @@ type Configuration struct {
 func GetConfiguration() (Configuration, error) {
 	fs := flag.NewFlagSet("timeasy", flag.ContinueOnError)
 	var (
-		imagePath     = fs.String("image-path", "upload", "image path")
 		dbHost        = fs.String("database-host", "localhost", "database host")
 		dbPort        = fs.String("database-port", "5432", "database port")
 		dbName        = fs.String("database-name", "timeasy", "database name")
@@ -41,7 +39,6 @@ func GetConfiguration() (Configuration, error) {
 	)
 
 	var configuration Configuration
-	configuration.ImagePath = *imagePath
 	configuration.DbName = *dbName
 	configuration.DbUser = *dbUser
 	configuration.DbPassword = *dbPassword
