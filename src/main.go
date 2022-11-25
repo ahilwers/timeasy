@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"time"
+	"timeasy-server/configuration"
+	"timeasy-server/database"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
@@ -11,10 +13,21 @@ import (
 )
 
 func main() {
+	configuration, err := configuration.GetConfiguration()
+	if err != nil {
+		panic(err)
+	}
+
+	databaseService := new(database.DatabaseService)
+	err = databaseService.Init(configuration.DbHost, configuration.DbName, configuration.DbUser,
+		configuration.DbPassword, configuration.DbPort)
+	if err != nil {
+		panic(err)
+	}
 
 	var keycloakconfig = ginkeycloak.KeycloakConfig{
-		Url:           "http://localhost:8180",
-		Realm:         "timeasy",
+		Url:           configuration.KeyCloakHost,
+		Realm:         configuration.KeyCloakRealm,
 		FullCertsPath: nil,
 	}
 
