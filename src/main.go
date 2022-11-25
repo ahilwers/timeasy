@@ -27,10 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	var projectService project.ProjectService
-	projectService.Init(databaseService.Database)
-	var projectController project.ProjectController
-	projectController.Init(&projectService)
+	projectController := project.NewController(project.NewService(databaseService.Database))
 
 	var keycloakconfig = ginkeycloak.KeycloakConfig{
 		Url:           configuration.KeyCloakHost,

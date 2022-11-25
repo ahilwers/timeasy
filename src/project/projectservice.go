@@ -6,15 +6,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type ProjectService struct {
+type ProjectService interface {
+	AddProject(project *Project) (*Project, error)
+}
+
+type projectService struct {
 	db *gorm.DB
 }
 
-func (projectService *ProjectService) Init(db *gorm.DB) {
-	projectService.db = db
+func NewService(db *gorm.DB) ProjectService {
+	return &projectService{db}
 }
 
-func (projectService *ProjectService) AddProject(project *Project) (*Project, error) {
+func (projectService *projectService) AddProject(project *Project) (*Project, error) {
 	if project.UserId == "" {
 		return nil, fmt.Errorf("The user id must not be empty.")
 	}

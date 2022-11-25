@@ -7,15 +7,19 @@ import (
 	"github.com/tbaehler/gin-keycloak/pkg/ginkeycloak"
 )
 
-type ProjectController struct {
+type ProjectController interface {
+	AddProject(context *gin.Context)
+}
+
+type projectController struct {
 	projectService ProjectService
 }
 
-func (projectController *ProjectController) Init(projectService *ProjectService) {
-	projectController.projectService = *projectService
+func NewController(projectService ProjectService) ProjectController {
+	return &projectController{projectService}
 }
 
-func (projectController *ProjectController) AddProject(context *gin.Context) {
+func (controller *projectController) AddProject(context *gin.Context) {
 	var prj Project
 	if err := context.ShouldBindJSON(&prj); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -25,7 +29,7 @@ func (projectController *ProjectController) AddProject(context *gin.Context) {
 	token := ginToken.(ginkeycloak.KeyCloakToken)
 	prj.UserId = token.Sub
 
-	createdProject, err := projectController.projectService.AddProject(&prj)
+	createdProject, err := controller.projectService.AddProject(&prj)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
