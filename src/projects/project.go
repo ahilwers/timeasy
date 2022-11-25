@@ -1,4 +1,4 @@
-package project
+package projects
 
 import (
 	"github.com/gofrs/uuid"

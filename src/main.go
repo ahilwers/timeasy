@@ -5,7 +5,7 @@ import (
 	"time"
 	"timeasy-server/configuration"
 	"timeasy-server/database"
-	"timeasy-server/project"
+	"timeasy-server/projects"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
@@ -27,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	projectController := project.NewController(project.NewService(databaseService.Database))
+	projectController := projects.NewController(projects.NewService(databaseService.Database))
 
 	var keycloakconfig = ginkeycloak.KeycloakConfig{
 		Url:           configuration.KeyCloakHost,
