@@ -100,3 +100,17 @@ func Test_projectService_AddProject(t *testing.T) {
 		t.Error("project names are not equal.")
 	}
 }
+
+func Test_projectService_AddProjectFailsWithoutUserId(t *testing.T) {
+	teardownTest := setupTest(t)
+	defer teardownTest(t)
+
+	projectService := NewService(db)
+	prj := Project{
+		Name: "Testproject",
+	}
+	_, err := projectService.AddProject(&prj)
+	if err == nil {
+		t.Error("adding a project without userid is not allowed.")
+	}
+}
