@@ -22,8 +22,7 @@ func NewProjectUsecase(repo repository.ProjectRepository) ProjectUsecase {
 
 func (pu *projectUsecase) AddProject(project *model.Project) (*model.Project, error) {
 	if project.UserId == "" {
-		fmt.Println("Id not set")
-		//	return nil, fmt.Errorf("The user id must not be empty.")
+		return nil, fmt.Errorf("The user id must not be empty.")
 	}
 	return pu.repo.AddProject(project)
 }
