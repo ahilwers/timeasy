@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tbaehler/gin-keycloak/pkg/ginkeycloak"
 )
 
 type ProjectController interface {
@@ -25,9 +24,7 @@ func (controller *projectController) AddProject(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	ginToken, _ := context.Get("token")
-	token := ginToken.(ginkeycloak.KeyCloakToken)
-	prj.UserId = token.Sub
+	//Todo: set user id here
 
 	createdProject, err := controller.projectService.AddProject(&prj)
 	if err != nil {
