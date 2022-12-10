@@ -1,10 +1,12 @@
-package projects
+package usecase
 
 import (
 	"fmt"
 	"log"
 	"os"
 	"testing"
+	"timeasy-server/pkg/database"
+	"timeasy-server/pkg/domain/model"
 
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
@@ -54,7 +56,7 @@ func TestMain(m *testing.M) {
 		}
 		return db.Ping()
 	})
-	db.AutoMigrate(&Project{})
+	db.AutoMigrate(&model.Project{})
 	code := m.Run()
 
 	if err := pool.Purge(resource); err != nil {
@@ -82,16 +84,17 @@ func Test_projectService_AddProject(t *testing.T) {
 	teardownTest := setupTest(t)
 	defer teardownTest(t)
 
-	projectService := NewService(db)
-	prj := Project{
+	projectRepo := database.NewGormProjectRepository(db)
+	projectUsecase := NewProjectUsecase(projectRepo)
+	prj := model.Project{
 		Name:   "Testproject",
 		UserId: "1",
 	}
-	_, err := projectService.AddProject(&prj)
+	_, err := projectUsecase.AddProject(&prj)
 	if err != nil {
 		t.Errorf("Project could not be created: %s", err)
 	}
-	var projectFromDb Project
+	var projectFromDb model.Project
 	if err := db.First(&projectFromDb, prj.ID).Error; err != nil {
 		t.Errorf("project could not be retrieved: %s", err)
 	}
@@ -105,11 +108,13 @@ func Test_projectService_AddProjectFailsWithoutUserId(t *testing.T) {
 	teardownTest := setupTest(t)
 	defer teardownTest(t)
 
-	projectService := NewService(db)
-	prj := Project{
+	projectRepo := database.NewGormProjectRepository(db)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	prj := model.Project{
 		Name: "Testproject",
 	}
-	_, err := projectService.AddProject(&prj)
+	_, err := projectUsecase.AddProject(&prj)
 	if err == nil {
 		t.Error("adding a project without userid is not allowed.")
 	}

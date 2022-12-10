@@ -1,11 +1,11 @@
 package main
 
 import (
-	"net/http"
 	"time"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
-	"timeasy-server/pkg/projects"
+	"timeasy-server/pkg/delivery/http"
+	"timeasy-server/pkg/usecase"
 
 	"github.com/gin-gonic/gin"
 	ginglog "github.com/szuecs/gin-glog"
@@ -25,7 +25,8 @@ func main() {
 		panic(err)
 	}
 
-	projectController := projects.NewController(projects.NewService(databaseService.Database))
+	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
+	projectHandler := http.NewProjectHandler(projectUsecase)
 
 	router := gin.Default()
 
@@ -33,18 +34,7 @@ func main() {
 	router.Use(gin.Recovery())
 
 	privateGroup := router.Group("/api/v1")
-	privateGroup.GET("/private", getPrivate)
-	privateGroup.POST("/projects", projectController.AddProject)
-
-	router.GET("/public", getPublic)
+	privateGroup.POST("/projects", projectHandler.AddProject)
 
 	router.Run()
-}
-
-func getPublic(context *gin.Context) {
-	context.String(http.StatusOK, "Hello world!")
-}
-
-func getPrivate(context *gin.Context) {
-	context.String(http.StatusOK, "Welcome to the private area. :)")
 }

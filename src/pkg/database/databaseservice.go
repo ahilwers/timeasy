@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"timeasy-server/pkg/projects"
+	"timeasy-server/pkg/domain/model"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ func (databaseService *DatabaseService) Init(host string, databaseName string, u
 	if databaseError != nil {
 		return databaseError
 	}
-	database.AutoMigrate(&projects.Project{})
+	database.AutoMigrate(&model.Project{})
 
 	databaseService.Database = database
 	return nil
