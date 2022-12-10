@@ -18,6 +18,7 @@ func (databaseService *DatabaseService) Init(host string, databaseName string, u
 	if databaseError != nil {
 		return databaseError
 	}
+	database.AutoMigrate(&model.User{})
 	database.AutoMigrate(&model.Project{})
 
 	databaseService.Database = database
