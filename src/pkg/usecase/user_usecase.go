@@ -14,9 +14,9 @@ type UserUsecase interface {
 	GetUserById(id uuid.UUID) (*model.User, error)
 	AddUser(user *model.User) (*model.User, error)
 	// Updates a user
-	// Note: This will not update the password - user UpdateUserPassword if you want to update the password.
+	// Note: This will not update the password - use UpdateUserPassword if you want to update the password.
 	UpdateUser(user *model.User) error
-	// Updated the password of am existing user with the specified id.
+	// Updates the password of an existing user with the specified id.
 	UpdateUserPassword(id uuid.UUID, newPassword string) error
 }
 
