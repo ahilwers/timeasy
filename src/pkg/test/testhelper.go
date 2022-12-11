@@ -10,12 +10,15 @@ import (
 	"github.com/ory/dockertest/docker"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
 
 func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
+	log.Println("Trying to start database server.")
 	pool, err := dockertest.NewPool("")
+
 	if err != nil {
 		log.Fatalf("Could not connect to dokcer: %s", err)
 	}
@@ -42,7 +45,9 @@ func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
 	connectionString := fmt.Sprintf("host=localhost user=dbuser password=dbpassword dbname=timeasy_test port=%v", resource.GetPort("5432/tcp"))
 	// retry until db server is ready
 	err = pool.Retry(func() error {
-		DB, err = gorm.Open(postgres.Open(connectionString), &gorm.Config{})
+		DB, err = gorm.Open(postgres.Open(connectionString), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		})
 		if err != nil {
 			return err
 		}
@@ -52,6 +57,7 @@ func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
 		}
 		return db.Ping()
 	})
+	log.Println("=========================================================")
 	DB.AutoMigrate(&model.User{})
 	DB.AutoMigrate(&model.Project{})
 	return pool, resource
