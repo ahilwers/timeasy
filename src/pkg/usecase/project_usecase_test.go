@@ -1,42 +1,14 @@
 package usecase
 
 import (
-	"log"
-	"os"
 	"testing"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/test"
-
-	"gorm.io/gorm"
 )
 
-func TestMain(m *testing.M) {
-	log.Println("Testmain")
-
-	pool, resource := test.SetupDatabase()
-	code := m.Run()
-	test.TeardownDatabase(pool, resource)
-
-	os.Exit(code)
-}
-
-func setupTest(tb testing.TB) func(tb testing.TB) {
-	log.Println("setup test")
-	deleteAllEntities(test.DB)
-	return func(tb testing.TB) {
-		log.Println("teardown test")
-		deleteAllEntities(test.DB)
-	}
-}
-
-func deleteAllEntities(db *gorm.DB) error {
-	log.Println("Deleting all entities.")
-	return db.Exec("DELETE FROM projects").Error
-}
-
 func Test_projectService_AddProject(t *testing.T) {
-	teardownTest := setupTest(t)
+	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
 	projectRepo := database.NewGormProjectRepository(test.DB)
@@ -60,7 +32,7 @@ func Test_projectService_AddProject(t *testing.T) {
 }
 
 func Test_projectService_AddProjectFailsWithoutUserId(t *testing.T) {
-	teardownTest := setupTest(t)
+	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
 	projectRepo := database.NewGormProjectRepository(test.DB)

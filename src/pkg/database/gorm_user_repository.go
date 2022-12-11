@@ -23,3 +23,11 @@ func (repo *gormUserRepository) AddUser(user *model.User) (*model.User, error) {
 	}
 	return user, nil
 }
+
+func (repo *gormUserRepository) GetAllUsers() ([]model.User, error) {
+	var users []model.User
+	if err := repo.db.Order("username").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}

@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"log"
+	"testing"
 	"timeasy-server/pkg/domain/model"
 
 	"github.com/ory/dockertest"
@@ -51,6 +52,7 @@ func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
 		}
 		return db.Ping()
 	})
+	DB.AutoMigrate(&model.User{})
 	DB.AutoMigrate(&model.Project{})
 	return pool, resource
 }
@@ -59,4 +61,23 @@ func TeardownDatabase(pool *dockertest.Pool, resource *dockertest.Resource) {
 	if err := pool.Purge(resource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
+}
+
+func SetupTest(tb testing.TB) func(tb testing.TB) {
+	deleteAllEntities(DB)
+	return func(tb testing.TB) {
+		deleteAllEntities(DB)
+	}
+}
+
+func deleteAllEntities(db *gorm.DB) error {
+	err := db.Exec("DELETE FROM users")
+	if err != nil {
+		return err.Error
+	}
+	err = db.Exec("DELETE FROM projects")
+	if err != nil {
+		return err.Error
+	}
+	return nil
 }
