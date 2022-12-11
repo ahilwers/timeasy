@@ -4,6 +4,7 @@ import (
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
+	"github.com/gofrs/uuid"
 	"gorm.io/gorm"
 )
 
@@ -22,6 +23,21 @@ func (repo *gormUserRepository) AddUser(user *model.User) (*model.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (repo *gormUserRepository) UpdateUser(user *model.User) error {
+	if err := repo.db.Save(user).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *gormUserRepository) GetUserById(id uuid.UUID) (*model.User, error) {
+	var user model.User
+	if err := repo.db.First(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (repo *gormUserRepository) GetAllUsers() ([]model.User, error) {
