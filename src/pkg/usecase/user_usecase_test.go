@@ -276,3 +276,5 @@ func Test_userUsecase_UpdateUserFailsIfUserDoesNotExist(t *testing.T) {
 		t.Errorf("an error was expected because the user does not exist")
 	}
 }
+
+//Todo: Add tests for updating the password of a user.

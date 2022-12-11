@@ -13,7 +13,11 @@ import (
 type UserUsecase interface {
 	GetUserById(id uuid.UUID) (*model.User, error)
 	AddUser(user *model.User) (*model.User, error)
+	// Updates a user
+	// Note: This will not update the password - user UpdateUserPassword if you want to update the password.
 	UpdateUser(user *model.User) error
+	// Updated the password of am existing user with the specified id.
+	UpdateUserPassword(id uuid.UUID, newPassword string) error
 }
 
 type userUsecase struct {
@@ -37,7 +41,7 @@ func (uu *userUsecase) AddUser(user *model.User) (*model.User, error) {
 	}
 	hashedPassword, err := encryptPassword(user.Password)
 	if err != nil {
-		return user, err
+		return user, fmt.Errorf("could not encrypt password: %v", err)
 	}
 	user.Password = hashedPassword
 	return uu.userRepo.AddUser(user)
@@ -54,6 +58,20 @@ func (uu *userUsecase) UpdateUser(user *model.User) error {
 	}
 	user.Password = userFromDb.Password
 	return uu.userRepo.UpdateUser(user)
+}
+
+func (uu *userUsecase) UpdateUserPassword(id uuid.UUID, newPassword string) error {
+	hashedPassword, err := encryptPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("could not encrypt password: %v", err)
+	}
+	user, err := uu.GetUserById(id)
+	if err != nil {
+		return err
+	}
+	user.Password = hashedPassword
+	uu.userRepo.UpdateUser(user)
+	return nil
 }
 
 func (uu *userUsecase) checkUserData(user *model.User) error {
