@@ -50,3 +50,56 @@ func Test_userUseCase_AddingUserFailsIfPasswordEmpty(t *testing.T) {
 		t.Errorf("wrong error was thrown: %v", err)
 	}
 }
+
+func Test_userUseCase_AddingUserFailsIfPasswordOnlyContainsSpaces(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := model.User{
+		Username: "user",
+		Password: "  ",
+	}
+	_, err := userUsecase.AddUser(&user)
+	if err == nil {
+		t.Errorf("adding a user without password should cause an error")
+	} else if err.Error() != "password must not be empty" {
+		t.Errorf("wrong error was thrown: %v", err)
+	}
+}
+
+func Test_userUseCase_AddingUserFailsIfUsernameEmpty(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := model.User{
+		Password: "password",
+	}
+	_, err := userUsecase.AddUser(&user)
+	if err == nil {
+		t.Errorf("adding a user without username should cause an error")
+	} else if err.Error() != "username must not be empty" {
+		t.Errorf("wrong error was thrown: %v", err)
+	}
+}
+
+func Test_userUseCase_AddingUserFailsIfUsernameOnlyContainsSpaces(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := model.User{
+		Username: "  ",
+		Password: "password",
+	}
+	_, err := userUsecase.AddUser(&user)
+	if err == nil {
+		t.Errorf("adding a user without username should cause an error")
+	} else if err.Error() != "username must not be empty" {
+		t.Errorf("wrong error was thrown: %v", err)
+	}
+}

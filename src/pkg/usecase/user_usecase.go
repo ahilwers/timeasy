@@ -22,6 +22,9 @@ func NewUserUsecase(repo repository.UserRepository) UserUsecase {
 }
 
 func (uu *userUsecase) AddUser(user *model.User) (*model.User, error) {
+	if len(strings.TrimSpace(user.Username)) == 0 {
+		return nil, fmt.Errorf("username must not be empty")
+	}
 	if len(strings.TrimSpace(user.Password)) == 0 {
 		return nil, fmt.Errorf("password must not be empty")
 	}
