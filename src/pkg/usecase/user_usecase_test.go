@@ -277,4 +277,52 @@ func Test_userUsecase_UpdateUserFailsIfUserDoesNotExist(t *testing.T) {
 	}
 }
 
-//Todo: Add tests for updating the password of a user.
+// Todo: Add tests for updating the password of a user.
+func Test_userUsecase_UpdateUserPassword(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := model.User{
+		Username: "user",
+		Password: "password",
+	}
+	_, err := userUsecase.AddUser(&user)
+	if err != nil {
+		t.Errorf("error adding the user: %v", err)
+	}
+	oldPassword := user.Password
+	err = userUsecase.UpdateUserPassword(user.ID, "newPassword")
+	if err != nil {
+		t.Errorf("error updating user password: %v", err)
+	}
+	users, err := userRepo.GetAllUsers()
+	if err != nil {
+		t.Errorf("error getting users from database: %v", err)
+	}
+	if len(users) != 1 {
+		t.Errorf("there should only be 1 user in the database - actual count: %v", len(users))
+	}
+	updatedUser := users[0]
+	if updatedUser.Password == oldPassword {
+		t.Errorf("the user password was not updated - password is %v", updatedUser.Password)
+	}
+	if updatedUser.Password == "newPassword" {
+		t.Errorf("the user password was not encrypted - password is still %v", updatedUser.Password)
+	}
+}
+
+func Test_updatingUserPasswordFailsIfUserDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+
+	notExistingId, _ := uuid.NewV4()
+	err := userUsecase.UpdateUserPassword(notExistingId, "newPassword")
+	if err == nil {
+		t.Error("updating a password for a non existing user should have thrown an error.")
+	}
+}
