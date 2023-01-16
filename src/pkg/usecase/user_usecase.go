@@ -19,6 +19,8 @@ type UserUsecase interface {
 	UpdateUser(user *model.User) error
 	// Updates the password of an existing user with the specified id.
 	UpdateUserPassword(id uuid.UUID, newPassword string) error
+	// Checks if the given password is equal to the hashed password.
+	VerifyPassword(password, hashedPassword string) error
 }
 
 type userUsecase struct {
@@ -44,7 +46,7 @@ func (uu *userUsecase) AddUser(user *model.User) (*model.User, error) {
 	if err != nil {
 		return user, err
 	}
-	hashedPassword, err := encryptPassword(user.Password)
+	hashedPassword, err := uu.encryptPassword(user.Password)
 	if err != nil {
 		return user, fmt.Errorf("could not encrypt password: %v", err)
 	}
@@ -66,7 +68,7 @@ func (uu *userUsecase) UpdateUser(user *model.User) error {
 }
 
 func (uu *userUsecase) UpdateUserPassword(id uuid.UUID, newPassword string) error {
-	hashedPassword, err := encryptPassword(newPassword)
+	hashedPassword, err := uu.encryptPassword(newPassword)
 	if err != nil {
 		return fmt.Errorf("could not encrypt password: %v", err)
 	}
@@ -89,10 +91,14 @@ func (uu *userUsecase) checkUserData(user *model.User) error {
 	return nil
 }
 
-func encryptPassword(password string) (string, error) {
+func (uu *userUsecase) encryptPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return password, err
 	}
 	return string(hashedPassword), nil
+}
+
+func (uu *userUsecase) VerifyPassword(password, hashedPassword string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }

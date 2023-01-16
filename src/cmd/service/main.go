@@ -27,14 +27,21 @@ func main() {
 
 	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
 	projectHandler := http.NewProjectHandler(projectUsecase)
+	userUsecase := usecase.NewUserUsecase(database.NewGormUserRepository(databaseService.Database))
+	userHandler := http.NewUserHandler(userUsecase)
 
 	router := gin.Default()
 
 	router.Use(ginglog.Logger(3 * time.Second))
 	router.Use(gin.Recovery())
 
-	privateGroup := router.Group("/api/v1")
-	privateGroup.POST("/projects", projectHandler.AddProject)
+	publicGroup := router.Group("/api/v1")
+	publicGroup.POST("/signup", userHandler.Signup)
+	publicGroup.POST("/login", userHandler.Login)
+
+	protectedGroup := router.Group("/api/v1")
+	protectedGroup.Use(http.JwtAuthMiddleware())
+	protectedGroup.POST("/projects", projectHandler.AddProject)
 
 	router.Run()
 }
