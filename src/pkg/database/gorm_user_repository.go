@@ -40,6 +40,14 @@ func (repo *gormUserRepository) GetUserById(id uuid.UUID) (*model.User, error) {
 	return &user, nil
 }
 
+func (repo *gormUserRepository) GetUserByName(username string) (*model.User, error) {
+	var user model.User
+	if err := repo.db.First(&user, "username=?", username).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (repo *gormUserRepository) GetAllUsers() ([]model.User, error) {
 	var users []model.User
 	if err := repo.db.Order("username").Find(&users).Error; err != nil {

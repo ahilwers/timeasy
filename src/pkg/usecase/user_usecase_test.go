@@ -200,6 +200,61 @@ func Test_userUsecase_GetUserByIdThrowsErrorIfUserNotFound(t *testing.T) {
 	}
 }
 
+func Test_userUsecase_GetUserByName(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+
+	user1 := model.User{
+		Username: "user1",
+		Password: "password",
+	}
+	_, err := userUsecase.AddUser(&user1)
+	if err != nil {
+		t.Errorf("error adding the user: %v", err)
+	}
+
+	user2 := model.User{
+		Username: "user2",
+		Password: "password",
+	}
+	_, err = userUsecase.AddUser(&user2)
+	if err != nil {
+		t.Errorf("error adding the user: %v", err)
+	}
+
+	user1FromDb, err := userUsecase.GetUserByName(user1.Username)
+	if err != nil {
+		t.Errorf("error getting user from database: %v", err)
+	}
+	if user1FromDb.ID != user1.ID {
+		t.Errorf("id of found user doesn't match the searched user - searched: %v, actual: %v", user1.ID, user1FromDb.ID)
+	}
+
+	user2FromDb, err := userUsecase.GetUserByName(user2.Username)
+	if err != nil {
+		t.Errorf("error getting user from database: %v", err)
+	}
+	if user2FromDb.ID != user2.ID {
+		t.Errorf("id of found user doesn't match the searched user - searched: %v, actual: %v", user1.ID, user1FromDb.ID)
+	}
+}
+
+func Test_userUsecase_GetUserByNameThrowsErrorIfUserNotFound(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+
+	_, err := userUsecase.GetUserByName("notExistingUser")
+	if err == nil {
+		t.Error("there should have been an error as the user does not exist")
+	}
+}
+
 func Test_userUsecase_UpdateUser(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
