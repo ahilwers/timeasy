@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
+
+	"github.com/gofrs/uuid"
 )
 
 type ProjectUsecase interface {
@@ -21,7 +23,7 @@ func NewProjectUsecase(repo repository.ProjectRepository) ProjectUsecase {
 }
 
 func (pu *projectUsecase) AddProject(project *model.Project) (*model.Project, error) {
-	if project.UserId == "" {
+	if project.UserId == uuid.Nil {
 		return nil, fmt.Errorf("The user id must not be empty.")
 	}
 	return pu.repo.AddProject(project)

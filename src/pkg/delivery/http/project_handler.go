@@ -28,7 +28,12 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	//Todo: set user id here
+	userId, err := ExtractTokenID(context)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	prj.UserId = userId
 
 	createdProject, err := handler.usecase.AddProject(&prj)
 	if err != nil {

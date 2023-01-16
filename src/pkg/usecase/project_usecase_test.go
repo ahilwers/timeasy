@@ -11,13 +11,25 @@ func Test_projectService_AddProject(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+
+	user := model.User{
+		Username: "user",
+		Password: "password",
+	}
+	_, err := userUsecase.AddUser(&user)
+	if err != nil {
+		t.Errorf("user can not be added: %v", err)
+	}
+
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 	prj := model.Project{
 		Name:   "Testproject",
-		UserId: "1",
+		UserId: user.ID,
 	}
-	_, err := projectUsecase.AddProject(&prj)
+	_, err = projectUsecase.AddProject(&prj)
 	if err != nil {
 		t.Errorf("Project could not be created: %s", err)
 	}
