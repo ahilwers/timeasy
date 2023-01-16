@@ -23,16 +23,26 @@ func NewUserHandler(usecase usecase.UserUsecase) UserHandler {
 	}
 }
 
+type signupInput struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
 func (handler *userHandler) Signup(context *gin.Context) {
-	var user model.User
-	if err := context.ShouldBindJSON(&user); err != nil {
+	var input signupInput
+	if err := context.ShouldBindJSON(&input); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	user := model.User{
+		Username: input.Username,
+		Password: input.Password,
 	}
 	createdUser, err := handler.usecase.AddUser(&user)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
+	createdUser.Password = ""
 	context.JSON(http.StatusOK, createdUser)
 }
 
