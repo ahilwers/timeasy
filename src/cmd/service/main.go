@@ -1,14 +1,10 @@
 package main
 
 import (
-	"time"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/delivery/http"
 	"timeasy-server/pkg/usecase"
-
-	"github.com/gin-gonic/gin"
-	ginglog "github.com/szuecs/gin-glog"
 )
 
 var databaseService database.DatabaseService
@@ -30,18 +26,6 @@ func main() {
 	userUsecase := usecase.NewUserUsecase(database.NewGormUserRepository(databaseService.Database))
 	userHandler := http.NewUserHandler(userUsecase)
 
-	router := gin.Default()
-
-	router.Use(ginglog.Logger(3 * time.Second))
-	router.Use(gin.Recovery())
-
-	publicGroup := router.Group("/api/v1")
-	publicGroup.POST("/signup", userHandler.Signup)
-	publicGroup.POST("/login", userHandler.Login)
-
-	protectedGroup := router.Group("/api/v1")
-	protectedGroup.Use(http.JwtAuthMiddleware())
-	protectedGroup.POST("/projects", projectHandler.AddProject)
-
+	router := http.SetupRouter(userHandler, projectHandler)
 	router.Run()
 }
