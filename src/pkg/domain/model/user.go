@@ -10,6 +10,7 @@ type User struct {
 	ID       uuid.UUID `gorm:"type:uuid;primaryKey;"`
 	Username string
 	Password string
+	Roles    RoleList `gorm:"type:VARCHAR(255)"` //store the roles in a string field
 }
 
 func (user *User) BeforeCreate(db *gorm.DB) error {
@@ -18,5 +19,9 @@ func (user *User) BeforeCreate(db *gorm.DB) error {
 		return err
 	}
 	user.ID = id
+	// If no group is provided add the user role
+	if len(user.Roles) == 0 {
+		user.Roles = append(user.Roles, RoleUser)
+	}
 	return nil
 }

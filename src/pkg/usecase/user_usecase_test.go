@@ -35,6 +35,51 @@ func Test_userUsecase_AddUser(t *testing.T) {
 	if userFromDb.Username != user.Username {
 		t.Errorf("username wrong - expected: %v, actual: %v", user.Username, userFromDb.Username)
 	}
+	// After Adding the user should have the Role "USER"
+	if len(userFromDb.Roles) != 1 {
+		t.Error("the new user sould have one role")
+	}
+	if userFromDb.Roles[0] != model.RoleUser {
+		t.Errorf("the role should be %v but is %v", model.RoleUser, userFromDb.Roles[0])
+	}
+}
+
+func Test_userUsecase_AddUserWithMultipleRoles(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleAdmin, model.RoleUser},
+	}
+	_, err := userUsecase.AddUser(&user)
+	if err != nil {
+		t.Errorf("error adding the user: %v", err)
+	}
+	users, err := userRepo.GetAllUsers()
+	if err != nil {
+		t.Errorf("error getting users from database: %v", err)
+	}
+	if len(users) == 0 {
+		t.Error("user dataset was not created")
+	}
+	userFromDb := users[0]
+	if userFromDb.Username != user.Username {
+		t.Errorf("username wrong - expected: %v, actual: %v", user.Username, userFromDb.Username)
+	}
+	// After Adding the user should have all the roles we provided
+	if len(userFromDb.Roles) != 2 {
+		t.Error("the new user sould have one role")
+	}
+	if userFromDb.Roles[0] != model.RoleAdmin {
+		t.Errorf("the first role should be %v but is %v", model.RoleAdmin, userFromDb.Roles[0])
+	}
+	if userFromDb.Roles[1] != model.RoleUser {
+		t.Errorf("the second role should be %v but is %v", model.RoleUser, userFromDb.Roles[1])
+	}
 }
 
 func Test_userUseCase_AddingUserFailsIfPasswordEmpty(t *testing.T) {
