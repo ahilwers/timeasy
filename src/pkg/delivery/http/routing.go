@@ -19,6 +19,7 @@ func SetupRouter(userHandler UserHandler, projectHandler ProjectHandler) *gin.En
 
 	protectedGroup := router.Group("/api/v1")
 	protectedGroup.Use(JwtAuthMiddleware())
+	protectedGroup.GET("/users/:id", userHandler.GetUserById)
 	protectedGroup.POST("/projects", projectHandler.AddProject)
 
 	return router
