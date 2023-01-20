@@ -13,6 +13,7 @@ import (
 type UserUsecase interface {
 	GetUserById(id uuid.UUID) (*model.User, error)
 	GetUserByName(username string) (*model.User, error)
+	GetAllUsers() ([]model.User, error)
 	AddUser(user *model.User) (*model.User, error)
 	// Updates a user
 	// Note: This will not update the password - use UpdateUserPassword if you want to update the password.
@@ -39,6 +40,10 @@ func (uu *userUsecase) GetUserById(id uuid.UUID) (*model.User, error) {
 
 func (uu *userUsecase) GetUserByName(username string) (*model.User, error) {
 	return uu.userRepo.GetUserByName(username)
+}
+
+func (uu *userUsecase) GetAllUsers() ([]model.User, error) {
+	return uu.userRepo.GetAllUsers()
 }
 
 func (uu *userUsecase) AddUser(user *model.User) (*model.User, error) {
