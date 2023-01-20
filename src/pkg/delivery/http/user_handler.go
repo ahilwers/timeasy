@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/usecase"
@@ -13,6 +14,7 @@ type UserHandler interface {
 	Signup(context *gin.Context)
 	Login(context *gin.Context)
 	GetUserById(context *gin.Context)
+	GetAllUsers(contest *gin.Context)
 }
 
 type userHandler struct {
@@ -120,8 +122,28 @@ func (handler *userHandler) GetUserById(context *gin.Context) {
 	}
 	user, err := handler.usecase.GetUserById(userId)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "username or assword not valid"})
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %v not found", userId)})
 		return
 	}
 	context.JSON(http.StatusOK, user)
+}
+
+func (handler *userHandler) GetAllUsers(context *gin.Context) {
+	token := ExtractToken(context)
+	hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !hasAdminRole {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": "you are not allowed to fetch this user"})
+		return
+	}
+
+	users, err := handler.usecase.GetAllUsers()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all users"})
+		return
+	}
+	context.JSON(http.StatusOK, users)
 }
