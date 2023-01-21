@@ -22,6 +22,7 @@ type UserUsecase interface {
 	UpdateUserPassword(id uuid.UUID, newPassword string) error
 	// Checks if the given password is equal to the hashed password.
 	VerifyPassword(password, hashedPassword string) error
+	DeleteUser(id uuid.UUID) error
 }
 
 type userUsecase struct {
@@ -94,6 +95,18 @@ func (uu *userUsecase) UpdateUserPassword(id uuid.UUID, newPassword string) erro
 	}
 	user.Password = hashedPassword
 	uu.userRepo.UpdateUser(user)
+	return nil
+}
+
+func (uu *userUsecase) DeleteUser(id uuid.UUID) error {
+	user, err := uu.GetUserById(id)
+	if err != nil {
+		return &EntityNotFoundError{Msg: err.Error()}
+	}
+	err = uu.userRepo.DeleteUser(user)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

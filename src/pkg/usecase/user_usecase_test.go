@@ -351,3 +351,36 @@ func Test_updatingUserPasswordFailsIfUserDoesNotExist(t *testing.T) {
 	err := userUsecase.UpdateUserPassword(notExistingId, "newPassword")
 	assert.NotNil(t, err)
 }
+
+func Test_deleteUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+
+	user := model.User{
+		Username: "user",
+		Password: "password",
+	}
+	_, err := userUsecase.AddUser(&user)
+	assert.Nil(t, err)
+
+	err = userUsecase.DeleteUser(user.ID)
+	assert.Nil(t, err)
+
+	userList, err := userUsecase.GetAllUsers()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(userList))
+}
+
+func Test_deleteUserFailsIfUserDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+
+	notExistingId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	err = userUsecase.DeleteUser(notExistingId)
+	assert.NotNil(t, err)
+}

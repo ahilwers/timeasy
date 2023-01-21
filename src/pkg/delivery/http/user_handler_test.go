@@ -798,6 +798,39 @@ func Test_userHandler_UpdateUserRolesFailsIfNotAdmin(t *testing.T) {
 	assert.Equal(t, model.RoleUser, userFromDb.Roles[0])
 }
 
+func Test_userHandler_DeleteUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser, model.RoleAdmin})
+	assert.Nil(t, err)
+	otherUser, err := addUser(userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/users/%v", otherUser.ID), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	_, err = userUsecase.GetUserById(otherUser.ID)
+	assert.NotNil(t, err)
+}
+
 func addUsers(userUsecase usecase.UserUsecase, count int) ([]model.User, error) {
 	var users []model.User
 	for i := 0; i < count; i++ {
