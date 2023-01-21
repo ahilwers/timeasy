@@ -19,6 +19,7 @@ type UserHandler interface {
 	GetAllUsers(context *gin.Context)
 	UpdateUser(context *gin.Context)
 	UpdatePassword(context *gin.Context)
+	UpdateRoles(context *gin.Context)
 }
 
 type userHandler struct {
@@ -258,6 +259,40 @@ func (handler *userHandler) UpdatePassword(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("password of user %v updated", userId)})
+}
+
+type rolesInput struct {
+	Roles model.RoleList
+}
+
+func (handler *userHandler) UpdateRoles(context *gin.Context) {
+	userId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	token := ExtractToken(context)
+	hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !hasAdminRole {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": "you are not allowed to update this user"})
+		return
+	}
+	var rolesInput rolesInput
+	if err := context.ShouldBindJSON(&rolesInput); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	user, err := handler.usecase.GetUserById(userId)
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %v does not exist", userId)})
+		return
+	}
+	user.Roles = rolesInput.Roles
+	err = handler.usecase.UpdateUser(user)
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("roles of user %v updated", userId)})
 }
 
 func (handler *userHandler) getId(context *gin.Context) (uuid.UUID, error) {
