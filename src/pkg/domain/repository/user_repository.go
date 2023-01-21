@@ -12,4 +12,5 @@ type UserRepository interface {
 	GetUserById(id uuid.UUID) (*model.User, error)
 	GetUserByName(username string) (*model.User, error)
 	GetAllUsers() ([]model.User, error)
+	DeleteUser(user *model.User) error
 }

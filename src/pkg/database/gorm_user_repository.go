@@ -55,3 +55,10 @@ func (repo *gormUserRepository) GetAllUsers() ([]model.User, error) {
 	}
 	return users, nil
 }
+
+func (repo *gormUserRepository) DeleteUser(user *model.User) error {
+	if err := repo.db.Delete(user).Error; err != nil {
+		return err
+	}
+	return nil
+}

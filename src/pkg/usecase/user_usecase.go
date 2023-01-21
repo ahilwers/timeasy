@@ -13,6 +13,7 @@ import (
 type UserUsecase interface {
 	GetUserById(id uuid.UUID) (*model.User, error)
 	GetUserByName(username string) (*model.User, error)
+	GetAllUsers() ([]model.User, error)
 	AddUser(user *model.User) (*model.User, error)
 	// Updates a user
 	// Note: This will not update the password - use UpdateUserPassword if you want to update the password.
@@ -21,6 +22,7 @@ type UserUsecase interface {
 	UpdateUserPassword(id uuid.UUID, newPassword string) error
 	// Checks if the given password is equal to the hashed password.
 	VerifyPassword(password, hashedPassword string) error
+	DeleteUser(id uuid.UUID) error
 }
 
 type userUsecase struct {
@@ -41,12 +43,24 @@ func (uu *userUsecase) GetUserByName(username string) (*model.User, error) {
 	return uu.userRepo.GetUserByName(username)
 }
 
+func (uu *userUsecase) GetAllUsers() ([]model.User, error) {
+	return uu.userRepo.GetAllUsers()
+}
+
 func (uu *userUsecase) AddUser(user *model.User) (*model.User, error) {
 	err := uu.checkUserData(user)
 	if err != nil {
 		return user, err
 	}
-	hashedPassword, err := uu.encryptPassword(user.Password)
+
+	_, err = uu.GetUserByName(user.Username)
+	if err == nil {
+		return user, &EntityExistsError{
+			Msg: "a user with the same name already exists",
+		}
+	}
+
+	hashedPassword, err := uu.EncryptPassword(user.Password)
 	if err != nil {
 		return user, fmt.Errorf("could not encrypt password: %v", err)
 	}
@@ -68,16 +82,31 @@ func (uu *userUsecase) UpdateUser(user *model.User) error {
 }
 
 func (uu *userUsecase) UpdateUserPassword(id uuid.UUID, newPassword string) error {
-	hashedPassword, err := uu.encryptPassword(newPassword)
+	if len(strings.TrimSpace(newPassword)) == 0 {
+		return fmt.Errorf("password must not be empty")
+	}
+	hashedPassword, err := uu.EncryptPassword(newPassword)
 	if err != nil {
 		return fmt.Errorf("could not encrypt password: %v", err)
 	}
 	user, err := uu.GetUserById(id)
 	if err != nil {
-		return err
+		return &EntityNotFoundError{Msg: err.Error()}
 	}
 	user.Password = hashedPassword
 	uu.userRepo.UpdateUser(user)
+	return nil
+}
+
+func (uu *userUsecase) DeleteUser(id uuid.UUID) error {
+	user, err := uu.GetUserById(id)
+	if err != nil {
+		return &EntityNotFoundError{Msg: err.Error()}
+	}
+	err = uu.userRepo.DeleteUser(user)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -91,7 +120,7 @@ func (uu *userUsecase) checkUserData(user *model.User) error {
 	return nil
 }
 
-func (uu *userUsecase) encryptPassword(password string) (string, error) {
+func (uu *userUsecase) EncryptPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return password, err
