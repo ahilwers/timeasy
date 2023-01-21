@@ -70,19 +70,25 @@ func TeardownDatabase(pool *dockertest.Pool, resource *dockertest.Resource) {
 }
 
 func SetupTest(tb testing.TB) func(tb testing.TB) {
-	deleteAllEntities(DB)
+	err := deleteAllEntities(DB)
+	if err != nil {
+		tb.Errorf(err.Error())
+	}
 	return func(tb testing.TB) {
-		deleteAllEntities(DB)
+		err := deleteAllEntities(DB)
+		if err != nil {
+			tb.Errorf(err.Error())
+		}
 	}
 }
 
 func deleteAllEntities(db *gorm.DB) error {
 	err := db.Exec("DELETE FROM users")
-	if err != nil {
+	if err.Error != nil {
 		return err.Error
 	}
 	err = db.Exec("DELETE FROM projects")
-	if err != nil {
+	if err.Error != nil {
 		return err.Error
 	}
 	return nil

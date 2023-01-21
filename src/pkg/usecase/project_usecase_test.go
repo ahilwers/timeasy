@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"testing"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/domain/model"
@@ -81,6 +82,25 @@ func Test_projectUsecase_GetProjectByIdFailsIfProjectDoesNotExist(t *testing.T) 
 	assert.NotNil(t, err)
 }
 
+func Test_projectUsecase_GetAllProjects(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	addProjects(t, projectUsecase, 3, user)
+
+	projectsFromDb, err := projectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(projectsFromDb))
+	for i, project := range projectsFromDb {
+		assert.Equal(t, fmt.Sprintf("Project%v", i+1), project.Name)
+		assert.Equal(t, user.ID, project.UserId)
+	}
+}
+
 func addUser(t *testing.T, username string, password string, roles model.RoleList) model.User {
 	userRepo := database.NewGormUserRepository(test.DB)
 	userUsecase := NewUserUsecase(userRepo)
@@ -92,4 +112,23 @@ func addUser(t *testing.T, username string, password string, roles model.RoleLis
 	_, err := userUsecase.AddUser(&user)
 	assert.Nil(t, err)
 	return user
+}
+
+func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, user model.User) []model.Project {
+	var projects []model.Project
+	for i := 0; i < count; i++ {
+		project := addProject(t, projectUsecase, fmt.Sprintf("Project%v", i+1), user)
+		projects = append(projects, project)
+	}
+	return projects
+}
+
+func addProject(t *testing.T, projectUsecase ProjectUsecase, name string, user model.User) model.Project {
+	prj := model.Project{
+		Name:   name,
+		UserId: user.ID,
+	}
+	err := projectUsecase.AddProject(&prj)
+	assert.Nil(t, err)
+	return prj
 }

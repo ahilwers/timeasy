@@ -9,8 +9,11 @@ import (
 )
 
 type ProjectUsecase interface {
-	AddProject(project *model.Project) error
 	GetProjectById(id uuid.UUID) (*model.Project, error)
+	GetAllProjects() ([]model.Project, error)
+	AddProject(project *model.Project) error
+	UpdateProject(project *model.Project) error
+	DeleteProject(id uuid.UUID) error
 }
 
 type projectUsecase struct {
@@ -32,4 +35,23 @@ func (pu *projectUsecase) AddProject(project *model.Project) error {
 
 func (pu *projectUsecase) GetProjectById(id uuid.UUID) (*model.Project, error) {
 	return pu.repo.GetProjectById(id)
+}
+
+func (pu *projectUsecase) UpdateProject(project *model.Project) error {
+	if project.UserId == uuid.Nil {
+		return fmt.Errorf("The user id must not be empty.")
+	}
+	return pu.repo.UpdateProject(project)
+}
+
+func (pu *projectUsecase) DeleteProject(id uuid.UUID) error {
+	project, err := pu.GetProjectById(id)
+	if err != nil {
+		return fmt.Errorf("project with id %v does not exist", id)
+	}
+	return pu.repo.DeleteProject(project)
+}
+
+func (pu *projectUsecase) GetAllProjects() ([]model.Project, error) {
+	return pu.repo.GetAllProjects()
 }
