@@ -9,7 +9,8 @@ import (
 )
 
 type ProjectUsecase interface {
-	AddProject(project *model.Project) (*model.Project, error)
+	AddProject(project *model.Project) error
+	GetProjectById(id uuid.UUID) (*model.Project, error)
 }
 
 type projectUsecase struct {
@@ -22,9 +23,13 @@ func NewProjectUsecase(repo repository.ProjectRepository) ProjectUsecase {
 	}
 }
 
-func (pu *projectUsecase) AddProject(project *model.Project) (*model.Project, error) {
+func (pu *projectUsecase) AddProject(project *model.Project) error {
 	if project.UserId == uuid.Nil {
-		return nil, fmt.Errorf("The user id must not be empty.")
+		return fmt.Errorf("The user id must not be empty.")
 	}
 	return pu.repo.AddProject(project)
+}
+
+func (pu *projectUsecase) GetProjectById(id uuid.UUID) (*model.Project, error) {
+	return pu.repo.GetProjectById(id)
 }
