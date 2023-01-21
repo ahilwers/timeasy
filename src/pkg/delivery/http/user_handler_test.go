@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"timeasy-server/pkg/test"
 	"timeasy-server/pkg/usecase"
 
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -368,14 +370,210 @@ func Test_userHandler_SignupFailsIfUsernameExists(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 409, w.Code)
 
-	var errorResult ErrorResult
-	err = json.Unmarshal(w.Body.Bytes(), &errorResult)
-	assert.Nil(t, err)
-	assert.Equal(t, "a user with the same name already exists", errorResult.Error)
+	AssertErrorMessageEquals(t, w.Body.Bytes(), "a user with the same name already exists")
 
 	usersFromDb, err := userUsecase.GetAllUsers()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(usersFromDb))
+}
+
+func Test_userHandler_UpdateUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	user, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	user.Username = "updatedUser"
+	userJson, err := json.Marshal(user)
+	assert.Nil(t, err)
+	reader := bytes.NewReader(userJson)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v", user.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	usersFromDb, err := userUsecase.GetAllUsers()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(usersFromDb))
+	assert.Equal(t, user.ID, usersFromDb[0].ID)
+	assert.Equal(t, "updatedUser", usersFromDb[0].Username)
+}
+
+func Test_userHandler_UpdateUserFailsIfUserUpdatesAnotherUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	otherUser, err := addUser(userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	otherUser.Username = "updatedUser"
+	userJson, err := json.Marshal(otherUser)
+	assert.Nil(t, err)
+	reader := bytes.NewReader(userJson)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v", otherUser.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 401, w.Code)
+
+	// The other user should not be updated:
+	otherUserFromDb, err := userUsecase.GetUserById(otherUser.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, "otherUser", otherUserFromDb.Username)
+}
+
+func Test_userHandler_UpdateUserPassesIfUserIsAdmin(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser, model.RoleAdmin})
+	assert.Nil(t, err)
+
+	otherUser, err := addUser(userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	otherUser.Username = "updatedUser"
+	userJson, err := json.Marshal(otherUser)
+	assert.Nil(t, err)
+	reader := bytes.NewReader(userJson)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v", otherUser.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	otherUserFromDb, err := userUsecase.GetUserById(otherUser.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, "updatedUser", otherUserFromDb.Username)
+}
+
+func Test_userHandler_UpdateUserFailsIfItDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser, model.RoleAdmin})
+	assert.Nil(t, err)
+
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	otherUser := model.User{
+		ID:       userId,
+		Username: "otherUser",
+		Password: "otherPassword",
+	}
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	otherUser.Username = "updatedUser"
+	userJson, err := json.Marshal(otherUser)
+	assert.Nil(t, err)
+	reader := bytes.NewReader(userJson)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v", otherUser.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code)
+}
+
+func Test_userHandler_UpdateUserFailsIfUsernameIsEmpty(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser, model.RoleAdmin})
+	assert.Nil(t, err)
+
+	otherUser, err := addUser(userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	otherUser.Username = ""
+	userJson, err := json.Marshal(otherUser)
+	assert.Nil(t, err)
+	reader := bytes.NewReader(userJson)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v", otherUser.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 400, w.Code)
+
+	AssertErrorMessageEquals(t, w.Body.Bytes(), "username must not be empty")
+
+	otherUserFromDb, err := userUsecase.GetUserById(otherUser.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, "otherUser", otherUserFromDb.Username)
 }
 
 func addUsers(userUsecase usecase.UserUsecase, count int) ([]model.User, error) {

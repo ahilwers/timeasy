@@ -12,6 +12,7 @@ import (
 	"timeasy-server/pkg/test"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 type ErrorResult struct {
@@ -51,4 +52,11 @@ func Login(router *gin.Engine, username string, password string) (string, error)
 
 func AddToken(req *http.Request, token string) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+}
+
+func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {
+	var errorResult ErrorResult
+	err := json.Unmarshal(responseBody, &errorResult)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedMessage, errorResult.Error)
 }

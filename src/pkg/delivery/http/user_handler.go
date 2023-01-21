@@ -15,7 +15,8 @@ type UserHandler interface {
 	Signup(context *gin.Context)
 	Login(context *gin.Context)
 	GetUserById(context *gin.Context)
-	GetAllUsers(contest *gin.Context)
+	GetAllUsers(context *gin.Context)
+	UpdateUser(constext *gin.Context)
 }
 
 type userHandler struct {
@@ -67,14 +68,12 @@ type loginInput struct {
 
 func (handler *userHandler) Login(context *gin.Context) {
 	var input loginInput
-
 	if err := context.ShouldBindJSON(&input); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	token, err := handler.checkLogin(input.Username, input.Password)
-
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect."})
 		return
@@ -100,17 +99,10 @@ func (handler *userHandler) checkLogin(username string, password string) (string
 }
 
 func (handler *userHandler) GetUserById(context *gin.Context) {
-	id := context.Param("id")
-	if id == "" {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "please specify a valid id"})
-		return
-	}
-	userId, err := uuid.FromString(id)
+	userId, err := handler.getId(context)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
 	}
-
 	token := ExtractToken(context)
 	authUserId, err := ExtractTokenUserId(token)
 	if err != nil {
@@ -156,4 +148,66 @@ func (handler *userHandler) GetAllUsers(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, users)
+}
+
+type updateUserInput struct {
+	Username string
+}
+
+func (handler *userHandler) UpdateUser(context *gin.Context) {
+	userId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	token := ExtractToken(context)
+	authUserId, err := ExtractTokenUserId(token)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// a normal user can only update his own data.
+	// if he tries to get the data of another user he must be an admin.
+	if authUserId != userId {
+		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !hasAdminRole {
+			context.JSON(http.StatusUnauthorized, gin.H{"error": "you are not allowed to update this user"})
+			return
+		}
+	}
+
+	var userInput updateUserInput
+	if err := context.ShouldBindJSON(&userInput); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	existingUser, err := handler.usecase.GetUserById(userId)
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %v not found", userId)})
+		return
+	}
+	existingUser.Username = userInput.Username
+
+	err = handler.usecase.UpdateUser(existingUser)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+}
+
+func (handler *userHandler) getId(context *gin.Context) (uuid.UUID, error) {
+	id := context.Param("id")
+	if id == "" {
+		return uuid.Nil, fmt.Errorf("please specify a valid id")
+	}
+	userId, err := uuid.FromString(id)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return userId, nil
 }
