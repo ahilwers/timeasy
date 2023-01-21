@@ -14,6 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ErrorResult struct {
+	Error string
+}
+
 func TestMain(m *testing.M) {
 	log.Println("Testmain")
 

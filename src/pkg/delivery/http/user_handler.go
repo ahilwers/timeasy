@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"timeasy-server/pkg/domain/model"
@@ -44,7 +45,16 @@ func (handler *userHandler) Signup(context *gin.Context) {
 	}
 	createdUser, err := handler.usecase.AddUser(&user)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		var entityExistsError *usecase.EntityExistsError
+		var errorCode int
+		switch {
+		case errors.As(err, &entityExistsError):
+			errorCode = http.StatusConflict
+		default:
+			errorCode = http.StatusInternalServerError
+		}
+		context.JSON(errorCode, gin.H{"error": err.Error()})
+		return
 	}
 	createdUser.Password = ""
 	context.JSON(http.StatusOK, createdUser)

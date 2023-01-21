@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/domain/model"
@@ -260,6 +261,121 @@ func Test_userHandler_GetUserListFailsIfUserIsNotAdmin(t *testing.T) {
 	AddToken(req, token)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 401, w.Code)
+}
+
+func Test_userHandler_Signup(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"username\": \"%v\", \"password\": \"%v\"}", "user1", "password1"))
+	req, err := http.NewRequest("POST", "/api/v1/signup", reader)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	usersFromDb, err := userUsecase.GetAllUsers()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(usersFromDb))
+	assert.Equal(t, "user1", usersFromDb[0].Username)
+}
+
+func Test_userHandler_SignupFailsWithoutUsername(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"username\": \"%v\", \"password\": \"%v\"}", "", "password"))
+	req, err := http.NewRequest("POST", "/api/v1/signup", reader)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 400, w.Code)
+
+	usersFromDb, err := userUsecase.GetAllUsers()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(usersFromDb))
+}
+
+func Test_userHandler_SignupFailsWithoutPassword(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"username\": \"%v\", \"password\": \"%v\"}", "user1", ""))
+	req, err := http.NewRequest("POST", "/api/v1/signup", reader)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 400, w.Code)
+
+	usersFromDb, err := userUsecase.GetAllUsers()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(usersFromDb))
+}
+
+func Test_userHandler_SignupFailsIfUsernameExists(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser})
+
+	router := SetupRouter(userHandler, projectHandler)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"username\": \"%v\", \"password\": \"%v\"}", "user1", "password"))
+	req, err := http.NewRequest("POST", "/api/v1/signup", reader)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 409, w.Code)
+
+	var errorResult ErrorResult
+	err = json.Unmarshal(w.Body.Bytes(), &errorResult)
+	assert.Nil(t, err)
+	assert.Equal(t, "a user with the same name already exists", errorResult.Error)
+
+	usersFromDb, err := userUsecase.GetAllUsers()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(usersFromDb))
 }
 
 func addUsers(userUsecase usecase.UserUsecase, count int) ([]model.User, error) {

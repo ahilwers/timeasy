@@ -51,6 +51,14 @@ func (uu *userUsecase) AddUser(user *model.User) (*model.User, error) {
 	if err != nil {
 		return user, err
 	}
+
+	_, err = uu.GetUserByName(user.Username)
+	if err == nil {
+		return user, &EntityExistsError{
+			Msg: "a user with the same name already exists",
+		}
+	}
+
 	hashedPassword, err := uu.encryptPassword(user.Password)
 	if err != nil {
 		return user, fmt.Errorf("could not encrypt password: %v", err)
