@@ -576,6 +576,157 @@ func Test_userHandler_UpdateUserFailsIfUsernameIsEmpty(t *testing.T) {
 	assert.Equal(t, "otherUser", otherUserFromDb.Username)
 }
 
+func Test_userHandler_UpdateUserPassword(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	user, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"password\": \"%v\"}", "newPassword"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v/password", user.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	userFromDb, err := userUsecase.GetUserById(user.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, user.Username, userFromDb.Username)
+	err = userUsecase.VerifyPassword("newPassword", userFromDb.Password)
+	assert.Nil(t, err)
+}
+
+func Test_userHandler_UpdateUserPasswordFailsIfNotSameUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	otherUser, err := addUser(userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"password\": \"%v\"}", "newPassword"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v/password", otherUser.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 401, w.Code)
+
+	userFromDb, err := userUsecase.GetUserById(otherUser.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, otherUser.Username, userFromDb.Username)
+	// Password should still be the same:
+	err = userUsecase.VerifyPassword("otherPassword", userFromDb.Password)
+	assert.Nil(t, err)
+}
+
+func Test_userHandler_UpdateUserPasswordPassesIfUserIsAdmin(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser, model.RoleAdmin})
+	assert.Nil(t, err)
+
+	otherUser, err := addUser(userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"password\": \"%v\"}", "newPassword"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v/password", otherUser.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	userFromDb, err := userUsecase.GetUserById(otherUser.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, otherUser.Username, userFromDb.Username)
+	err = userUsecase.VerifyPassword("newPassword", userFromDb.Password)
+	assert.Nil(t, err)
+}
+
+func Test_userHandler_UpdateUserPasswordFailsIfPasswordEmpty(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	_, err := addUser(userUsecase, "user1", "password1", model.RoleList{model.RoleUser, model.RoleAdmin})
+	assert.Nil(t, err)
+
+	otherUser, err := addUser(userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, err := Login(router, "user1", "password1")
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"password\": \"%v\"}", ""))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%v/password", otherUser.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 400, w.Code)
+
+	userFromDb, err := userUsecase.GetUserById(otherUser.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, otherUser.Username, userFromDb.Username)
+	// Password should still be the same:
+	err = userUsecase.VerifyPassword("otherPassword", userFromDb.Password)
+	assert.Nil(t, err)
+}
+
 func addUsers(userUsecase usecase.UserUsecase, count int) ([]model.User, error) {
 	var users []model.User
 	for i := 0; i < count; i++ {

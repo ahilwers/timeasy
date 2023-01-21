@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/usecase"
 
@@ -16,7 +17,8 @@ type UserHandler interface {
 	Login(context *gin.Context)
 	GetUserById(context *gin.Context)
 	GetAllUsers(context *gin.Context)
-	UpdateUser(constext *gin.Context)
+	UpdateUser(context *gin.Context)
+	UpdatePassword(context *gin.Context)
 }
 
 type userHandler struct {
@@ -198,6 +200,64 @@ func (handler *userHandler) UpdateUser(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user %v updated", userId)})
+}
+
+type passwordChangeInput struct {
+	Password string
+}
+
+func (handler *userHandler) UpdatePassword(context *gin.Context) {
+	userId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	token := ExtractToken(context)
+	authUserId, err := ExtractTokenUserId(token)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// a normal user can only update his own data.
+	// if he tries to get the data of another user he must be an admin.
+	if authUserId != userId {
+		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !hasAdminRole {
+			context.JSON(http.StatusUnauthorized, gin.H{"error": "you are not allowed to update this user"})
+			return
+		}
+	}
+
+	var passwordInput passwordChangeInput
+	if err := context.ShouldBindJSON(&passwordInput); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(strings.TrimSpace(passwordInput.Password)) == 0 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "password must not be empty"})
+		return
+	}
+
+	err = handler.usecase.UpdateUserPassword(userId, passwordInput.Password)
+	if err != nil {
+		var entityNotFoundError *usecase.EntityNotFoundError
+		var errorCode int
+		switch {
+		case errors.As(err, &entityNotFoundError):
+			errorCode = http.StatusNotFound
+		default:
+			errorCode = http.StatusInternalServerError
+		}
+		context.JSON(errorCode, gin.H{"error": err.Error()})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("password of user %v updated", userId)})
 }
 
 func (handler *userHandler) getId(context *gin.Context) (uuid.UUID, error) {

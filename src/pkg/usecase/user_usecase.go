@@ -59,7 +59,7 @@ func (uu *userUsecase) AddUser(user *model.User) (*model.User, error) {
 		}
 	}
 
-	hashedPassword, err := uu.encryptPassword(user.Password)
+	hashedPassword, err := uu.EncryptPassword(user.Password)
 	if err != nil {
 		return user, fmt.Errorf("could not encrypt password: %v", err)
 	}
@@ -81,13 +81,16 @@ func (uu *userUsecase) UpdateUser(user *model.User) error {
 }
 
 func (uu *userUsecase) UpdateUserPassword(id uuid.UUID, newPassword string) error {
-	hashedPassword, err := uu.encryptPassword(newPassword)
+	if len(strings.TrimSpace(newPassword)) == 0 {
+		return fmt.Errorf("password must not be empty")
+	}
+	hashedPassword, err := uu.EncryptPassword(newPassword)
 	if err != nil {
 		return fmt.Errorf("could not encrypt password: %v", err)
 	}
 	user, err := uu.GetUserById(id)
 	if err != nil {
-		return err
+		return &EntityNotFoundError{Msg: err.Error()}
 	}
 	user.Password = hashedPassword
 	uu.userRepo.UpdateUser(user)
@@ -104,7 +107,7 @@ func (uu *userUsecase) checkUserData(user *model.User) error {
 	return nil
 }
 
-func (uu *userUsecase) encryptPassword(password string) (string, error) {
+func (uu *userUsecase) EncryptPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return password, err
