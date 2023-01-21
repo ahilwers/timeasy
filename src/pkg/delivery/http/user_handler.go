@@ -20,6 +20,7 @@ type UserHandler interface {
 	UpdateUser(context *gin.Context)
 	UpdatePassword(context *gin.Context)
 	UpdateRoles(context *gin.Context)
+	DeleteUser(context *gin.Context)
 }
 
 type userHandler struct {
@@ -293,6 +294,30 @@ func (handler *userHandler) UpdateRoles(context *gin.Context) {
 	user.Roles = rolesInput.Roles
 	err = handler.usecase.UpdateUser(user)
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("roles of user %v updated", userId)})
+}
+
+func (handler *userHandler) DeleteUser(context *gin.Context) {
+	userId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	token := ExtractToken(context)
+	hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !hasAdminRole {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": "you are not allowed to delete a user"})
+		return
+	}
+	_, err = handler.usecase.GetUserById(userId)
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %v does not exist", userId)})
+		return
+	}
+	err = handler.usecase.DeleteUser(userId)
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user %v deleted", userId)})
 }
 
 func (handler *userHandler) getId(context *gin.Context) (uuid.UUID, error) {
