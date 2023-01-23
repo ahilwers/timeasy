@@ -38,7 +38,7 @@ func Test_projectHandler_GetProjectById(t *testing.T) {
 		Name:   "testproject",
 		UserId: user.ID,
 	}
-	_, err := projectUsecase.AddProject(&project)
+	err := projectUsecase.AddProject(&project)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()

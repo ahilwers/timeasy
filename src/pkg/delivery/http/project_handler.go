@@ -43,9 +43,9 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 	}
 	fmt.Printf("Roles: %v\n", userRoles)
 
-	createdProject, err := handler.usecase.AddProject(&prj)
+	err = handler.usecase.AddProject(&prj)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
-	context.JSON(http.StatusOK, createdProject)
+	context.JSON(http.StatusOK, prj)
 }

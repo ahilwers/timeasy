@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"timeasy-server/pkg/database"
@@ -96,9 +97,117 @@ func Test_projectUsecase_GetAllProjects(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(projectsFromDb))
 	for i, project := range projectsFromDb {
-		assert.Equal(t, fmt.Sprintf("Project%v", i+1), project.Name)
+		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
 		assert.Equal(t, user.ID, project.UserId)
 	}
+}
+
+func Test_projectUsecase_UpdateProject(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	project := addProject(t, projectUsecase, "project1", user)
+	project.Name = "updatedProject"
+	err := projectUsecase.UpdateProject(&project)
+	assert.Nil(t, err)
+
+	projectsFromDb, err := projectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, project.ID, projectsFromDb[0].ID)
+	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.Equal(t, user.ID, projectsFromDb[0].UserId)
+}
+
+func Test_projectUsecase_UpdateProjectFailsIfProjectDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	projectId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	project := model.Project{
+		ID:     projectId,
+		Name:   "project",
+		UserId: user.ID,
+	}
+
+	project.Name = "updatedProject"
+	err = projectUsecase.UpdateProject(&project)
+	assert.NotNil(t, err)
+	var entityNotFoundError *EntityNotFoundError
+	assert.True(t, errors.As(err, &entityNotFoundError))
+
+	projectsFromDb, err := projectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(projectsFromDb))
+}
+
+func Test_projectUsecase_UpdateProjectFailsIfItHasNoUserId(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	project := addProject(t, projectUsecase, "project1", user)
+	project.Name = "updatedProject"
+	project.UserId = uuid.Nil
+	err := projectUsecase.UpdateProject(&project)
+	assert.NotNil(t, err)
+	var entityIncompleteError *EntityIncompleteError
+	assert.True(t, errors.As(err, &entityIncompleteError))
+
+	projectsFromDb, err := projectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	// The project data should not have been changed:
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, project.ID, projectsFromDb[0].ID)
+	assert.Equal(t, "project1", projectsFromDb[0].Name)
+	assert.Equal(t, user.ID, projectsFromDb[0].UserId)
+}
+
+func Test_projectUsecase_DeleteProject(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	projects := addProjects(t, projectUsecase, 3, user)
+
+	err := projectUsecase.DeleteProject(projects[1].ID)
+	assert.Nil(t, err)
+	projectsFromDb, err := projectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(projectsFromDb))
+	assert.Equal(t, "Project 1", projectsFromDb[0].Name)
+	assert.Equal(t, "Project 3", projectsFromDb[1].Name)
+}
+
+func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	notExistingId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	err = projectUsecase.DeleteProject(notExistingId)
+	assert.NotNil(t, err)
+	var entityNotFoundError *EntityNotFoundError
+	assert.True(t, errors.As(err, &entityNotFoundError))
 }
 
 func addUser(t *testing.T, username string, password string, roles model.RoleList) model.User {
@@ -117,7 +226,7 @@ func addUser(t *testing.T, username string, password string, roles model.RoleLis
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, user model.User) []model.Project {
 	var projects []model.Project
 	for i := 0; i < count; i++ {
-		project := addProject(t, projectUsecase, fmt.Sprintf("Project%v", i+1), user)
+		project := addProject(t, projectUsecase, fmt.Sprintf("Project %v", i+1), user)
 		projects = append(projects, project)
 	}
 	return projects
