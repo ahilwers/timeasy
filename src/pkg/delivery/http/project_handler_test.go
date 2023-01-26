@@ -42,7 +42,7 @@ func Test_projectHandler_GetProjectById(t *testing.T) {
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%v", user.ID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
 	AddToken(req, token)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)

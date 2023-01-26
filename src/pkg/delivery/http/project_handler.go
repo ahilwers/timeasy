@@ -7,10 +7,12 @@ import (
 	"timeasy-server/pkg/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid"
 )
 
 type ProjectHandler interface {
 	AddProject(context *gin.Context)
+	GetProjectById(context *gin.Context)
 }
 
 type projectHandler struct {
@@ -48,4 +50,50 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 	context.JSON(http.StatusOK, prj)
+}
+
+func (handler *projectHandler) GetProjectById(context *gin.Context) {
+	projectId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	project, err := handler.usecase.GetProjectById(projectId)
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
+		return
+	}
+	token := ExtractToken(context)
+	authUserId, err := ExtractTokenUserId(token)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// a normal user can only fetch his own data.
+	// if he tries to get the project of another user he must be an admin.
+	if authUserId != project.UserId {
+		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !hasAdminRole {
+			// We just say that the project was not found:
+			context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found",
+				projectId)})
+			return
+		}
+	}
+	context.JSON(http.StatusOK, project)
+}
+
+func (handler *projectHandler) getId(context *gin.Context) (uuid.UUID, error) {
+	id := context.Param("id")
+	if id == "" {
+		return uuid.Nil, fmt.Errorf("please specify a valid id")
+	}
+	userId, err := uuid.FromString(id)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return userId, nil
 }

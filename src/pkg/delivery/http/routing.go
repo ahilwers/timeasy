@@ -26,6 +26,7 @@ func SetupRouter(userHandler UserHandler, projectHandler ProjectHandler) *gin.En
 	protectedGroup.PUT("/users/:id/password", userHandler.UpdatePassword)
 	protectedGroup.PUT("/users/:id/roles", userHandler.UpdateRoles)
 	protectedGroup.POST("/projects", projectHandler.AddProject)
+	protectedGroup.GET("/projects/:id", projectHandler.GetProjectById)
 
 	return router
 }
