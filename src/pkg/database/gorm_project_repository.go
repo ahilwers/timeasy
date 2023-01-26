@@ -54,3 +54,11 @@ func (repo *gormProjectRepository) GetAllProjects() ([]model.Project, error) {
 	}
 	return projects, nil
 }
+
+func (repo *gormProjectRepository) GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error) {
+	var projects []model.Project
+	if err := repo.db.Order("name").Find(&projects, "user_id=?", userId).Error; err != nil {
+		return nil, err
+	}
+	return projects, nil
+}

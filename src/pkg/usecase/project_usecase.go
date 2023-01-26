@@ -11,6 +11,7 @@ import (
 type ProjectUsecase interface {
 	GetProjectById(id uuid.UUID) (*model.Project, error)
 	GetAllProjects() ([]model.Project, error)
+	GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error)
 	AddProject(project *model.Project) error
 	UpdateProject(project *model.Project) error
 	DeleteProject(id uuid.UUID) error
@@ -58,4 +59,7 @@ func (pu *projectUsecase) DeleteProject(id uuid.UUID) error {
 
 func (pu *projectUsecase) GetAllProjects() ([]model.Project, error) {
 	return pu.repo.GetAllProjects()
+}
+func (pu *projectUsecase) GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error) {
+	return pu.repo.GetAllProjectsOfUser(userId)
 }

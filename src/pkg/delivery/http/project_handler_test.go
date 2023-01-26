@@ -170,7 +170,128 @@ func Test_projectHandler_GetProjectByIdPassesIfBelongsToOtherUserAndUserIsAdmin(
 	assert.Equal(t, projectOwner.ID, projectFromService.UserId)
 }
 
-func loginUser(t *testing.T, router *gin.Engine, userUsecase usecase.UserUsecase, user model.User) (string, *model.User) {
+func Test_projectHandler_GetAllProjects(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, user := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+	})
+
+	addProjects(t, projectUsecase, 3, user)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/projects", nil)
+	AddToken(req, token)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var projectsFromService []model.Project
+	json.Unmarshal(w.Body.Bytes(), &projectsFromService)
+	for i, project := range projectsFromService {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
+		assert.Equal(t, user.ID, project.UserId)
+	}
+}
+
+func Test_projectHandler_GetAllProjectsReturnsOnlyProjectsOfUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, user := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+	})
+
+	addProjects(t, projectUsecase, 3, user)
+	otherUser := model.User{
+		Username: "otherUser",
+		Password: "otherPassword",
+	}
+	_, err := userUsecase.AddUser(&otherUser)
+	assert.Nil(t, err)
+	addProjectsWithStartIndex(t, projectUsecase, 4, 3, otherUser)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/projects", nil)
+	AddToken(req, token)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var projectsFromService []model.Project
+	json.Unmarshal(w.Body.Bytes(), &projectsFromService)
+	assert.Equal(t, 3, len(projectsFromService))
+	for i, project := range projectsFromService {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
+		assert.Equal(t, user.ID, project.UserId)
+	}
+}
+
+func Test_projectHandler_GetAllProjectsReturnsAllProjectsIfUserIsAdmin(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, user := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
+	})
+
+	addProjects(t, projectUsecase, 3, user)
+	otherUser := model.User{
+		Username: "otherUser",
+		Password: "otherPassword",
+	}
+	_, err := userUsecase.AddUser(&otherUser)
+	assert.Nil(t, err)
+	addProjectsWithStartIndex(t, projectUsecase, 4, 3, otherUser)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/projects", nil)
+	AddToken(req, token)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var projectsFromService []model.Project
+	json.Unmarshal(w.Body.Bytes(), &projectsFromService)
+	assert.Equal(t, 6, len(projectsFromService))
+	for i, project := range projectsFromService {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
+	}
+}
+
+func loginUser(t *testing.T, router *gin.Engine, userUsecase usecase.UserUsecase, user model.User) (string, model.User) {
 	username := user.Username
 	password := user.Password
 	_, err := userUsecase.AddUser(&user)
@@ -179,5 +300,28 @@ func loginUser(t *testing.T, router *gin.Engine, userUsecase usecase.UserUsecase
 	token, err := Login(router, username, password)
 	assert.Nil(t, err)
 
-	return token, &user
+	return token, user
+}
+
+func addProjects(t *testing.T, projectUsecase usecase.ProjectUsecase, count int, user model.User) []model.Project {
+	return addProjectsWithStartIndex(t, projectUsecase, 1, count, user)
+}
+
+func addProjectsWithStartIndex(t *testing.T, projectUsecase usecase.ProjectUsecase, startIndex int, count int, user model.User) []model.Project {
+	var projects []model.Project
+	for i := 0; i < count; i++ {
+		project := addProject(t, projectUsecase, fmt.Sprintf("Project %v", startIndex+i), user)
+		projects = append(projects, project)
+	}
+	return projects
+}
+
+func addProject(t *testing.T, projectUsecase usecase.ProjectUsecase, name string, user model.User) model.Project {
+	prj := model.Project{
+		Name:   name,
+		UserId: user.ID,
+	}
+	err := projectUsecase.AddProject(&prj)
+	assert.Nil(t, err)
+	return prj
 }

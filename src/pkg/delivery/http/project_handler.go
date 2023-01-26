@@ -13,6 +13,7 @@ import (
 type ProjectHandler interface {
 	AddProject(context *gin.Context)
 	GetProjectById(context *gin.Context)
+	GetAllProjects(context *gin.Context)
 }
 
 type projectHandler struct {
@@ -84,6 +85,32 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 		}
 	}
 	context.JSON(http.StatusOK, project)
+}
+
+func (handler *projectHandler) GetAllProjects(context *gin.Context) {
+	token := ExtractToken(context)
+	hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := ExtractTokenUserId(token)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var projects []model.Project
+	if hasAdminRole {
+		projects, err = handler.usecase.GetAllProjects()
+	} else {
+		projects, err = handler.usecase.GetAllProjectsOfUser(userId)
+	}
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all users"})
+		return
+	}
+	context.JSON(http.StatusOK, projects)
 }
 
 func (handler *projectHandler) getId(context *gin.Context) (uuid.UUID, error) {

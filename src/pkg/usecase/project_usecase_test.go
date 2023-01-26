@@ -102,6 +102,34 @@ func Test_projectUsecase_GetAllProjects(t *testing.T) {
 	}
 }
 
+func Test_projectUsecase_GetAllProjectsOfUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+
+	addProjects(t, projectUsecase, 3, user)
+	otherUser := addUser(t, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	addProjectsWithStartIndex(t, projectUsecase, 4, 3, otherUser)
+
+	projectsFromDb, err := projectUsecase.GetAllProjectsOfUser(user.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(projectsFromDb))
+	for i, project := range projectsFromDb {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
+		assert.Equal(t, user.ID, project.UserId)
+	}
+	projectsFromDb, err = projectUsecase.GetAllProjectsOfUser(otherUser.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(projectsFromDb))
+	for i, project := range projectsFromDb {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+4), project.Name)
+		assert.Equal(t, otherUser.ID, project.UserId)
+	}
+}
+
 func Test_projectUsecase_UpdateProject(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
@@ -214,8 +242,8 @@ func addUser(t *testing.T, username string, password string, roles model.RoleLis
 	userRepo := database.NewGormUserRepository(test.DB)
 	userUsecase := NewUserUsecase(userRepo)
 	user := model.User{
-		Username: "user",
-		Password: "password",
+		Username: username,
+		Password: password,
 		Roles:    roles,
 	}
 	_, err := userUsecase.AddUser(&user)
@@ -224,9 +252,13 @@ func addUser(t *testing.T, username string, password string, roles model.RoleLis
 }
 
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, user model.User) []model.Project {
+	return addProjectsWithStartIndex(t, projectUsecase, 1, count, user)
+}
+
+func addProjectsWithStartIndex(t *testing.T, projectUsecase ProjectUsecase, startIndex int, count int, user model.User) []model.Project {
 	var projects []model.Project
 	for i := 0; i < count; i++ {
-		project := addProject(t, projectUsecase, fmt.Sprintf("Project %v", i+1), user)
+		project := addProject(t, projectUsecase, fmt.Sprintf("Project %v", startIndex+i), user)
 		projects = append(projects, project)
 	}
 	return projects

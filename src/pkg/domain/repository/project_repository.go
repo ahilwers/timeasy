@@ -12,4 +12,5 @@ type ProjectRepository interface {
 	DeleteProject(project *model.Project) error
 	GetProjectById(id uuid.UUID) (*model.Project, error)
 	GetAllProjects() ([]model.Project, error)
+	GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error)
 }
