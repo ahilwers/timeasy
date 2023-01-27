@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/domain/model"
@@ -289,6 +290,41 @@ func Test_projectHandler_GetAllProjectsReturnsAllProjectsIfUserIsAdmin(t *testin
 	for i, project := range projectsFromService {
 		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
 	}
+}
+
+func Test_projectHandler_AddProject(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, user := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "project1"))
+	req, err := http.NewRequest("POST", "/api/v1/projects", reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "project1", projectsFromDb[0].Name)
+	assert.Equal(t, user.ID, projectsFromDb[0].UserId)
 }
 
 func loginUser(t *testing.T, router *gin.Engine, userUsecase usecase.UserUsecase, user model.User) (string, model.User) {

@@ -26,8 +26,12 @@ func NewProjectHandler(usecase usecase.ProjectUsecase) ProjectHandler {
 	}
 }
 
+type projectInput struct {
+	Name string `json:"name" binding:"required"`
+}
+
 func (handler *projectHandler) AddProject(context *gin.Context) {
-	var prj model.Project
+	var prj projectInput
 	if err := context.ShouldBindJSON(&prj); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -38,7 +42,11 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	prj.UserId = userId
+	newProject := model.Project{
+		Name:   prj.Name,
+		UserId: userId,
+	}
+
 	userRoles, err := ExtractTokenRoles(tokenString)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -46,7 +54,7 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 	}
 	fmt.Printf("Roles: %v\n", userRoles)
 
-	err = handler.usecase.AddProject(&prj)
+	err = handler.usecase.AddProject(&newProject)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
