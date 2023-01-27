@@ -327,6 +327,312 @@ func Test_projectHandler_AddProject(t *testing.T) {
 	assert.Equal(t, user.ID, projectsFromDb[0].UserId)
 }
 
+func Test_projectHandler_UpdateProject(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, user := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	project := addProject(t, projectUsecase, "project", user)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.Equal(t, user.ID, projectsFromDb[0].UserId)
+}
+
+func Test_projectHandler_UpdateProjectFailsIfItDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, _ := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	projectId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", projectId), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(projectsFromDb))
+}
+
+func Test_projectHandler_UpdateProjectFailsIfItBelongsToAnotherUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, _ := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	projectOwner := model.User{
+		Username: "owner",
+		Password: "ownerpassword",
+	}
+	_, err := userUsecase.AddUser(&projectOwner)
+	assert.Nil(t, err)
+
+	project := addProject(t, projectUsecase, "project", projectOwner)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "project", projectsFromDb[0].Name)
+	assert.Equal(t, projectOwner.ID, projectsFromDb[0].UserId)
+}
+
+func Test_projectHandler_UpdateProjectSucceedsIfItBelongsToAnotherUserAndUserIsAdmin(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, _ := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
+	})
+
+	projectOwner := model.User{
+		Username: "owner",
+		Password: "ownerpassword",
+	}
+	_, err := userUsecase.AddUser(&projectOwner)
+	assert.Nil(t, err)
+
+	project := addProject(t, projectUsecase, "project", projectOwner)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.Equal(t, projectOwner.ID, projectsFromDb[0].UserId)
+}
+
+func Test_projectHandler_DeleteProject(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, user := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	project := addProject(t, projectUsecase, "project", user)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(projectsFromDb))
+}
+
+func Test_projectHandler_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, _ := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	projectId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", projectId), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code)
+}
+
+func Test_projectHandler_DeleteProjectFailsIfItBelongsToAnotherUser(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, _ := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	projectOwner := model.User{
+		Username: "owner",
+		Password: "ownerpassword",
+	}
+	_, err := userUsecase.AddUser(&projectOwner)
+
+	project := addProject(t, projectUsecase, "project", projectOwner)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+}
+
+func Test_projectHandler_DeleteProjectSucceedsIfItBelongsToAnotherUserAndUserIsAdmin(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
+	userHandler := NewUserHandler(userUsecase)
+	projectHandler := NewProjectHandler(projectUsecase)
+
+	router := SetupRouter(userHandler, projectHandler)
+	token, _ := loginUser(t, router, userUsecase, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
+	})
+
+	projectOwner := model.User{
+		Username: "owner",
+		Password: "ownerpassword",
+	}
+	_, err := userUsecase.AddUser(&projectOwner)
+
+	project := addProject(t, projectUsecase, "project", projectOwner)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := projectRepo.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(projectsFromDb))
+}
+
 func loginUser(t *testing.T, router *gin.Engine, userUsecase usecase.UserUsecase, user model.User) (string, model.User) {
 	username := user.Username
 	password := user.Password

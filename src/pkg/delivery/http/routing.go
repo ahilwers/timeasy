@@ -28,6 +28,8 @@ func SetupRouter(userHandler UserHandler, projectHandler ProjectHandler) *gin.En
 	protectedGroup.GET("/projects", projectHandler.GetAllProjects)
 	protectedGroup.POST("/projects", projectHandler.AddProject)
 	protectedGroup.GET("/projects/:id", projectHandler.GetProjectById)
+	protectedGroup.PUT("/projects/:id", projectHandler.UpdateProject)
+	protectedGroup.DELETE("/projects/:id", projectHandler.DeleteProject)
 
 	return router
 }
