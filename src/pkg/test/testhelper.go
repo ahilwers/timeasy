@@ -60,6 +60,7 @@ func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
 	log.Println("=========================================================")
 	DB.AutoMigrate(&model.User{})
 	DB.AutoMigrate(&model.Project{})
+	DB.AutoMigrate(&model.TimeEntry{})
 	return pool, resource
 }
 

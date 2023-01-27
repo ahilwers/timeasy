@@ -10,15 +10,14 @@ import (
 type TimeEntry struct {
 	gorm.Model
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey;"`
-	UserId      uuid.UUID
-	ProjectId   uuid.UUID
+	UserId      uuid.UUID `gorm:"type:uuid;"`
+	ProjectId   uuid.UUID `gorm:"type:uuid;"`
 	StartTime   time.Time
 	EndTime     time.Time
 	Description string
 }
 
 func (timeEntry *TimeEntry) BeforeCreate(db *gorm.DB) error {
-	time.Now()
 	id, err := uuid.NewV4()
 	if err != nil {
 		return err
