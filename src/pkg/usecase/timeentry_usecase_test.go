@@ -253,6 +253,41 @@ func Test_timeEntryUsecase_UpdateTimeEntry(t *testing.T) {
 	assert.True(t, entryList[0].EndTime.IsZero())
 }
 
+func Test_timeEntryUsecase_UpdateTimeEntryFailsIfItDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+	project := addProject(t, projectUsecase, "project", user)
+
+	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
+	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
+	id, err := uuid.NewV4()
+	assert.Nil(t, err)
+	timeEntry := model.TimeEntry{
+		ID:          id,
+		Description: "timeentry",
+		StartTime:   time.Now(),
+		UserId:      user.ID,
+		ProjectId:   project.ID,
+	}
+
+	timeEntry.Description = "updatedTimeentry"
+	err = timeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	assert.NotNil(t, err)
+	var notFoundError *EntityNotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+
+	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entryList))
+}
+
 func Test_timeEntryUsecase_UpdateTimeEntryFailsIfUserIdIsEmpty(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
