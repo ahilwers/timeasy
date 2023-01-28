@@ -92,5 +92,9 @@ func deleteAllEntities(db *gorm.DB) error {
 	if err.Error != nil {
 		return err.Error
 	}
+	err = db.Exec("DELETE FROM time_entries")
+	if err.Error != nil {
+		return err.Error
+	}
 	return nil
 }

@@ -5,11 +5,16 @@ import (
 	"log"
 	"os"
 	"testing"
+	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/test"
 
 	"github.com/stretchr/testify/assert"
 )
+
+var TestUserUsecase UserUsecase
+var TestProjectUsecase ProjectUsecase
+var TestTimeEntryUsecase TimeEntryUsecase
 
 func TestMain(m *testing.M) {
 	log.Println("Testmain")
@@ -21,36 +26,53 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func addUser(t *testing.T, userUsecase UserUsecase, username string, password string, roles model.RoleList) model.User {
+func SetupTest(tb testing.TB) func(tb testing.TB) {
+	tearDownTest := test.SetupTest(tb)
+	initUsecases()
+	return tearDownTest
+}
+
+func initUsecases() {
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	TestProjectUsecase = NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	TestUserUsecase = NewUserUsecase(userRepo)
+
+	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
+	TestTimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, TestUserUsecase, TestProjectUsecase)
+}
+
+func addUser(t *testing.T, username string, password string, roles model.RoleList) model.User {
 	user := model.User{
 		Username: username,
 		Password: password,
 		Roles:    roles,
 	}
-	_, err := userUsecase.AddUser(&user)
+	_, err := TestUserUsecase.AddUser(&user)
 	assert.Nil(t, err)
 	return user
 }
 
-func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, user model.User) []model.Project {
-	return addProjectsWithStartIndex(t, projectUsecase, 1, count, user)
+func addProjects(t *testing.T, count int, user model.User) []model.Project {
+	return addProjectsWithStartIndex(t, 1, count, user)
 }
 
-func addProjectsWithStartIndex(t *testing.T, projectUsecase ProjectUsecase, startIndex int, count int, user model.User) []model.Project {
+func addProjectsWithStartIndex(t *testing.T, startIndex int, count int, user model.User) []model.Project {
 	var projects []model.Project
 	for i := 0; i < count; i++ {
-		project := addProject(t, projectUsecase, fmt.Sprintf("Project %v", startIndex+i), user)
+		project := addProject(t, fmt.Sprintf("Project %v", startIndex+i), user)
 		projects = append(projects, project)
 	}
 	return projects
 }
 
-func addProject(t *testing.T, projectUsecase ProjectUsecase, name string, user model.User) model.Project {
+func addProject(t *testing.T, name string, user model.User) model.Project {
 	prj := model.Project{
 		Name:   name,
 		UserId: user.ID,
 	}
-	err := projectUsecase.AddProject(&prj)
+	err := TestProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)
 	return prj
 }

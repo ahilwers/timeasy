@@ -5,38 +5,29 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/domain/model"
-	"timeasy-server/pkg/test"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_timeEntryUsecase_AddTimeEntry(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(entryList))
 	assert.Equal(t, timeEntry.Description, entryList[0].Description)
@@ -47,19 +38,11 @@ func Test_timeEntryUsecase_AddTimeEntry(t *testing.T) {
 }
 
 func Test_timeEntryUsecase_AddTimeEntryFailsIfUserDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
-
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
 	userId, err := uuid.NewV4()
 	timeEntry := model.TimeEntry{
@@ -68,25 +51,18 @@ func Test_timeEntryUsecase_AddTimeEntryFailsIfUserDoesNotExist(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err = timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.NotNil(t, err)
 	var userNotFoundError *UserNotFoundError
 	assert.True(t, errors.As(err, &userNotFoundError))
 }
 
 func Test_timeEntryUsecase_AddTimeEntryFailsIfProjectDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	projectId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	timeEntry := model.TimeEntry{
@@ -95,36 +71,29 @@ func Test_timeEntryUsecase_AddTimeEntryFailsIfProjectDoesNotExist(t *testing.T) 
 		UserId:      user.ID,
 		ProjectId:   projectId,
 	}
-	err = timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.NotNil(t, err)
 	var projectNotFoundError *ProjectNotFoundError
 	assert.True(t, errors.As(err, &projectNotFoundError))
 }
 
 func Test_timeEntryUsecase_GetTimeEntryById(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
-	entry, err := timeEntryUsecase.GetTimeEntryById(timeEntry.ID)
+	entry, err := TestTimeEntryUsecase.GetTimeEntryById(timeEntry.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, timeEntry.Description, entry.Description)
 	assertTimesAreEqual(t, timeEntry.StartTime, entry.StartTime)
@@ -134,50 +103,36 @@ func Test_timeEntryUsecase_GetTimeEntryById(t *testing.T) {
 }
 
 func Test_timeEntryUsecase_GetTimeEntryByIdFailsIfItDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 
 	id, err := uuid.NewV4()
 	assert.Nil(t, err)
-	_, err = timeEntryUsecase.GetTimeEntryById(id)
+	_, err = TestTimeEntryUsecase.GetTimeEntryById(id)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
 }
 
 func Test_timeEntryUsecase_GetAllTimeEntriesOfUser(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
-	otherUser := addUser(t, userUsecase, "otheruser", "otherpassword", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	otherUser := addUser(t, "otheruser", "otherpassword", model.RoleList{model.RoleUser})
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
+	project := addProject(t, "project", user)
 
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
+	_ = addTimeEntries(t, 3, user, project)
+	_ = addTimeEntriesWithStartIndex(t, 4, 3, otherUser, project)
 
-	_ = addTimeEntries(t, timeEntryUsecase, 3, user, project)
-	_ = addTimeEntriesWithStartIndex(t, timeEntryUsecase, 4, 3, otherUser, project)
-
-	entriesOfUser, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entriesOfUser, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	for i, entry := range entriesOfUser {
 		assert.Equal(t, fmt.Sprintf("entry %v", i+1), entry.Description)
 	}
 
-	entriesOfOtherUser, err := timeEntryUsecase.GetAllTimeEntriesOfUser(otherUser.ID)
+	entriesOfOtherUser, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(otherUser.ID)
 	assert.Nil(t, err)
 	for i, entry := range entriesOfOtherUser {
 		assert.Equal(t, fmt.Sprintf("entry %v", i+4), entry.Description)
@@ -185,31 +140,24 @@ func Test_timeEntryUsecase_GetAllTimeEntriesOfUser(t *testing.T) {
 }
 
 func Test_timeEntryUsecase_GetAllTimeEntriesOfUserAndProject(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-	otherProject := addProject(t, projectUsecase, "otherproject", user)
+	project := addProject(t, "project", user)
+	otherProject := addProject(t, "otherproject", user)
 
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
+	_ = addTimeEntries(t, 3, user, project)
+	_ = addTimeEntriesWithStartIndex(t, 4, 3, user, otherProject)
 
-	_ = addTimeEntries(t, timeEntryUsecase, 3, user, project)
-	_ = addTimeEntriesWithStartIndex(t, timeEntryUsecase, 4, 3, user, otherProject)
-
-	entriesOfUser, err := timeEntryUsecase.GetAllTimeEntriesOfUserAndProject(user.ID, project.ID)
+	entriesOfUser, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUserAndProject(user.ID, project.ID)
 	assert.Nil(t, err)
 	for i, entry := range entriesOfUser {
 		assert.Equal(t, fmt.Sprintf("entry %v", i+1), entry.Description)
 	}
 
-	entriesOfOtherUser, err := timeEntryUsecase.GetAllTimeEntriesOfUserAndProject(user.ID, otherProject.ID)
+	entriesOfOtherUser, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUserAndProject(user.ID, otherProject.ID)
 	assert.Nil(t, err)
 	for i, entry := range entriesOfOtherUser {
 		assert.Equal(t, fmt.Sprintf("entry %v", i+4), entry.Description)
@@ -217,33 +165,26 @@ func Test_timeEntryUsecase_GetAllTimeEntriesOfUserAndProject(t *testing.T) {
 }
 
 func Test_timeEntryUsecase_UpdateTimeEntry(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
-	err = timeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.UpdateTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(entryList))
 	assert.Equal(t, "updatedTimeentry", entryList[0].Description)
@@ -254,19 +195,12 @@ func Test_timeEntryUsecase_UpdateTimeEntry(t *testing.T) {
 }
 
 func Test_timeEntryUsecase_UpdateTimeEntryFailsIfItDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	id, err := uuid.NewV4()
 	assert.Nil(t, err)
 	timeEntry := model.TimeEntry{
@@ -278,47 +212,40 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfItDoesNotExist(t *testing.T) {
 	}
 
 	timeEntry.Description = "updatedTimeentry"
-	err = timeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.UpdateTimeEntry(&timeEntry)
 	assert.NotNil(t, err)
 	var notFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(entryList))
 }
 
 func Test_timeEntryUsecase_UpdateTimeEntryFailsIfUserIdIsEmpty(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
 	timeEntry.UserId = uuid.Nil
-	err = timeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.UpdateTimeEntry(&timeEntry)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(entryList))
 	assert.Equal(t, "timeentry", entryList[0].Description)
@@ -329,36 +256,29 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfUserIdIsEmpty(t *testing.T) {
 }
 
 func Test_timeEntryUsecase_UpdateTimeEntryFailsIfProjectIdIsEmpty(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
 	timeEntry.ProjectId = uuid.Nil
-	err = timeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.UpdateTimeEntry(&timeEntry)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(entryList))
 	assert.Equal(t, "timeentry", entryList[0].Description)
@@ -369,38 +289,31 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfProjectIdIsEmpty(t *testing.T) 
 }
 
 func Test_timeEntryUsecase_UpdateTimeEntryFailsIfUserDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	timeEntry.UserId = userId
-	err = timeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.UpdateTimeEntry(&timeEntry)
 	assert.NotNil(t, err)
 	var userNotFoundError *UserNotFoundError
 	assert.True(t, errors.As(err, &userNotFoundError))
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(entryList))
 	assert.Equal(t, "timeentry", entryList[0].Description)
@@ -411,38 +324,31 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfUserDoesNotExist(t *testing.T) 
 }
 
 func Test_timeEntryUsecase_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
 	projectId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	timeEntry.ProjectId = projectId
-	err = timeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = TestTimeEntryUsecase.UpdateTimeEntry(&timeEntry)
 	assert.NotNil(t, err)
 	var projectNotFoundError *ProjectNotFoundError
 	assert.True(t, errors.As(err, &projectNotFoundError))
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(entryList))
 	assert.Equal(t, "timeentry", entryList[0].Description)
@@ -453,67 +359,53 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 }
 
 func Test_timeEntryUsecase_DeleteTimeEntry(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
-	err = timeEntryUsecase.DeleteTimeEntry(timeEntry.ID)
+	err = TestTimeEntryUsecase.DeleteTimeEntry(timeEntry.ID)
 	assert.Nil(t, err)
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(entryList))
 }
 
 func Test_timeEntryUsecase_DeleteTimeEntryFailsIfItDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	project := addProject(t, "project", user)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := NewProjectUsecase(projectRepo)
-	project := addProject(t, projectUsecase, "project", user)
-
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
 	timeEntry := model.TimeEntry{
 		Description: "timeentry",
 		StartTime:   time.Now(),
 		UserId:      user.ID,
 		ProjectId:   project.ID,
 	}
-	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	err := TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
 	assert.Nil(t, err)
 
 	notExistingId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	err = timeEntryUsecase.DeleteTimeEntry(notExistingId)
+	err = TestTimeEntryUsecase.DeleteTimeEntry(notExistingId)
 	assert.NotNil(t, err)
 	var notFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
 
-	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(entryList))
 }
@@ -525,21 +417,23 @@ func assertTimesAreEqual(t *testing.T, time1 time.Time, time2 time.Time) {
 	assert.Equal(t, time1.Second(), time2.Second())
 }
 
-func addTimeEntries(t *testing.T, usecase TimeEntryUsecase, count int, owner model.User, project model.Project) []model.TimeEntry {
-	return addTimeEntriesWithStartIndex(t, usecase, 1, count, owner, project)
+func addTimeEntries(t *testing.T, count int, owner model.User, project model.Project) []model.TimeEntry {
+	return addTimeEntriesWithStartIndex(t, 1, count, owner, project)
 }
 
-func addTimeEntriesWithStartIndex(t *testing.T, usecase TimeEntryUsecase, startIndex int, count int, owner model.User, project model.Project) []model.TimeEntry {
+func addTimeEntriesWithStartIndex(t *testing.T, startIndex int, count int, owner model.User, project model.Project) []model.TimeEntry {
 	var entries []model.TimeEntry
+	startTime := time.Now()
+	oneHour := 1000 * 1000 * 60 * 60 // duration is in nanoseconds
 	for i := 0; i < count; i++ {
 		entry := model.TimeEntry{
 			Description: fmt.Sprintf("entry %v", startIndex+i),
-			StartTime:   time.Now(),
+			StartTime:   startTime.Add(time.Duration(oneHour * (count - i))),
 			UserId:      owner.ID,
 			ProjectId:   project.ID,
 		}
 		entries = append(entries, entry)
-		err := usecase.AddTimeEntry(&entry)
+		err := TestTimeEntryUsecase.AddTimeEntry(&entry)
 		assert.Nil(t, err)
 	}
 	return entries
