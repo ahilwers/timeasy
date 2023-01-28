@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 	"time"
 	"timeasy-server/pkg/domain/model"
@@ -48,7 +49,20 @@ func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 
 	err = handler.usecase.AddTimeEntry(&newEntry)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		errorCode := http.StatusInternalServerError
+		var userNotFoundError *usecase.UserNotFoundError
+		var projectNotFoundError *usecase.ProjectNotFoundError
+
+		switch {
+		case errors.As(err, &userNotFoundError):
+			errorCode = http.StatusBadRequest
+		case errors.As(err, &projectNotFoundError):
+			errorCode = http.StatusBadRequest
+		default:
+			errorCode = http.StatusInternalServerError
+		}
+		context.JSON(errorCode, gin.H{"error": err.Error()})
+		return
 	}
 	entryDto.Id = newEntry.ID
 	context.JSON(http.StatusOK, entryDto)
