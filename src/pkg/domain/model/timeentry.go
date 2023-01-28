@@ -12,8 +12,8 @@ type TimeEntry struct {
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey;"`
 	UserId      uuid.UUID `gorm:"type:uuid;"`
 	ProjectId   uuid.UUID `gorm:"type:uuid;"`
-	StartTime   time.Time
-	EndTime     time.Time
+	StartTime   time.Time `gorm:"type:timestamp;"`
+	EndTime     time.Time `gorm:"type:timestamp;"`
 	Description string
 }
 
