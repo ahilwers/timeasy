@@ -21,6 +21,17 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func addUser(t *testing.T, userUsecase UserUsecase, username string, password string, roles model.RoleList) model.User {
+	user := model.User{
+		Username: username,
+		Password: password,
+		Roles:    roles,
+	}
+	_, err := userUsecase.AddUser(&user)
+	assert.Nil(t, err)
+	return user
+}
+
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, user model.User) []model.Project {
 	return addProjectsWithStartIndex(t, projectUsecase, 1, count, user)
 }

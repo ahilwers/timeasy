@@ -16,7 +16,9 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
@@ -53,7 +55,9 @@ func Test_projectUsecase_GetProjectById(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
@@ -87,7 +91,9 @@ func Test_projectUsecase_GetAllProjects(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 
@@ -106,12 +112,14 @@ func Test_projectUsecase_GetAllProjectsOfUser(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 
 	addProjects(t, projectUsecase, 3, user)
-	otherUser := addUser(t, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	otherUser := addUser(t, userUsecase, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
 	addProjectsWithStartIndex(t, projectUsecase, 4, 3, otherUser)
 
 	projectsFromDb, err := projectUsecase.GetAllProjectsOfUser(user.ID)
@@ -134,7 +142,9 @@ func Test_projectUsecase_UpdateProject(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 
@@ -155,7 +165,9 @@ func Test_projectUsecase_UpdateProjectFailsIfProjectDoesNotExist(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 
@@ -182,7 +194,9 @@ func Test_projectUsecase_UpdateProjectFailsIfItHasNoUserId(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 
@@ -207,7 +221,9 @@ func Test_projectUsecase_DeleteProject(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 
@@ -226,7 +242,9 @@ func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 	teardownTest := test.SetupTest(t)
 	defer teardownTest(t)
 
-	addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	projectUsecase := NewProjectUsecase(projectRepo)
 
@@ -236,17 +254,4 @@ func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
-}
-
-func addUser(t *testing.T, username string, password string, roles model.RoleList) model.User {
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := NewUserUsecase(userRepo)
-	user := model.User{
-		Username: username,
-		Password: password,
-		Roles:    roles,
-	}
-	_, err := userUsecase.AddUser(&user)
-	assert.Nil(t, err)
-	return user
 }

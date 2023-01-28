@@ -1,5 +1,11 @@
 package usecase
 
+import (
+	"fmt"
+
+	"github.com/gofrs/uuid"
+)
+
 type EntityExistsError struct {
 	Msg string
 }
@@ -25,6 +31,34 @@ func (e *EntityNotFoundError) Error() string {
 func NewEntityNotFoundError(msg string) *EntityNotFoundError {
 	return &EntityNotFoundError{
 		Msg: msg,
+	}
+}
+
+type UserNotFoundError struct {
+	Msg string
+}
+
+func (e *UserNotFoundError) Error() string {
+	return e.Msg
+}
+
+func NewUserNotFoundError(userId uuid.UUID) *UserNotFoundError {
+	return &UserNotFoundError{
+		Msg: fmt.Sprintf("user with id %v not found", userId),
+	}
+}
+
+type ProjectNotFoundError struct {
+	Msg string
+}
+
+func (e *ProjectNotFoundError) Error() string {
+	return e.Msg
+}
+
+func NewProjectNotFoundError(projectId uuid.UUID) *ProjectNotFoundError {
+	return &ProjectNotFoundError{
+		Msg: fmt.Sprintf("project with id %v not found", projectId),
 	}
 }
 

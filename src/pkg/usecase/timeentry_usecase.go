@@ -18,53 +18,93 @@ type TimeEntryUsecase interface {
 }
 
 type timeEntryUsecase struct {
-	repo repository.TimeEntryRepository
+	repo           repository.TimeEntryRepository
+	userUsecase    UserUsecase
+	projectUsecase ProjectUsecase
 }
 
-func NewTimeEntryUsecase(repo repository.TimeEntryRepository) TimeEntryUsecase {
+func NewTimeEntryUsecase(repo repository.TimeEntryRepository, userUsecase UserUsecase, projectUsecase ProjectUsecase) TimeEntryUsecase {
 	return &timeEntryUsecase{
-		repo: repo,
+		repo:           repo,
+		userUsecase:    userUsecase,
+		projectUsecase: projectUsecase,
 	}
 }
 
-func (pu *timeEntryUsecase) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
-	entry, err := pu.repo.GetTimeEntryById(id)
+func (tu *timeEntryUsecase) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
+	entry, err := tu.repo.GetTimeEntryById(id)
 	if err != nil {
 		return nil, NewEntityNotFoundError(fmt.Sprintf("timeentry with if %v does not exist", id))
 	}
 	return entry, nil
 }
 
-func (pu *timeEntryUsecase) GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error) {
-	return pu.repo.GetAllTimeEntriesOfUser(userId)
+func (tu *timeEntryUsecase) GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error) {
+	return tu.repo.GetAllTimeEntriesOfUser(userId)
 }
 
-func (pu *timeEntryUsecase) GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error) {
-	return pu.repo.GetAllTimeEntriesOfUserAndProject(userId, projectId)
+func (tu *timeEntryUsecase) GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error) {
+	return tu.repo.GetAllTimeEntriesOfUserAndProject(userId, projectId)
 }
 
-func (pu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {
-	if timeEntry.UserId == uuid.Nil {
-		return NewEntityIncompleteError("the user id must not be empty")
+func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {
+	err := tu.checkEntry(timeEntry)
+	if err != nil {
+		return err
 	}
-	return pu.repo.AddTimeEntry(timeEntry)
+	return tu.repo.AddTimeEntry(timeEntry)
 }
 
-func (pu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry) error {
-	if timeEntry.UserId == uuid.Nil {
-		return NewEntityIncompleteError("the user id must not be empty")
-	}
-	_, err := pu.GetTimeEntryById(timeEntry.ID)
+func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry) error {
+	_, err := tu.GetTimeEntryById(timeEntry.ID)
 	if err != nil {
 		return NewEntityNotFoundError(fmt.Sprintf("timeEntry with id %v does not exist", timeEntry.ID))
 	}
-	return pu.repo.UpdateTimeEntry(timeEntry)
+	err = tu.checkEntry(timeEntry)
+	if err != nil {
+		return err
+	}
+	return tu.repo.UpdateTimeEntry(timeEntry)
 }
 
-func (pu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID) error {
-	timeEntry, err := pu.GetTimeEntryById(id)
+func (tu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID) error {
+	timeEntry, err := tu.GetTimeEntryById(id)
 	if err != nil {
 		return NewEntityNotFoundError(fmt.Sprintf("timeEntry with id %v does not exist", id))
 	}
-	return pu.repo.DeleteTimeEntry(timeEntry)
+	return tu.repo.DeleteTimeEntry(timeEntry)
+}
+
+func (tu *timeEntryUsecase) checkEntry(timeEntry *model.TimeEntry) error {
+	err := tu.checkUser(timeEntry)
+	if err != nil {
+		return err
+	}
+	err = tu.checkProject(timeEntry)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (tu *timeEntryUsecase) checkUser(timeEntry *model.TimeEntry) error {
+	if timeEntry.UserId == uuid.Nil {
+		return NewEntityIncompleteError("the user id must not be empty")
+	}
+	_, err := tu.userUsecase.GetUserById(timeEntry.UserId)
+	if err != nil {
+		return NewUserNotFoundError(timeEntry.UserId)
+	}
+	return nil
+}
+
+func (tu *timeEntryUsecase) checkProject(timeEntry *model.TimeEntry) error {
+	if timeEntry.ProjectId == uuid.Nil {
+		return NewEntityIncompleteError("the project id must not be empty")
+	}
+	_, err := tu.projectUsecase.GetProjectById(timeEntry.ProjectId)
+	if err != nil {
+		return NewProjectNotFoundError(timeEntry.ProjectId)
+	}
+	return nil
 }
