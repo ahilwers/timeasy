@@ -452,6 +452,72 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 	assert.True(t, entryList[0].EndTime.IsZero())
 }
 
+func Test_timeEntryUsecase_DeleteTimeEntry(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+	project := addProject(t, projectUsecase, "project", user)
+
+	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
+	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now(),
+		UserId:      user.ID,
+		ProjectId:   project.ID,
+	}
+	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	err = timeEntryUsecase.DeleteTimeEntry(timeEntry.ID)
+	assert.Nil(t, err)
+
+	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entryList))
+}
+
+func Test_timeEntryUsecase_DeleteTimeEntryFailsIfItDoesNotExist(t *testing.T) {
+	teardownTest := test.SetupTest(t)
+	defer teardownTest(t)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	userUsecase := NewUserUsecase(userRepo)
+	user := addUser(t, userUsecase, "user", "password", model.RoleList{model.RoleUser})
+
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectUsecase := NewProjectUsecase(projectRepo)
+	project := addProject(t, projectUsecase, "project", user)
+
+	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
+	timeEntryUsecase := NewTimeEntryUsecase(timeEntryRepo, userUsecase, projectUsecase)
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now(),
+		UserId:      user.ID,
+		ProjectId:   project.ID,
+	}
+	err := timeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	notExistingId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	err = timeEntryUsecase.DeleteTimeEntry(notExistingId)
+	assert.NotNil(t, err)
+	var notFoundError *EntityNotFoundError
+	assert.True(t, errors.As(err, &notFoundError))
+
+	entryList, err := timeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(entryList))
+}
+
 func assertTimesAreEqual(t *testing.T, time1 time.Time, time2 time.Time) {
 	// We cannot check the milliseconds here because they get lost in the database:
 	assert.Equal(t, time1.Hour(), time2.Hour())
