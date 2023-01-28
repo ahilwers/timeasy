@@ -28,7 +28,11 @@ func NewTimeEntryUsecase(repo repository.TimeEntryRepository) TimeEntryUsecase {
 }
 
 func (pu *timeEntryUsecase) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
-	return pu.repo.GetTimeEntryById(id)
+	entry, err := pu.repo.GetTimeEntryById(id)
+	if err != nil {
+		return nil, NewEntityNotFoundError(fmt.Sprintf("timeentry with if %v does not exist", id))
+	}
+	return entry, nil
 }
 
 func (pu *timeEntryUsecase) GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error) {
