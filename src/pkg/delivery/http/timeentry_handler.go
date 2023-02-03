@@ -15,6 +15,7 @@ import (
 type TimeEntryHandler interface {
 	AddTimeEntry(context *gin.Context)
 	UpdateTimeEntry(context *gin.Context)
+	DeleteTimeEntry(context *gin.Context)
 }
 
 type timeEntryHandler struct {
@@ -110,6 +111,39 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("entry %v updated", entryId)})
+}
+
+func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
+	entryId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	tokenString := ExtractToken(context)
+	userId, err := ExtractTokenUserId(tokenString)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	timeEntry, err := handler.usecase.GetTimeEntryById(entryId)
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
+		return
+	}
+	if timeEntry.UserId != userId {
+		isAdmin, err := TokenHasRole(tokenString, model.RoleAdmin)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !isAdmin {
+			context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
+			return
+		}
+	}
+	err = handler.usecase.DeleteTimeEntry(entryId)
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("entry %v deleted", entryId)})
 }
 
 func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryDto, userId uuid.UUID) model.TimeEntry {

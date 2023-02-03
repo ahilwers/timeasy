@@ -241,3 +241,153 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 	assert.Equal(t, timeEntry.ProjectId, entriesFromDb[0].ProjectId)
 	assert.Equal(t, timeEntry.UserId, entriesFromDb[0].UserId)
 }
+
+func Test_timeEntryHandler_DeleteTimeEntry(t *testing.T) {
+	teardownTest := SetupTest(t)
+	defer teardownTest(t)
+	token, user := loginUser(t, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	project := model.Project{
+		Name:   "project",
+		UserId: user.ID,
+	}
+	err := TestProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		ProjectId:   project.ID,
+		UserId:      user.ID,
+	}
+	err = TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
+
+	entriesFromDb, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entriesFromDb))
+}
+
+func Test_timeEntryHandler_DeleteTimeEntryFailsIfitDoesNotExist(t *testing.T) {
+	teardownTest := SetupTest(t)
+	defer teardownTest(t)
+	token, user := loginUser(t, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	project := model.Project{
+		Name:   "project",
+		UserId: user.ID,
+	}
+	err := TestProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	missingId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/timeentries/%v", missingId), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
+	AssertErrorMessageEquals(t, w.Body.Bytes(), fmt.Sprintf("entry with id %v not found", missingId))
+}
+
+func Test_timeEntryHandler_DeleteTimeEntryFailsIfItDoesNotBelongToTheUser(t *testing.T) {
+	teardownTest := SetupTest(t)
+	defer teardownTest(t)
+	token, user := loginUser(t, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	project := model.Project{
+		Name:   "project",
+		UserId: user.ID,
+	}
+	err := TestProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	owner, err := addUser("owner", "ownerpasword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		ProjectId:   project.ID,
+		UserId:      owner.ID,
+	}
+	err = TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
+	AssertErrorMessageEquals(t, w.Body.Bytes(), fmt.Sprintf("entry with id %v not found", timeEntry.ID))
+
+	entriesFromDb, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(owner.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(entriesFromDb))
+}
+
+func Test_timeEntryHandler_DeleteTimeEntrySucceedsIfItDoesNotBelongToTheUserButUserIsAdmin(t *testing.T) {
+	teardownTest := SetupTest(t)
+	defer teardownTest(t)
+	token, user := loginUser(t, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
+	})
+
+	project := model.Project{
+		Name:   "project",
+		UserId: user.ID,
+	}
+	err := TestProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	owner, err := addUser("owner", "ownerpasword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		ProjectId:   project.ID,
+		UserId:      owner.ID,
+	}
+	err = TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), nil)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
+
+	entriesFromDb, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(owner.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entriesFromDb))
+}
