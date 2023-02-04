@@ -9,11 +9,21 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/test"
+	"timeasy-server/pkg/usecase"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
+
+var TestUserUsecase usecase.UserUsecase
+var TestProjectUsecase usecase.ProjectUsecase
+var TestTimeEntryUsecase usecase.TimeEntryUsecase
+var TestUserHandler UserHandler
+var TestProjectHandler ProjectHandler
+var TestTimeEntryHandler TimeEntryHandler
+var TestRouter *gin.Engine
 
 type ErrorResult struct {
 	Error string
@@ -29,11 +39,37 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func SetupTest(tb testing.TB) func(tb testing.TB) {
+	tearDown := test.SetupTest(tb)
+	initUsecases()
+	initHandlers()
+	return tearDown
+}
+
+func initUsecases() {
+	projectRepo := database.NewGormProjectRepository(test.DB)
+	TestProjectUsecase = usecase.NewProjectUsecase(projectRepo)
+
+	userRepo := database.NewGormUserRepository(test.DB)
+	TestUserUsecase = usecase.NewUserUsecase(userRepo)
+
+	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
+	TestTimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, TestUserUsecase, TestProjectUsecase)
+}
+
+func initHandlers() {
+	TestUserHandler = NewUserHandler(TestUserUsecase)
+	TestProjectHandler = NewProjectHandler(TestProjectUsecase)
+	TestTimeEntryHandler = NewTimeEntryHandler(TestTimeEntryUsecase)
+
+	TestRouter = SetupRouter(TestUserHandler, TestProjectHandler, TestTimeEntryHandler)
+}
+
 type tokenObject struct {
 	Token string
 }
 
-func Login(router *gin.Engine, username string, password string) (string, error) {
+func Login(username string, password string) (string, error) {
 	w := httptest.NewRecorder()
 
 	reader := strings.NewReader(fmt.Sprintf("{\"username\": \"%v\", \"password\": \"%v\"}", username, password))
@@ -41,7 +77,7 @@ func Login(router *gin.Engine, username string, password string) (string, error)
 	if err != nil {
 		return "", fmt.Errorf("error creating request for long")
 	}
-	router.ServeHTTP(w, loginRequest)
+	TestRouter.ServeHTTP(w, loginRequest)
 	if w.Code != 200 {
 		return "", fmt.Errorf("error logging in: %v", w.Code)
 	}
@@ -55,8 +91,13 @@ func AddToken(req *http.Request, token string) {
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {
+	actualMessage := GetErrorMessageFromResponse(t, responseBody)
+	assert.Equal(t, expectedMessage, actualMessage)
+}
+
+func GetErrorMessageFromResponse(t *testing.T, responseBody []byte) string {
 	var errorResult ErrorResult
 	err := json.Unmarshal(responseBody, &errorResult)
 	assert.Nil(t, err)
-	assert.Equal(t, expectedMessage, errorResult.Error)
+	return errorResult.Error
 }

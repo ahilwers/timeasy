@@ -7,31 +7,17 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/domain/model"
-	"timeasy-server/pkg/test"
-	"timeasy-server/pkg/usecase"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_projectHandler_GetProjectById(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, user := loginUser(t, router, userUsecase, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 	})
@@ -40,13 +26,13 @@ func Test_projectHandler_GetProjectById(t *testing.T) {
 		Name:   "testproject",
 		UserId: user.ID,
 	}
-	err := projectUsecase.AddProject(&project)
+	err := TestProjectUsecase.AddProject(&project)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
 	AddToken(req, token)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var projectFromService model.Project
@@ -56,20 +42,10 @@ func Test_projectHandler_GetProjectById(t *testing.T) {
 }
 
 func Test_projectHandler_GetProjectByIdFailsIfProjectDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 	})
@@ -80,33 +56,23 @@ func Test_projectHandler_GetProjectByIdFailsIfProjectDoesNotExist(t *testing.T) 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%v", projectId), nil)
 	AddToken(req, token)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 404, w.Code)
 
 	AssertErrorMessageEquals(t, w.Body.Bytes(), fmt.Sprintf("project with id %v not found", projectId))
 }
 
 func Test_projectHandler_GetProjectByIdFailsIfItDoesNotBelongToUser(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
-
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
 
 	projectOwner := model.User{
 		Username: "owner",
 		Password: "password",
 	}
-	_, err := userUsecase.AddUser(&projectOwner)
+	_, err := TestUserUsecase.AddUser(&projectOwner)
 
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 	})
@@ -115,38 +81,28 @@ func Test_projectHandler_GetProjectByIdFailsIfItDoesNotBelongToUser(t *testing.T
 		Name:   "testproject",
 		UserId: projectOwner.ID,
 	}
-	err = projectUsecase.AddProject(&project)
+	err = TestProjectUsecase.AddProject(&project)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
 	AddToken(req, token)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 404, w.Code)
 	AssertErrorMessageEquals(t, w.Body.Bytes(), fmt.Sprintf("project with id %v not found", project.ID))
 }
 
 func Test_projectHandler_GetProjectByIdPassesIfBelongsToOtherUserAndUserIsAdmin(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
-
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
 
 	projectOwner := model.User{
 		Username: "owner",
 		Password: "password",
 	}
-	_, err := userUsecase.AddUser(&projectOwner)
+	_, err := TestUserUsecase.AddUser(&projectOwner)
 
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleAdmin, model.RoleUser},
@@ -156,13 +112,13 @@ func Test_projectHandler_GetProjectByIdPassesIfBelongsToOtherUserAndUserIsAdmin(
 		Name:   "testproject",
 		UserId: projectOwner.ID,
 	}
-	err = projectUsecase.AddProject(&project)
+	err = TestProjectUsecase.AddProject(&project)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
 	AddToken(req, token)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var projectFromService model.Project
@@ -172,30 +128,20 @@ func Test_projectHandler_GetProjectByIdPassesIfBelongsToOtherUserAndUserIsAdmin(
 }
 
 func Test_projectHandler_GetAllProjects(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, user := loginUser(t, router, userUsecase, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 	})
 
-	addProjects(t, projectUsecase, 3, user)
+	addProjects(t, 3, user)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/projects", nil)
 	AddToken(req, token)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var projectsFromService []model.Project
@@ -207,37 +153,26 @@ func Test_projectHandler_GetAllProjects(t *testing.T) {
 }
 
 func Test_projectHandler_GetAllProjectsReturnsOnlyProjectsOfUser(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
-
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, user := loginUser(t, router, userUsecase, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 	})
 
-	addProjects(t, projectUsecase, 3, user)
+	addProjects(t, 3, user)
 	otherUser := model.User{
 		Username: "otherUser",
 		Password: "otherPassword",
 	}
-	_, err := userUsecase.AddUser(&otherUser)
+	_, err := TestUserUsecase.AddUser(&otherUser)
 	assert.Nil(t, err)
-	addProjectsWithStartIndex(t, projectUsecase, 4, 3, otherUser)
+	addProjectsWithStartIndex(t, 4, 3, otherUser)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/projects", nil)
 	AddToken(req, token)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var projectsFromService []model.Project
@@ -250,38 +185,27 @@ func Test_projectHandler_GetAllProjectsReturnsOnlyProjectsOfUser(t *testing.T) {
 }
 
 func Test_projectHandler_GetAllProjectsReturnsAllProjectsIfUserIsAdmin(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
-
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, user := loginUser(t, router, userUsecase, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
 	})
 
-	addProjects(t, projectUsecase, 3, user)
+	addProjects(t, 3, user)
 	otherUser := model.User{
 		Username: "otherUser",
 		Password: "otherPassword",
 	}
-	_, err := userUsecase.AddUser(&otherUser)
+	_, err := TestUserUsecase.AddUser(&otherUser)
 	assert.Nil(t, err)
-	addProjectsWithStartIndex(t, projectUsecase, 4, 3, otherUser)
+	addProjectsWithStartIndex(t, 4, 3, otherUser)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/projects", nil)
 	AddToken(req, token)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
 	var projectsFromService []model.Project
@@ -293,20 +217,10 @@ func Test_projectHandler_GetAllProjectsReturnsAllProjectsIfUserIsAdmin(t *testin
 }
 
 func Test_projectHandler_AddProject(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, user := loginUser(t, router, userUsecase, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
@@ -317,10 +231,10 @@ func Test_projectHandler_AddProject(t *testing.T) {
 	req, err := http.NewRequest("POST", "/api/v1/projects", reader)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, "project1", projectsFromDb[0].Name)
@@ -328,36 +242,26 @@ func Test_projectHandler_AddProject(t *testing.T) {
 }
 
 func Test_projectHandler_UpdateProject(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, user := loginUser(t, router, userUsecase, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
 	})
 
-	project := addProject(t, projectUsecase, "project", user)
+	project := addProject(t, "project", user)
 
 	w := httptest.NewRecorder()
 	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
@@ -365,20 +269,10 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 }
 
 func Test_projectHandler_UpdateProjectFailsIfItDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
@@ -392,29 +286,19 @@ func Test_projectHandler_UpdateProjectFailsIfItDoesNotExist(t *testing.T) {
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", projectId), reader)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 404, w.Code)
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(projectsFromDb))
 }
 
 func Test_projectHandler_UpdateProjectFailsIfItBelongsToAnotherUser(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
@@ -424,20 +308,21 @@ func Test_projectHandler_UpdateProjectFailsIfItBelongsToAnotherUser(t *testing.T
 		Username: "owner",
 		Password: "ownerpassword",
 	}
-	_, err := userUsecase.AddUser(&projectOwner)
+	_, err := TestUserUsecase.AddUser(&projectOwner)
 	assert.Nil(t, err)
 
-	project := addProject(t, projectUsecase, "project", projectOwner)
+	project := addProject(t, "project", projectOwner)
 
 	w := httptest.NewRecorder()
 	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
-	assert.Equal(t, 404, w.Code)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 403, w.Code)
+	AssertErrorMessageEquals(t, w.Body.Bytes(), "you are not allowed to update this project")
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, "project", projectsFromDb[0].Name)
@@ -445,20 +330,10 @@ func Test_projectHandler_UpdateProjectFailsIfItBelongsToAnotherUser(t *testing.T
 }
 
 func Test_projectHandler_UpdateProjectSucceedsIfItBelongsToAnotherUserAndUserIsAdmin(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
@@ -468,20 +343,20 @@ func Test_projectHandler_UpdateProjectSucceedsIfItBelongsToAnotherUserAndUserIsA
 		Username: "owner",
 		Password: "ownerpassword",
 	}
-	_, err := userUsecase.AddUser(&projectOwner)
+	_, err := TestUserUsecase.AddUser(&projectOwner)
 	assert.Nil(t, err)
 
-	project := addProject(t, projectUsecase, "project", projectOwner)
+	project := addProject(t, "project", projectOwner)
 
 	w := httptest.NewRecorder()
 	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
@@ -489,54 +364,34 @@ func Test_projectHandler_UpdateProjectSucceedsIfItBelongsToAnotherUserAndUserIsA
 }
 
 func Test_projectHandler_DeleteProject(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, user := loginUser(t, router, userUsecase, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
 	})
 
-	project := addProject(t, projectUsecase, "project", user)
+	project := addProject(t, "project", user)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(projectsFromDb))
 }
 
 func Test_projectHandler_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
@@ -549,25 +404,15 @@ func Test_projectHandler_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", projectId), nil)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 404, w.Code)
 }
 
 func Test_projectHandler_DeleteProjectFailsIfItBelongsToAnotherUser(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
@@ -577,37 +422,27 @@ func Test_projectHandler_DeleteProjectFailsIfItBelongsToAnotherUser(t *testing.T
 		Username: "owner",
 		Password: "ownerpassword",
 	}
-	_, err := userUsecase.AddUser(&projectOwner)
+	_, err := TestUserUsecase.AddUser(&projectOwner)
 
-	project := addProject(t, projectUsecase, "project", projectOwner)
+	project := addProject(t, "project", projectOwner)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 404, w.Code)
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 }
 
 func Test_projectHandler_DeleteProjectSucceedsIfItBelongsToAnotherUserAndUserIsAdmin(t *testing.T) {
-	teardownTest := test.SetupTest(t)
+	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	projectUsecase := usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo)
-
-	userHandler := NewUserHandler(userUsecase)
-	projectHandler := NewProjectHandler(projectUsecase)
-
-	router := SetupRouter(userHandler, projectHandler)
-	token, _ := loginUser(t, router, userUsecase, model.User{
+	token, _ := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
@@ -617,53 +452,53 @@ func Test_projectHandler_DeleteProjectSucceedsIfItBelongsToAnotherUserAndUserIsA
 		Username: "owner",
 		Password: "ownerpassword",
 	}
-	_, err := userUsecase.AddUser(&projectOwner)
+	_, err := TestUserUsecase.AddUser(&projectOwner)
 
-	project := addProject(t, projectUsecase, "project", projectOwner)
+	project := addProject(t, "project", projectOwner)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
 	AddToken(req, token)
 	assert.Nil(t, err)
-	router.ServeHTTP(w, req)
+	TestRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	projectsFromDb, err := projectRepo.GetAllProjects()
+	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(projectsFromDb))
 }
 
-func loginUser(t *testing.T, router *gin.Engine, userUsecase usecase.UserUsecase, user model.User) (string, model.User) {
+func loginUser(t *testing.T, user model.User) (string, model.User) {
 	username := user.Username
 	password := user.Password
-	_, err := userUsecase.AddUser(&user)
+	_, err := TestUserUsecase.AddUser(&user)
 	assert.Nil(t, err)
 
-	token, err := Login(router, username, password)
+	token, err := Login(username, password)
 	assert.Nil(t, err)
 
 	return token, user
 }
 
-func addProjects(t *testing.T, projectUsecase usecase.ProjectUsecase, count int, user model.User) []model.Project {
-	return addProjectsWithStartIndex(t, projectUsecase, 1, count, user)
+func addProjects(t *testing.T, count int, user model.User) []model.Project {
+	return addProjectsWithStartIndex(t, 1, count, user)
 }
 
-func addProjectsWithStartIndex(t *testing.T, projectUsecase usecase.ProjectUsecase, startIndex int, count int, user model.User) []model.Project {
+func addProjectsWithStartIndex(t *testing.T, startIndex int, count int, user model.User) []model.Project {
 	var projects []model.Project
 	for i := 0; i < count; i++ {
-		project := addProject(t, projectUsecase, fmt.Sprintf("Project %v", startIndex+i), user)
+		project := addProject(t, fmt.Sprintf("Project %v", startIndex+i), user)
 		projects = append(projects, project)
 	}
 	return projects
 }
 
-func addProject(t *testing.T, projectUsecase usecase.ProjectUsecase, name string, user model.User) model.Project {
+func addProject(t *testing.T, name string, user model.User) model.Project {
 	prj := model.Project{
 		Name:   name,
 		UserId: user.ID,
 	}
-	err := projectUsecase.AddProject(&prj)
+	err := TestProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)
 	return prj
 }
