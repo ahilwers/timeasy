@@ -319,7 +319,8 @@ func Test_projectHandler_UpdateProjectFailsIfItBelongsToAnotherUser(t *testing.T
 	AddToken(req, token)
 	assert.Nil(t, err)
 	TestRouter.ServeHTTP(w, req)
-	assert.Equal(t, 404, w.Code)
+	assert.Equal(t, 403, w.Code)
+	AssertErrorMessageEquals(t, w.Body.Bytes(), "you are not allowed to update this project")
 
 	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)

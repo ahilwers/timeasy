@@ -86,7 +86,7 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 			return
 		}
 		if !isAdmin {
-			context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
+			context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to update this project"})
 			return
 		}
 	}

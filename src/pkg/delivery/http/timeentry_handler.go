@@ -28,15 +28,20 @@ func NewTimeEntryHandler(entryUsecase usecase.TimeEntryUsecase) TimeEntryHandler
 	}
 }
 
-type timeEntryDto struct {
+type timeEntryUpdateDto struct {
 	Description      string `json:"description" binding:"required"`
 	StartTimeUTCUnix int64  `json:"startTimeUTCUnix" binding:"required"`
 	EndTimeUTCUnix   int64
 	ProjectId        uuid.UUID `json:"projectId" binding:"required"`
 }
 
+type timeEntryDto struct {
+	Id uuid.UUID
+	timeEntryUpdateDto
+}
+
 func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
-	var entryDto timeEntryDto
+	var entryDto timeEntryUpdateDto
 	if err := context.ShouldBindJSON(&entryDto); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -79,7 +84,7 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
 		return
 	}
-	var entryDto timeEntryDto
+	var entryDto timeEntryUpdateDto
 	if err := context.ShouldBindJSON(&entryDto); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -146,7 +151,7 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("entry %v deleted", entryId)})
 }
 
-func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryDto, userId uuid.UUID) model.TimeEntry {
+func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryUpdateDto, userId uuid.UUID) model.TimeEntry {
 	timeEntry := model.TimeEntry{
 		UserId: userId,
 	}
@@ -154,7 +159,7 @@ func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryDto, userId uui
 	return timeEntry
 }
 
-func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryDto) {
+func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryUpdateDto) {
 	startTime := handler.convertUnitxTimeToTime(dto.StartTimeUTCUnix)
 	endTime := handler.convertUnitxTimeToTime(dto.EndTimeUTCUnix)
 	entry.Description = dto.Description
