@@ -242,6 +242,105 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 	assert.Equal(t, timeEntry.UserId, entriesFromDb[0].UserId)
 }
 
+func Test_timeEntryHandler_UpdateTimeEntryFailsIfItDoesNotBelongToTheUser(t *testing.T) {
+	teardownTest := SetupTest(t)
+	defer teardownTest(t)
+	token, user := loginUser(t, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
+	})
+
+	project := model.Project{
+		Name:   "project",
+		UserId: user.ID,
+	}
+	err := TestProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	owner, err := addUser("owner", "ownerpassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		ProjectId:   project.ID,
+		UserId:      owner.ID,
+	}
+	err = TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
+		"updatedentry", startTime.Unix(), timeEntry.ProjectId))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 403, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
+	AssertErrorMessageEquals(t, w.Body.Bytes(), "you are not allowed to update this entry")
+
+	entriesFromDb, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(owner.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(entriesFromDb))
+	assert.Equal(t, "timeentry", entriesFromDb[0].Description)
+	assert.Equal(t, startTime, entriesFromDb[0].StartTime)
+	assert.True(t, entriesFromDb[0].EndTime.IsZero())
+	assert.Equal(t, timeEntry.ProjectId, entriesFromDb[0].ProjectId)
+	assert.Equal(t, timeEntry.UserId, entriesFromDb[0].UserId)
+}
+
+func Test_timeEntryHandler_UpdateTimeEntrySucceedsIfItDoesNotBelongToTheUserButTheUserIsAdmin(t *testing.T) {
+	teardownTest := SetupTest(t)
+	defer teardownTest(t)
+	token, user := loginUser(t, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
+	})
+
+	project := model.Project{
+		Name:   "project",
+		UserId: user.ID,
+	}
+	err := TestProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	owner, err := addUser("owner", "ownerpassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		ProjectId:   project.ID,
+		UserId:      owner.ID,
+	}
+	err = TestTimeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
+		"updatedentry", startTime.Unix(), timeEntry.ProjectId))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), reader)
+	AddToken(req, token)
+	assert.Nil(t, err)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
+
+	entriesFromDb, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(owner.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(entriesFromDb))
+	assert.Equal(t, "updatedentry", entriesFromDb[0].Description)
+	assert.Equal(t, startTime, entriesFromDb[0].StartTime)
+	assert.True(t, entriesFromDb[0].EndTime.IsZero())
+	assert.Equal(t, timeEntry.ProjectId, entriesFromDb[0].ProjectId)
+	assert.Equal(t, timeEntry.UserId, entriesFromDb[0].UserId)
+}
+
 func Test_timeEntryHandler_DeleteTimeEntry(t *testing.T) {
 	teardownTest := SetupTest(t)
 	defer teardownTest(t)

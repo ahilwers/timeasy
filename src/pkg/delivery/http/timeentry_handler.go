@@ -90,10 +90,22 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 		return
 	}
 	tokenString := ExtractToken(context)
-	_, err = ExtractTokenUserId(tokenString)
+	userId, err := ExtractTokenUserId(tokenString)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	if timeEntry.UserId != userId {
+		isAdmin, err := TokenHasRole(tokenString, model.RoleAdmin)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !isAdmin {
+			context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to update this entry"})
+			return
+		}
 	}
 
 	handler.fillEntryFromDto(timeEntry, entryDto)
