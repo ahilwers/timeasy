@@ -30,6 +30,8 @@ func SetupRouter(userHandler UserHandler, projectHandler ProjectHandler, timeEnt
 	protectedGroup.GET("/projects/:id", projectHandler.GetProjectById)
 	protectedGroup.PUT("/projects/:id", projectHandler.UpdateProject)
 	protectedGroup.DELETE("/projects/:id", projectHandler.DeleteProject)
+	protectedGroup.GET("/timeentries/:id", timeEntryHandler.GetTimeEntryById)
+	protectedGroup.GET("/timeentries", timeEntryHandler.GetAllTimeEntries)
 	protectedGroup.POST("/timeentries", timeEntryHandler.AddTimeEntry)
 	protectedGroup.PUT("/timeentries/:id", timeEntryHandler.UpdateTimeEntry)
 	protectedGroup.DELETE("/timeentries/:id", timeEntryHandler.DeleteTimeEntry)

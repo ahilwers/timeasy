@@ -16,6 +16,8 @@ type TimeEntryHandler interface {
 	AddTimeEntry(context *gin.Context)
 	UpdateTimeEntry(context *gin.Context)
 	DeleteTimeEntry(context *gin.Context)
+	GetTimeEntryById(context *gin.Context)
+	GetAllTimeEntries(context *gin.Context)
 }
 
 type timeEntryHandler struct {
@@ -163,6 +165,58 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("entry %v deleted", entryId)})
 }
 
+func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
+	entryId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	timeEntry, err := handler.usecase.GetTimeEntryById(entryId)
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
+		return
+	}
+	token := ExtractToken(context)
+	authUserId, err := ExtractTokenUserId(token)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// a normal user can only fetch his own data.
+	// if he tries to get an entry of another user he must be an admin.
+	if authUserId != timeEntry.UserId {
+		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !hasAdminRole {
+			// We just say that the entry was not found:
+			context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found",
+				entryId)})
+			return
+		}
+	}
+	context.JSON(http.StatusOK, handler.createDtoFromTimeEntry(timeEntry))
+}
+
+func (handler *timeEntryHandler) GetAllTimeEntries(context *gin.Context) {
+	token := ExtractToken(context)
+	userId, err := ExtractTokenUserId(token)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var timeEntries []model.TimeEntry
+	timeEntries, err = handler.usecase.GetAllTimeEntriesOfUser(userId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all entries"})
+		return
+	}
+	timeEntryDtos := handler.convertTimeEntriesToDtos(timeEntries)
+	context.JSON(http.StatusOK, timeEntryDtos)
+}
+
 func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryUpdateDto, userId uuid.UUID) model.TimeEntry {
 	timeEntry := model.TimeEntry{
 		UserId: userId,
@@ -172,18 +226,45 @@ func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryUpdateDto, user
 }
 
 func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryUpdateDto) {
-	startTime := handler.convertUnitxTimeToTime(dto.StartTimeUTCUnix)
-	endTime := handler.convertUnitxTimeToTime(dto.EndTimeUTCUnix)
+	startTime := handler.convertUnixTimeToTime(dto.StartTimeUTCUnix)
+	endTime := handler.convertUnixTimeToTime(dto.EndTimeUTCUnix)
 	entry.Description = dto.Description
 	entry.StartTime = startTime
 	entry.EndTime = endTime
 	entry.ProjectId = dto.ProjectId
 }
 
-func (handler *timeEntryHandler) convertUnitxTimeToTime(unixTime int64) time.Time {
+func (handler *timeEntryHandler) convertTimeEntriesToDtos(timeEntries []model.TimeEntry) []timeEntryDto {
+	var dtos []timeEntryDto
+	for _, timeEntry := range timeEntries {
+		dtos = append(dtos, handler.createDtoFromTimeEntry(&timeEntry))
+	}
+	return dtos
+}
+
+func (handler *timeEntryHandler) createDtoFromTimeEntry(timeEntry *model.TimeEntry) timeEntryDto {
+	dto := timeEntryDto{
+		Id: timeEntry.ID,
+	}
+	dto.Description = timeEntry.Description
+	dto.StartTimeUTCUnix = handler.convertTimeToUnixTime(timeEntry.StartTime)
+	dto.EndTimeUTCUnix = handler.convertTimeToUnixTime(timeEntry.EndTime)
+	dto.ProjectId = timeEntry.ProjectId
+	return dto
+}
+
+func (handler *timeEntryHandler) convertUnixTimeToTime(unixTime int64) time.Time {
 	var result time.Time
 	if unixTime > 0 {
 		result = time.Unix(unixTime, 0).UTC()
+	}
+	return result
+}
+
+func (handler *timeEntryHandler) convertTimeToUnixTime(time time.Time) int64 {
+	result := int64(0)
+	if !time.IsZero() {
+		result = time.Unix()
 	}
 	return result
 }
