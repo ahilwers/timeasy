@@ -15,6 +15,7 @@ import (
 var TestUserUsecase UserUsecase
 var TestProjectUsecase ProjectUsecase
 var TestTimeEntryUsecase TimeEntryUsecase
+var TestTeamUsecase TeamUsecase
 
 func TestMain(m *testing.M) {
 	log.Println("Testmain")
@@ -41,6 +42,9 @@ func initUsecases() {
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
 	TestTimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, TestUserUsecase, TestProjectUsecase)
+
+	teamRepo := database.NewGormTeamRepository(test.DB)
+	TestTeamUsecase = NewTeamUsecase(teamRepo)
 }
 
 func addUser(t *testing.T, username string, password string, roles model.RoleList) model.User {

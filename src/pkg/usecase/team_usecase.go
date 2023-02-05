@@ -32,13 +32,17 @@ func (pu *teamUsecase) AddTeam(team *model.Team) error {
 }
 
 func (pu *teamUsecase) GetTeamById(id uuid.UUID) (*model.Team, error) {
-	return pu.repo.GetTeamById(id)
+	team, err := pu.repo.GetTeamById(id)
+	if err != nil {
+		return nil, NewEntityNotFoundError(fmt.Sprintf("team with id %v not found", id))
+	}
+	return team, nil
 }
 
 func (pu *teamUsecase) UpdateTeam(team *model.Team) error {
 	_, err := pu.GetTeamById(team.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("team with id %v does not exist", team.ID))
+		return err
 	}
 	return pu.repo.UpdateTeam(team)
 }
@@ -46,7 +50,7 @@ func (pu *teamUsecase) UpdateTeam(team *model.Team) error {
 func (pu *teamUsecase) DeleteTeam(id uuid.UUID) error {
 	team, err := pu.GetTeamById(id)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("team with id %v does not exist", id))
+		return err
 	}
 	return pu.repo.DeleteTeam(team)
 }
