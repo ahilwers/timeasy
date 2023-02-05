@@ -7,8 +7,10 @@ import (
 
 type Team struct {
 	gorm.Model
-	ID   uuid.UUID `gorm:"type:uuid;primaryKey;"`
-	Name string
+	ID    uuid.UUID `gorm:"type:uuid;primaryKey;"`
+	Name1 string
+	Name2 string
+	Name3 string
 }
 
 func (team *Team) BeforeCreate(db *gorm.DB) error {

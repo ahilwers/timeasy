@@ -7,7 +7,7 @@ import (
 	ginglog "github.com/szuecs/gin-glog"
 )
 
-func SetupRouter(userHandler UserHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler) *gin.Engine {
+func SetupRouter(userHandler UserHandler, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(ginglog.Logger(3 * time.Second))
@@ -35,6 +35,11 @@ func SetupRouter(userHandler UserHandler, projectHandler ProjectHandler, timeEnt
 	protectedGroup.POST("/timeentries", timeEntryHandler.AddTimeEntry)
 	protectedGroup.PUT("/timeentries/:id", timeEntryHandler.UpdateTimeEntry)
 	protectedGroup.DELETE("/timeentries/:id", timeEntryHandler.DeleteTimeEntry)
+	protectedGroup.GET("/teams/:id", teamHandler.GetTeamById)
+	protectedGroup.GET("/teams", teamHandler.GetAllTeams)
+	protectedGroup.POST("/teams", teamHandler.AddTeam)
+	protectedGroup.PUT("/teams/:id", teamHandler.UpdateTeam)
+	protectedGroup.DELETE("/teams/:id", teamHandler.DeleteTeam)
 
 	return router
 }

@@ -49,7 +49,7 @@ func (repo *gormTeamRepository) DeleteTeam(team *model.Team) error {
 
 func (repo *gormTeamRepository) GetAllTeams() ([]model.Team, error) {
 	var teams []model.Team
-	if err := repo.db.Order("name").Find(&teams).Error; err != nil {
+	if err := repo.db.Order("name1").Order("name2").Order("name3").Find(&teams).Error; err != nil {
 		return nil, err
 	}
 	return teams, nil

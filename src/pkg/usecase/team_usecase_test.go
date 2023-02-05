@@ -15,7 +15,7 @@ func Test_teamUsecase_AddTeam(t *testing.T) {
 	defer teardownTest(t)
 
 	team := model.Team{
-		Name: "Testteam",
+		Name1: "Testteam",
 	}
 	err := TestTeamUsecase.AddTeam(&team)
 	assert.Nil(t, err)
@@ -23,7 +23,7 @@ func Test_teamUsecase_AddTeam(t *testing.T) {
 	teamsFromDb, err := TestTeamUsecase.GetAllTeams()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(teamsFromDb))
-	assert.Equal(t, "Testteam", teamsFromDb[0].Name)
+	assert.Equal(t, "Testteam", teamsFromDb[0].Name1)
 }
 
 func Test_teamUsecase_UpdateTeam(t *testing.T) {
@@ -31,19 +31,19 @@ func Test_teamUsecase_UpdateTeam(t *testing.T) {
 	defer teardownTest(t)
 
 	team := model.Team{
-		Name: "Testteam",
+		Name1: "Testteam",
 	}
 	err := TestTeamUsecase.AddTeam(&team)
 	assert.Nil(t, err)
 
-	team.Name = "UpdatedTeam"
+	team.Name1 = "UpdatedTeam"
 	err = TestTeamUsecase.UpdateTeam(&team)
 	assert.Nil(t, err)
 
 	teamsFromDb, err := TestTeamUsecase.GetAllTeams()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(teamsFromDb))
-	assert.Equal(t, "UpdatedTeam", teamsFromDb[0].Name)
+	assert.Equal(t, "UpdatedTeam", teamsFromDb[0].Name1)
 }
 
 func Test_teamUsecase_UpdateTeamFailsIfItDoesNotExist(t *testing.T) {
@@ -51,10 +51,10 @@ func Test_teamUsecase_UpdateTeamFailsIfItDoesNotExist(t *testing.T) {
 	defer teardownTest(t)
 
 	team := model.Team{
-		Name: "Testteam",
+		Name1: "Testteam",
 	}
 
-	team.Name = "UpdatedTeam"
+	team.Name1 = "UpdatedTeam"
 	err := TestTeamUsecase.UpdateTeam(&team)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
@@ -70,7 +70,7 @@ func Test_teamUsecase_DeleteTeam(t *testing.T) {
 	defer teardownTest(t)
 
 	team := model.Team{
-		Name: "Testteam",
+		Name1: "Testteam",
 	}
 	err := TestTeamUsecase.AddTeam(&team)
 	assert.Nil(t, err)
@@ -100,14 +100,14 @@ func Test_teamUsecase_GetTeamById(t *testing.T) {
 	defer teardownTest(t)
 
 	team := model.Team{
-		Name: "Testteam",
+		Name1: "Testteam",
 	}
 	err := TestTeamUsecase.AddTeam(&team)
 	assert.Nil(t, err)
 
 	teamFromDb, err := TestTeamUsecase.GetTeamById(team.ID)
 	assert.Nil(t, err)
-	assert.Equal(t, team.Name, teamFromDb.Name)
+	assert.Equal(t, team.Name1, teamFromDb.Name1)
 }
 
 func Test_teamUsecase_GetTeamByIdFailsIfItDoesNotExist(t *testing.T) {
@@ -132,7 +132,7 @@ func Test_teamUsecase_GetAllTeams(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(teamsFromDb))
 	for i, team := range teamsFromDb {
-		assert.Equal(t, teams[i].Name, team.Name)
+		assert.Equal(t, teams[i].Name1, team.Name1)
 	}
 }
 
@@ -140,7 +140,7 @@ func addTeams(t *testing.T, count int) []model.Team {
 	var teams []model.Team
 	for i := 0; i < count; i++ {
 		team := model.Team{
-			Name: fmt.Sprintf("Team %v", i+1),
+			Name1: fmt.Sprintf("Team %v", i+1),
 		}
 		teams = append(teams, team)
 		err := TestTeamUsecase.AddTeam(&team)
