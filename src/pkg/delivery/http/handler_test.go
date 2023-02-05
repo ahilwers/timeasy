@@ -20,9 +20,11 @@ import (
 var TestUserUsecase usecase.UserUsecase
 var TestProjectUsecase usecase.ProjectUsecase
 var TestTimeEntryUsecase usecase.TimeEntryUsecase
+var TestTeamUsecase usecase.TeamUsecase
 var TestUserHandler UserHandler
 var TestProjectHandler ProjectHandler
 var TestTimeEntryHandler TimeEntryHandler
+var TestTeamHandler TeamHandler
 var TestRouter *gin.Engine
 
 type ErrorResult struct {
@@ -55,14 +57,18 @@ func initUsecases() {
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
 	TestTimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, TestUserUsecase, TestProjectUsecase)
+
+	teamRepo := database.NewGormTeamRepository(test.DB)
+	TestTeamUsecase = usecase.NewTeamUsecase(teamRepo)
 }
 
 func initHandlers() {
 	TestUserHandler = NewUserHandler(TestUserUsecase)
 	TestProjectHandler = NewProjectHandler(TestProjectUsecase)
 	TestTimeEntryHandler = NewTimeEntryHandler(TestTimeEntryUsecase)
+	TestTeamHandler = NewTeamHandler(TestTeamUsecase)
 
-	TestRouter = SetupRouter(TestUserHandler, TestProjectHandler, TestTimeEntryHandler)
+	TestRouter = SetupRouter(TestUserHandler, TestTeamHandler, TestProjectHandler, TestTimeEntryHandler)
 }
 
 type tokenObject struct {
