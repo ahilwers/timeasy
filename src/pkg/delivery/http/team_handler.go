@@ -108,13 +108,42 @@ func (handler *teamHandler) GetTeamById(context *gin.Context) {
 }
 
 func (handler *teamHandler) GetAllTeams(context *gin.Context) {
-	var teams []model.Team
-	teams, err := handler.usecase.GetAllTeams()
+	tokenString := ExtractToken(context)
+	userId, err := ExtractTokenUserId(tokenString)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	isAdmin, err := TokenHasRole(tokenString, model.RoleAdmin)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var dtos []teamDto
+	if isAdmin {
+		teams, err := handler.usecase.GetAllTeams()
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		dtos = handler.convertTeamsToDtos(teams)
+	} else {
+		teamAssignments, err := handler.usecase.GetTeamsOfUser(userId)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		for _, assignment := range teamAssignments {
+			dto := handler.createDtoFromTeam(&assignment.Team)
+			dtos = append(dtos, dto)
+		}
+	}
+
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all teams"})
 		return
 	}
-	context.JSON(http.StatusOK, handler.convertTeamsToDtos(teams))
+	context.JSON(http.StatusOK, dtos)
 }
 
 func (handler *teamHandler) DeleteTeam(context *gin.Context) {

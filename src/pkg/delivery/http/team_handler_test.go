@@ -190,16 +190,20 @@ func Test_teamHandler_GetTeamByIdFailsIfItDoesNotExist(t *testing.T) {
 	AssertErrorMessageEquals(t, w.Body.Bytes(), fmt.Sprintf("team with id %v not found", missingId))
 }
 
-func Test_teamHandler_GetAllTeams(t *testing.T) {
+func Test_teamHandler_GetAllTeamsOnlyReturnsTeamsOfUser(t *testing.T) {
 	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
 	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
+		Roles:    model.RoleList{model.RoleUser},
 	})
 
-	teams := addTeams(t, 3, user)
+	otherUser, err := addUser("otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+	_ = addTeams(t, 3, *otherUser)
+	userTeams := addTeamsWithStartIndex(t, 3, 4, user)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/teams", nil)
@@ -209,15 +213,50 @@ func Test_teamHandler_GetAllTeams(t *testing.T) {
 
 	var teamsFromService []testTeamDto
 	json.Unmarshal(w.Body.Bytes(), &teamsFromService)
+	assert.Equal(t, 3, len(teamsFromService))
 	for i, teamFromService := range teamsFromService {
-		assert.Equal(t, teams[i].Name1, teamFromService.Name1)
+		assert.Equal(t, userTeams[i].Name1, teamFromService.Name1)
+	}
+}
+
+func Test_teamHandler_GetAllTeamsReturnsAllTeamsIfUserIsAdmin(t *testing.T) {
+	teardownTest := SetupTest(t)
+	defer teardownTest(t)
+
+	token, user := loginUser(t, model.User{
+		Username: "user",
+		Password: "password",
+		Roles:    model.RoleList{model.RoleUser, model.RoleAdmin},
+	})
+
+	otherUser, err := addUser("otherUser", "otherPassword", model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+	otherTeams := addTeams(t, 3, *otherUser)
+	userTeams := addTeamsWithStartIndex(t, 3, 4, user)
+	allTeams := append(otherTeams, userTeams[:]...)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/teams", nil)
+	AddToken(req, token)
+	TestRouter.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var teamsFromService []testTeamDto
+	json.Unmarshal(w.Body.Bytes(), &teamsFromService)
+	assert.Equal(t, 6, len(teamsFromService))
+	for i, teamFromService := range teamsFromService {
+		assert.Equal(t, allTeams[i].Name1, teamFromService.Name1)
 	}
 }
 
 func addTeams(t *testing.T, count int, owner model.User) []model.Team {
+	return addTeamsWithStartIndex(t, count, 1, owner)
+}
+
+func addTeamsWithStartIndex(t *testing.T, count int, startIndex int, owner model.User) []model.Team {
 	var teams []model.Team
 	for i := 0; i < count; i++ {
-		team := addTeam(t, fmt.Sprintf("team %v", i+1), owner)
+		team := addTeam(t, fmt.Sprintf("team %v", i+startIndex), owner)
 		teams = append(teams, team)
 	}
 	return teams
