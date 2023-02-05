@@ -61,6 +61,7 @@ func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
 	DB.AutoMigrate(&model.User{})
 	DB.AutoMigrate(&model.Project{})
 	DB.AutoMigrate(&model.TimeEntry{})
+	DB.AutoMigrate(&model.Team{})
 	return pool, resource
 }
 
@@ -93,6 +94,10 @@ func deleteAllEntities(db *gorm.DB) error {
 		return err.Error
 	}
 	err = db.Exec("DELETE FROM users")
+	if err.Error != nil {
+		return err.Error
+	}
+	err = db.Exec("DELETE FROM teams")
 	if err.Error != nil {
 		return err.Error
 	}
