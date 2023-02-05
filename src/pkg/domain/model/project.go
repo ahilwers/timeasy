@@ -10,6 +10,7 @@ type Project struct {
 	ID     uuid.UUID `gorm:"type:uuid;primaryKey;"`
 	Name   string
 	UserId uuid.UUID `gorm:"type:uuid;"`
+	User   User
 }
 
 func (project *Project) BeforeCreate(db *gorm.DB) error {

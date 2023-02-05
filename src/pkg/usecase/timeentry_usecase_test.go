@@ -380,6 +380,11 @@ func Test_timeEntryUsecase_DeleteTimeEntry(t *testing.T) {
 	entryList, err := TestTimeEntryUsecase.GetAllTimeEntriesOfUser(user.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(entryList))
+	// Make sure that the associated entities are still there:
+	_, err = TestUserUsecase.GetUserById(user.ID)
+	assert.Nil(t, err)
+	_, err = TestProjectUsecase.GetProjectById(project.ID)
+	assert.Nil(t, err)
 }
 
 func Test_timeEntryUsecase_DeleteTimeEntryFailsIfItDoesNotExist(t *testing.T) {
