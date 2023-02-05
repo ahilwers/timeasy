@@ -19,12 +19,14 @@ type TeamHandler interface {
 }
 
 type teamHandler struct {
-	usecase usecase.TeamUsecase
+	usecase     usecase.TeamUsecase
+	userUsecase usecase.UserUsecase
 }
 
-func NewTeamHandler(usecase usecase.TeamUsecase) TeamHandler {
+func NewTeamHandler(usecase usecase.TeamUsecase, userUsecase usecase.UserUsecase) TeamHandler {
 	return &teamHandler{
-		usecase: usecase,
+		usecase:     usecase,
+		userUsecase: userUsecase,
 	}
 }
 
@@ -46,9 +48,21 @@ func (handler *teamHandler) AddTeam(context *gin.Context) {
 		return
 	}
 
+	tokenString := ExtractToken(context)
+	userId, err := ExtractTokenUserId(tokenString)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	user, err := handler.userUsecase.GetUserById(userId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	team := handler.createTeamFromDto(teamDto)
 
-	err := handler.usecase.AddTeam(&team)
+	err = handler.usecase.AddTeam(&team, user)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

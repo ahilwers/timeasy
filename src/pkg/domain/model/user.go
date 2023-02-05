@@ -11,6 +11,15 @@ type User struct {
 	Username string
 	Password string
 	Roles    RoleList `gorm:"type:VARCHAR(255)"` //store the roles in a string field
+	Teams    []UserTeamAssignment
+}
+
+type UserTeamAssignment struct {
+	gorm.Model
+	UserID uuid.UUID
+	TeamID uuid.UUID
+	Team   Team
+	Roles  RoleList `gorm:"type:VARCHAR(255)"` //store the team roles in a string field
 }
 
 func (user *User) BeforeCreate(db *gorm.DB) error {

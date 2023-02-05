@@ -42,13 +42,13 @@ func Test_teamHandler_UpdateTeam(t *testing.T) {
 	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	token, _ := loginUser(t, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
 	})
 
-	team := addTeam(t, "team1")
+	team := addTeam(t, "team1", user)
 
 	w := httptest.NewRecorder()
 
@@ -94,13 +94,13 @@ func Test_teamHandler_DeleteTeam(t *testing.T) {
 	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	token, _ := loginUser(t, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
 	})
 
-	team := addTeam(t, "team1")
+	team := addTeam(t, "team1", user)
 
 	w := httptest.NewRecorder()
 
@@ -119,13 +119,13 @@ func Test_teamHandler_DeleteTeamFailsIfItDoesNotExist(t *testing.T) {
 	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	token, _ := loginUser(t, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 		Roles:    model.RoleList{model.RoleUser},
 	})
 
-	_ = addTeam(t, "team1")
+	_ = addTeam(t, "team1", user)
 
 	w := httptest.NewRecorder()
 	missingId, err := uuid.NewV4()
@@ -153,12 +153,12 @@ func Test_teamHandler_GetTeamById(t *testing.T) {
 	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	token, _ := loginUser(t, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 	})
 
-	team := addTeam(t, "team1")
+	team := addTeam(t, "team1", user)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/teams/%v", team.ID), nil)
@@ -194,12 +194,12 @@ func Test_teamHandler_GetAllTeams(t *testing.T) {
 	teardownTest := SetupTest(t)
 	defer teardownTest(t)
 
-	token, _ := loginUser(t, model.User{
+	token, user := loginUser(t, model.User{
 		Username: "user",
 		Password: "password",
 	})
 
-	teams := addTeams(t, 3)
+	teams := addTeams(t, 3, user)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/teams", nil)
@@ -214,20 +214,20 @@ func Test_teamHandler_GetAllTeams(t *testing.T) {
 	}
 }
 
-func addTeams(t *testing.T, count int) []model.Team {
+func addTeams(t *testing.T, count int, owner model.User) []model.Team {
 	var teams []model.Team
 	for i := 0; i < count; i++ {
-		team := addTeam(t, fmt.Sprintf("team %v", i+1))
+		team := addTeam(t, fmt.Sprintf("team %v", i+1), owner)
 		teams = append(teams, team)
 	}
 	return teams
 }
 
-func addTeam(t *testing.T, name string) model.Team {
+func addTeam(t *testing.T, name string, owner model.User) model.Team {
 	team := model.Team{
 		Name1: name,
 	}
-	err := TestTeamUsecase.AddTeam(&team)
+	err := TestTeamUsecase.AddTeam(&team, &owner)
 	assert.Nil(t, err)
 	return team
 }

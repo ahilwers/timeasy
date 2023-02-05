@@ -12,5 +12,7 @@ type TeamRepository interface {
 	DeleteTeam(team *model.Team) error
 	GetTeamById(id uuid.UUID) (*model.Team, error)
 	GetAllTeams() ([]model.Team, error)
-	GetAllTeamsOfUser(userId uuid.UUID) ([]model.Team, error)
+	AddUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error
+	GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAssignment, error)
+	GetUserTeamAssignment(userId uuid.UUID, teamId uuid.UUID) (*model.UserTeamAssignment, error)
 }
