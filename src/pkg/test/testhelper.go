@@ -84,7 +84,7 @@ func SetupTest(tb testing.TB) func(tb testing.TB) {
 }
 
 func deleteAllEntities(db *gorm.DB) error {
-	err := db.Exec("DELETE FROM users")
+	err := db.Exec("DELETE FROM time_entries")
 	if err.Error != nil {
 		return err.Error
 	}
@@ -92,7 +92,7 @@ func deleteAllEntities(db *gorm.DB) error {
 	if err.Error != nil {
 		return err.Error
 	}
-	err = db.Exec("DELETE FROM time_entries")
+	err = db.Exec("DELETE FROM users")
 	if err.Error != nil {
 		return err.Error
 	}

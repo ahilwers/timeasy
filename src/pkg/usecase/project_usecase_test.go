@@ -193,6 +193,9 @@ func Test_projectUsecase_DeleteProject(t *testing.T) {
 	assert.Equal(t, 2, len(projectsFromDb))
 	assert.Equal(t, "Project 1", projectsFromDb[0].Name)
 	assert.Equal(t, "Project 3", projectsFromDb[1].Name)
+	// Make sure that the user is still there:
+	_, err = TestUserUsecase.GetUserById(user.ID)
+	assert.Nil(t, err)
 }
 
 func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
