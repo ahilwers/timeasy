@@ -15,4 +15,6 @@ type TeamRepository interface {
 	AddUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error
 	GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAssignment, error)
 	GetUserTeamAssignment(userId uuid.UUID, teamId uuid.UUID) (*model.UserTeamAssignment, error)
+	DeleteUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error
+	UpdateUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error
 }

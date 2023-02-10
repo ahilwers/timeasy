@@ -77,3 +77,17 @@ func (repo *gormTeamRepository) GetUserTeamAssignment(userId uuid.UUID, teamId u
 	}
 	return &teamAssignment, nil
 }
+
+func (repo *gormTeamRepository) DeleteUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error {
+	if err := repo.db.Delete(teamAssignment).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *gormTeamRepository) UpdateUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error {
+	if err := repo.db.Save(teamAssignment).Error; err != nil {
+		return err
+	}
+	return nil
+}

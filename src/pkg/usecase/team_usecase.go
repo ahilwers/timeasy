@@ -15,7 +15,9 @@ type TeamUsecase interface {
 	UpdateTeam(team *model.Team) error
 	DeleteTeam(id uuid.UUID) error
 	GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAssignment, error)
-	AddUserToTeam(user *model.User, team model.Team, roles model.RoleList) (*model.UserTeamAssignment, error)
+	AddUserToTeam(user *model.User, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error)
+	DeleteUserFromTeam(user *model.User, team *model.Team) error
+	UpdateUserRolesInTeam(user *model.User, team *model.Team, roles model.RoleList) error
 }
 
 type teamUsecase struct {
@@ -33,7 +35,7 @@ func (usecase *teamUsecase) AddTeam(team *model.Team, owner *model.User) error {
 	if err != nil {
 		return err
 	}
-	_, err = usecase.AddUserToTeam(owner, *team, model.RoleList{model.RoleUser, model.RoleAdmin})
+	_, err = usecase.AddUserToTeam(owner, team, model.RoleList{model.RoleUser, model.RoleAdmin})
 	if err != nil {
 		return err
 	}
@@ -72,7 +74,7 @@ func (usecase *teamUsecase) GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAs
 	return usecase.repo.GetTeamsOfUser(userId)
 }
 
-func (usecase *teamUsecase) AddUserToTeam(user *model.User, team model.Team, roles model.RoleList) (*model.UserTeamAssignment, error) {
+func (usecase *teamUsecase) AddUserToTeam(user *model.User, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error) {
 	_, err := usecase.repo.GetUserTeamAssignment(user.ID, team.ID)
 	// if this throws no error the assignment already exists:
 	if err == nil {
@@ -91,4 +93,29 @@ func (usecase *teamUsecase) AddUserToTeam(user *model.User, team model.Team, rol
 	}
 
 	return &assignment, nil
+}
+
+func (usecase *teamUsecase) DeleteUserFromTeam(user *model.User, team *model.Team) error {
+	teamAssignment, err := usecase.repo.GetUserTeamAssignment(user.ID, team.ID)
+	if err != nil {
+		return NewEntityNotFoundError(fmt.Sprintf("assignment between user %v and team %v not found", user.ID, team.ID))
+	}
+	err = usecase.repo.DeleteUserTeamAssignment(teamAssignment)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (usecase *teamUsecase) UpdateUserRolesInTeam(user *model.User, team *model.Team, roles model.RoleList) error {
+	teamAssignment, err := usecase.repo.GetUserTeamAssignment(user.ID, team.ID)
+	if err != nil {
+		return NewEntityNotFoundError(fmt.Sprintf("assignment between user %v and team %v not found", user.ID, team.ID))
+	}
+	teamAssignment.Roles = roles
+	err = usecase.repo.UpdateUserTeamAssignment(teamAssignment)
+	if err != nil {
+		return err
+	}
+	return nil
 }
