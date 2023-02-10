@@ -22,6 +22,7 @@ func (databaseService *DatabaseService) Init(host string, databaseName string, u
 	database.AutoMigrate(&model.Project{})
 	database.AutoMigrate(&model.TimeEntry{})
 	database.AutoMigrate(&model.Team{})
+	database.AutoMigrate(&model.UserTeamAssignment{})
 
 	databaseService.Database = database
 	return nil

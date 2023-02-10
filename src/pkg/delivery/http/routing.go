@@ -40,6 +40,9 @@ func SetupRouter(userHandler UserHandler, teamHandler TeamHandler, projectHandle
 	protectedGroup.POST("/teams", teamHandler.AddTeam)
 	protectedGroup.PUT("/teams/:id", teamHandler.UpdateTeam)
 	protectedGroup.DELETE("/teams/:id", teamHandler.DeleteTeam)
+	protectedGroup.POST("/teams/:id/users", teamHandler.AddUserToTeam)
+	protectedGroup.DELETE("/teams/:id/users/:userId", teamHandler.DeleteUserFromTeam)
+	protectedGroup.PUT("/teams/:id/users/:userId/roles", teamHandler.UpdateUserRolesInTeam)
 
 	return router
 }

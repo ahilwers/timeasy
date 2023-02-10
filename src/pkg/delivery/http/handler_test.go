@@ -66,7 +66,7 @@ func initHandlers() {
 	TestUserHandler = NewUserHandler(TestUserUsecase)
 	TestProjectHandler = NewProjectHandler(TestProjectUsecase)
 	TestTimeEntryHandler = NewTimeEntryHandler(TestTimeEntryUsecase)
-	TestTeamHandler = NewTeamHandler(TestTeamUsecase)
+	TestTeamHandler = NewTeamHandler(TestTeamUsecase, TestUserUsecase)
 
 	TestRouter = SetupRouter(TestUserHandler, TestTeamHandler, TestProjectHandler, TestTimeEntryHandler)
 }
