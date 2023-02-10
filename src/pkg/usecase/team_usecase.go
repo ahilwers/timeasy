@@ -18,6 +18,7 @@ type TeamUsecase interface {
 	AddUserToTeam(user *model.User, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error)
 	DeleteUserFromTeam(user *model.User, team *model.Team) error
 	UpdateUserRolesInTeam(user *model.User, team *model.Team, roles model.RoleList) error
+	IsUserAdminInTeam(user *model.User, team *model.Team) bool
 }
 
 type teamUsecase struct {
@@ -81,6 +82,11 @@ func (usecase *teamUsecase) AddUserToTeam(user *model.User, team *model.Team, ro
 		return nil, NewEntityExistsError(fmt.Sprintf("an assignment between user %v and team %v already exists", user.ID, team.ID))
 	}
 
+	// If no roles a re given add the user role:
+	if len(roles) == 0 {
+		roles = append(roles, model.RoleUser)
+	}
+
 	assignment := model.UserTeamAssignment{
 		UserID: user.ID,
 		TeamID: team.ID,
@@ -118,4 +124,28 @@ func (usecase *teamUsecase) UpdateUserRolesInTeam(user *model.User, team *model.
 		return err
 	}
 	return nil
+}
+
+func (usecase *teamUsecase) IsUserAdminInTeam(user *model.User, team *model.Team) bool {
+	if usecase.isUserAdmin(user) {
+		return true
+	}
+	teamAssignment, err := usecase.repo.GetUserTeamAssignment(user.ID, team.ID)
+	if err != nil {
+		return false
+	}
+	return usecase.hasRole(teamAssignment.Roles, model.RoleAdmin)
+}
+
+func (usecase *teamUsecase) isUserAdmin(user *model.User) bool {
+	return usecase.hasRole(user.Roles, model.RoleAdmin)
+}
+
+func (usecase *teamUsecase) hasRole(roles model.RoleList, role string) bool {
+	for _, role := range roles {
+		if role == model.RoleAdmin {
+			return true
+		}
+	}
+	return false
 }
