@@ -3,7 +3,7 @@ package main
 import (
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
-	"timeasy-server/pkg/delivery/http"
+	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
 )
 
@@ -22,14 +22,14 @@ func main() {
 	}
 
 	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
-	projectHandler := http.NewProjectHandler(projectUsecase)
+	projectHandler := rest.NewProjectHandler(projectUsecase)
 	userUsecase := usecase.NewUserUsecase(database.NewGormUserRepository(databaseService.Database))
-	userHandler := http.NewUserHandler(userUsecase)
+	userHandler := rest.NewUserHandler(userUsecase)
 	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), userUsecase, projectUsecase)
-	timeEntryHandler := http.NewTimeEntryHandler(timeEntryUsecase)
+	timeEntryHandler := rest.NewTimeEntryHandler(timeEntryUsecase)
 	teamUsecase := usecase.NewTeamUsecase(database.NewGormTeamRepository(databaseService.Database))
-	teamHandler := http.NewTeamHandler(teamUsecase)
+	teamHandler := rest.NewTeamHandler(teamUsecase, userUsecase)
 
-	router := http.SetupRouter(userHandler, teamHandler, projectHandler, timeEntryHandler)
+	router := rest.SetupRouter(userHandler, teamHandler, projectHandler, timeEntryHandler)
 	router.Run()
 }
