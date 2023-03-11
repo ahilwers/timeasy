@@ -23,14 +23,16 @@ type TeamHandler interface {
 }
 
 type teamHandler struct {
-	usecase     usecase.TeamUsecase
-	userUsecase usecase.UserUsecase
+	tokenVerifier TokenVerifier
+	usecase       usecase.TeamUsecase
+	userUsecase   usecase.UserUsecase
 }
 
-func NewTeamHandler(usecase usecase.TeamUsecase, userUsecase usecase.UserUsecase) TeamHandler {
+func NewTeamHandler(tokenVerifier TokenVerifier, usecase usecase.TeamUsecase, userUsecase usecase.UserUsecase) TeamHandler {
 	return &teamHandler{
-		usecase:     usecase,
-		userUsecase: userUsecase,
+		tokenVerifier: tokenVerifier,
+		usecase:       usecase,
+		userUsecase:   userUsecase,
 	}
 }
 
@@ -52,8 +54,12 @@ func (handler *teamHandler) AddTeam(context *gin.Context) {
 		return
 	}
 
-	tokenString := ExtractToken(context)
-	userId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -116,13 +122,17 @@ func (handler *teamHandler) GetTeamById(context *gin.Context) {
 }
 
 func (handler *teamHandler) GetAllTeams(context *gin.Context) {
-	tokenString := ExtractToken(context)
-	userId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	isAdmin, err := TokenHasRole(tokenString, model.RoleAdmin)
+	isAdmin, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -198,8 +208,12 @@ func (handler *teamHandler) AddUserToTeam(context *gin.Context) {
 		return
 	}
 
-	tokenString := ExtractToken(context)
-	userId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -241,8 +255,12 @@ func (handler *teamHandler) DeleteUserFromTeam(context *gin.Context) {
 		return
 	}
 
-	tokenString := ExtractToken(context)
-	loggedInUserId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	loggedInUserId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -317,8 +335,12 @@ func (handler *teamHandler) UpdateUserRolesInTeam(context *gin.Context) {
 		return
 	}
 
-	tokenString := ExtractToken(context)
-	loggedInUserId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	loggedInUserId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

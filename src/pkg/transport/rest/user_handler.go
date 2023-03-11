@@ -24,12 +24,14 @@ type UserHandler interface {
 }
 
 type userHandler struct {
-	usecase usecase.UserUsecase
+	tokenVerifier TokenVerifier
+	usecase       usecase.UserUsecase
 }
 
-func NewUserHandler(usecase usecase.UserUsecase) UserHandler {
+func NewUserHandler(tokenVerifier TokenVerifier, usecase usecase.UserUsecase) UserHandler {
 	return &userHandler{
-		usecase: usecase,
+		tokenVerifier: tokenVerifier,
+		usecase:       usecase,
 	}
 }
 
@@ -106,9 +108,14 @@ func (handler *userHandler) GetUserById(context *gin.Context) {
 	userId, err := handler.getId(context)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
-	token := ExtractToken(context)
-	authUserId, err := ExtractTokenUserId(token)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	authUserId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -116,7 +123,7 @@ func (handler *userHandler) GetUserById(context *gin.Context) {
 	// a normal user can only fetch his own data.
 	// if he tries to get the data of another user he must be an admin.
 	if authUserId != userId {
-		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -135,8 +142,12 @@ func (handler *userHandler) GetUserById(context *gin.Context) {
 }
 
 func (handler *userHandler) GetAllUsers(context *gin.Context) {
-	token := ExtractToken(context)
-	hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -164,8 +175,12 @@ func (handler *userHandler) UpdateUser(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	token := ExtractToken(context)
-	authUserId, err := ExtractTokenUserId(token)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	authUserId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -173,7 +188,7 @@ func (handler *userHandler) UpdateUser(context *gin.Context) {
 	// a normal user can only update his own data.
 	// if he tries to get the data of another user he must be an admin.
 	if authUserId != userId {
-		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -215,8 +230,12 @@ func (handler *userHandler) UpdatePassword(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	token := ExtractToken(context)
-	authUserId, err := ExtractTokenUserId(token)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	authUserId, err := handler.tokenVerifier.GetUserId(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -224,7 +243,7 @@ func (handler *userHandler) UpdatePassword(context *gin.Context) {
 	// a normal user can only update his own data.
 	// if he tries to get the data of another user he must be an admin.
 	if authUserId != userId {
-		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -271,8 +290,12 @@ func (handler *userHandler) UpdateRoles(context *gin.Context) {
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
-	token := ExtractToken(context)
-	hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -301,8 +324,12 @@ func (handler *userHandler) DeleteUser(context *gin.Context) {
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
-	token := ExtractToken(context)
-	hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

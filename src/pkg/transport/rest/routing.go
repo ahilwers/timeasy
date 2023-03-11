@@ -7,7 +7,7 @@ import (
 	ginglog "github.com/szuecs/gin-glog"
 )
 
-func SetupRouter(userHandler UserHandler, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, userHandler UserHandler, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(ginglog.Logger(3 * time.Second))
@@ -18,7 +18,7 @@ func SetupRouter(userHandler UserHandler, teamHandler TeamHandler, projectHandle
 	publicGroup.POST("/login", userHandler.Login)
 
 	protectedGroup := router.Group("/api/v1")
-	protectedGroup.Use(JwtAuthMiddleware())
+	protectedGroup.Use(authMiddleware.HandlerFunc())
 	protectedGroup.GET("/users/:id", userHandler.GetUserById)
 	protectedGroup.GET("/users", userHandler.GetAllUsers)
 	protectedGroup.PUT("/users/:id", userHandler.UpdateUser)

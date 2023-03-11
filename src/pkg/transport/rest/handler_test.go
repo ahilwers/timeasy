@@ -63,12 +63,14 @@ func initUsecases() {
 }
 
 func initHandlers() {
-	TestUserHandler = NewUserHandler(TestUserUsecase)
-	TestProjectHandler = NewProjectHandler(TestProjectUsecase)
-	TestTimeEntryHandler = NewTimeEntryHandler(TestTimeEntryUsecase)
-	TestTeamHandler = NewTeamHandler(TestTeamUsecase, TestUserUsecase)
+	tokenVerifier := NewJwtTokenVerifier()
+	authMiddleware := NewJwtAuthMiddleware(tokenVerifier)
+	TestUserHandler = NewUserHandler(tokenVerifier, TestUserUsecase)
+	TestProjectHandler = NewProjectHandler(tokenVerifier, TestProjectUsecase)
+	TestTimeEntryHandler = NewTimeEntryHandler(tokenVerifier, TestTimeEntryUsecase)
+	TestTeamHandler = NewTeamHandler(tokenVerifier, TestTeamUsecase, TestUserUsecase)
 
-	TestRouter = SetupRouter(TestUserHandler, TestTeamHandler, TestProjectHandler, TestTimeEntryHandler)
+	TestRouter = SetupRouter(authMiddleware, TestUserHandler, TestTeamHandler, TestProjectHandler, TestTimeEntryHandler)
 }
 
 type tokenObject struct {

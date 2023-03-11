@@ -6,10 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func JwtAuthMiddleware() gin.HandlerFunc {
+type jwtAuthMiddleware struct {
+	tokenVerifier TokenVerifier
+}
+
+func NewJwtAuthMiddleware(tokenVerifier TokenVerifier) AuthMiddleware {
+	return &jwtAuthMiddleware{
+		tokenVerifier: tokenVerifier,
+	}
+}
+
+func (mw *jwtAuthMiddleware) HandlerFunc() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := ExtractToken(c)
-		err := TokenValid(tokenString)
+		_, err := mw.tokenVerifier.VerifyToken(c)
 		if err != nil {
 			c.String(http.StatusUnauthorized, "Unauthorized")
 			c.Abort()

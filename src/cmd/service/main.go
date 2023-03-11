@@ -21,15 +21,18 @@ func main() {
 		panic(err)
 	}
 
-	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
-	projectHandler := rest.NewProjectHandler(projectUsecase)
-	userUsecase := usecase.NewUserUsecase(database.NewGormUserRepository(databaseService.Database))
-	userHandler := rest.NewUserHandler(userUsecase)
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), userUsecase, projectUsecase)
-	timeEntryHandler := rest.NewTimeEntryHandler(timeEntryUsecase)
-	teamUsecase := usecase.NewTeamUsecase(database.NewGormTeamRepository(databaseService.Database))
-	teamHandler := rest.NewTeamHandler(teamUsecase, userUsecase)
+	tokenVerifier := rest.NewJwtTokenVerifier()
+	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
-	router := rest.SetupRouter(userHandler, teamHandler, projectHandler, timeEntryHandler)
+	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
+	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase)
+	userUsecase := usecase.NewUserUsecase(database.NewGormUserRepository(databaseService.Database))
+	userHandler := rest.NewUserHandler(tokenVerifier, userUsecase)
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), userUsecase, projectUsecase)
+	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
+	teamUsecase := usecase.NewTeamUsecase(database.NewGormTeamRepository(databaseService.Database))
+	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase, userUsecase)
+
+	router := rest.SetupRouter(authMiddleware, userHandler, teamHandler, projectHandler, timeEntryHandler)
 	router.Run()
 }
