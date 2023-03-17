@@ -11,7 +11,6 @@ type TimeEntry struct {
 	gorm.Model
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey;"`
 	UserId      uuid.UUID `gorm:"type:uuid;"`
-	User        User
 	ProjectId   uuid.UUID `gorm:"type:uuid;"`
 	Project     Project
 	StartTime   time.Time `gorm:"type:timestamp;"` // db: timestamp without time zone

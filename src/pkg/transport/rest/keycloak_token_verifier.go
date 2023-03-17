@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -40,8 +39,11 @@ func (v *keycloakTokenVerifier) VerifyToken(c *gin.Context) (AuthToken, error) {
 
 func (v *keycloakTokenVerifier) getAuthHeader(c *gin.Context) (string, error) {
 	header := strings.Fields(c.Request.Header.Get("Authorization"))
+	if len(header) < 2 {
+		return "", fmt.Errorf("authorization header missing")
+	}
 	if header[0] != "Bearer" {
-		return "", errors.New("malformed token")
+		return "", fmt.Errorf("malformed token")
 	}
 	return header[1], nil
 }

@@ -21,7 +21,7 @@ func main() {
 		panic(err)
 	}
 
-	tokenVerifier := rest.NewJwtTokenVerifier()
+	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
 	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
