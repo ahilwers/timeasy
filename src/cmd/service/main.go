@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/transport/rest"
@@ -20,6 +21,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	flag.Parse() // Intialize glog flags
 
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
