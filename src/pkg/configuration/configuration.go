@@ -15,8 +15,8 @@ type Configuration struct {
 	DbName        string
 	DbUser        string
 	DbPassword    string
-	KeyCloakHost  string
-	KeyCloakRealm string
+	KeycloakHost  string
+	KeycloakRealm string
 }
 
 func GetConfiguration() (Configuration, error) {
@@ -27,8 +27,8 @@ func GetConfiguration() (Configuration, error) {
 		dbName        = fs.String("database-name", "timeasy", "database name")
 		dbUser        = fs.String("database-user", "dbuser", "database user")
 		dbPassword    = fs.String("database-password", "dbpassword", "database password")
-		keyCloakHost  = fs.String("keycloak-host", "http://localhost:8180", "keycloak host")
-		keyCloakRealm = fs.String("keycloak-realm", "timeasy", "keycloak realm")
+		keycloakHost  = fs.String("keycloak-host", "http://localhost:8180", "keycloak host")
+		keycloakRealm = fs.String("keycloak-realm", "timeasy", "keycloak realm")
 		_             = fs.String("config", "", "config file (optional)")
 	)
 
@@ -48,7 +48,7 @@ func GetConfiguration() (Configuration, error) {
 		return configuration, fmt.Errorf("the specified port is invalid: %w", err)
 	}
 	configuration.DbPort = port
-	configuration.KeyCloakHost = *keyCloakHost
-	configuration.KeyCloakRealm = *keyCloakRealm
+	configuration.KeycloakHost = *keycloakHost
+	configuration.KeycloakRealm = *keycloakRealm
 	return configuration, nil
 }

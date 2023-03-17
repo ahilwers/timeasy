@@ -59,7 +59,7 @@ func (handler *teamHandler) AddTeam(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -127,12 +127,12 @@ func (handler *teamHandler) GetAllTeams(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	isAdmin, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+	isAdmin, err := token.HasRole(model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -213,7 +213,7 @@ func (handler *teamHandler) AddUserToTeam(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -260,7 +260,7 @@ func (handler *teamHandler) DeleteUserFromTeam(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	loggedInUserId, err := handler.tokenVerifier.GetUserId(token)
+	loggedInUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -340,7 +340,7 @@ func (handler *teamHandler) UpdateUserRolesInTeam(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	loggedInUserId, err := handler.tokenVerifier.GetUserId(token)
+	loggedInUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

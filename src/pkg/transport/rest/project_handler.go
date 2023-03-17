@@ -45,7 +45,7 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -83,14 +83,14 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if project.UserId != userId {
-		isAdmin, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -125,7 +125,7 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	authUserId, err := handler.tokenVerifier.GetUserId(token)
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -133,7 +133,7 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 	// a normal user can only fetch his own data.
 	// if he tries to get the project of another user he must be an admin.
 	if authUserId != project.UserId {
-		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -154,12 +154,12 @@ func (handler *projectHandler) GetAllProjects(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+	hasAdminRole, err := token.HasRole(model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -189,7 +189,7 @@ func (handler *projectHandler) DeleteProject(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -201,7 +201,7 @@ func (handler *projectHandler) DeleteProject(context *gin.Context) {
 		return
 	}
 	if project.UserId != userId {
-		isAdmin, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

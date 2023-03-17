@@ -55,7 +55,7 @@ func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -102,14 +102,14 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if timeEntry.UserId != userId {
-		isAdmin, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -153,7 +153,7 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -165,7 +165,7 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 		return
 	}
 	if timeEntry.UserId != userId {
-		isAdmin, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -194,7 +194,7 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	authUserId, err := handler.tokenVerifier.GetUserId(token)
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -202,7 +202,7 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 	// a normal user can only fetch his own data.
 	// if he tries to get an entry of another user he must be an admin.
 	if authUserId != timeEntry.UserId {
-		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -223,7 +223,7 @@ func (handler *timeEntryHandler) GetAllTimeEntries(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := handler.tokenVerifier.GetUserId(token)
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

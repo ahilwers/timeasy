@@ -115,7 +115,7 @@ func (handler *userHandler) GetUserById(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	authUserId, err := handler.tokenVerifier.GetUserId(token)
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -123,7 +123,7 @@ func (handler *userHandler) GetUserById(context *gin.Context) {
 	// a normal user can only fetch his own data.
 	// if he tries to get the data of another user he must be an admin.
 	if authUserId != userId {
-		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -147,7 +147,7 @@ func (handler *userHandler) GetAllUsers(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+	hasAdminRole, err := token.HasRole(model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -180,7 +180,7 @@ func (handler *userHandler) UpdateUser(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	authUserId, err := handler.tokenVerifier.GetUserId(token)
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -188,7 +188,7 @@ func (handler *userHandler) UpdateUser(context *gin.Context) {
 	// a normal user can only update his own data.
 	// if he tries to get the data of another user he must be an admin.
 	if authUserId != userId {
-		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -235,7 +235,7 @@ func (handler *userHandler) UpdatePassword(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	authUserId, err := handler.tokenVerifier.GetUserId(token)
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -243,7 +243,7 @@ func (handler *userHandler) UpdatePassword(context *gin.Context) {
 	// a normal user can only update his own data.
 	// if he tries to get the data of another user he must be an admin.
 	if authUserId != userId {
-		hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -295,7 +295,7 @@ func (handler *userHandler) UpdateRoles(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+	hasAdminRole, err := token.HasRole(model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -329,7 +329,7 @@ func (handler *userHandler) DeleteUser(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	hasAdminRole, err := handler.tokenVerifier.HasRole(token, model.RoleAdmin)
+	hasAdminRole, err := token.HasRole(model.RoleAdmin)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
