@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gofrs/uuid"
@@ -37,8 +38,15 @@ func (v *keycloakToken) HasRole(role string) (bool, error) {
 
 func (v *keycloakToken) GetRoles() ([]string, error) {
 	roles := []string{}
-	realmAccess := v.token.PrivateClaims()["realm_access"]
-	roleArray := realmAccess.(map[string]interface{})["roles"].([]interface{})
+	realmAccess, ok := v.token.PrivateClaims()["realm_access"]
+	if !ok {
+		return roles, fmt.Errorf("private claims do not contain realm_access")
+	}
+	roleIntf, ok := realmAccess.(map[string]interface{})["roles"]
+	if !ok {
+		return roles, fmt.Errorf("realm_access does not contain roles")
+	}
+	roleArray := roleIntf.([]interface{})
 	for _, roleIntf := range roleArray {
 		roles = append(roles, roleIntf.(string))
 	}
