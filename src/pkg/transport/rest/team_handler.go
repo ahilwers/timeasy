@@ -25,14 +25,12 @@ type TeamHandler interface {
 type teamHandler struct {
 	tokenVerifier TokenVerifier
 	usecase       usecase.TeamUsecase
-	userUsecase   usecase.UserUsecase
 }
 
-func NewTeamHandler(tokenVerifier TokenVerifier, usecase usecase.TeamUsecase, userUsecase usecase.UserUsecase) TeamHandler {
+func NewTeamHandler(tokenVerifier TokenVerifier, usecase usecase.TeamUsecase) TeamHandler {
 	return &teamHandler{
 		tokenVerifier: tokenVerifier,
 		usecase:       usecase,
-		userUsecase:   userUsecase,
 	}
 }
 
@@ -64,15 +62,10 @@ func (handler *teamHandler) AddTeam(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	user, err := handler.userUsecase.GetUserById(userId)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
 
 	team := handler.createTeamFromDto(teamDto)
 
-	err = handler.usecase.AddTeam(&team, user)
+	err = handler.usecase.AddTeam(&team, userId)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -202,32 +195,22 @@ func (handler *teamHandler) AddUserToTeam(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userToBeAdded, err := handler.userUsecase.GetUserById(userInput.Id)
-	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
 
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId, err := token.GetUserId()
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	user, err := handler.userUsecase.GetUserById(userId)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if !handler.usecase.IsUserAdminInTeam(user, team) {
+	if !handler.usecase.IsUserAdminInTeam(authUserId, team) {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to add users to this team"})
 		return
 	}
-	_, err = handler.usecase.AddUserToTeam(userToBeAdded, team, userInput.Roles)
+	_, err = handler.usecase.AddUserToTeam(userInput.Id, team, userInput.Roles)
 	if err != nil {
 		var assignmentExistsError *usecase.EntityExistsError
 		errorCode := 0
@@ -260,17 +243,12 @@ func (handler *teamHandler) DeleteUserFromTeam(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	loggedInUserId, err := token.GetUserId()
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	loggedInUser, err := handler.userUsecase.GetUserById(loggedInUserId)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if !handler.usecase.IsUserAdminInTeam(loggedInUser, team) {
+	if !handler.usecase.IsUserAdminInTeam(authUserId, team) {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to add users to this team"})
 		return
 	}
@@ -280,13 +258,8 @@ func (handler *teamHandler) DeleteUserFromTeam(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userToBeDeleted, err := handler.userUsecase.GetUserById(userIdToBeDeleted)
-	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
 
-	err = handler.usecase.DeleteUserFromTeam(userToBeDeleted, team)
+	err = handler.usecase.DeleteUserFromTeam(userIdToBeDeleted, team)
 	if err != nil {
 		var entityNotFoundError *usecase.EntityNotFoundError
 		errorCode := 0
@@ -299,7 +272,7 @@ func (handler *teamHandler) DeleteUserFromTeam(context *gin.Context) {
 		context.JSON(errorCode, gin.H{"error": err.Error()})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user %v deleted from team %v", userToBeDeleted.ID, teamId)})
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user %v deleted from team %v", userIdToBeDeleted, teamId)})
 }
 
 type teamRolesInput struct {
@@ -329,32 +302,22 @@ func (handler *teamHandler) UpdateUserRolesInTeam(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userToBeUpdated, err := handler.userUsecase.GetUserById(userToBeUpdatedId)
-	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
 
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	loggedInUserId, err := token.GetUserId()
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	loggedInUser, err := handler.userUsecase.GetUserById(loggedInUserId)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if !handler.usecase.IsUserAdminInTeam(loggedInUser, team) {
+	if !handler.usecase.IsUserAdminInTeam(authUserId, team) {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to update users in this team"})
 		return
 	}
-	err = handler.usecase.UpdateUserRolesInTeam(userToBeUpdated, team, rolesInput.Roles)
+	err = handler.usecase.UpdateUserRolesInTeam(userToBeUpdatedId, team, rolesInput.Roles)
 	if err != nil {
 		var entityNotFoundError *usecase.EntityNotFoundError
 		errorCode := 0

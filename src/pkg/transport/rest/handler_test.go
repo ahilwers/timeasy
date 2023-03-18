@@ -2,34 +2,18 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/test"
 	"timeasy-server/pkg/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
-
-var TestUserUsecase usecase.UserUsecase
-var TestProjectUsecase usecase.ProjectUsecase
-var TestTimeEntryUsecase usecase.TimeEntryUsecase
-var TestTeamUsecase usecase.TeamUsecase
-var TestUserHandler UserHandler
-var TestProjectHandler ProjectHandler
-var TestTimeEntryHandler TimeEntryHandler
-var TestTeamHandler TeamHandler
-var TestRouter *gin.Engine
-
-type ErrorResult struct {
-	Error string
-}
 
 func TestMain(m *testing.M) {
 	log.Println("Testmain")
@@ -41,61 +25,80 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func SetupTest(tb testing.TB) func(tb testing.TB) {
+type tokenVerifierMock struct {
+	mock.Mock
+}
+
+func (m *tokenVerifierMock) VerifyToken(c *gin.Context) (AuthToken, error) {
+	args := m.Called(c)
+	return args.Get(0).(AuthToken), args.Error(1)
+}
+
+type authTokenMock struct {
+	mock.Mock
+}
+
+func (t *authTokenMock) GetUserId() (uuid.UUID, error) {
+	args := t.Called()
+	return args.Get(0).(uuid.UUID), args.Error(1)
+}
+
+func (t *authTokenMock) GetRoles() ([]string, error) {
+	args := t.Called()
+	return args.Get(0).([]string), args.Error(1)
+}
+
+func (t *authTokenMock) HasRole(role string) (bool, error) {
+	args := t.Called(role)
+	return args.Get(0).(bool), args.Error(1)
+}
+
+type HandlerTest struct {
+	ProjectUsecase   usecase.ProjectUsecase
+	TimeEntryUsecase usecase.TimeEntryUsecase
+	TeamUsecase      usecase.TeamUsecase
+	ProjectHandler   ProjectHandler
+	TimeEntryHandler TimeEntryHandler
+	TeamHandler      TeamHandler
+	Router           *gin.Engine
+	tokenVerifier    TokenVerifier
+}
+
+type ErrorResult struct {
+	Error string
+}
+
+func NewHandlerTest(tokenVerifier TokenVerifier) *HandlerTest {
+	return &HandlerTest{
+		tokenVerifier: tokenVerifier,
+	}
+}
+
+func (t *HandlerTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 	tearDown := test.SetupTest(tb)
-	initUsecases()
-	initHandlers()
+	t.initUsecases()
+	t.initHandlers()
 	return tearDown
 }
 
-func initUsecases() {
+func (t *HandlerTest) initUsecases() {
 	projectRepo := database.NewGormProjectRepository(test.DB)
-	TestProjectUsecase = usecase.NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	TestUserUsecase = usecase.NewUserUsecase(userRepo)
+	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo)
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	TestTimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, TestUserUsecase, TestProjectUsecase)
+	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase)
 
 	teamRepo := database.NewGormTeamRepository(test.DB)
-	TestTeamUsecase = usecase.NewTeamUsecase(teamRepo)
+	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo)
 }
 
-func initHandlers() {
-	tokenVerifier := NewJwtTokenVerifier()
-	authMiddleware := NewJwtAuthMiddleware(tokenVerifier)
-	TestUserHandler = NewUserHandler(tokenVerifier, TestUserUsecase)
-	TestProjectHandler = NewProjectHandler(tokenVerifier, TestProjectUsecase)
-	TestTimeEntryHandler = NewTimeEntryHandler(tokenVerifier, TestTimeEntryUsecase)
-	TestTeamHandler = NewTeamHandler(tokenVerifier, TestTeamUsecase, TestUserUsecase)
+func (t *HandlerTest) initHandlers() {
+	authMiddleware := NewJwtAuthMiddleware(t.tokenVerifier)
+	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase)
+	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
+	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
 
-	TestRouter = SetupRouter(authMiddleware, TestUserHandler, TestTeamHandler, TestProjectHandler, TestTimeEntryHandler)
-}
-
-type tokenObject struct {
-	Token string
-}
-
-func Login(username string, password string) (string, error) {
-	w := httptest.NewRecorder()
-
-	reader := strings.NewReader(fmt.Sprintf("{\"username\": \"%v\", \"password\": \"%v\"}", username, password))
-	loginRequest, err := http.NewRequest("POST", "/api/v1/login", reader)
-	if err != nil {
-		return "", fmt.Errorf("error creating request for long")
-	}
-	TestRouter.ServeHTTP(w, loginRequest)
-	if w.Code != 200 {
-		return "", fmt.Errorf("error logging in: %v", w.Code)
-	}
-	var tokenObject tokenObject
-	json.Unmarshal(w.Body.Bytes(), &tokenObject)
-	return tokenObject.Token, nil
-}
-
-func AddToken(req *http.Request, token string) {
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {
