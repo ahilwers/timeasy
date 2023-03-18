@@ -12,16 +12,17 @@ import (
 )
 
 func Test_projectUsecase_AddProject(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userId := getUserId(t)
 
 	prj := model.Project{
 		Name:   "Testproject",
-		UserId: user.ID,
+		UserId: userId,
 	}
-	err := TestProjectUsecase.AddProject(&prj)
+	err := usecaseTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)
 
 	var projectFromDb model.Project
@@ -29,185 +30,220 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 		t.Errorf("project could not be retrieved: %s", err)
 	}
 	assert.Equal(t, prj.Name, projectFromDb.Name)
-	assert.Equal(t, user.ID, projectFromDb.UserId)
+	assert.Equal(t, userId, projectFromDb.UserId)
 }
 
 func Test_projectUsecase_AddProjectFailsWithoutUserId(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
 	prj := model.Project{
 		Name: "Testproject",
 	}
-	err := TestProjectUsecase.AddProject(&prj)
+	err := usecaseTest.ProjectUsecase.AddProject(&prj)
 	assert.NotNil(t, err)
 }
 
 func Test_projectUsecase_GetProjectById(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userId := getUserId(t)
 
 	prj := model.Project{
 		Name:   "Testproject",
-		UserId: user.ID,
+		UserId: userId,
 	}
-	err := TestProjectUsecase.AddProject(&prj)
+	err := usecaseTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)
 
-	projectFromDb, err := TestProjectUsecase.GetProjectById(prj.ID)
+	projectFromDb, err := usecaseTest.ProjectUsecase.GetProjectById(prj.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, prj.ID, projectFromDb.ID)
 	assert.Equal(t, prj.Name, projectFromDb.Name)
 }
 
 func Test_projectUsecase_GetProjectByIdFailsIfProjectDoesNotExist(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
 	notExistingId, err := uuid.NewV4()
 	assert.Nil(t, err)
 
-	_, err = TestProjectUsecase.GetProjectById(notExistingId)
+	_, err = usecaseTest.ProjectUsecase.GetProjectById(notExistingId)
 	assert.NotNil(t, err)
 }
 
 func Test_projectUsecase_GetAllProjects(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userId := getUserId(t)
 
-	addProjects(t, 3, user)
+	addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
 
-	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(projectsFromDb))
 	for i, project := range projectsFromDb {
 		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
-		assert.Equal(t, user.ID, project.UserId)
+		assert.Equal(t, userId, project.UserId)
 	}
 }
 
 func Test_projectUsecase_GetAllProjectsOfUser(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
-	addProjects(t, 3, user)
-	otherUser := addUser(t, "otherUser", "otherPassword", model.RoleList{model.RoleUser})
-	addProjectsWithStartIndex(t, 4, 3, otherUser)
+	userId := getUserId(t)
+	addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	addProjectsWithStartIndex(t, usecaseTest.ProjectUsecase, 4, 3, otherUserId)
 
-	projectsFromDb, err := TestProjectUsecase.GetAllProjectsOfUser(user.ID)
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjectsOfUser(userId)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(projectsFromDb))
 	for i, project := range projectsFromDb {
 		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
-		assert.Equal(t, user.ID, project.UserId)
+		assert.Equal(t, userId, project.UserId)
 	}
-	projectsFromDb, err = TestProjectUsecase.GetAllProjectsOfUser(otherUser.ID)
+	projectsFromDb, err = usecaseTest.ProjectUsecase.GetAllProjectsOfUser(otherUserId)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(projectsFromDb))
 	for i, project := range projectsFromDb {
 		assert.Equal(t, fmt.Sprintf("Project %v", i+4), project.Name)
-		assert.Equal(t, otherUser.ID, project.UserId)
+		assert.Equal(t, otherUserId, project.UserId)
 	}
 }
 
 func Test_projectUsecase_UpdateProject(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
-	project := addProject(t, "project1", user)
+	userId := getUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project1", userId)
 	project.Name = "updatedProject"
-	err := TestProjectUsecase.UpdateProject(&project)
+	err := usecaseTest.ProjectUsecase.UpdateProject(&project)
 	assert.Nil(t, err)
 
-	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, project.ID, projectsFromDb[0].ID)
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
-	assert.Equal(t, user.ID, projectsFromDb[0].UserId)
+	assert.Equal(t, userId, projectsFromDb[0].UserId)
 }
 
 func Test_projectUsecase_UpdateProjectFailsIfProjectDoesNotExist(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
+	userId := getUserId(t)
 	projectId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	project := model.Project{
 		ID:     projectId,
 		Name:   "project",
-		UserId: user.ID,
+		UserId: userId,
 	}
 
 	project.Name = "updatedProject"
-	err = TestProjectUsecase.UpdateProject(&project)
+	err = usecaseTest.ProjectUsecase.UpdateProject(&project)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
 
-	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(projectsFromDb))
 }
 
 func Test_projectUsecase_UpdateProjectFailsIfItHasNoUserId(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
-	project := addProject(t, "project1", user)
+	userId := getUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project1", userId)
 	project.Name = "updatedProject"
 	project.UserId = uuid.Nil
-	err := TestProjectUsecase.UpdateProject(&project)
+	err := usecaseTest.ProjectUsecase.UpdateProject(&project)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
 
-	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	// The project data should not have been changed:
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, project.ID, projectsFromDb[0].ID)
 	assert.Equal(t, "project1", projectsFromDb[0].Name)
-	assert.Equal(t, user.ID, projectsFromDb[0].UserId)
+	assert.Equal(t, userId, projectsFromDb[0].UserId)
 }
 
 func Test_projectUsecase_DeleteProject(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	user := addUser(t, "user", "password", model.RoleList{model.RoleUser})
-	projects := addProjects(t, 3, user)
+	userId := getUserId(t)
+	projects := addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
 
-	err := TestProjectUsecase.DeleteProject(projects[1].ID)
+	err := usecaseTest.ProjectUsecase.DeleteProject(projects[1].ID)
 	assert.Nil(t, err)
-	projectsFromDb, err := TestProjectUsecase.GetAllProjects()
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(projectsFromDb))
 	assert.Equal(t, "Project 1", projectsFromDb[0].Name)
 	assert.Equal(t, "Project 3", projectsFromDb[1].Name)
-	// Make sure that the user is still there:
-	_, err = TestUserUsecase.GetUserById(user.ID)
-	assert.Nil(t, err)
 }
 
 func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
-	teardownTest := SetupTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
-
-	addUser(t, "user", "password", model.RoleList{model.RoleUser})
 
 	notExistingId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	err = TestProjectUsecase.DeleteProject(notExistingId)
+	err = usecaseTest.ProjectUsecase.DeleteProject(notExistingId)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
+}
+
+func getUserId(t *testing.T) uuid.UUID {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	return userId
+}
+
+func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, userId uuid.UUID) []model.Project {
+	return addProjectsWithStartIndex(t, projectUsecase, 1, count, userId)
+}
+
+func addProjectsWithStartIndex(t *testing.T, projectUsecase ProjectUsecase, startIndex int, count int, userId uuid.UUID) []model.Project {
+	var projects []model.Project
+	for i := 0; i < count; i++ {
+		project := addProject(t, projectUsecase, fmt.Sprintf("Project %v", startIndex+i), userId)
+		projects = append(projects, project)
+	}
+	return projects
+}
+
+func addProject(t *testing.T, projectUsecase ProjectUsecase, name string, userId uuid.UUID) model.Project {
+	prj := model.Project{
+		Name:   name,
+		UserId: userId,
+	}
+	err := projectUsecase.AddProject(&prj)
+	assert.Nil(t, err)
+	return prj
 }
