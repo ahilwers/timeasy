@@ -29,13 +29,11 @@ func main() {
 
 	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
 	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase)
-	userUsecase := usecase.NewUserUsecase(database.NewGormUserRepository(databaseService.Database))
-	userHandler := rest.NewUserHandler(tokenVerifier, userUsecase)
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), userUsecase, projectUsecase)
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), projectUsecase)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
 	teamUsecase := usecase.NewTeamUsecase(database.NewGormTeamRepository(databaseService.Database))
-	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase, userUsecase)
+	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
-	router := rest.SetupRouter(authMiddleware, userHandler, teamHandler, projectHandler, timeEntryHandler)
+	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler)
 	router.Run()
 }

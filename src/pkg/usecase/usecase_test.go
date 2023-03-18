@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var TestUserUsecase UserUsecase
 var TestProjectUsecase ProjectUsecase
 var TestTimeEntryUsecase TimeEntryUsecase
 var TestTeamUsecase TeamUsecase
@@ -37,25 +36,11 @@ func initUsecases() {
 	projectRepo := database.NewGormProjectRepository(test.DB)
 	TestProjectUsecase = NewProjectUsecase(projectRepo)
 
-	userRepo := database.NewGormUserRepository(test.DB)
-	TestUserUsecase = NewUserUsecase(userRepo)
-
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	TestTimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, TestUserUsecase, TestProjectUsecase)
+	TestTimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, TestProjectUsecase)
 
 	teamRepo := database.NewGormTeamRepository(test.DB)
 	TestTeamUsecase = NewTeamUsecase(teamRepo)
-}
-
-func addUser(t *testing.T, username string, password string, roles model.RoleList) model.User {
-	user := model.User{
-		Username: username,
-		Password: password,
-		Roles:    roles,
-	}
-	_, err := TestUserUsecase.AddUser(&user)
-	assert.Nil(t, err)
-	return user
 }
 
 func addProjects(t *testing.T, count int, user model.User) []model.Project {
