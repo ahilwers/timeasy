@@ -16,7 +16,7 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 
 	prj := model.Project{
 		Name:   "Testproject",
@@ -50,7 +50,7 @@ func Test_projectUsecase_GetProjectById(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 
 	prj := model.Project{
 		Name:   "Testproject",
@@ -82,7 +82,7 @@ func Test_projectUsecase_GetAllProjects(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 
 	addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
 
@@ -100,7 +100,7 @@ func Test_projectUsecase_GetAllProjectsOfUser(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 	addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
 	otherUserId, err := uuid.NewV4()
 	assert.Nil(t, err)
@@ -127,7 +127,7 @@ func Test_projectUsecase_UpdateProject(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 	project := addProject(t, usecaseTest.ProjectUsecase, "project1", userId)
 	project.Name = "updatedProject"
 	err := usecaseTest.ProjectUsecase.UpdateProject(&project)
@@ -146,7 +146,7 @@ func Test_projectUsecase_UpdateProjectFailsIfProjectDoesNotExist(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 	projectId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	project := model.Project{
@@ -171,7 +171,7 @@ func Test_projectUsecase_UpdateProjectFailsIfItHasNoUserId(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 	project := addProject(t, usecaseTest.ProjectUsecase, "project1", userId)
 	project.Name = "updatedProject"
 	project.UserId = uuid.Nil
@@ -194,7 +194,7 @@ func Test_projectUsecase_DeleteProject(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	userId := getUserId(t)
+	userId := GetTestUserId(t)
 	projects := addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
 
 	err := usecaseTest.ProjectUsecase.DeleteProject(projects[1].ID)
@@ -217,12 +217,6 @@ func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
-}
-
-func getUserId(t *testing.T) uuid.UUID {
-	userId, err := uuid.NewV4()
-	assert.Nil(t, err)
-	return userId
 }
 
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, userId uuid.UUID) []model.Project {

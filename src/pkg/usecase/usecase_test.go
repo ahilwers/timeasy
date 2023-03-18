@@ -6,6 +6,9 @@ import (
 	"testing"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/test"
+
+	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
@@ -43,4 +46,10 @@ func (u *UsecaseTest) initUsecases() {
 
 	teamRepo := database.NewGormTeamRepository(test.DB)
 	u.TeamUsecase = NewTeamUsecase(teamRepo)
+}
+
+func GetTestUserId(t *testing.T) uuid.UUID {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	return userId
 }
