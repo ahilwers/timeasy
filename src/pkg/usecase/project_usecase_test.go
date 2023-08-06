@@ -245,6 +245,50 @@ func Test_projectUsecase_CanProjectBeAssignedToATeam(t *testing.T) {
 	assert.Equal(t, *projectFromDb.TeamID, team.ID)
 }
 
+func Test_projectUsecase_AssignProjectToTeamFailsIfProjectDoesNotExist(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	project := model.Project{
+		Name: "NotExistingProject",
+	}
+
+	team := model.Team{
+		Name1: "Testteam",
+	}
+
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	err = usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.NotNil(t, err)
+	var entityNotFoundError *EntityNotFoundError
+	assert.True(t, errors.As(err, &entityNotFoundError))
+}
+
+func Test_projectUsecase_AssignProjectToTeamFilesIfTeamDoesNotExist(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
+	assert.Nil(t, project.TeamID)
+
+	team := model.Team{
+		Name1: "Testteam",
+	}
+
+	err := usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.NotNil(t, err)
+	var entityNotFoundError *EntityNotFoundError
+	assert.True(t, errors.As(err, &entityNotFoundError))
+}
+
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, userId uuid.UUID) []model.Project {
 	return addProjectsWithStartIndex(t, projectUsecase, 1, count, userId)
 }
