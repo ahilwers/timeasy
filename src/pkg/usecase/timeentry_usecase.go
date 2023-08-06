@@ -19,14 +19,12 @@ type TimeEntryUsecase interface {
 
 type timeEntryUsecase struct {
 	repo           repository.TimeEntryRepository
-	userUsecase    UserUsecase
 	projectUsecase ProjectUsecase
 }
 
-func NewTimeEntryUsecase(repo repository.TimeEntryRepository, userUsecase UserUsecase, projectUsecase ProjectUsecase) TimeEntryUsecase {
+func NewTimeEntryUsecase(repo repository.TimeEntryRepository, projectUsecase ProjectUsecase) TimeEntryUsecase {
 	return &timeEntryUsecase{
 		repo:           repo,
-		userUsecase:    userUsecase,
 		projectUsecase: projectUsecase,
 	}
 }
@@ -90,10 +88,6 @@ func (tu *timeEntryUsecase) checkEntry(timeEntry *model.TimeEntry) error {
 func (tu *timeEntryUsecase) checkUser(timeEntry *model.TimeEntry) error {
 	if timeEntry.UserId == uuid.Nil {
 		return NewEntityIncompleteError("the user id must not be empty")
-	}
-	_, err := tu.userUsecase.GetUserById(timeEntry.UserId)
-	if err != nil {
-		return NewUserNotFoundError(timeEntry.UserId)
 	}
 	return nil
 }

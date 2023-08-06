@@ -21,12 +21,14 @@ type TimeEntryHandler interface {
 }
 
 type timeEntryHandler struct {
-	usecase usecase.TimeEntryUsecase
+	tokenVerifier TokenVerifier
+	usecase       usecase.TimeEntryUsecase
 }
 
-func NewTimeEntryHandler(entryUsecase usecase.TimeEntryUsecase) TimeEntryHandler {
+func NewTimeEntryHandler(tokenVerifier TokenVerifier, entryUsecase usecase.TimeEntryUsecase) TimeEntryHandler {
 	return &timeEntryHandler{
-		usecase: entryUsecase,
+		tokenVerifier: tokenVerifier,
+		usecase:       entryUsecase,
 	}
 }
 
@@ -48,8 +50,12 @@ func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	tokenString := ExtractToken(context)
-	userId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -91,15 +97,19 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	tokenString := ExtractToken(context)
-	userId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if timeEntry.UserId != userId {
-		isAdmin, err := TokenHasRole(tokenString, model.RoleAdmin)
+		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -138,8 +148,12 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	tokenString := ExtractToken(context)
-	userId, err := ExtractTokenUserId(tokenString)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -151,7 +165,7 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 		return
 	}
 	if timeEntry.UserId != userId {
-		isAdmin, err := TokenHasRole(tokenString, model.RoleAdmin)
+		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -175,8 +189,12 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
 		return
 	}
-	token := ExtractToken(context)
-	authUserId, err := ExtractTokenUserId(token)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	authUserId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -184,7 +202,7 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 	// a normal user can only fetch his own data.
 	// if he tries to get an entry of another user he must be an admin.
 	if authUserId != timeEntry.UserId {
-		hasAdminRole, err := TokenHasRole(token, model.RoleAdmin)
+		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -200,8 +218,12 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 }
 
 func (handler *timeEntryHandler) GetAllTimeEntries(context *gin.Context) {
-	token := ExtractToken(context)
-	userId, err := ExtractTokenUserId(token)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

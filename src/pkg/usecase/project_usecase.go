@@ -60,6 +60,7 @@ func (pu *projectUsecase) DeleteProject(id uuid.UUID) error {
 func (pu *projectUsecase) GetAllProjects() ([]model.Project, error) {
 	return pu.repo.GetAllProjects()
 }
+
 func (pu *projectUsecase) GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error) {
 	return pu.repo.GetAllProjectsOfUser(userId)
 }

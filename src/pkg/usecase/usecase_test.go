@@ -1,21 +1,15 @@
 package usecase
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"testing"
 	"timeasy-server/pkg/database"
-	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/test"
 
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
-
-var TestUserUsecase UserUsecase
-var TestProjectUsecase ProjectUsecase
-var TestTimeEntryUsecase TimeEntryUsecase
-var TestTeamUsecase TeamUsecase
 
 func TestMain(m *testing.M) {
 	log.Println("Testmain")
@@ -27,56 +21,35 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func SetupTest(tb testing.TB) func(tb testing.TB) {
+type UsecaseTest struct {
+	ProjectUsecase   ProjectUsecase
+	TimeEntryUsecase TimeEntryUsecase
+	TeamUsecase      TeamUsecase
+}
+
+func NewUsecaseTest() *UsecaseTest {
+	return &UsecaseTest{}
+}
+
+func (u *UsecaseTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 	tearDownTest := test.SetupTest(tb)
-	initUsecases()
+	u.initUsecases()
 	return tearDownTest
 }
 
-func initUsecases() {
+func (u *UsecaseTest) initUsecases() {
 	projectRepo := database.NewGormProjectRepository(test.DB)
-	TestProjectUsecase = NewProjectUsecase(projectRepo)
-
-	userRepo := database.NewGormUserRepository(test.DB)
-	TestUserUsecase = NewUserUsecase(userRepo)
+	u.ProjectUsecase = NewProjectUsecase(projectRepo)
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
-	TestTimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, TestUserUsecase, TestProjectUsecase)
+	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase)
 
 	teamRepo := database.NewGormTeamRepository(test.DB)
-	TestTeamUsecase = NewTeamUsecase(teamRepo)
+	u.TeamUsecase = NewTeamUsecase(teamRepo)
 }
 
-func addUser(t *testing.T, username string, password string, roles model.RoleList) model.User {
-	user := model.User{
-		Username: username,
-		Password: password,
-		Roles:    roles,
-	}
-	_, err := TestUserUsecase.AddUser(&user)
+func GetTestUserId(t *testing.T) uuid.UUID {
+	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	return user
-}
-
-func addProjects(t *testing.T, count int, user model.User) []model.Project {
-	return addProjectsWithStartIndex(t, 1, count, user)
-}
-
-func addProjectsWithStartIndex(t *testing.T, startIndex int, count int, user model.User) []model.Project {
-	var projects []model.Project
-	for i := 0; i < count; i++ {
-		project := addProject(t, fmt.Sprintf("Project %v", startIndex+i), user)
-		projects = append(projects, project)
-	}
-	return projects
-}
-
-func addProject(t *testing.T, name string, user model.User) model.Project {
-	prj := model.Project{
-		Name:   name,
-		UserId: user.ID,
-	}
-	err := TestProjectUsecase.AddProject(&prj)
-	assert.Nil(t, err)
-	return prj
+	return userId
 }

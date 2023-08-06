@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/transport/rest"
@@ -21,15 +22,18 @@ func main() {
 		panic(err)
 	}
 
-	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
-	projectHandler := rest.NewProjectHandler(projectUsecase)
-	userUsecase := usecase.NewUserUsecase(database.NewGormUserRepository(databaseService.Database))
-	userHandler := rest.NewUserHandler(userUsecase)
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), userUsecase, projectUsecase)
-	timeEntryHandler := rest.NewTimeEntryHandler(timeEntryUsecase)
-	teamUsecase := usecase.NewTeamUsecase(database.NewGormTeamRepository(databaseService.Database))
-	teamHandler := rest.NewTeamHandler(teamUsecase, userUsecase)
+	flag.Parse() // Intialize glog flags
 
-	router := rest.SetupRouter(userHandler, teamHandler, projectHandler, timeEntryHandler)
+	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
+	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
+
+	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
+	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase)
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), projectUsecase)
+	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
+	teamUsecase := usecase.NewTeamUsecase(database.NewGormTeamRepository(databaseService.Database))
+	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
+
+	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler)
 	router.Run()
 }
