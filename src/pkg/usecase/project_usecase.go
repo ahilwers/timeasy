@@ -15,15 +15,18 @@ type ProjectUsecase interface {
 	AddProject(project *model.Project) error
 	UpdateProject(project *model.Project) error
 	DeleteProject(id uuid.UUID) error
+	AssignProjectToTeam(project *model.Project, team *model.Team) error
 }
 
 type projectUsecase struct {
-	repo repository.ProjectRepository
+	repo        repository.ProjectRepository
+	teamUsecase TeamUsecase
 }
 
-func NewProjectUsecase(repo repository.ProjectRepository) ProjectUsecase {
+func NewProjectUsecase(repo repository.ProjectRepository, teamUsecase TeamUsecase) ProjectUsecase {
 	return &projectUsecase{
-		repo: repo,
+		repo:        repo,
+		teamUsecase: teamUsecase,
 	}
 }
 
@@ -63,4 +66,19 @@ func (pu *projectUsecase) GetAllProjects() ([]model.Project, error) {
 
 func (pu *projectUsecase) GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error) {
 	return pu.repo.GetAllProjectsOfUser(userId)
+}
+
+func (pu *projectUsecase) AssignProjectToTeam(project *model.Project, team *model.Team) error {
+	_, err := pu.GetProjectById(project.ID)
+	if err != nil {
+		return NewEntityNotFoundError(fmt.Sprintf("project with id %v does not exist", project.ID))
+	}
+	_, err = pu.teamUsecase.GetTeamById(team.ID)
+	if err != nil {
+		return NewEntityNotFoundError(fmt.Sprintf("team with id %v does not exist", team.ID))
+	}
+	project.TeamID = &team.ID
+	project.Team = *team
+	err = pu.UpdateProject(project)
+	return err
 }

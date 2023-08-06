@@ -31,6 +31,7 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	}
 	assert.Equal(t, prj.Name, projectFromDb.Name)
 	assert.Equal(t, userId, projectFromDb.UserId)
+	assert.Nil(t, projectFromDb.TeamID)
 }
 
 func Test_projectUsecase_AddProjectFailsWithoutUserId(t *testing.T) {
@@ -217,6 +218,31 @@ func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
+}
+
+func Test_projectUsecase_CanProjectBeAssignedToATeam(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
+	assert.Nil(t, project.TeamID)
+
+	team := model.Team{
+		Name1: "Testteam",
+	}
+
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	err = usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.Nil(t, err)
+
+	projectFromDb, err := usecaseTest.ProjectUsecase.GetProjectById(project.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, *projectFromDb.TeamID, team.ID)
 }
 
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, userId uuid.UUID) []model.Project {

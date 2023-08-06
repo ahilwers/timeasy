@@ -82,14 +82,14 @@ func (t *HandlerTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 }
 
 func (t *HandlerTest) initUsecases() {
+	teamRepo := database.NewGormTeamRepository(test.DB)
+	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo)
+
 	projectRepo := database.NewGormProjectRepository(test.DB)
-	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo)
+	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase)
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
 	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase)
-
-	teamRepo := database.NewGormTeamRepository(test.DB)
-	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo)
 }
 
 func (t *HandlerTest) initHandlers() {

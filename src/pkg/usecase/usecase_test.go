@@ -38,14 +38,14 @@ func (u *UsecaseTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 }
 
 func (u *UsecaseTest) initUsecases() {
+	teamRepo := database.NewGormTeamRepository(test.DB)
+	u.TeamUsecase = NewTeamUsecase(teamRepo)
+
 	projectRepo := database.NewGormProjectRepository(test.DB)
-	u.ProjectUsecase = NewProjectUsecase(projectRepo)
+	u.ProjectUsecase = NewProjectUsecase(projectRepo, u.TeamUsecase)
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
 	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase)
-
-	teamRepo := database.NewGormTeamRepository(test.DB)
-	u.TeamUsecase = NewTeamUsecase(teamRepo)
 }
 
 func GetTestUserId(t *testing.T) uuid.UUID {
