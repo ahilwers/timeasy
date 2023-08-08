@@ -41,7 +41,7 @@ func (u *UsecaseTest) initUsecases() {
 	teamRepo := database.NewGormTeamRepository(test.DB)
 	u.TeamUsecase = NewTeamUsecase(teamRepo)
 
-	projectRepo := database.NewGormProjectRepository(test.DB)
+	projectRepo := database.NewGormProjectRepository(test.DB, teamRepo)
 	u.ProjectUsecase = NewProjectUsecase(projectRepo, u.TeamUsecase)
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
