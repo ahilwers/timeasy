@@ -78,7 +78,6 @@ func (pu *projectUsecase) AssignProjectToTeam(project *model.Project, team *mode
 		return NewEntityNotFoundError(fmt.Sprintf("team with id %v does not exist", team.ID))
 	}
 	project.TeamID = &team.ID
-	project.Team = *team
 	err = pu.UpdateProject(project)
 	return err
 }

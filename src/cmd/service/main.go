@@ -32,7 +32,7 @@ func main() {
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database,
 		teamRepository), teamUsecase)
-	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase)
+	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), projectUsecase)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
 

@@ -94,7 +94,7 @@ func (t *HandlerTest) initUsecases() {
 
 func (t *HandlerTest) initHandlers() {
 	authMiddleware := NewJwtAuthMiddleware(t.tokenVerifier)
-	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase)
+	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase)
 	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
 
