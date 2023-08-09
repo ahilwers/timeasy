@@ -15,10 +15,11 @@ type TeamUsecase interface {
 	UpdateTeam(team *model.Team) error
 	DeleteTeam(id uuid.UUID) error
 	GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAssignment, error)
+	DoesUserBelongToTeam(userId uuid.UUID, teamId uuid.UUID) bool
 	AddUserToTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error)
 	DeleteUserFromTeam(userId uuid.UUID, team *model.Team) error
 	UpdateUserRolesInTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) error
-	IsUserAdminInTeam(userId uuid.UUID, team *model.Team) bool
+	IsUserAdminInTeam(userId uuid.UUID, teamId uuid.UUID) bool
 }
 
 type teamUsecase struct {
@@ -75,6 +76,19 @@ func (usecase *teamUsecase) GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAs
 	return usecase.repo.GetTeamsOfUser(userId)
 }
 
+func (usecase *teamUsecase) DoesUserBelongToTeam(userId uuid.UUID, teamId uuid.UUID) bool {
+	teamAssignments, err := usecase.GetTeamsOfUser(userId)
+	if err != nil {
+		return false
+	}
+	for _, teamAssignment := range teamAssignments {
+		if teamAssignment.TeamID == teamId {
+			return true
+		}
+	}
+	return false
+}
+
 func (usecase *teamUsecase) AddUserToTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error) {
 	_, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
 	// if this throws no error the assignment already exists:
@@ -126,8 +140,8 @@ func (usecase *teamUsecase) UpdateUserRolesInTeam(userId uuid.UUID, team *model.
 	return nil
 }
 
-func (usecase *teamUsecase) IsUserAdminInTeam(userId uuid.UUID, team *model.Team) bool {
-	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
+func (usecase *teamUsecase) IsUserAdminInTeam(userId uuid.UUID, teamId uuid.UUID) bool {
+	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, teamId)
 	if err != nil {
 		return false
 	}

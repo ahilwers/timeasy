@@ -326,6 +326,20 @@ func Test_teamUsecase_UpdateUserRolesInTeamFailsIfUserDoesNotBelongToTeam(t *tes
 	assert.Equal(t, model.RoleList{model.RoleUser, model.RoleAdmin}, teamsOfUser[0].Roles)
 }
 
+func Test_teamUsecase_DoesUserBelongToTeam(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	team := addTeam(t, usecaseTest.TeamUsecase, "team", userId)
+	assert.True(t, usecaseTest.TeamUsecase.DoesUserBelongToTeam(userId, team.ID))
+
+	otherUserId := GetTestUserId(t)
+	otherTeam := addTeam(t, usecaseTest.TeamUsecase, "otherTeam", otherUserId)
+	assert.False(t, usecaseTest.TeamUsecase.DoesUserBelongToTeam(userId, otherTeam.ID))
+}
+
 func addTeams(t *testing.T, teamUsecase TeamUsecase, count int, ownerId uuid.UUID) []model.Team {
 	var teams []model.Team
 	for i := 0; i < count; i++ {

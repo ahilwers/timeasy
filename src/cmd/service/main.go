@@ -27,12 +27,14 @@ func main() {
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
-	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database))
-	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase)
+	teamRepository := database.NewGormTeamRepository(databaseService.Database)
+	teamUsecase := usecase.NewTeamUsecase(teamRepository)
+	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
+	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database,
+		teamRepository), teamUsecase)
+	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), projectUsecase)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
-	teamUsecase := usecase.NewTeamUsecase(database.NewGormTeamRepository(databaseService.Database))
-	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
 	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler)
 	router.Run()

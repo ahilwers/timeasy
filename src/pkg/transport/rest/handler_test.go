@@ -82,19 +82,19 @@ func (t *HandlerTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 }
 
 func (t *HandlerTest) initUsecases() {
-	projectRepo := database.NewGormProjectRepository(test.DB)
-	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo)
+	teamRepo := database.NewGormTeamRepository(test.DB)
+	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo)
+
+	projectRepo := database.NewGormProjectRepository(test.DB, teamRepo)
+	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase)
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
 	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase)
-
-	teamRepo := database.NewGormTeamRepository(test.DB)
-	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo)
 }
 
 func (t *HandlerTest) initHandlers() {
 	authMiddleware := NewJwtAuthMiddleware(t.tokenVerifier)
-	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase)
+	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase)
 	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
 

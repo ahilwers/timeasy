@@ -206,7 +206,7 @@ func (handler *teamHandler) AddUserToTeam(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if !handler.usecase.IsUserAdminInTeam(authUserId, team) {
+	if !handler.usecase.IsUserAdminInTeam(authUserId, team.ID) {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to add users to this team"})
 		return
 	}
@@ -248,7 +248,7 @@ func (handler *teamHandler) DeleteUserFromTeam(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if !handler.usecase.IsUserAdminInTeam(authUserId, team) {
+	if !handler.usecase.IsUserAdminInTeam(authUserId, team.ID) {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to add users to this team"})
 		return
 	}
@@ -313,7 +313,7 @@ func (handler *teamHandler) UpdateUserRolesInTeam(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if !handler.usecase.IsUserAdminInTeam(authUserId, team) {
+	if !handler.usecase.IsUserAdminInTeam(authUserId, team.ID) {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to update users in this team"})
 		return
 	}

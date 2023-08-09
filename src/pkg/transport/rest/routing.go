@@ -19,6 +19,7 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.POST("/projects", projectHandler.AddProject)
 	protectedGroup.GET("/projects/:id", projectHandler.GetProjectById)
 	protectedGroup.PUT("/projects/:id", projectHandler.UpdateProject)
+	protectedGroup.POST("/projects/team", projectHandler.AssignProjectToTeam)
 	protectedGroup.DELETE("/projects/:id", projectHandler.DeleteProject)
 	protectedGroup.GET("/timeentries/:id", timeEntryHandler.GetTimeEntryById)
 	protectedGroup.GET("/timeentries", timeEntryHandler.GetAllTimeEntries)
