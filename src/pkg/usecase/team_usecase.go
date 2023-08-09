@@ -19,7 +19,7 @@ type TeamUsecase interface {
 	AddUserToTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error)
 	DeleteUserFromTeam(userId uuid.UUID, team *model.Team) error
 	UpdateUserRolesInTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) error
-	IsUserAdminInTeam(userId uuid.UUID, team *model.Team) bool
+	IsUserAdminInTeam(userId uuid.UUID, teamId uuid.UUID) bool
 }
 
 type teamUsecase struct {
@@ -140,8 +140,8 @@ func (usecase *teamUsecase) UpdateUserRolesInTeam(userId uuid.UUID, team *model.
 	return nil
 }
 
-func (usecase *teamUsecase) IsUserAdminInTeam(userId uuid.UUID, team *model.Team) bool {
-	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
+func (usecase *teamUsecase) IsUserAdminInTeam(userId uuid.UUID, teamId uuid.UUID) bool {
+	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, teamId)
 	if err != nil {
 		return false
 	}

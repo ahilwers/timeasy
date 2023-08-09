@@ -97,7 +97,13 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 		return
 	}
 
-	if project.UserId != userId {
+	// A project belongs to a user if it directly belongs to this user or it belongs to a team the user is member of:
+	projectBelongsToUser := userId == project.UserId
+	if !projectBelongsToUser && project.TeamID != nil {
+		projectBelongsToUser = handler.teamUsecase.IsUserAdminInTeam(userId, *project.TeamID)
+	}
+
+	if !projectBelongsToUser {
 		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -263,7 +269,7 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 		return
 	}
 
-	if !handler.teamUsecase.IsUserAdminInTeam(userId, team) {
+	if !handler.teamUsecase.IsUserAdminInTeam(userId, team.ID) {
 		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -343,6 +343,93 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
 }
 
+func Test_projectHandler_UpdateProjectAsTeamLead(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	project := addProject(t, handlerTest, "project", otherUserId)
+
+	team := model.Team{
+		Name1: "Team",
+	}
+	err = handlerTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := handlerTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.Equal(t, otherUserId, projectsFromDb[0].UserId)
+}
+
+func Test_projectHandler_UpdateProjectIfUserIsNotTeamLead(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	project := addProject(t, handlerTest, "project", otherUserId)
+
+	team := model.Team{
+		Name1: "Team",
+	}
+	err = handlerTest.TeamUsecase.AddTeam(&team, otherUserId)
+	assert.Nil(t, err)
+
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 403, w.Code)
+
+	projectsFromDb, err := handlerTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "project", projectsFromDb[0].Name)
+	assert.Equal(t, otherUserId, projectsFromDb[0].UserId)
+}
+
 func Test_projectHandler_UpdateProjectFailsIfItDoesNotExist(t *testing.T) {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
