@@ -554,6 +554,89 @@ func Test_projectHandler_DeleteProject(t *testing.T) {
 	assert.Equal(t, 0, len(projectsFromDb))
 }
 
+func Test_projectHandler_DeleteProjectAsTeamLead(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	project := addProject(t, handlerTest, "project", otherUserId)
+
+	team := model.Team{
+		Name1: "Team",
+	}
+	err = handlerTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := handlerTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(projectsFromDb))
+}
+
+func Test_projectHandler_DeleteProjectFailsIfUserIsNotTeamLead(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	project := addProject(t, handlerTest, "project", otherUserId)
+
+	team := model.Team{
+		Name1: "Team",
+	}
+	err = handlerTest.TeamUsecase.AddTeam(&team, otherUserId)
+	assert.Nil(t, err)
+
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code)
+
+	projectsFromDb, err := handlerTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+}
+
 func Test_projectHandler_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
