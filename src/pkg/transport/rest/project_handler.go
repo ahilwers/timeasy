@@ -138,9 +138,16 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// A project belongs to a user if it directly belongs to this user or it belongs to a team the user is member of:
+	projectBelongsToUser := authUserId == project.UserId
+	if !projectBelongsToUser && project.TeamID != nil {
+		projectBelongsToUser = handler.teamUsecase.DoesUserBelongToTeam(authUserId, *project.TeamID)
+	}
+
 	// a normal user can only fetch his own data.
 	// if he tries to get the project of another user he must be an admin.
-	if authUserId != project.UserId {
+	if !projectBelongsToUser {
 		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

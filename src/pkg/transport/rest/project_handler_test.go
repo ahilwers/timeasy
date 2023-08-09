@@ -105,6 +105,51 @@ func Test_projectHandler_GetProjectByIdFailsIfItDoesNotBelongToUser(t *testing.T
 	AssertErrorMessageEquals(t, w.Body.Bytes(), fmt.Sprintf("project with id %v not found", project.ID))
 }
 
+func Test_projectHandler_GetProjectByIdSucceedsIfItBelongsToUsersTeam(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	project := model.Project{
+		Name:   "testproject",
+		UserId: otherUserId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	team := model.Team{
+		Name1: "Team",
+	}
+	err = handlerTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%v", project.ID), nil)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var projectFromService model.Project
+	json.Unmarshal(w.Body.Bytes(), &projectFromService)
+	assert.Equal(t, project.Name, projectFromService.Name)
+	assert.Equal(t, otherUserId, projectFromService.UserId)
+}
+
 func Test_projectHandler_GetProjectByIdPassesIfBelongsToOtherUserAndUserIsAdmin(t *testing.T) {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
