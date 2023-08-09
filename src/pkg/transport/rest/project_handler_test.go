@@ -544,6 +544,46 @@ func Test_projectHandler_AssignProjectToTeam(t *testing.T) {
 	assert.Equal(t, team.ID, *projectFromDb.TeamID)
 }
 
+func Test_projectHandler_AssignProjectToTeamFailsIfUserIsNotTeamAdmin(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := addProject(t, handlerTest, "project", userId)
+
+	teamAdminId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	team := model.Team{
+		Name1: "Team",
+	}
+	err = handlerTest.TeamUsecase.AddTeam(&team, teamAdminId)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"projectId\": \"%v\", \"teamId\": \"%v\"}", project.ID, team.ID))
+	req, err := http.NewRequest("POST", "/api/v1/projects/team", reader)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 403, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
+
+	projectFromDb, err := handlerTest.ProjectUsecase.GetProjectById(project.ID)
+	assert.Nil(t, err)
+	assert.Equal(t, "project", projectFromDb.Name)
+	assert.Equal(t, userId, projectFromDb.UserId)
+	assert.Nil(t, projectFromDb.TeamID)
+}
+
 func addProjects(t *testing.T, handlerTest *HandlerTest, count int, userId uuid.UUID) []model.Project {
 	return addProjectsWithStartIndex(t, handlerTest, 1, count, userId)
 }
