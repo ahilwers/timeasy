@@ -6,18 +6,14 @@ Visit the timeasy website: <https://timeasy.org>
 
 <p>
     <a href="https://apps.apple.com/us/app/timeasy-time-tracking/id1620757668?itsct=apps_box_badge&amp;itscg=30200">
-      <img src="assets-readme/appstore_logo.png" alt="Download on the App Store"/>
+      <img src="simple-app/assets-readme/appstore_logo.png" alt="Download on the App Store"/>
     </a>
 </p>
 <p>
     <a href="https://play.google.com/store/apps/details?id=com.hilwerssoftware.timeasy">
-        <img src="assets-readme/google_play_logo.png" alt="Get it on Google Play" />
+        <img src="simple-app/assets-readme/google_play_logo.png" alt="Get it on Google Play" />
     </a>
 </p>
-
-![](assets-readme/screenshot_01.png)
-![](assets-readme/screenshot_02.png)
-![](assets-readme/screenshot_03.png)
 
 # Repository structure
 
