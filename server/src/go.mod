@@ -3,7 +3,6 @@ module timeasy-server
 go 1.19
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.8.1
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/golang/glog v1.0.0
@@ -12,7 +11,6 @@ require (
 	github.com/peterbourgon/ff v1.7.1
 	github.com/stretchr/testify v1.8.1
 	github.com/szuecs/gin-glog v1.1.1
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/gorm v1.24.2
 )
@@ -62,6 +60,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
