@@ -33,7 +33,7 @@ func NewTimeEntryUsecase(repo repository.TimeEntryRepository, projectUsecase Pro
 
 func (tu *timeEntryUsecase) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
 	entry, err := tu.repo.GetTimeEntryById(id)
-	if err != nil {
+	if err != nil || entry.Deleted {
 		return nil, NewEntityNotFoundError(fmt.Sprintf("timeentry with if %v does not exist", id))
 	}
 	return entry, nil
