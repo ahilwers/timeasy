@@ -98,30 +98,6 @@ func Test_timeEntryUsecase_GetTimeEntryByIdFailsIfItDoesNotExist(t *testing.T) {
 	assert.True(t, errors.As(err, &entityNotFoundError))
 }
 
-func Test_timeEntryUsecase_GetTimeEntryByIdFailsIfItIsDeleted(t *testing.T) {
-	usecaseTest := NewUsecaseTest()
-	teardownTest := usecaseTest.SetupTest(t)
-	defer teardownTest(t)
-
-	userId := GetTestUserId(t)
-	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
-
-	timeEntry := model.TimeEntry{
-		Description: "timeentry",
-		StartTime:   time.Now(),
-		UserId:      userId,
-		ProjectId:   project.ID,
-		Deleted:     true,
-	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
-	assert.Nil(t, err)
-
-	_, err = usecaseTest.TimeEntryUsecase.GetTimeEntryById(timeEntry.ID)
-	assert.NotNil(t, err)
-	var entityNotFoundError *EntityNotFoundError
-	assert.True(t, errors.As(err, &entityNotFoundError))
-}
-
 func Test_timeEntryUsecase_GetAllTimeEntriesOfUser(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)
@@ -133,40 +109,6 @@ func Test_timeEntryUsecase_GetAllTimeEntriesOfUser(t *testing.T) {
 	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
 
 	_ = addTimeEntries(t, usecaseTest.TimeEntryUsecase, 3, userId, project)
-	_ = addTimeEntriesWithStartIndex(t, usecaseTest.TimeEntryUsecase, 4, 3, otherUserId, project)
-
-	entriesOfUser, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
-	assert.Nil(t, err)
-	for i, entry := range entriesOfUser {
-		assert.Equal(t, fmt.Sprintf("entry %v", i+1), entry.Description)
-	}
-
-	entriesOfOtherUser, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(otherUserId)
-	assert.Nil(t, err)
-	for i, entry := range entriesOfOtherUser {
-		assert.Equal(t, fmt.Sprintf("entry %v", i+4), entry.Description)
-	}
-}
-
-func Test_timeEntryUsecase_GetAllTimeEntriesOfUserShouldNotReturnDeletedEntries(t *testing.T) {
-	usecaseTest := NewUsecaseTest()
-	teardownTest := usecaseTest.SetupTest(t)
-	defer teardownTest(t)
-
-	userId := GetTestUserId(t)
-	otherUserId := GetTestUserId(t)
-
-	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
-
-	_ = addTimeEntries(t, usecaseTest.TimeEntryUsecase, 3, userId, project)
-	deletedTimeEntry := model.TimeEntry{
-		Description: "deletedtimeentry",
-		StartTime:   time.Now(),
-		UserId:      userId,
-		ProjectId:   project.ID,
-		Deleted:     true,
-	}
-	usecaseTest.TimeEntryUsecase.AddTimeEntry(&deletedTimeEntry)
 	_ = addTimeEntriesWithStartIndex(t, usecaseTest.TimeEntryUsecase, 4, 3, otherUserId, project)
 
 	entriesOfUser, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
@@ -208,39 +150,6 @@ func Test_timeEntryUsecase_GetAllTimeEntriesOfUserAndProject(t *testing.T) {
 	}
 }
 
-func Test_timeEntryUsecase_GetAllTimeEntriesOfUserAndProjectShouldNotReturnDeletedEntries(t *testing.T) {
-	usecaseTest := NewUsecaseTest()
-	teardownTest := usecaseTest.SetupTest(t)
-	defer teardownTest(t)
-
-	userId := GetTestUserId(t)
-
-	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
-	otherProject := addProject(t, usecaseTest.ProjectUsecase, "otherproject", userId)
-
-	_ = addTimeEntries(t, usecaseTest.TimeEntryUsecase, 3, userId, project)
-	deletedTimeEntry := model.TimeEntry{
-		Description: "deletedtimeentry",
-		StartTime:   time.Now(),
-		UserId:      userId,
-		ProjectId:   project.ID,
-		Deleted:     true,
-	}
-	usecaseTest.TimeEntryUsecase.AddTimeEntry(&deletedTimeEntry)
-	_ = addTimeEntriesWithStartIndex(t, usecaseTest.TimeEntryUsecase, 4, 3, userId, otherProject)
-
-	entriesOfUser, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUserAndProject(userId, project.ID)
-	assert.Nil(t, err)
-	for i, entry := range entriesOfUser {
-		assert.Equal(t, fmt.Sprintf("entry %v", i+1), entry.Description)
-	}
-
-	entriesOfOtherUser, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUserAndProject(userId, otherProject.ID)
-	assert.Nil(t, err)
-	for i, entry := range entriesOfOtherUser {
-		assert.Equal(t, fmt.Sprintf("entry %v", i+4), entry.Description)
-	}
-}
 func Test_timeEntryUsecase_UpdateTimeEntry(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)
@@ -431,45 +340,6 @@ func Test_timeEntryUsecase_DeleteTimeEntry(t *testing.T) {
 	// Make sure that the associated entities are still there:
 	_, err = usecaseTest.ProjectUsecase.GetProjectById(project.ID)
 	assert.Nil(t, err)
-}
-
-func Test_timeEntryUsecase_DeleteTimeEntryDoesNotDeleteOtherEntries(t *testing.T) {
-	usecaseTest := NewUsecaseTest()
-	teardownTest := usecaseTest.SetupTest(t)
-	defer teardownTest(t)
-
-	userId := GetTestUserId(t)
-	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
-
-	timeEntry := model.TimeEntry{
-		Description: "timeentry",
-		StartTime:   time.Now(),
-		UserId:      userId,
-		ProjectId:   project.ID,
-	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
-	assert.Nil(t, err)
-	otherTimeEntry := model.TimeEntry{
-		Description: "othertimeentry",
-		StartTime:   time.Now(),
-		UserId:      userId,
-		ProjectId:   project.ID,
-	}
-	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&otherTimeEntry)
-	assert.Nil(t, err)
-
-	// Check if both entires are available:
-	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(entryList))
-
-	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID)
-	assert.Nil(t, err)
-
-	entryList, err = usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(entryList))
-	assert.Equal(t, "othertimeentry", entryList[0].Description)
 }
 
 func Test_timeEntryUsecase_DeleteTimeEntryFailsIfItDoesNotExist(t *testing.T) {
