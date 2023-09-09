@@ -41,7 +41,7 @@ func (repo *gormTimeEntryRepository) UpdateTimeEntry(timeEntry *model.TimeEntry)
 }
 
 func (repo *gormTimeEntryRepository) DeleteTimeEntry(timeEntry *model.TimeEntry) error {
-	if err := repo.db.Delete(timeEntry).Error; err != nil {
+	if err := repo.db.Model(&timeEntry).Update("deleted", true).Error; err != nil {
 		return err
 	}
 	return nil
@@ -49,7 +49,7 @@ func (repo *gormTimeEntryRepository) DeleteTimeEntry(timeEntry *model.TimeEntry)
 
 func (repo *gormTimeEntryRepository) GetAllTimeEntries() ([]model.TimeEntry, error) {
 	var timeEntries []model.TimeEntry
-	if err := repo.db.Order("start_time desc").Order("end_time desc").Find(&timeEntries).Error; err != nil {
+	if err := repo.db.Order("start_time desc").Order("end_time desc").Find(&timeEntries, "deleted=?", false).Error; err != nil {
 		return nil, err
 	}
 	return timeEntries, nil
@@ -57,7 +57,8 @@ func (repo *gormTimeEntryRepository) GetAllTimeEntries() ([]model.TimeEntry, err
 
 func (repo *gormTimeEntryRepository) GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error) {
 	var timeEntries []model.TimeEntry
-	if err := repo.db.Order("start_time desc").Order("end_time desc").Find(&timeEntries, "user_id=?", userId).Error; err != nil {
+	if err := repo.db.Order("start_time desc").Order("end_time desc").Find(&timeEntries, "deleted=? AND user_id=?",
+		false, userId).Error; err != nil {
 		return nil, err
 	}
 	return timeEntries, nil
@@ -65,8 +66,8 @@ func (repo *gormTimeEntryRepository) GetAllTimeEntriesOfUser(userId uuid.UUID) (
 
 func (repo *gormTimeEntryRepository) GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error) {
 	var timeEntries []model.TimeEntry
-	if err := repo.db.Order("start_time desc").Order("end_time desc").Find(&timeEntries, "user_id=? AND project_id=?",
-		userId, projectId).Error; err != nil {
+	if err := repo.db.Order("start_time desc").Order("end_time desc").Find(&timeEntries, " deleted=? AND user_id=? AND project_id=?",
+		false, userId, projectId).Error; err != nil {
 		return nil, err
 	}
 	return timeEntries, nil
