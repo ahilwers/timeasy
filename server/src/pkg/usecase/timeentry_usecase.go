@@ -16,7 +16,7 @@ type TimeEntryUsecase interface {
 	AddTimeEntry(timeEntry *model.TimeEntry) error
 	UpdateTimeEntry(timeEntry *model.TimeEntry) error
 	DeleteTimeEntry(id uuid.UUID) error
-	GetChangedEntries(sinceWhen time.Time) ([]model.TimeEntry, error)
+	GetChangedEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
 }
 
 type timeEntryUsecase struct {
@@ -75,8 +75,8 @@ func (tu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID) error {
 	return tu.repo.DeleteTimeEntry(timeEntry)
 }
 
-func (tu *timeEntryUsecase) GetChangedEntries(sinceWhen time.Time) ([]model.TimeEntry, error) {
-	return nil, fmt.Errorf("Not implemented")
+func (tu *timeEntryUsecase) GetChangedEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error) {
+	return tu.repo.GetUpdatedTimeEntriesOfUser(userId, sinceWhen)
 }
 
 func (tu *timeEntryUsecase) checkEntry(timeEntry *model.TimeEntry) error {
