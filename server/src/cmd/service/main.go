@@ -35,7 +35,8 @@ func main() {
 	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), projectUsecase)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
+	syncHandler := rest.NewSyncHandler(tokenVerifier, timeEntryUsecase)
 
-	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler)
+	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, syncHandler)
 	router.Run()
 }

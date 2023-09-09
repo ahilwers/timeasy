@@ -59,10 +59,11 @@ func (c *ChangeType) parse(sType string) (ChangeType, error) {
 }
 
 type ChangedTimeEntryDto struct {
-	Id               uuid.UUID
-	Description      string `json:"description" binding:"required"`
-	StartTimeUTCUnix int64  `json:"startTimeUTCUnix" binding:"required"`
-	EndTimeUTCUnix   int64
-	ProjectId        uuid.UUID  `json:"projectId" binding:"required"`
-	ChangeType       ChangeType `json:"changeType" binding:"required"`
+	Id                     uuid.UUID
+	Description            string `json:"description" binding:"required"`
+	StartTimeUTCUnix       int64  `json:"startTimeUTCUnix" binding:"required"`
+	EndTimeUTCUnix         int64
+	ProjectId              uuid.UUID  `json:"projectId" binding:"required"`
+	ChangeType             ChangeType `json:"changeType" binding:"required"`
+	ChangeTimestampUTCUnix int64      `json:"changeTimestampUTCUnix" binding:"required"`
 }
