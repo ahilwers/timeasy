@@ -78,6 +78,27 @@ func Test_projectUsecase_GetProjectByIdFailsIfProjectDoesNotExist(t *testing.T) 
 	assert.NotNil(t, err)
 }
 
+func Test_projectUsecase_GetProjectByIdFailsIfItIsDeleted(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	prj := model.Project{
+		Name:    "Testproject",
+		UserId:  userId,
+		Deleted: true,
+	}
+	err := usecaseTest.ProjectUsecase.AddProject(&prj)
+	assert.Nil(t, err)
+
+	_, err = usecaseTest.ProjectUsecase.GetProjectById(prj.ID)
+	assert.NotNil(t, err)
+	var entityNotFoundError *EntityNotFoundError
+	assert.True(t, errors.As(err, &entityNotFoundError))
+}
+
 func Test_projectUsecase_GetAllProjects(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)
@@ -96,6 +117,30 @@ func Test_projectUsecase_GetAllProjects(t *testing.T) {
 	}
 }
 
+func Test_projectUsecase_GetAllProjectsDoesNotReturnDeletedOnes(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
+	deletedProject := model.Project{
+		Name:    "Testproject",
+		UserId:  userId,
+		Deleted: true,
+	}
+	usecaseTest.ProjectUsecase.AddProject(&deletedProject)
+
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(projectsFromDb))
+	for i, project := range projectsFromDb {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
+		assert.Equal(t, userId, project.UserId)
+	}
+}
+
 func Test_projectUsecase_GetAllProjectsOfUser(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)
@@ -103,6 +148,40 @@ func Test_projectUsecase_GetAllProjectsOfUser(t *testing.T) {
 
 	userId := GetTestUserId(t)
 	addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	addProjectsWithStartIndex(t, usecaseTest.ProjectUsecase, 4, 3, otherUserId)
+
+	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjectsOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(projectsFromDb))
+	for i, project := range projectsFromDb {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+1), project.Name)
+		assert.Equal(t, userId, project.UserId)
+	}
+	projectsFromDb, err = usecaseTest.ProjectUsecase.GetAllProjectsOfUser(otherUserId)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(projectsFromDb))
+	for i, project := range projectsFromDb {
+		assert.Equal(t, fmt.Sprintf("Project %v", i+4), project.Name)
+		assert.Equal(t, otherUserId, project.UserId)
+	}
+}
+
+func Test_projectUsecase_GetAllProjectsOfUserDoesNotReturnDeletedOnes(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
+	deletedProject := model.Project{
+		Name:    "Testproject",
+		UserId:  userId,
+		Deleted: true,
+	}
+	usecaseTest.ProjectUsecase.AddProject(&deletedProject)
+
 	otherUserId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	addProjectsWithStartIndex(t, usecaseTest.ProjectUsecase, 4, 3, otherUserId)

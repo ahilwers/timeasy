@@ -16,6 +16,7 @@ type TimeEntry struct {
 	StartTime   time.Time `gorm:"type:timestamp;"` // db: timestamp without time zone
 	EndTime     time.Time `gorm:"type:timestamp;"` // db: timestamp without time zone
 	Description string
+	Deleted     bool
 }
 
 func (timeEntry *TimeEntry) BeforeCreate(db *gorm.DB) error {

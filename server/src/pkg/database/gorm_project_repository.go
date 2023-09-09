@@ -43,7 +43,7 @@ func (repo *gormProjectRepository) UpdateProject(project *model.Project) error {
 }
 
 func (repo *gormProjectRepository) DeleteProject(project *model.Project) error {
-	if err := repo.db.Delete(project).Error; err != nil {
+	if err := repo.db.Model(&project).Update("deleted", true).Error; err != nil {
 		return err
 	}
 	return nil
@@ -51,7 +51,7 @@ func (repo *gormProjectRepository) DeleteProject(project *model.Project) error {
 
 func (repo *gormProjectRepository) GetAllProjects() ([]model.Project, error) {
 	var projects []model.Project
-	if err := repo.db.Order("name").Find(&projects).Error; err != nil {
+	if err := repo.db.Order("name").Find(&projects, "deleted=?", false).Error; err != nil {
 		return nil, err
 	}
 	return projects, nil
@@ -65,9 +65,9 @@ func (repo *gormProjectRepository) GetAllProjectsOfUser(userId uuid.UUID) ([]mod
 		return projects, err
 	}
 	if len(teamIds) != 0 {
-		query = query.Where("user_id=? OR team_id IN ?", userId, teamIds)
+		query = query.Where("deleted=? AND user_id=? OR team_id IN ?", false, userId, teamIds)
 	} else {
-		query = query.Where("user_id=?", userId)
+		query = query.Where("deleted=? AND user_id=?", false, userId)
 	}
 
 	if err := query.Find(&projects).Error; err != nil {
