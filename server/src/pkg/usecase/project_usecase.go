@@ -38,11 +38,7 @@ func (pu *projectUsecase) AddProject(project *model.Project) error {
 }
 
 func (pu *projectUsecase) GetProjectById(id uuid.UUID) (*model.Project, error) {
-	entry, err := pu.repo.GetProjectById(id)
-	if err != nil || entry.Deleted {
-		return nil, NewEntityNotFoundError(fmt.Sprintf("project with if %v does not exist", id))
-	}
-	return entry, nil
+	return pu.repo.GetProjectById(id)
 }
 
 func (pu *projectUsecase) UpdateProject(project *model.Project) error {
