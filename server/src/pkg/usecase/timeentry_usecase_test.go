@@ -59,6 +59,119 @@ func Test_timeEntryUsecase_AddTimeEntryFailsIfProjectDoesNotExist(t *testing.T) 
 	assert.True(t, errors.As(err, &projectNotFoundError))
 }
 
+func Test_timeEntryUsecase_AddTimeEntryList(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now().Add(time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	timeEntry2 := model.TimeEntry{
+		Description: "timeentry2",
+		StartTime:   time.Now(),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+
+	addedTimeEntries := []model.TimeEntry{
+		timeEntry1,
+		timeEntry2,
+	}
+
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries)
+	assert.Nil(t, err)
+
+	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(entryList))
+	for i, timeEntry := range entryList {
+		assert.Equal(t, addedTimeEntries[i].Description, timeEntry.Description)
+		assertTimesAreEqual(t, addedTimeEntries[i].StartTime, timeEntry.StartTime)
+		assert.Equal(t, userId, timeEntry.UserId)
+		assert.Equal(t, project.ID, timeEntry.ProjectId)
+		assert.True(t, timeEntry.EndTime.IsZero())
+	}
+}
+
+func Test_timeEntryUsecase_AddTimeEntryListFailsIfProjectIdIsMissing(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now().Add(time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	timeEntry2 := model.TimeEntry{
+		Description: "timeentry2",
+		StartTime:   time.Now(),
+		UserId:      userId,
+	}
+
+	addedTimeEntries := []model.TimeEntry{
+		timeEntry1,
+		timeEntry2,
+	}
+
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries)
+	assert.NotNil(t, err)
+	var entityIncompleteError *EntityIncompleteError
+	assert.True(t, errors.As(err, &entityIncompleteError))
+	assert.Equal(t, fmt.Sprintf("the project id of time entry %v must not be empty", timeEntry2.ID), err.Error())
+
+	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entryList))
+}
+
+func Test_timeEntryUsecase_AddTimeEntryListFailsIfUserIdIsMissing(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now().Add(time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	timeEntry2 := model.TimeEntry{
+		Description: "timeentry2",
+		StartTime:   time.Now(),
+		ProjectId:   project.ID,
+	}
+
+	addedTimeEntries := []model.TimeEntry{
+		timeEntry1,
+		timeEntry2,
+	}
+
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries)
+	assert.NotNil(t, err)
+	var entityIncompleteError *EntityIncompleteError
+	assert.True(t, errors.As(err, &entityIncompleteError))
+	assert.Equal(t, fmt.Sprintf("the user id of time entry %v must not be empty", timeEntry2.ID), err.Error())
+
+	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entryList))
+}
+
 func Test_timeEntryUsecase_GetTimeEntryById(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)

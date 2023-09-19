@@ -9,6 +9,7 @@ import (
 
 type TimeEntryRepository interface {
 	AddTimeEntry(project *model.TimeEntry) error
+	AddTimeEntryList(timeEntryList []model.TimeEntry) error
 	UpdateTimeEntry(project *model.TimeEntry) error
 	DeleteTimeEntry(project *model.TimeEntry) error
 	GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error)

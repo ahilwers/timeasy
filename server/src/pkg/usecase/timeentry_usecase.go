@@ -14,6 +14,7 @@ type TimeEntryUsecase interface {
 	GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error)
 	GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error)
 	AddTimeEntry(timeEntry *model.TimeEntry) error
+	AddTimeEntryList(timeEntryList []model.TimeEntry) error
 	UpdateTimeEntry(timeEntry *model.TimeEntry) error
 	DeleteTimeEntry(id uuid.UUID) error
 	GetChangedEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
@@ -55,6 +56,16 @@ func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {
 	return tu.repo.AddTimeEntry(timeEntry)
 }
 
+func (tu *timeEntryUsecase) AddTimeEntryList(timeEntryList []model.TimeEntry) error {
+	for _, timeEntry := range timeEntryList {
+		err := tu.checkEntry(&timeEntry)
+		if err != nil {
+			return err
+		}
+	}
+	return tu.repo.AddTimeEntryList(timeEntryList)
+}
+
 func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry) error {
 	_, err := tu.GetTimeEntryById(timeEntry.ID)
 	if err != nil {
@@ -93,14 +104,14 @@ func (tu *timeEntryUsecase) checkEntry(timeEntry *model.TimeEntry) error {
 
 func (tu *timeEntryUsecase) checkUser(timeEntry *model.TimeEntry) error {
 	if timeEntry.UserId == uuid.Nil {
-		return NewEntityIncompleteError("the user id must not be empty")
+		return NewEntityIncompleteError(fmt.Sprintf("the user id of time entry %v must not be empty", timeEntry.ID))
 	}
 	return nil
 }
 
 func (tu *timeEntryUsecase) checkProject(timeEntry *model.TimeEntry) error {
 	if timeEntry.ProjectId == uuid.Nil {
-		return NewEntityIncompleteError("the project id must not be empty")
+		return NewEntityIncompleteError(fmt.Sprintf("the project id of time entry %v must not be empty", timeEntry.ID))
 	}
 	_, err := tu.projectUsecase.GetProjectById(timeEntry.ProjectId)
 	if err != nil {

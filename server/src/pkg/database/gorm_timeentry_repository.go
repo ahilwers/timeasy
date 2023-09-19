@@ -26,6 +26,17 @@ func (repo *gormTimeEntryRepository) AddTimeEntry(timeEntry *model.TimeEntry) er
 	return nil
 }
 
+func (repo *gormTimeEntryRepository) AddTimeEntryList(timeEntryList []model.TimeEntry) error {
+	return repo.db.Transaction(func(tx *gorm.DB) error {
+		for _, timeEntry := range timeEntryList {
+			if err := repo.db.Create(&timeEntry).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 func (repo *gormTimeEntryRepository) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
 	var timeEntry model.TimeEntry
 	if err := repo.db.First(&timeEntry, id).Error; err != nil {
