@@ -52,6 +52,17 @@ func (repo *gormTimeEntryRepository) UpdateTimeEntry(timeEntry *model.TimeEntry)
 	return nil
 }
 
+func (repo *gormTimeEntryRepository) UpdateTimeEntryList(timeEntryList []model.TimeEntry) error {
+	return repo.db.Transaction(func(tx *gorm.DB) error {
+		for _, timeEntry := range timeEntryList {
+			if err := repo.db.Save(&timeEntry).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 func (repo *gormTimeEntryRepository) DeleteTimeEntry(timeEntry *model.TimeEntry) error {
 	if err := repo.db.Delete(timeEntry).Error; err != nil {
 		return err

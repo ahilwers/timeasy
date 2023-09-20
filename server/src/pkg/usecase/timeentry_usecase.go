@@ -16,6 +16,7 @@ type TimeEntryUsecase interface {
 	AddTimeEntry(timeEntry *model.TimeEntry) error
 	AddTimeEntryList(timeEntryList []model.TimeEntry) error
 	UpdateTimeEntry(timeEntry *model.TimeEntry) error
+	UpdateTimeEntryList(timeEntry []model.TimeEntry) error
 	DeleteTimeEntry(id uuid.UUID) error
 	GetChangedEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
 }
@@ -76,6 +77,16 @@ func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry) error {
 		return err
 	}
 	return tu.repo.UpdateTimeEntry(timeEntry)
+}
+
+func (tu *timeEntryUsecase) UpdateTimeEntryList(timeEntryList []model.TimeEntry) error {
+	for _, timeEntry := range timeEntryList {
+		err := tu.checkEntry(&timeEntry)
+		if err != nil {
+			return err
+		}
+	}
+	return tu.repo.UpdateTimeEntryList(timeEntryList)
 }
 
 func (tu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID) error {
