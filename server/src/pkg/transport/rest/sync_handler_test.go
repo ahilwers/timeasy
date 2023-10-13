@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -98,4 +99,66 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 	assert.Equal(t, updatedTimeEntry.ProjectId, syncEntries[1].ProjectId)
 	assert.Equal(t, CHANGED, syncEntries[1].ChangeType)
 
+}
+
+func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+	endTime := time.Date(2023, 1, 28, 11, 1, 0, 0, time.UTC)
+	id, err := uuid.NewV4()
+	assert.Nil(t, err)
+	changeTime := time.Date(2023, 1, 29, 11, 23, 53, 0, time.UTC)
+
+	timeEntry1 := ChangedTimeEntryDto{
+		Id:                     id,
+		Description:            "timeEntry1",
+		StartTimeUTCUnix:       startTime.Unix(),
+		EndTimeUTCUnix:         endTime.Unix(),
+		ProjectId:              project.ID,
+		ChangeType:             NEW,
+		ChangeTimestampUTCUnix: changeTime.Unix(),
+	}
+
+	syncEntries := SyncEntries{
+		TimeEntries: []ChangedTimeEntryDto{timeEntry1},
+	}
+	entryJson, err := json.Marshal(syncEntries)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+
+	entryReader := bytes.NewReader(entryJson)
+	req, _ := http.NewRequest("POST", "/api/v1/sync/changed", entryReader)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	entries, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(entries))
+	assert.Equal(t, id, entries[0].ID)
+	assert.Equal(t, "timeEntry1", entries[0].Description)
+	assert.Equal(t, startTime, entries[0].StartTime)
+	assert.Equal(t, endTime, entries[0].EndTime)
+	assert.Equal(t, project.ID, entries[0].ProjectId)
+	//assert.Equal(t, changeTime, entries[0].UpdatedAt)
 }

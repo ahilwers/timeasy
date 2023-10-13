@@ -58,6 +58,10 @@ func (c *ChangeType) parse(sType string) (ChangeType, error) {
 	return ChangeType(value), nil
 }
 
+type SyncEntries struct {
+	TimeEntries []ChangedTimeEntryDto
+}
+
 type ChangedTimeEntryDto struct {
 	Id                     uuid.UUID
 	Description            string `json:"description" binding:"required"`
