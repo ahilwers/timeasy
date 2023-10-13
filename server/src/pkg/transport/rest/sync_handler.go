@@ -21,12 +21,14 @@ type SyncHandler interface {
 type syncHandler struct {
 	tokenVerifier    TokenVerifier
 	timeEntryUsecase usecase.TimeEntryUsecase
+	syncUsecase      usecase.SyncUsecase
 }
 
-func NewSyncHandler(tokenVerifier TokenVerifier, timeEntryUsecase usecase.TimeEntryUsecase) SyncHandler {
+func NewSyncHandler(tokenVerifier TokenVerifier, timeEntryUsecase usecase.TimeEntryUsecase, syncUsecase usecase.SyncUsecase) SyncHandler {
 	return &syncHandler{
 		tokenVerifier:    tokenVerifier,
 		timeEntryUsecase: timeEntryUsecase,
+		syncUsecase:      syncUsecase,
 	}
 }
 
@@ -91,7 +93,10 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 		return
 	}
 
-	err = handler.handleClientSideChangedTimeEntries(syncDtos.TimeEntries, userId)
+	var syncData model.SyncData
+	handler.fillInClientSideChangedTimeEntries(&syncData, syncDtos.TimeEntries, userId)
+
+	err = handler.syncUsecase.UpdateAndDeleteData(syncData)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -99,22 +104,16 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 	context.JSON(http.StatusOK, nil)
 }
 
-func (handler *syncHandler) handleClientSideChangedTimeEntries(changedTimeEntries []ChangedTimeEntryDto, userId uuid.UUID) error {
-	var timeEntriesToBeUpdated []model.TimeEntry
-	var timeEntryIdsToBeDeleted []uuid.UUID
+func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.SyncData, changedTimeEntries []ChangedTimeEntryDto, userId uuid.UUID) {
 	for _, changedTimeEntry := range changedTimeEntries {
-		if changedTimeEntry.ChangeType == DELETED {
-			timeEntryIdsToBeDeleted = append(timeEntryIdsToBeDeleted, changedTimeEntry.Id)
-		} else {
-			timeEntry := handler.createTimeEntryFromDto(changedTimeEntry, userId)
-			timeEntriesToBeUpdated = append(timeEntriesToBeUpdated, timeEntry)
+		timeEntry := handler.createTimeEntryFromDto(changedTimeEntry, userId)
+		switch changedTimeEntry.ChangeType {
+		case NEW, CHANGED:
+			syncData.TimeEntriesToBeUpdated = append(syncData.TimeEntriesToBeUpdated, timeEntry)
+		case DELETED:
+			syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)
 		}
 	}
-	err := handler.timeEntryUsecase.UpdateTimeEntryList(timeEntriesToBeUpdated)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntryDto, userId uuid.UUID) model.TimeEntry {
