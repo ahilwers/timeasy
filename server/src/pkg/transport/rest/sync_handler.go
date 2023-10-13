@@ -126,10 +126,6 @@ func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntry
 		StartTime:   time.Unix(timeEntryDto.StartTimeUTCUnix, 0).UTC(),
 		EndTime:     time.Unix(timeEntryDto.EndTimeUTCUnix, 0).UTC(),
 	}
-	timeEntry.UpdatedAt = time.Unix(timeEntryDto.ChangeTimestampUTCUnix, 0).UTC()
-	if timeEntryDto.ChangeType == NEW {
-		timeEntry.CreatedAt = time.Unix(timeEntryDto.ChangeTimestampUTCUnix, 0).UTC()
-	}
 	return timeEntry
 }
 

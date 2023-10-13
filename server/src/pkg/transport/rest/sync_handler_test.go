@@ -127,16 +127,14 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	endTime := time.Date(2023, 1, 28, 11, 1, 0, 0, time.UTC)
 	id, err := uuid.NewV4()
 	assert.Nil(t, err)
-	changeTime := time.Date(2023, 1, 29, 11, 23, 53, 0, time.UTC)
 
 	timeEntry1 := ChangedTimeEntryDto{
-		Id:                     id,
-		Description:            "timeEntry1",
-		StartTimeUTCUnix:       startTime.Unix(),
-		EndTimeUTCUnix:         endTime.Unix(),
-		ProjectId:              project.ID,
-		ChangeType:             NEW,
-		ChangeTimestampUTCUnix: changeTime.Unix(),
+		Id:               id,
+		Description:      "timeEntry1",
+		StartTimeUTCUnix: startTime.Unix(),
+		EndTimeUTCUnix:   endTime.Unix(),
+		ProjectId:        project.ID,
+		ChangeType:       NEW,
 	}
 
 	syncEntries := SyncEntries{
@@ -160,5 +158,4 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	assert.Equal(t, startTime, entries[0].StartTime)
 	assert.Equal(t, endTime, entries[0].EndTime)
 	assert.Equal(t, project.ID, entries[0].ProjectId)
-	//assert.Equal(t, changeTime, entries[0].UpdatedAt)
 }
