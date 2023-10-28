@@ -10,4 +10,5 @@ import (
 type SyncRepository interface {
 	UpdateAndDeleteData(data model.SyncData) error
 	GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
+	GetUpdatedProjectsOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error)
 }

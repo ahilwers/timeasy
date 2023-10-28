@@ -11,6 +11,7 @@ import (
 type SyncUsecase interface {
 	UpdateAndDeleteData(data model.SyncData) error
 	GetChangedTimeEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
+	GetChangedProjects(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error)
 }
 
 type syncUsecase struct {
@@ -29,4 +30,8 @@ func (usecase *syncUsecase) UpdateAndDeleteData(data model.SyncData) error {
 
 func (tu *syncUsecase) GetChangedTimeEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error) {
 	return tu.repo.GetUpdatedTimeEntriesOfUser(userId, sinceWhen)
+}
+
+func (tu *syncUsecase) GetChangedProjects(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error) {
+	return tu.repo.GetUpdatedProjectsOfUser(userId, sinceWhen)
 }

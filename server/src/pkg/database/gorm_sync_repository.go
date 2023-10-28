@@ -68,3 +68,11 @@ func (repo *gormSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, si
 	}
 	return updatedEntries, nil
 }
+
+func (repo *gormSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error) {
+	var updatedProjects []model.Project
+	if err := repo.db.Unscoped().Order("name").Find(&updatedProjects, "user_id=? AND (updated_at >= ? OR created_at >= ? OR deleted_at >= ?)", userId, sinceWhen, sinceWhen, sinceWhen).Error; err != nil {
+		return nil, err
+	}
+	return updatedProjects, nil
+}

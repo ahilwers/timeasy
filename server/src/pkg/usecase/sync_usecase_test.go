@@ -110,3 +110,95 @@ func Test_syncUsecase_CanUpdatedEntriesBeFetchedWhenEntryIsDeleted(t *testing.T)
 	assert.Equal(t, 1, len(changedEntries))
 	assert.Equal(t, "timeentry", changedEntries[0].Description)
 }
+
+func Test_syncUsecase_CanUpdatedProjectsBeFetchedWhenEntryIsNew(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	oldProject := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	oldProject.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
+	oldProject.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
+	err := usecaseTest.ProjectUsecase.AddProject(&oldProject)
+	assert.Nil(t, err)
+
+	newProject := model.Project{
+		Name:   "newProject",
+		UserId: userId,
+	}
+	err = usecaseTest.ProjectUsecase.AddProject(&newProject)
+	assert.Nil(t, err)
+
+	changedProjects, err := usecaseTest.SyncUsecase.GetChangedProjects(userId, time.Date(2023, 8, 31, 0, 0, 0, 0, time.UTC))
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changedProjects))
+	assert.Equal(t, "newProject", changedProjects[0].Name)
+}
+
+func Test_syncUsecase_CanUpdatedProjectsBeFetchedWhenEntryIsUpdated(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	oldProject := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	oldProject.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
+	oldProject.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
+	err := usecaseTest.ProjectUsecase.AddProject(&oldProject)
+	assert.Nil(t, err)
+
+	// The project should not be returned now:
+	changedProjects, err := usecaseTest.SyncUsecase.GetChangedProjects(userId, time.Date(2023, 8, 31, 0, 0, 0, 0, time.UTC))
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(changedProjects))
+
+	//Update the project:
+	oldProject.Name = "updatedProject"
+	err = usecaseTest.ProjectUsecase.UpdateProject(&oldProject)
+	assert.Nil(t, err)
+
+	changedProjects, err = usecaseTest.SyncUsecase.GetChangedProjects(userId, time.Date(2023, 8, 31, 0, 0, 0, 0, time.UTC))
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changedProjects))
+	assert.Equal(t, "updatedProject", changedProjects[0].Name)
+}
+
+func Test_syncUsecase_CanUpdatedProjectsBeFetchedWhenEntryIsDeleted(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+
+	oldProject := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	oldProject.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
+	oldProject.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
+	err := usecaseTest.ProjectUsecase.AddProject(&oldProject)
+	assert.Nil(t, err)
+
+	// The project should not be returned now:
+	changedProjects, err := usecaseTest.SyncUsecase.GetChangedProjects(userId, time.Date(2023, 8, 31, 0, 0, 0, 0, time.UTC))
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(changedProjects))
+
+	//Delete the project:
+	err = usecaseTest.ProjectUsecase.DeleteProject(oldProject.ID)
+	assert.Nil(t, err)
+
+	changedProjects, err = usecaseTest.SyncUsecase.GetChangedProjects(userId, time.Date(2023, 8, 31, 0, 0, 0, 0, time.UTC))
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changedProjects))
+	assert.Equal(t, "project", changedProjects[0].Name)
+}
