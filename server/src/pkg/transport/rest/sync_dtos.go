@@ -60,6 +60,7 @@ func (c *ChangeType) parse(sType string) (ChangeType, error) {
 
 type SyncEntries struct {
 	TimeEntries []ChangedTimeEntryDto
+	Projects    []ChangedProjectDto
 }
 
 type ChangedTimeEntryDto struct {
@@ -68,6 +69,13 @@ type ChangedTimeEntryDto struct {
 	StartTimeUTCUnix       int64  `json:"startTimeUTCUnix" binding:"required"`
 	EndTimeUTCUnix         int64
 	ProjectId              uuid.UUID  `json:"projectId" binding:"required"`
+	ChangeType             ChangeType `json:"changeType" binding:"required"`
+	ChangeTimestampUTCUnix int64      `json:"changeTimestampUTCUnix" binding:"required"`
+}
+
+type ChangedProjectDto struct {
+	Id                     uuid.UUID
+	Name                   string     `json:"name" binding:"required"`
 	ChangeType             ChangeType `json:"changeType" binding:"required"`
 	ChangeTimestampUTCUnix int64      `json:"changeTimestampUTCUnix" binding:"required"`
 }

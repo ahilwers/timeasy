@@ -14,8 +14,6 @@ import (
 type SyncHandler interface {
 	GetChangedEntries(context *gin.Context)
 	SendLocallyChangedEntries(context *gin.Context)
-	GetChangedProjects(context *gin.Context)
-	SendLocallyChangedProjects(context *gin.Context)
 }
 
 type syncHandler struct {
@@ -71,6 +69,27 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 		}
 		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
+
+	projects, err := handler.syncUsecase.GetChangedProjects(userId, time.Unix(unixTime, 0))
+	for _, project := range projects {
+		changeType := CHANGED
+		changeTime := project.UpdatedAt
+		if !project.DeletedAt.Time.IsZero() {
+			changeType = DELETED
+			changeTime = project.DeletedAt.Time
+		} else if project.CreatedAt == project.UpdatedAt {
+			changeType = NEW
+			changeTime = project.CreatedAt
+		}
+		syncProject := ChangedProjectDto{
+			Id:                     project.ID,
+			Name:                   project.Name,
+			ChangeType:             changeType,
+			ChangeTimestampUTCUnix: changeTime.Unix(),
+		}
+		syncEntries.Projects = append(syncEntries.Projects, syncProject)
+	}
+
 	context.JSON(http.StatusOK, syncEntries)
 }
 
@@ -124,10 +143,4 @@ func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntry
 		EndTime:     time.Unix(timeEntryDto.EndTimeUTCUnix, 0).UTC(),
 	}
 	return timeEntry
-}
-
-func (handler *syncHandler) GetChangedProjects(context *gin.Context) {
-}
-
-func (handler *syncHandler) SendLocallyChangedProjects(context *gin.Context) {
 }

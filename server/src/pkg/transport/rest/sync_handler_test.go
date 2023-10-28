@@ -296,7 +296,6 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 	assert.Equal(t, 0, len(entries))
 }
 
-/*
 func Test_syncHandler_GetChangedProjects(t *testing.T) {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
@@ -350,14 +349,13 @@ func Test_syncHandler_GetChangedProjects(t *testing.T) {
 	handlerTest.Router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	var syncEntries []ChangedTimeEntryDto
+	var syncEntries SyncEntries
 	json.Unmarshal(w.Body.Bytes(), &syncEntries)
-	assert.Equal(t, 2, len(syncEntries))
+	assert.Equal(t, 2, len(syncEntries.Projects))
 
-	assert.Equal(t, deletedProject.Name, syncEntries[0].Description)
-	assert.Equal(t, DELETED, syncEntries[0].ChangeType)
+	assert.Equal(t, deletedProject.Name, syncEntries.Projects[0].Name)
+	assert.Equal(t, DELETED, syncEntries.Projects[0].ChangeType)
 
-	assert.Equal(t, updatedProject.Name, syncEntries[1].Description)
-	assert.Equal(t, CHANGED, syncEntries[1].ChangeType)
+	assert.Equal(t, updatedProject.Name, syncEntries.Projects[1].Name)
+	assert.Equal(t, CHANGED, syncEntries.Projects[1].ChangeType)
 }
-*/
