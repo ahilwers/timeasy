@@ -34,7 +34,7 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.POST("/teams/:id/users", teamHandler.AddUserToTeam)
 	protectedGroup.DELETE("/teams/:id/users/:userId", teamHandler.DeleteUserFromTeam)
 	protectedGroup.PUT("/teams/:id/users/:userId/roles", teamHandler.UpdateUserRolesInTeam)
-	protectedGroup.GET("/sync/changed/:timestamp", syncHandler.GetChangedTimeEntries)
+	protectedGroup.GET("/sync/changed/:timestamp", syncHandler.GetChangedEntries)
 	protectedGroup.POST("/sync/changed", syncHandler.SendLocallyChangedEntries)
 
 	return router

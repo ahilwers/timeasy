@@ -1,7 +1,6 @@
 package database
 
 import (
-	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -93,12 +92,4 @@ func (repo *gormTimeEntryRepository) GetAllTimeEntriesOfUserAndProject(userId uu
 		return nil, err
 	}
 	return timeEntries, nil
-}
-
-func (repo *gormTimeEntryRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error) {
-	var updatedEntries []model.TimeEntry
-	if err := repo.db.Unscoped().Order("start_time desc").Order("end_time desc").Find(&updatedEntries, "user_id=? AND (updated_at >= ? OR created_at >= ? OR deleted_at >= ?)", userId, sinceWhen, sinceWhen, sinceWhen).Error; err != nil {
-		return nil, err
-	}
-	return updatedEntries, nil
 }

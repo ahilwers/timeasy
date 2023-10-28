@@ -12,27 +12,25 @@ import (
 )
 
 type SyncHandler interface {
-	GetChangedTimeEntries(context *gin.Context)
+	GetChangedEntries(context *gin.Context)
 	SendLocallyChangedEntries(context *gin.Context)
 	GetChangedProjects(context *gin.Context)
 	SendLocallyChangedProjects(context *gin.Context)
 }
 
 type syncHandler struct {
-	tokenVerifier    TokenVerifier
-	timeEntryUsecase usecase.TimeEntryUsecase
-	syncUsecase      usecase.SyncUsecase
+	tokenVerifier TokenVerifier
+	syncUsecase   usecase.SyncUsecase
 }
 
-func NewSyncHandler(tokenVerifier TokenVerifier, timeEntryUsecase usecase.TimeEntryUsecase, syncUsecase usecase.SyncUsecase) SyncHandler {
+func NewSyncHandler(tokenVerifier TokenVerifier, syncUsecase usecase.SyncUsecase) SyncHandler {
 	return &syncHandler{
-		tokenVerifier:    tokenVerifier,
-		timeEntryUsecase: timeEntryUsecase,
-		syncUsecase:      syncUsecase,
+		tokenVerifier: tokenVerifier,
+		syncUsecase:   syncUsecase,
 	}
 }
 
-func (handler *syncHandler) GetChangedTimeEntries(context *gin.Context) {
+func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -50,8 +48,8 @@ func (handler *syncHandler) GetChangedTimeEntries(context *gin.Context) {
 		return
 	}
 
-	var syncEntries []ChangedTimeEntryDto
-	entries, err := handler.timeEntryUsecase.GetChangedEntries(userId, time.Unix(unixTime, 0))
+	var syncEntries SyncEntries
+	entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, time.Unix(unixTime, 0))
 	for _, entry := range entries {
 		changeType := CHANGED
 		changeTime := entry.UpdatedAt
@@ -62,7 +60,7 @@ func (handler *syncHandler) GetChangedTimeEntries(context *gin.Context) {
 			changeType = NEW
 			changeTime = entry.CreatedAt
 		}
-		syncEntry := ChangedTimeEntryDto{
+		syncTimeEntry := ChangedTimeEntryDto{
 			Id:                     entry.ID,
 			Description:            entry.Description,
 			StartTimeUTCUnix:       entry.StartTime.Unix(),
@@ -71,7 +69,7 @@ func (handler *syncHandler) GetChangedTimeEntries(context *gin.Context) {
 			ChangeType:             changeType,
 			ChangeTimestampUTCUnix: changeTime.Unix(),
 		}
-		syncEntries = append(syncEntries, syncEntry)
+		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
 	context.JSON(http.StatusOK, syncEntries)
 }

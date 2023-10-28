@@ -25,6 +25,7 @@ type UsecaseTest struct {
 	ProjectUsecase   ProjectUsecase
 	TimeEntryUsecase TimeEntryUsecase
 	TeamUsecase      TeamUsecase
+	SyncUsecase      SyncUsecase
 }
 
 func NewUsecaseTest() *UsecaseTest {
@@ -46,6 +47,9 @@ func (u *UsecaseTest) initUsecases() {
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
 	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase)
+
+	syncRepo := database.NewGormSyncRepository(test.DB)
+	u.SyncUsecase = NewSyncUsecase(syncRepo)
 }
 
 func GetTestUserId(t *testing.T) uuid.UUID {

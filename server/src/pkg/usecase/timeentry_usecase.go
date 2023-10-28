@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"fmt"
-	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -18,7 +17,6 @@ type TimeEntryUsecase interface {
 	UpdateTimeEntry(timeEntry *model.TimeEntry) error
 	UpdateTimeEntryList(timeEntry []model.TimeEntry) error
 	DeleteTimeEntry(id uuid.UUID) error
-	GetChangedEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
 }
 
 type timeEntryUsecase struct {
@@ -95,10 +93,6 @@ func (tu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID) error {
 		return NewEntityNotFoundError(fmt.Sprintf("timeEntry with id %v does not exist", id))
 	}
 	return tu.repo.DeleteTimeEntry(timeEntry)
-}
-
-func (tu *timeEntryUsecase) GetChangedEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error) {
-	return tu.repo.GetUpdatedTimeEntriesOfUser(userId, sinceWhen)
 }
 
 func (tu *timeEntryUsecase) checkEntry(timeEntry *model.TimeEntry) error {
