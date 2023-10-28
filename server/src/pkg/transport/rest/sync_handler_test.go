@@ -159,3 +159,140 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	assert.Equal(t, endTime, entries[0].EndTime)
 	assert.Equal(t, project.ID, entries[0].ProjectId)
 }
+
+func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+	endTime := time.Date(2023, 1, 28, 11, 1, 0, 0, time.UTC)
+
+	// Create a time entry:
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		EndTime:     endTime,
+		ProjectId:   project.ID,
+		UserId:      userId,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	// Now let's update the time entry:
+	changeTime := time.Now().Add(time.Hour).UTC()
+	updatedTimeEntry := ChangedTimeEntryDto{
+		Id:                     timeEntry.ID,
+		Description:            "updatedTimeEntry",
+		StartTimeUTCUnix:       startTime.Unix(),
+		EndTimeUTCUnix:         endTime.Unix(),
+		ProjectId:              project.ID,
+		ChangeType:             CHANGED,
+		ChangeTimestampUTCUnix: changeTime.Unix(),
+	}
+
+	syncEntries := SyncEntries{
+		TimeEntries: []ChangedTimeEntryDto{updatedTimeEntry},
+	}
+	entryJson, err := json.Marshal(syncEntries)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+
+	entryReader := bytes.NewReader(entryJson)
+	req, _ := http.NewRequest("POST", "/api/v1/sync/changed", entryReader)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	entries, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(entries))
+	assert.Equal(t, timeEntry.ID, entries[0].ID)
+	assert.Equal(t, "updatedTimeEntry", entries[0].Description)
+	assert.Equal(t, startTime, entries[0].StartTime)
+	assert.Equal(t, endTime, entries[0].EndTime)
+	assert.Equal(t, project.ID, entries[0].ProjectId)
+}
+
+func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+	endTime := time.Date(2023, 1, 28, 11, 1, 0, 0, time.UTC)
+
+	// Create a time entry:
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		EndTime:     endTime,
+		ProjectId:   project.ID,
+		UserId:      userId,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	assert.Nil(t, err)
+
+	// Now let's delete the time entry:
+	changeTime := time.Now().Add(time.Hour).UTC()
+	deletedTimeEntry := ChangedTimeEntryDto{
+		Id:                     timeEntry.ID,
+		Description:            "deletedTimeEntry",
+		StartTimeUTCUnix:       startTime.Unix(),
+		EndTimeUTCUnix:         endTime.Unix(),
+		ProjectId:              project.ID,
+		ChangeType:             DELETED,
+		ChangeTimestampUTCUnix: changeTime.Unix(),
+	}
+
+	syncEntries := SyncEntries{
+		TimeEntries: []ChangedTimeEntryDto{deletedTimeEntry},
+	}
+	entryJson, err := json.Marshal(syncEntries)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+
+	entryReader := bytes.NewReader(entryJson)
+	req, _ := http.NewRequest("POST", "/api/v1/sync/changed", entryReader)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	entries, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entries))
+}
