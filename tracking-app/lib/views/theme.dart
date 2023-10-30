@@ -7,15 +7,15 @@ const FlexSchemeData timeasyTheme = FlexSchemeData(
   light: FlexSchemeColor(
     appBarColor: Color(0xff6b2cae),
     primary: Color(0xff6b2cae),
-    primaryVariant: Color(0xff481e74),
+    primaryContainer: Color(0xff481e74),
     secondary: Color(0xff6276f9),
-    secondaryVariant: Color(0xff2d3881),
+    secondaryContainer: Color(0xff2d3881),
   ),
   dark: FlexSchemeColor(
     appBarColor: Color(0xff6b2cae),
     primary: Color(0xff6b2cae),
-    primaryVariant: Color(0xff481e74),
+    primaryContainer: Color(0xff481e74),
     secondary: Color(0xff6276f9),
-    secondaryVariant: Color(0xff2d3881),
+    secondaryContainer: Color(0xff2d3881),
   ),
 );
