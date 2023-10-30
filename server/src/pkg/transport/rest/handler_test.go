@@ -57,9 +57,11 @@ type HandlerTest struct {
 	ProjectUsecase   usecase.ProjectUsecase
 	TimeEntryUsecase usecase.TimeEntryUsecase
 	TeamUsecase      usecase.TeamUsecase
+	SyncUsecase      usecase.SyncUsecase
 	ProjectHandler   ProjectHandler
 	TimeEntryHandler TimeEntryHandler
 	TeamHandler      TeamHandler
+	SyncHandler      SyncHandler
 	Router           *gin.Engine
 	tokenVerifier    TokenVerifier
 }
@@ -90,6 +92,9 @@ func (t *HandlerTest) initUsecases() {
 
 	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
 	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase)
+
+	syncRepo := database.NewGormSyncRepository(test.DB)
+	t.SyncUsecase = usecase.NewSyncUsecase(syncRepo)
 }
 
 func (t *HandlerTest) initHandlers() {
@@ -97,8 +102,9 @@ func (t *HandlerTest) initHandlers() {
 	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase)
 	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
+	t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
 
-	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler)
+	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.SyncHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {
