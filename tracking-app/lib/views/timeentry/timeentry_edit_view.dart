@@ -97,7 +97,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                 },
                 child: Text(
                   AppLocalizations.of(context)!.save,
-                  style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
                 ),
               ),
               _timeEntryId != null
@@ -107,7 +107,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                       },
                       child: Text(
                         AppLocalizations.of(context)!.delete,
-                        style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
+                        style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
                       ),
                     )
                   : Container(),

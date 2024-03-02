@@ -81,7 +81,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
               },
               child: Text(
                 AppLocalizations.of(context)!.save,
-                style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
               ),
             ),
             _projectId != null
@@ -91,7 +91,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                     },
                     child: Text(
                       AppLocalizations.of(context)!.delete,
-                      style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
                     ),
                   )
                 : Container(),
