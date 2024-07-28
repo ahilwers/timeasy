@@ -41,4 +41,8 @@ class DateTools {
     var firstDayOfWeek = getFirstDayOfWeek(weekNumber, year);
     return firstDayOfWeek.add(new Duration(days: 6));
   }
+
+  DateTime onlyDate(DateTime dateTime) {
+    return DateTime(dateTime.year, dateTime.month, dateTime.day);
+  }
 }
