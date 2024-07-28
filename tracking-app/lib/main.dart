@@ -55,7 +55,8 @@ class MainPage extends StatefulWidget {
 
 enum AppState { RUNNING, STOPPED }
 
-class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin {
+class _MainPageState extends State<MainPage>
+    with SingleTickerProviderStateMixin {
   AppState _currentState = AppState.STOPPED;
   late Project _currentProject;
   List<Project>? _projects;
@@ -75,7 +76,9 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
     );
 
     var projectRepository = new ProjectRepository();
-    projectRepository.getLastUsedProjectOrDefault("Project 1").then((Project project) {
+    projectRepository
+        .getLastUsedProjectOrDefault("Project 1")
+        .then((Project project) {
       setState(() {
         _setCurrentProject(project);
       });
@@ -138,7 +141,8 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
-              child: Image.asset("assets/hourglass_lightgrey.png"), // Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
+              child: Image.asset(
+                  "assets/hourglass_lightgrey.png"), // Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.centerRight,
@@ -153,13 +157,20 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             ListTile(
               title: Text(AppLocalizations.of(context)!.weeklyOverview),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => WeeklyView(_currentProject)));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => WeeklyView(_currentProject)));
               },
             ),
             ListTile(
               title: Text(AppLocalizations.of(context)!.timeEntries),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => TimeEntryListView(_currentProject))).then(
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            TimeEntryListView(_currentProject))).then(
                   (_) {
                     _updateAppState();
                   },
@@ -169,7 +180,10 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             ListTile(
               title: Text(AppLocalizations.of(context)!.projects),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListView())).then(
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ProjectListView())).then(
                   (_) {
                     _loadProjects();
                   },
@@ -179,7 +193,8 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
             ListTile(
               title: Text(AppLocalizations.of(context)!.info),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => Imprint()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => Imprint()));
               },
             ),
           ],
@@ -248,7 +263,9 @@ class _MainPageState extends State<MainPage> with SingleTickerProviderStateMixin
 
   _updateAppState() {
     // Set the current state if there's a timing already running:
-    _timeEntryRepository.getLatestOpenTimeEntry(_currentProject.id).then((TimeEntry? entry) {
+    _timeEntryRepository
+        .getLatestOpenTimeEntry(_currentProject.id)
+        .then((TimeEntry? entry) {
       if (entry != null) {
         _setAppState(AppState.RUNNING);
       } else {
