@@ -117,6 +117,6 @@ class ExcelExport {
 
   String formatTime(DateTime time) {
     DateTime localTime = time.toLocal();
-    return "${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}:${localTime.second.toString().padLeft(2, '0')}";
+    return "${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}";
   }
 }

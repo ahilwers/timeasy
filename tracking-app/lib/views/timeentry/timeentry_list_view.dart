@@ -34,6 +34,7 @@ class DataList extends StatefulWidget {
 
 class _DataListState extends State<DataList> {
   List<TimeEntry>? timeEntries;
+  DateTimeRange? _currentDateRange;
   final Project _project;
   Locale? locale;
 
@@ -45,7 +46,7 @@ class _DataListState extends State<DataList> {
   @override
   void initState() {
     super.initState();
-    _loadTimeEntries();
+    _loadTimeEntries(_getInitialDateRange());
   }
 
   @override
@@ -77,8 +78,22 @@ class _DataListState extends State<DataList> {
             ),
           ],
         ),
-        body: SingleChildScrollView(
-            scrollDirection: Axis.vertical, child: _dataBody()),
+        body: Column(
+          children: <Widget>[
+            TextButton(
+              child: Text(
+                _getCurrentDateRangeText(),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium!
+                    .copyWith(fontWeight: FontWeight.bold),
+              ),
+              onPressed: _selectDateRange,
+            ),
+            SingleChildScrollView(
+                scrollDirection: Axis.vertical, child: _dataBody()),
+          ],
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             _addOrEditTimeEntry();
@@ -88,6 +103,14 @@ class _DataListState extends State<DataList> {
         ),
       );
     }
+  }
+
+  _getCurrentDateRangeText() {
+    var dateRange = _currentDateRange ?? _getInitialDateRange();
+    var formatter = new DateFormat.yMd(locale.toString());
+    return formatter.format(dateRange.start) +
+        " - " +
+        formatter.format(dateRange.end);
   }
 
   _dataBody() {
@@ -143,13 +166,14 @@ class _DataListState extends State<DataList> {
       ),
     )
         .then((value) {
-      _loadTimeEntries();
+      _loadTimeEntries(_currentDateRange ?? _getInitialDateRange());
     });
   }
 
-  void _loadTimeEntries() {
+  void _loadTimeEntries(DateTimeRange dateRange) {
+    _currentDateRange = dateRange;
     _timeEntryRepository
-        .getAllTimeEntries(_project.id)
+        .getTimeEntries(_project.id, dateRange.start, dateRange.end)
         .then((List<TimeEntry> value) {
       setState(() {
         timeEntries = value;
@@ -163,15 +187,11 @@ class _DataListState extends State<DataList> {
 
   Future<void> _saveTimeEntries() async {
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-
-    if (selectedDirectory != null) {
-      showDateRangePicker(
-        context: context,
-        firstDate: DateTime.fromMillisecondsSinceEpoch(0),
-        lastDate: DateTime.now(),
-        initialDateRange: _getInitialDataRange(),
-      ).then((value) => _exportTimeEntries(selectedDirectory, value!));
+    if (selectedDirectory == null) {
+      return;
     }
+    var dateRange = _currentDateRange ?? _getInitialDateRange();
+    _exportTimeEntries(selectedDirectory, dateRange);
   }
 
   void _exportTimeEntries(String directory, DateTimeRange dateRange) {
@@ -179,12 +199,22 @@ class _DataListState extends State<DataList> {
     export.Export();
   }
 
-  DateTimeRange _getInitialDataRange() {
+  DateTimeRange _getInitialDateRange() {
     var dateTools = DateTools();
     var year = DateTime.now().year;
     var weekNumber = dateTools.getWeekNumber(DateTime.now());
-    var firstDayOfWeek = dateTools.getFirstDayOfWeek(weekNumber, year);
     var lastDayOfWeek = dateTools.getLastDayOfWeek(weekNumber, year);
+    var firstDayOfWeek = lastDayOfWeek.subtract(new Duration(days: 31));
     return DateTimeRange(start: firstDayOfWeek, end: lastDayOfWeek);
+  }
+
+  void _selectDateRange() {
+    var dateRange = _currentDateRange ?? _getInitialDateRange();
+    showDateRangePicker(
+      context: context,
+      initialDateRange: dateRange,
+      firstDate: DateTime.fromMillisecondsSinceEpoch(0),
+      lastDate: dateRange.end,
+    ).then((value) => _loadTimeEntries(value ?? dateRange));
   }
 }
