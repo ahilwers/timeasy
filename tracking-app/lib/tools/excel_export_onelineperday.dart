@@ -6,12 +6,12 @@ import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/tools/date_tools.dart';
 
-class ExcelExport {
+class ExcelExportOneLinePerDay {
   final String directory;
   final DateTimeRange dateRange;
   final String projectId;
 
-  ExcelExport(this.directory, this.dateRange, this.projectId);
+  ExcelExportOneLinePerDay(this.directory, this.dateRange, this.projectId);
 
   Future<void> Export() async {
     var dateTools = DateTools();

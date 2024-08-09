@@ -7,8 +7,14 @@ import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/tools/date_tools.dart';
 import 'package:timeasy/tools/duration_formatter.dart';
-import 'package:timeasy/tools/excel_export.dart';
+import 'package:timeasy/tools/excel_export_onelineperday.dart';
+import 'package:timeasy/tools/excel_export_allentries.dart';
 import 'package:timeasy/views/timeentry/timeentry_edit_view.dart';
+
+enum ExportType {
+  AllEntries,
+  OneLinePerDay,
+}
 
 class TimeEntryListView extends StatelessWidget {
   final Project _project;
@@ -66,14 +72,14 @@ class _DataListState extends State<DataList> {
           actions: <Widget>[
             TextButton(
               child: Text(
-                "Speichern",
+                "Export",
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium!
                     .copyWith(color: Colors.white),
               ),
               onPressed: () {
-                _saveTimeEntries();
+                _showExportDialog(context);
               },
             ),
           ],
@@ -185,18 +191,29 @@ class _DataListState extends State<DataList> {
     return "${AppLocalizations.of(context)!.times} (${_project.name})";
   }
 
-  Future<void> _saveTimeEntries() async {
+  Future<void> _saveTimeEntries(ExportType exportType) async {
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
     if (selectedDirectory == null) {
       return;
     }
     var dateRange = _currentDateRange ?? _getInitialDateRange();
-    _exportTimeEntries(selectedDirectory, dateRange);
+    _exportTimeEntries(exportType, selectedDirectory, dateRange);
   }
 
-  void _exportTimeEntries(String directory, DateTimeRange dateRange) {
-    var export = ExcelExport(directory, dateRange, _project.id);
-    export.Export();
+  void _exportTimeEntries(
+      ExportType exportType, String directory, DateTimeRange dateRange) {
+    switch (exportType) {
+      case ExportType.AllEntries:
+        var export = ExcelExportAllEntries(directory, dateRange, _project.id);
+        export.Export();
+        break;
+      case ExportType.OneLinePerDay:
+        var export =
+            ExcelExportOneLinePerDay(directory, dateRange, _project.id);
+        export.Export();
+        break;
+      default:
+    }
   }
 
   DateTimeRange _getInitialDateRange() {
@@ -216,5 +233,51 @@ class _DataListState extends State<DataList> {
       firstDate: DateTime.fromMillisecondsSinceEpoch(0),
       lastDate: dateRange.end,
     ).then((value) => _loadTimeEntries(value ?? dateRange));
+  }
+
+  void _showExportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          title: Text('Wähle eine Option'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  _saveTimeEntries(ExportType.AllEntries); // Call the method
+                },
+                child: Text('Alle Zeiteinträge'),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  _saveTimeEntries(ExportType.OneLinePerDay); // Call the method
+                },
+                child: Text('Eine Zeile pro Tag'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
