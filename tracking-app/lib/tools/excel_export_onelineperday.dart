@@ -5,13 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/tools/date_tools.dart';
+import 'package:timeasy/tools/excel_export.dart';
 
-class ExcelExportOneLinePerDay {
+class ExcelExportOneLinePerDay extends ExcelExport {
   final String directory;
+  final String filename;
   final DateTimeRange dateRange;
   final String projectId;
 
-  ExcelExportOneLinePerDay(this.directory, this.dateRange, this.projectId);
+  ExcelExportOneLinePerDay(
+      this.directory, this.filename, this.dateRange, this.projectId)
+      : super();
 
   Future<void> Export() async {
     var dateTools = DateTools();
@@ -26,49 +30,39 @@ class ExcelExportOneLinePerDay {
     for (var i = 0; i < timeEntries.length; i++) {
       var startDate = dateTools.onlyDate(timeEntries[i].startTime);
       if ((lastDate == null) || (startDate != lastDate)) {
-        addTimeEntriesToSheet(sheetObject, i + 1, dayTimeEntries);
+        addTimeEntriesToSheet(sheetObject, currentLine, dayTimeEntries);
         dayTimeEntries.clear();
         currentLine++;
       }
       dayTimeEntries.add(timeEntries[i]);
       lastDate = dateTools.onlyDate(timeEntries[i].startTime);
     }
-    currentLine++;
     addTimeEntriesToSheet(sheetObject, currentLine, dayTimeEntries);
     var fileBytes = excel.save();
 
-    File('$directory/output_file_name.xlsx')
+    File('$directory/$filename')
       ..createSync(recursive: true)
       ..writeAsBytesSync(fileBytes!);
   }
 
   void addHeader(Sheet sheetObject) {
     sheetObject.cell(CellIndex.indexByString("A1")).value =
-        TextCellValue("Datum");
+        TextCellValue(getTranslation("date"));
     sheetObject.cell(CellIndex.indexByString("B1")).value =
-        TextCellValue("Start Time");
+        TextCellValue(getTranslation("start"));
     sheetObject.cell(CellIndex.indexByString("C1")).value =
-        TextCellValue("End Time");
-    sheetObject.cell(CellIndex.indexByString("D1")).value =
-        TextCellValue("Pause 1 Start");
-    sheetObject.cell(CellIndex.indexByString("E1")).value =
-        TextCellValue("Pause 1 End");
-    sheetObject.cell(CellIndex.indexByString("F1")).value =
-        TextCellValue("Pause 2 Start");
-    sheetObject.cell(CellIndex.indexByString("G1")).value =
-        TextCellValue("Pause 2 End");
-    sheetObject.cell(CellIndex.indexByString("H1")).value =
-        TextCellValue("Pause 3 Start");
-    sheetObject.cell(CellIndex.indexByString("I1")).value =
-        TextCellValue("Pause 3 End");
-    sheetObject.cell(CellIndex.indexByString("J1")).value =
-        TextCellValue("Pause 4 Start");
-    sheetObject.cell(CellIndex.indexByString("K1")).value =
-        TextCellValue("Pause 4 End");
-    sheetObject.cell(CellIndex.indexByString("L1")).value =
-        TextCellValue("Pause 5 Start");
-    sheetObject.cell(CellIndex.indexByString("M1")).value =
-        TextCellValue("Pause 5 End");
+        TextCellValue(getTranslation("end"));
+    var pauseCellIndex = 65 + 3; // D
+    for (var i = 0; i < 5; i++) {
+      var column = String.fromCharCode(pauseCellIndex);
+      var pauseText = getTranslation("pause");
+      sheetObject.cell(CellIndex.indexByString("${column}1")).value =
+          TextCellValue("${pauseText} ${i + 1} ${getTranslation("start")}");
+      pauseCellIndex++;
+      column = String.fromCharCode(pauseCellIndex);
+      sheetObject.cell(CellIndex.indexByString("${column}1")).value =
+          TextCellValue("${pauseText} ${i + 1} ${getTranslation("end")}");
+    }
   }
 
   void addTimeEntriesToSheet(

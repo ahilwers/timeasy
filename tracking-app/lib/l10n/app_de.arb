@@ -40,5 +40,9 @@
     "editProject": "Projekt bearbeiten",
     "errorMissingProjectName": "Bitte geben Sie einen Namen für das Projekt an.",
     "deleteProjectRequest": "Möchten Sie das Projekt wirklich löschen?",
-    "info": "Info"
-}    
+    "info": "Info",
+    "export": "Exportieren",
+    "timesExported": "Zeiten erfolgreich exportiert",
+    "date": "Datum",
+    "pause": "Pause"
+}   

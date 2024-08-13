@@ -4,13 +4,17 @@ import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/tools/excel_export.dart';
 
-class ExcelExportAllEntries {
+class ExcelExportAllEntries extends ExcelExport {
   final String directory;
+  final String filename;
   final DateTimeRange dateRange;
   final String projectId;
 
-  ExcelExportAllEntries(this.directory, this.dateRange, this.projectId);
+  ExcelExportAllEntries(
+      this.directory, this.filename, this.dateRange, this.projectId)
+      : super();
 
   Future<void> Export() async {
     var timeEntries = await getTimeEntries();
@@ -25,18 +29,18 @@ class ExcelExportAllEntries {
     });
     var fileBytes = excel.save();
 
-    File('$directory/output_file_name.xlsx')
+    File('$directory/$filename')
       ..createSync(recursive: true)
       ..writeAsBytesSync(fileBytes!);
   }
 
   void addHeader(Sheet sheetObject) {
     sheetObject.cell(CellIndex.indexByString("A1")).value =
-        TextCellValue("Datum");
+        TextCellValue(getTranslation("date"));
     sheetObject.cell(CellIndex.indexByString("B1")).value =
-        TextCellValue("Start Time");
+        TextCellValue(getTranslation("start"));
     sheetObject.cell(CellIndex.indexByString("C1")).value =
-        TextCellValue("End Time");
+        TextCellValue(getTranslation("end"));
   }
 
   void addTimeEntryToSheet(

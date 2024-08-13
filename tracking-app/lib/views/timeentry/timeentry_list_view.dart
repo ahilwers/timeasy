@@ -1,12 +1,14 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/tools/date_tools.dart';
 import 'package:timeasy/tools/duration_formatter.dart';
+import 'package:timeasy/tools/excel_export.dart';
 import 'package:timeasy/tools/excel_export_onelineperday.dart';
 import 'package:timeasy/tools/excel_export_allentries.dart';
 import 'package:timeasy/views/timeentry/timeentry_edit_view.dart';
@@ -43,6 +45,11 @@ class _DataListState extends State<DataList> {
   DateTimeRange? _currentDateRange;
   final Project _project;
   Locale? locale;
+  String exportMessage = "";
+  String exportDate = "";
+  String exportStart = "";
+  String exportEnd = "";
+  String exportPause = "";
 
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final DurationFormatter _durationFormatter = new DurationFormatter();
@@ -58,6 +65,11 @@ class _DataListState extends State<DataList> {
   @override
   Widget build(BuildContext context) {
     if (timeEntries == null) {
+      exportMessage = AppLocalizations.of(context)!.timesExported;
+      exportDate = AppLocalizations.of(context)!.date;
+      exportStart = AppLocalizations.of(context)!.start;
+      exportEnd = AppLocalizations.of(context)!.end;
+      exportPause = AppLocalizations.of(context)!.pause;
       return Scaffold(
         appBar: new AppBar(
           title: new Text(AppLocalizations.of(context)!.loadingTimes),
@@ -72,7 +84,7 @@ class _DataListState extends State<DataList> {
           actions: <Widget>[
             TextButton(
               child: Text(
-                "Export",
+                AppLocalizations.of(context)!.export,
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium!
@@ -191,29 +203,57 @@ class _DataListState extends State<DataList> {
     return "${AppLocalizations.of(context)!.times} (${_project.name})";
   }
 
-  Future<void> _saveTimeEntries(ExportType exportType) async {
+  Future<void> _saveTimeEntries(
+      BuildContext context, ExportType exportType) async {
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
     if (selectedDirectory == null) {
       return;
     }
     var dateRange = _currentDateRange ?? _getInitialDateRange();
-    _exportTimeEntries(exportType, selectedDirectory, dateRange);
+    _exportTimeEntries(context, exportType, selectedDirectory, dateRange);
   }
 
-  void _exportTimeEntries(
-      ExportType exportType, String directory, DateTimeRange dateRange) {
+  void _exportTimeEntries(BuildContext context, ExportType exportType,
+      String directory, DateTimeRange dateRange) {
+    var filename = _generateFilename(dateRange);
+    ExcelExport? export = null;
     switch (exportType) {
       case ExportType.AllEntries:
-        var export = ExcelExportAllEntries(directory, dateRange, _project.id);
-        export.Export();
+        export =
+            ExcelExportAllEntries(directory, filename, dateRange, _project.id);
         break;
       case ExportType.OneLinePerDay:
-        var export =
-            ExcelExportOneLinePerDay(directory, dateRange, _project.id);
-        export.Export();
+        export = ExcelExportOneLinePerDay(
+            directory, filename, dateRange, _project.id);
         break;
       default:
     }
+    export?.addTranslation("date", exportDate);
+    export?.addTranslation("start", exportStart);
+    export?.addTranslation("end", exportEnd);
+    export?.addTranslation("pause", exportPause);
+
+    export?.Export().then((value) => showToast(exportMessage));
+  }
+
+  String _generateFilename(DateTimeRange dateRange) {
+    var fromDate =
+        "${dateRange.start.year}-${dateRange.start.month.toString().padLeft(2, '0')}-${dateRange.start.day.toString().padLeft(2, '0')}";
+    var toDate =
+        "${dateRange.end.year}-${dateRange.end.month.toString().padLeft(2, '0')}-${dateRange.end.day.toString().padLeft(2, '0')}";
+    return "${fromDate} - ${toDate} ${_project.name}.xlsx";
+  }
+
+  void showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.black54,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
 
   DateTimeRange _getInitialDateRange() {
@@ -256,7 +296,8 @@ class _DataListState extends State<DataList> {
                 ),
                 onPressed: () {
                   Navigator.of(context).pop(); // Close the dialog
-                  _saveTimeEntries(ExportType.AllEntries); // Call the method
+                  _saveTimeEntries(
+                      context, ExportType.AllEntries); // Call the method
                 },
                 child: Text('Alle Zeiteinträge'),
               ),
@@ -270,7 +311,8 @@ class _DataListState extends State<DataList> {
                 ),
                 onPressed: () {
                   Navigator.of(context).pop(); // Close the dialog
-                  _saveTimeEntries(ExportType.OneLinePerDay); // Call the method
+                  _saveTimeEntries(
+                      context, ExportType.OneLinePerDay); // Call the method
                 },
                 child: Text('Eine Zeile pro Tag'),
               ),
