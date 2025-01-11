@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/tools/excel_export.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ExcelExportAllEntries extends ExcelExport {
   final String directory;
@@ -28,6 +29,8 @@ class ExcelExportAllEntries extends ExcelExport {
       currentLine++;
     });
     var fileBytes = excel.save();
+
+    await Permission.storage.request();
 
     File('$directory/$filename')
       ..createSync(recursive: true)
