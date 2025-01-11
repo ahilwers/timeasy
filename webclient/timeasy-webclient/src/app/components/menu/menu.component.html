@@ -1,0 +1,14 @@
+<div class="menu">
+  <span><a routerLink="/">Home</a></span>
+  <span><a routerLink="/dashboard">Dashboard</a></span>
+  @if (isAdmin) {
+    <span><a routerLink="/admin">Admin</a></span>
+  }
+  @if (!authenticated) {
+    <button (click)="login()">Login</button>
+  } @else {
+    <button (click)="logout()">Logout</button>
+    <a routerLink="/user">{{userProfile.username}}</a>
+  }
+
+</div>
