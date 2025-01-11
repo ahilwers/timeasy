@@ -5,23 +5,25 @@ version: "3"
 
 volumes:
   postgres_data:
+    name: keycloak-timeasy-data-dev
     driver: local
 
 services:
   postgres:
     image: "postgres"
+    container_name: "timeasy-keycloak-postgresql-dev"
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     restart: "always"
     environment:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password
       POSTGRES_DB: keycloak
       POSTGRES_HOST: postgres
-    user: $DOCKER_USER
 
   keycloak:
     image: bitnami/keycloak:latest
+    container_name: "timeasy-keycloak-dev"
     environment:
       KEYCLOAK_DATABASE_HOST: postgres
       KEYCLOAK_DATABASE_PORT: 5432

@@ -1,0 +1,17 @@
+version: "3"
+
+volumes:
+  timeasy-data:
+    name: timeasy-data-dev
+    driver: local
+
+services:
+  database:
+    image: "postgres"
+    container_name: "timeasy-postgresql-dev"
+    env_file:
+      - database.env
+    volumes:
+      - timeasy-data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432

@@ -18,7 +18,7 @@ echo $username
 echo $password
 
 export TOKEN=`http --form \
-    --auth timeasy-server:lXznQuMvVHsFTu11HXRzd6d0PqJ0NZg9 \
+    --auth timeasy-server:EpNELt4Acu8G7i6mR0ss5T3vrkXb6Yny \
     http://localhost:8180/realms/timeasy/protocol/openid-connect/token \
     'Content-Type:application/x-www-form-urlencoded' \
     username=$username \
@@ -27,4 +27,3 @@ export TOKEN=`http --form \
 
 echo $TOKEN
 bash
-
