@@ -1,11 +1,21 @@
 import {Component, OnInit} from '@angular/core';
-import {TimeEntry} from '../../models/timeentry.model';
-import {TimeEntryService} from '../../services/time-entry.service';
+import {TimeEntry} from '../../../models/timeentry.model';
+import {TimeEntryService} from '../../../services/time-entry.service';
+import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
+import {UtcToLocalTimePipe} from '../../../pipes/utc-to-local-time.pipe';
+import {Button} from 'primeng/button';
+import {TableModule} from 'primeng/table';
+import {Project} from '../../../models/project.model';
 
 @Component({
   selector: 'app-time-entry-list',
   standalone: true,
-  imports: [],
+  imports: [
+    UtcToLocalDatePipe,
+    UtcToLocalTimePipe,
+    Button,
+    TableModule,
+  ],
   templateUrl: './time-entry-list.component.html',
   styleUrl: './time-entry-list.component.css'
 })
@@ -33,4 +43,11 @@ export class TimeEntryListComponent implements OnInit {
   }
 
 
+  editTImeEntry(timeEntry: TimeEntry) {
+    console.log("editTimeEntry");
+  }
+
+  deleteTimeEntry(timeEntry: TimeEntry) {
+    console.log("deleteTimeEntry");
+  }
 }

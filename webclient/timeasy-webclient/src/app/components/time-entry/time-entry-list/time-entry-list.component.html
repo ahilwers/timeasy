@@ -1,0 +1,46 @@
+<h1>Time Entries</h1>
+
+<p-table [value]="timeEntries" [tableStyle]="{ 'min-width': '50rem' }">
+  <ng-template #header>
+    <tr>
+      <th>Start Time</th>
+      <th>End Time</th>
+      <th>Description</th>
+      <th></th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-timeEntry>
+    <tr>
+      <td>
+        {{ timeEntry.startTimeUTCUnix * 1000 | utcToLocalDate }}
+        <br />
+        {{ timeEntry.startTimeUTCUnix * 1000 | utcToLocalTime }}
+      </td>
+      <td>
+        @if (timeEntry.endTimeUTCUnix>0) {
+          {{ timeEntry.endTimeUTCUnix * 1000 | utcToLocalDate }}
+          <br />
+          {{ timeEntry.endTimeUTCUnix * 1000 | utcToLocalTime }}
+        }
+      </td>
+      <td>
+        {{ timeEntry.description }}
+      </td>
+      <td>
+        <div class="buttonCol">
+          <p-button
+            icon="pi pi-pencil"
+            [rounded]="true" [text]="true"
+            (click)="editTImeEntry(timeEntry)">
+          </p-button>
+          <p-button
+            icon="pi pi-trash"
+            [rounded]="true" [text]="true"
+            (click)="deleteTimeEntry(timeEntry)">
+          </p-button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+

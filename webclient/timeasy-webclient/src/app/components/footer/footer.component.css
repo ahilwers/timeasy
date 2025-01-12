@@ -1,6 +1,5 @@
 .footer {
-  background-color: #f4f4f4;
-  color: #333333;
+  background-color: var(--p-surface-950);
   text-align: left;
   padding: 10px;
   font-size: 1em;

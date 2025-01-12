@@ -1,18 +1,13 @@
 <nav class="menu">
-  <ul>
-    <li><a routerLink="/">Home</a></li>
-    <li><a routerLink="/dashboard">Dashboard</a></li>
-    <li><a routerLink="/timeentries">Time Entries</a></li>
-    @if (isAdmin) {
-      <li><a routerLink="/admin">Admin</a></li>
-    }
+  <div>
+    <p-menu [model]="menuItems" />
+  </div>
+  <div>
     @if (!authenticated) {
-      <li><button (click)="login()">Login</button><li>
+      <p-button (click)="login()" label="Login"/>
     } @else {
-      <li><button (click)="logout()">Logout</button></li>
-      <li><a routerLink="/user">{{userProfile.username}}</a></li>
+      <p-button (click)="logout()" label="Logout"/>
     }
-
-  </ul>
+  </div>
 </nav>
 

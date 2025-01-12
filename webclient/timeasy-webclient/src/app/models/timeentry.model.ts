@@ -1,7 +1,7 @@
 export interface TimeEntry {
-  Id: string;
+  id: string;
   projectId: string;
   description: string;
   startTimeUTCUnix: number;
-  EndTimeUTCUnix?: number;
+  endTimeUTCUnix: number;
 }

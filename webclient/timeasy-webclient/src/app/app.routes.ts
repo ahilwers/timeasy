@@ -21,8 +21,13 @@ const routes: Routes = [
     canActivate: [canActivateAuth],
   },
   {
+    path: 'projects',
+    loadComponent: () => import('./components/project/project-list/project-list.component').then(m => m.ProjectListComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
     path: 'timeentries',
-    loadComponent: () => import('./components/time-entry-list/time-entry-list.component').then(m => m.TimeEntryListComponent),
+    loadComponent: () => import('./components/time-entry/time-entry-list/time-entry-list.component').then(m => m.TimeEntryListComponent),
     canActivate: [canActivateAuth],
   },
   { path: '**', redirectTo: '' },

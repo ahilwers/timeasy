@@ -1,4 +1,4 @@
-import {ApplicationConfig} from '@angular/core';
+import {ApplicationConfig, LOCALE_ID} from '@angular/core';
 import {provideHttpClient, withInterceptors} from '@angular/common/http';
 import {appRoutes} from './app.routes';
 import {
@@ -11,7 +11,11 @@ import {
   UserActivityService,
   withAutoRefreshToken
 } from 'keycloak-angular';
-
+import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
+import {providePrimeNG} from 'primeng/config';
+import {ColorPreset} from './color.preset';
+import localeDe from '@angular/common/locales/de';
+import {registerLocaleData} from '@angular/common';
 
 export const provideKeycloakAngular = () =>
   provideKeycloak({
@@ -37,6 +41,11 @@ const urlCondition = createInterceptorCondition<IncludeBearerTokenCondition>({
   bearerPrefix: 'Bearer'
 });
 
+registerLocaleData(localeDe);
+const supportedLocales = ['en-US', 'de-DE'];
+const userLocale = navigator.language;
+const locale = supportedLocales.includes(userLocale) ? userLocale : 'en-US';
+
 export const appConfig: ApplicationConfig = {
   providers: [
     appRoutes,
@@ -46,6 +55,13 @@ export const appConfig: ApplicationConfig = {
     },
     provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
     provideKeycloakAngular(),
-
+    provideAnimationsAsync(),
+    providePrimeNG({
+      theme: {
+        preset: ColorPreset
+      },
+      ripple: true
+    }),
+    { provide: LOCALE_ID, useValue: locale }
   ],
 };

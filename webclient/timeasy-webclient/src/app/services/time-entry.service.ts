@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {map, Observable} from 'rxjs';
+import {TimeEntry} from '../models/timeentry.model';
 
 @Injectable({
   providedIn: 'root'
@@ -10,11 +11,21 @@ export class TimeEntryService {
 
   constructor(private http: HttpClient) {}
 
-  getTimeEntries(): Observable<any> {
-    return this.http.get(this.apiUrl);
+  getTimeEntries(): Observable<TimeEntry[]> {
+    return this.http.get<any[]>(this.apiUrl).pipe(
+      map((entries) =>
+        entries.map((entry) => ({
+          id: entry.Id,
+          projectId: entry.projectId,
+          description: entry.description,
+          startTimeUTCUnix: entry.startTimeUTCUnix,
+          endTimeUTCUnix: entry.EndTimeUTCUnix,
+        }))
+      )
+    );
   }
 
-  createTimeEntry(data: any): Observable<any> {
-    return this.http.post(this.apiUrl, data);
+  createTimeEntry(data: TimeEntry): Observable<TimeEntry> {
+    return this.http.post<TimeEntry>(this.apiUrl, data);
   }
 }
