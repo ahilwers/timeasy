@@ -1,0 +1,7 @@
+<h1>Time Entries</h1>
+
+<ul>
+  @for (timeEntry of timeEntries; track timeEntry) {
+    <li>{{timeEntry.startTimeUTCUnix}}</li>
+  }
+</ul>

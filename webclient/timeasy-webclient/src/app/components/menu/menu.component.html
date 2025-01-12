@@ -1,14 +1,18 @@
-<div class="menu">
-  <span><a routerLink="/">Home</a></span>
-  <span><a routerLink="/dashboard">Dashboard</a></span>
-  @if (isAdmin) {
-    <span><a routerLink="/admin">Admin</a></span>
-  }
-  @if (!authenticated) {
-    <button (click)="login()">Login</button>
-  } @else {
-    <button (click)="logout()">Logout</button>
-    <a routerLink="/user">{{userProfile.username}}</a>
-  }
+<nav class="menu">
+  <ul>
+    <li><a routerLink="/">Home</a></li>
+    <li><a routerLink="/dashboard">Dashboard</a></li>
+    <li><a routerLink="/timeentries">Time Entries</a></li>
+    @if (isAdmin) {
+      <li><a routerLink="/admin">Admin</a></li>
+    }
+    @if (!authenticated) {
+      <li><button (click)="login()">Login</button><li>
+    } @else {
+      <li><button (click)="logout()">Logout</button></li>
+      <li><a routerLink="/user">{{userProfile.username}}</a></li>
+    }
 
-</div>
+  </ul>
+</nav>
+

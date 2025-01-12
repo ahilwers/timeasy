@@ -1,4 +1,26 @@
 .menu {
-  display: flex;
-  gap: 5px;
+  width: 200px;
+  height: 100%;
+  background-color: #f4f4f4;
+  border-right: 1px solid #ddd;
+  padding: 15px;
+  flex-shrink: 0;
 }
+
+.menu ul {
+  list-style: none;
+}
+
+.menu li {
+  margin-bottom: 10px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: #333;
+}
+
+.menu a:hover {
+  text-decoration: underline;
+}
+

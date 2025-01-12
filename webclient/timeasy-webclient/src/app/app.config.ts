@@ -1,7 +1,16 @@
 import {ApplicationConfig} from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import {provideHttpClient, withInterceptors} from '@angular/common/http';
 import {appRoutes} from './app.routes';
-import {AutoRefreshTokenService, provideKeycloak, UserActivityService, withAutoRefreshToken} from 'keycloak-angular';
+import {
+  AutoRefreshTokenService,
+  createInterceptorCondition,
+  INCLUDE_BEARER_TOKEN_INTERCEPTOR_CONFIG,
+  IncludeBearerTokenCondition,
+  includeBearerTokenInterceptor,
+  provideKeycloak,
+  UserActivityService,
+  withAutoRefreshToken
+} from 'keycloak-angular';
 
 
 export const provideKeycloakAngular = () =>
@@ -23,11 +32,20 @@ export const provideKeycloakAngular = () =>
     providers: [AutoRefreshTokenService, UserActivityService]
   });
 
+const urlCondition = createInterceptorCondition<IncludeBearerTokenCondition>({
+  urlPattern: /^(http:\/\/localhost:8080)(\/.*)?$/i,
+  bearerPrefix: 'Bearer'
+});
 
 export const appConfig: ApplicationConfig = {
   providers: [
     appRoutes,
-    provideHttpClient(),
-    provideKeycloakAngular()
+    {
+      provide: INCLUDE_BEARER_TOKEN_INTERCEPTOR_CONFIG,
+      useValue: [urlCondition]
+    },
+    provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
+    provideKeycloakAngular(),
+
   ],
 };

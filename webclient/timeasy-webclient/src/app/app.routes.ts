@@ -20,6 +20,11 @@ const routes: Routes = [
     loadComponent: () => import('./components/user-profile/user-profile.component').then(m => m.UserProfileComponent),
     canActivate: [canActivateAuth],
   },
+  {
+    path: 'timeentries',
+    loadComponent: () => import('./components/time-entry-list/time-entry-list.component').then(m => m.TimeEntryListComponent),
+    canActivate: [canActivateAuth],
+  },
   { path: '**', redirectTo: '' },
 ];
 
