@@ -1,47 +1,75 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, effect, inject, OnInit, signal} from '@angular/core';
 import {Project} from '../../../models/project.model';
 import {ProjectService} from '../../../services/project.service';
-import {DataView} from 'primeng/dataview';
-import {JsonPipe, NgClass} from '@angular/common';
-import {Tag} from 'primeng/tag';
 import {Button} from 'primeng/button';
 import {TableModule} from 'primeng/table';
+import {Router} from '@angular/router';
+import {ConfirmationService} from 'primeng/api';
+import {ConfirmDialog} from 'primeng/confirmdialog';
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [DataView, NgClass, Tag, Button, JsonPipe, TableModule],
+  imports: [Button, TableModule, ConfirmDialog],
+  providers: [ConfirmationService],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.css'
 })
 export class ProjectListComponent implements OnInit {
 
-  projects : Project[] = [];
+  private readonly router = inject(Router);
+  private readonly projectService = inject(ProjectService);
+  private readonly confirmationService = inject(ConfirmationService);
 
-  constructor(private readonly projectService: ProjectService) {}
+  projects = this.projectService.getProjectsSignal();
+  projectDeleted = this.projectService.getDeletedSignal();
+  error = this.projectService.getErrorSignal()  ;
 
-  ngOnInit(): void {
-    this.loadProjects();
-  }
-
-  loadProjects(): void {
-    this.projectService.getProjects().subscribe({
-      next: (data) => {
-        this.projects = data;
-        console.log(this.projects)
-      },
-      error: (err) => {
-        console.error('Error fetching projects:', err);
+  constructor() {
+    effect(() => {
+      const projectDeleted = this.projectDeleted();
+      if (projectDeleted) {
+        this.projectService.loadProjects();
       }
     });
   }
 
+  ngOnInit(): void {
+    this.projectService.loadProjects()
+  }
+
   editProject(project: Project): void {
-    console.log('Edit project:', project);
+    this.router.navigate([`/projects/edit/${project.Id}`]);
+  }
+
+  addProject() {
+    this.router.navigate(['/projects/add']);
+  }
+
+  deleteProjectRequest(project: Project) {
+    this.confirmationService.confirm({
+      target: event?.target as EventTarget,
+      message: `Are you sure that you want to delete the project "${project.name}"?`,
+      header: 'Confirmation',
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: {
+        label: 'No',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptButtonProps: {
+        label: 'Yes',
+      },
+      accept: () => {
+        this.deleteProject(project)
+      },
+    });
   }
 
   deleteProject(project: Project): void {
-    console.log('Delete project:', project);
+    this.projectService.deleteProject(project);
   }
 
 

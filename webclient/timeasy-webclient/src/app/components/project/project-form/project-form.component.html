@@ -1,0 +1,8 @@
+<form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
+  <label for="name">Name</label>
+  <input type="text" id="name" formControlName="name">
+</form>
+
+@if (error()) {
+  <p>{{error()}}</p>
+}
