@@ -4,7 +4,9 @@
 </div>
 
 @if (error()) {
-  <p>{{error()}}</p>
+  <div class="error-message">
+    <p>{{error()}}</p>
+  </div>
 } @else {
   <p-confirmdialog></p-confirmdialog>
   <p-table [value]="projects()" [tableStyle]="{ 'min-width': '50rem' }">

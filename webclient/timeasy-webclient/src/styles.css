@@ -10,3 +10,61 @@ body, html {
   height: 100%;
   font-family: Arial, sans-serif;
 }
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.input-text {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.error-message {
+  color: var(--p-red-600);
+  font-weight: bold;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.button-container button {
+  min-width: 100px;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+.header-container h1 {
+  margin: 0;
+}
+
+.header-container button {
+  margin-left: auto;
+}
+

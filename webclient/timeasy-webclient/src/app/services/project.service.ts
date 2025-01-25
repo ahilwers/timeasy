@@ -13,6 +13,7 @@ export class ProjectService {
   private projects = signal<Project[]>([]);
   private projectDeleted = signal<boolean>(false);
   private error = signal<string | null>(null);
+  private updateSuccessful = signal<boolean>(false);
   private lastUpdatedProject = signal<Project | null>(null);
 
   constructor(private http: HttpClient) {
@@ -35,8 +36,12 @@ export class ProjectService {
     return this.error
   }
 
+  getUpdateSuccessfulSignal(): WritableSignal<boolean> {
+    return this.updateSuccessful;
+  }
+
   loadProject(id: string): void {
-    this.error.set(null);
+    this.reset();
     this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
       map((project) => ({
         Id: project.ID, // Mapping der API-Daten auf das Interface
@@ -54,7 +59,7 @@ export class ProjectService {
   }
 
   loadProjects(): void {
-    this.error.set(null);
+    this.reset();
     this.http.get<any[]>(this.apiUrl).pipe(
       map((projects) =>
         projects.map((project) => ({
@@ -73,51 +78,65 @@ export class ProjectService {
   }
 
   updateProject(data: Project): void {
+    this.reset();
     this.http.put<Project>(`${this.apiUrl}/${data.Id}`, data).pipe(
       tap((updatedProject) => {
         this.lastUpdatedProject.set(updatedProject);
+        this.updateSuccessful.set(true);
         this.error.set(null);
       }),
       catchError((err) => {
         const errorMessage = err.error?.message || 'Failed to update project.';
         this.error.set(errorMessage);
+        this.updateSuccessful.set(false);
         return of(null as unknown as Project);
       }),
-    ).subscribe((updatedProject) => {
-      this.lastUpdatedProject.set(updatedProject);
+    ).subscribe(() => {
     })
   }
 
   addProject(data: Project) {
+    this.reset();
     this.http.post<Project>(`${this.apiUrl}`, data).pipe(
       tap((addedProject) => {
         this.lastUpdatedProject.set(addedProject);
         this.error.set(null);
+        this.updateSuccessful.set(true);
       }),
       catchError((err) => {
         const errorMessage = err.error?.message || 'Failed to add project.';
         this.error.set(errorMessage);
+        this.updateSuccessful.set(false);
         return of(null as unknown as Project);
       }),
-    ).subscribe((addedProject) => {
-      this.lastUpdatedProject.set(addedProject);
+    ).subscribe(() => {
     })
   }
 
   deleteProject(data: Project) {
-    this.projectDeleted.set(false);
+    this.reset();
     this.http.delete<Project>(`${this.apiUrl}/${data.Id}`).pipe(
       tap(() => {
         this.projectDeleted.set(true);
         this.error.set(null);
+        this.updateSuccessful.set(true);
       }),
       catchError((err) => {
         const errorMessage = err.error?.message || 'Failed to delete project.';
         this.error.set(errorMessage);
+        this.updateSuccessful.set(false);
         return of(null as unknown as Project);
       }),
     ).subscribe(() => {
-      this.projectDeleted.set(true);
     })
+  }
+
+  reset() {
+    this.project.set(null);
+    this.projects.set([]);
+    this.projectDeleted.set(false);
+    this.error.set(null);
+    this.updateSuccessful.set(false);
+    this.lastUpdatedProject.set(null);
   }
 }
