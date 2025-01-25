@@ -7,6 +7,7 @@
 </div>
 
 <form class="form-container" [formGroup]="projectForm" (ngSubmit)="onSubmit()">
+  <p-toast></p-toast>
   <div class="form-field">
     <label for="name">Name</label>
     <input pInputText class="input-text" id="name" formControlName="name" />
@@ -16,9 +17,3 @@
     <p-button type="button" label="Cancel" severity="secondary" (click)="navigateToProjectList()"></p-button>
   </div>
 </form>
-
-@if (error()) {
-  <div class="error-message">
-    <p>{{error()}}</p>
-  </div>
-}

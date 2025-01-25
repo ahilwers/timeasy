@@ -5,6 +5,8 @@ import {ProjectService} from '../../../services/project.service';
 import {Project} from '../../../models/project.model';
 import {InputText} from 'primeng/inputtext';
 import {Button} from 'primeng/button';
+import {Toast} from 'primeng/toast';
+import {MessageService} from 'primeng/api';
 
 @Component({
   selector: 'app-project-form',
@@ -12,8 +14,10 @@ import {Button} from 'primeng/button';
   imports: [
     ReactiveFormsModule,
     InputText,
-    Button
+    Button,
+    Toast
   ],
+  providers: [MessageService],
   templateUrl: './project-form.component.html',
   styleUrl: './project-form.component.css'
 })
@@ -22,6 +26,7 @@ export class ProjectFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);
+  private readonly messageService = inject(MessageService);
 
   projectId : string = '';
   projectForm!: FormGroup;
@@ -43,6 +48,10 @@ export class ProjectFormComponent implements OnInit {
       const updateSuccessful = this.updateSuccessful();
       if (updateSuccessful) {
         this.navigateToProjectList();
+      }
+      const error = this.error();
+      if (error) {
+        this.messageService.add({severity: 'error', summary: 'Error', detail: error});
       }
     });
   }

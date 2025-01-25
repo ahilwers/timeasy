@@ -4,14 +4,15 @@ import {ProjectService} from '../../../services/project.service';
 import {Button} from 'primeng/button';
 import {TableModule} from 'primeng/table';
 import {Router} from '@angular/router';
-import {ConfirmationService} from 'primeng/api';
+import {ConfirmationService, MessageService} from 'primeng/api';
 import {ConfirmDialog} from 'primeng/confirmdialog';
+import {Toast} from 'primeng/toast';
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [Button, TableModule, ConfirmDialog],
-  providers: [ConfirmationService],
+  imports: [Button, TableModule, ConfirmDialog, Toast],
+  providers: [ConfirmationService, MessageService],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.css'
 })
@@ -20,6 +21,7 @@ export class ProjectListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly projectService = inject(ProjectService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
 
   projects = this.projectService.getProjectsSignal();
   projectDeleted = this.projectService.getDeletedSignal();
@@ -30,6 +32,10 @@ export class ProjectListComponent implements OnInit {
       const projectDeleted = this.projectDeleted();
       if (projectDeleted) {
         this.projectService.loadProjects();
+      }
+      const error = this.error();
+      if (error) {
+        this.messageService.add({severity: 'error', summary: 'Error', detail: error});
       }
     });
   }

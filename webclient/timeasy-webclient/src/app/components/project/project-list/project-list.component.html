@@ -3,9 +3,11 @@
   <p-button type="button" icon="pi pi-plus" (click)="addProject()"></p-button>
 </div>
 
-@if (error()) {
+<p-toast></p-toast>
+
+@if (projects()?.length === 0) {
   <div class="error-message">
-    <p>{{error()}}</p>
+    <p>No data available</p>
   </div>
 } @else {
   <p-confirmdialog></p-confirmdialog>
