@@ -1,5 +1,5 @@
 import {ApplicationConfig, LOCALE_ID} from '@angular/core';
-import {provideHttpClient, withInterceptors} from '@angular/common/http';
+import {HttpClient, provideHttpClient, withInterceptors} from '@angular/common/http';
 import {appRoutes} from './app.routes';
 import {
   AutoRefreshTokenService,
@@ -16,6 +16,8 @@ import {providePrimeNG} from 'primeng/config';
 import {ColorPreset} from './color.preset';
 import localeDe from '@angular/common/locales/de';
 import {registerLocaleData} from '@angular/common';
+import {provideTranslateService, TranslateLoader} from '@ngx-translate/core';
+import {TranslateHttpLoader} from '@ngx-translate/http-loader';
 
 export const provideKeycloakAngular = () =>
   provideKeycloak({
@@ -46,6 +48,10 @@ const supportedLocales = ['en-US', 'de-DE'];
 const userLocale = navigator.language;
 const locale = supportedLocales.includes(userLocale) ? userLocale : 'en-US';
 
+const httpLoaderFactory: (http: HttpClient) => TranslateHttpLoader = (http: HttpClient) =>
+  new TranslateHttpLoader(http, './i18n/', '.json');
+
+
 export const appConfig: ApplicationConfig = {
   providers: [
     appRoutes,
@@ -62,6 +68,14 @@ export const appConfig: ApplicationConfig = {
       },
       ripple: true
     }),
-    { provide: LOCALE_ID, useValue: locale }
+    { provide: LOCALE_ID, useValue: locale },
+    provideHttpClient(),
+    provideTranslateService({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: httpLoaderFactory,
+        deps: [HttpClient],
+      },
+    })
   ],
 };

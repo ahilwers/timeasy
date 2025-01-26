@@ -1,0 +1,15 @@
+{
+  "menu": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "timeEntries": "Time Entries",
+    "admin": "Admin"
+  },
+  "timeEntries": {
+    "headline": "Time Entries",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "description": "Description"
+  }
+}

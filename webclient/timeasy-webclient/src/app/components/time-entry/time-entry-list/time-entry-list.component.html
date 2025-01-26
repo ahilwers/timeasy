@@ -1,11 +1,11 @@
-<h1>Time Entries</h1>
+<h1>{{ 'timeEntries.headline' | translate}}</h1>
 
 <p-table [value]="timeEntries" [tableStyle]="{ 'min-width': '50rem' }">
   <ng-template #header>
     <tr>
-      <th>Start Time</th>
-      <th>End Time</th>
-      <th>Description</th>
+      <th> {{'timeEntries.startTime' | translate}}</th>
+      <th> {{'timeEntries.endTime' | translate}}</th>
+      <th> {{'timeEntries.description' | translate}}</th>
       <th></th>
     </tr>
   </ng-template>

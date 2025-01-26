@@ -4,6 +4,7 @@ import {KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs} from
 import {Button} from 'primeng/button';
 import {Menu} from 'primeng/menu';
 import {MenuItem} from 'primeng/api';
+import {TranslateService} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-menu',
@@ -18,6 +19,7 @@ export class MenuComponent implements OnInit {
   isAdmin : boolean = false;
   private readonly keyCloak = inject(Keycloak);
   private readonly keyCloakSignal = inject(KEYCLOAK_EVENT_SIGNAL);
+  private readonly translateService = inject(TranslateService)
 
   menuItems : MenuItem[] = [];
 
@@ -57,22 +59,22 @@ export class MenuComponent implements OnInit {
   updateMenu() {
     this.menuItems = [
       {
-        label: 'Home',
+        label: this.translateService.instant('menu.home'),
         icon: 'pi pi-home',
         routerLink: '/'
       },
       {
-        label: 'Dashboard',
+        label: this.translateService.instant('menu.dashboard'),
         icon: 'pi pi-gauge',
         routerLink: '/dashboard'
       },
       {
-        label: 'Project',
+        label: this.translateService.instant('menu.projects'),
         icon: 'pi pi-clipboard',
         routerLink: '/projects'
       },
       {
-        label: 'Time Entries',
+        label: this.translateService.instant('menu.timeEntries'),
         icon: 'pi pi-calendar-clock',
         routerLink: '/timeentries'
       }
@@ -80,7 +82,7 @@ export class MenuComponent implements OnInit {
 
     if (this.authenticated && this.isAdmin) {
       this.menuItems.push({
-        label: 'Admin',
+        label: this.translateService.instant('menu.admin'),
         icon: 'pi pi-shield',
         routerLink: '/admin'
       });
