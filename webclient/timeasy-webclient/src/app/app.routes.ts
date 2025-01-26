@@ -26,6 +26,16 @@ const routes: Routes = [
     canActivate: [canActivateAuth],
   },
   {
+    path: 'projects/edit/:projectId',
+    loadComponent: () => import('./components/project/project-form/project-form.component').then(m => m.ProjectFormComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
+    path: 'projects/add',
+    loadComponent: () => import('./components/project/project-form/project-form.component').then(m => m.ProjectFormComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
     path: 'timeentries',
     loadComponent: () => import('./components/time-entry/time-entry-list/time-entry-list.component').then(m => m.TimeEntryListComponent),
     canActivate: [canActivateAuth],

@@ -1,6 +1,12 @@
-<h1>Projects</h1>
+<div class="header-container">
+  <h1>Projects</h1>
+  <p-button type="button" icon="pi pi-plus" (click)="addProject()"></p-button>
+</div>
 
-<p-table [value]="projects" [tableStyle]="{ 'min-width': '50rem' }">
+<p-toast></p-toast>
+
+<p-confirmdialog></p-confirmdialog>
+<p-table [value]="projects()" [tableStyle]="{ 'min-width': '50rem' }">
   <ng-template #header>
     <tr>
       <th>Name</th>
@@ -20,11 +26,13 @@
           <p-button
             icon="pi pi-trash"
             [rounded]="true" [text]="true"
-            (click)="deleteProject(project)">
+            (click)="deleteProjectRequest(project)">
           </p-button>
         </div>
       </td>
     </tr>
   </ng-template>
 </p-table>
+
+
 
