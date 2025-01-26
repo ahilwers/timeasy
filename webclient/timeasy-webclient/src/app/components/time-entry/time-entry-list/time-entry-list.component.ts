@@ -6,6 +6,7 @@ import {UtcToLocalTimePipe} from '../../../pipes/utc-to-local-time.pipe';
 import {Button} from 'primeng/button';
 import {TableModule} from 'primeng/table';
 import {Project} from '../../../models/project.model';
+import {TranslatePipe} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-time-entry-list',
@@ -15,6 +16,7 @@ import {Project} from '../../../models/project.model';
     UtcToLocalTimePipe,
     Button,
     TableModule,
+    TranslatePipe,
   ],
   templateUrl: './time-entry-list.component.html',
   styleUrl: './time-entry-list.component.css'
