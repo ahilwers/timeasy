@@ -5,40 +5,34 @@
 
 <p-toast></p-toast>
 
-@if (projects()?.length === 0) {
-  <div class="error-message">
-    <p>No data available</p>
-  </div>
-} @else {
-  <p-confirmdialog></p-confirmdialog>
-  <p-table [value]="projects()" [tableStyle]="{ 'min-width': '50rem' }">
-    <ng-template #header>
-      <tr>
-        <th>Name</th>
-        <th></th>
-      </tr>
-    </ng-template>
-    <ng-template #body let-project>
-      <tr>
-        <td>{{ project.name }}</td>
-        <td>
-          <div class="buttonCol">
-            <p-button
-              icon="pi pi-pencil"
-              [rounded]="true" [text]="true"
-              (click)="editProject(project)">
-            </p-button>
-            <p-button
-              icon="pi pi-trash"
-              [rounded]="true" [text]="true"
-              (click)="deleteProjectRequest(project)">
-            </p-button>
-          </div>
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
-}
+<p-confirmdialog></p-confirmdialog>
+<p-table [value]="projects()" [tableStyle]="{ 'min-width': '50rem' }">
+  <ng-template #header>
+    <tr>
+      <th>Name</th>
+      <th></th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-project>
+    <tr>
+      <td>{{ project.name }}</td>
+      <td>
+        <div class="buttonCol">
+          <p-button
+            icon="pi pi-pencil"
+            [rounded]="true" [text]="true"
+            (click)="editProject(project)">
+          </p-button>
+          <p-button
+            icon="pi pi-trash"
+            [rounded]="true" [text]="true"
+            (click)="deleteProjectRequest(project)">
+          </p-button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
 
 
 

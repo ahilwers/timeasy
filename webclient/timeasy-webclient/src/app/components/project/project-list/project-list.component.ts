@@ -23,14 +23,13 @@ export class ProjectListComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
-  projects = this.projectService.getProjectsSignal();
-  projectDeleted = this.projectService.getDeletedSignal();
-  error = this.projectService.getErrorSignal()  ;
+  projects = this.projectService.projects();
+  deleted = this.projectService.deleted();
+  error = this.projectService.error();
 
   constructor() {
     effect(() => {
-      const projectDeleted = this.projectDeleted();
-      if (projectDeleted) {
+      if (this.deleted()) {
         this.projectService.loadProjects();
       }
       const error = this.error();
@@ -77,6 +76,4 @@ export class ProjectListComponent implements OnInit {
   deleteProject(project: Project): void {
     this.projectService.deleteProject(project);
   }
-
-
 }

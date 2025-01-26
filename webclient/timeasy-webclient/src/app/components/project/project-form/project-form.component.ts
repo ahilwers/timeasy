@@ -32,12 +32,12 @@ export class ProjectFormComponent implements OnInit {
   projectForm!: FormGroup;
 
   isNew = signal<boolean>(true);
-  project = this.projectService.getProjectSignal();
-  error = this.projectService.getErrorSignal();
-  updateSuccessful = this.projectService.getUpdateSuccessfulSignal();
+  project = this.projectService.project();
+  error = this.projectService.error();
+  updateSuccessful = this.projectService.updateSuccessful();
 
   constructor() {
-    this.projectService.reset();
+    this.projectService.resetState();
     effect(() => {
       const projectData = this.project();
       if (projectData) {
