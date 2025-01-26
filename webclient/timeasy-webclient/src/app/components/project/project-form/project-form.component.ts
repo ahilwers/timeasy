@@ -7,6 +7,7 @@ import {InputText} from 'primeng/inputtext';
 import {Button} from 'primeng/button';
 import {Toast} from 'primeng/toast';
 import {MessageService} from 'primeng/api';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-project-form',
@@ -15,7 +16,8 @@ import {MessageService} from 'primeng/api';
     ReactiveFormsModule,
     InputText,
     Button,
-    Toast
+    Toast,
+    TranslatePipe
   ],
   providers: [MessageService],
   templateUrl: './project-form.component.html',
@@ -27,6 +29,7 @@ export class ProjectFormComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);
   private readonly messageService = inject(MessageService);
+  private readonly translateService = inject(TranslateService);
 
   projectId : string = '';
   projectForm!: FormGroup;
@@ -51,7 +54,7 @@ export class ProjectFormComponent implements OnInit {
       }
       const error = this.error();
       if (error) {
-        this.messageService.add({severity: 'error', summary: 'Error', detail: error});
+        this.messageService.add({severity: 'error', summary: this.translateService.instant('globals.error'), detail: error});
       }
     });
   }

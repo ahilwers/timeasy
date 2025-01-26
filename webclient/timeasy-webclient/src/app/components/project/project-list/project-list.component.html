@@ -1,5 +1,5 @@
 <div class="header-container">
-  <h1>Projects</h1>
+  <h1>{{ 'projects.headline' | translate}}</h1>
   <p-button type="button" icon="pi pi-plus" (click)="addProject()"></p-button>
 </div>
 
@@ -9,7 +9,7 @@
 <p-table [value]="projects()" [tableStyle]="{ 'min-width': '50rem' }">
   <ng-template #header>
     <tr>
-      <th>Name</th>
+      <th>{{ 'projects.name' | translate}}</th>
       <th></th>
     </tr>
   </ng-template>

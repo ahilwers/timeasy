@@ -11,5 +11,21 @@
     "startTime": "Start Time",
     "endTime": "End Time",
     "description": "Description"
+  },
+  "projects": {
+    "headline": "Projects",
+    "name": "Name",
+    "add" : "Add Project",
+    "edit" : "Edit Project",
+    "errorLoadingProject": "Failed to load project.",
+    "errorLoadingProjects": "Failed to load projects.",
+    "errorUpdatingProject": "Failed to update project.",
+    "errorDeletingProject": "Failed to delete project.",
+    "errorAddingProject": "Failed to add project."
+  },
+  "globals": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "error": "Error"
   }
 }

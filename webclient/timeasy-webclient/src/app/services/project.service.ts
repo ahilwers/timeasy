@@ -1,9 +1,10 @@
-import {computed, Injectable, signal, WritableSignal} from '@angular/core';
+import {computed, inject, Injectable, signal, WritableSignal} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {catchError, map, of, tap} from 'rxjs';
 import {Project} from '../models/project.model';
 import {ProjectState} from './project.state';
 import {environment} from '../../environments/environment';
+import {TranslateService} from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,8 @@ import {environment} from '../../environments/environment';
 export class ProjectService {
   private readonly apiUrl = `${environment.apiUrl}/projects`;
   private readonly state = new ProjectState();
+
+  private readonly translateService = inject(TranslateService);
 
   constructor(private http: HttpClient) {
     console.log("ProjectService constructor");
@@ -37,7 +40,7 @@ export class ProjectService {
       },
       error: (err) => {
         console.error('Failed to load project:', err);
-        this.state.error.set('Failed to load project. Please try again later.');
+        this.state.error.set(this.translateService.instant('projects.errorLoadingProject'));
       }
     });
   }
@@ -53,7 +56,7 @@ export class ProjectService {
       ),
       catchError((err) => {
         console.error('Failed to load projects:', err);
-        this.state.error.set('Failed to load projects. Please try again later.');
+        this.state.error.set(this.translateService.instant('projects.errorLoadingProjects'));
         return of([]);
       })
     ).subscribe((transformedProjects) => {
@@ -70,7 +73,7 @@ export class ProjectService {
         this.state.error.set(null);
       }),
       catchError((err) => {
-        const errorMessage = err.error?.message || 'Failed to update project.';
+        const errorMessage = err.error?.message || this.translateService.instant('projects.errorUpdatingProject');
         this.state.error.set(errorMessage);
         this.state.updateSuccessful.set(false);
         return of(null as unknown as Project);
@@ -88,7 +91,7 @@ export class ProjectService {
         this.state.updateSuccessful.set(true);
       }),
       catchError((err) => {
-        const errorMessage = err.error?.message || 'Failed to add project.';
+        const errorMessage = err.error?.message || this.translateService.instant('projects.errorAddingProject');
         this.state.error.set(errorMessage);
         this.state.updateSuccessful.set(false);
         return of(null as unknown as Project);
@@ -106,7 +109,7 @@ export class ProjectService {
         this.state.updateSuccessful.set(true);
       }),
       catchError((err) => {
-        const errorMessage = err.error?.message || 'Failed to delete project.';
+        const errorMessage = err.error?.message || this.translateService.instant('projects.errorDeletingProject');
         this.state.error.set(errorMessage);
         this.state.updateSuccessful.set(false);
         return of(null as unknown as Project);

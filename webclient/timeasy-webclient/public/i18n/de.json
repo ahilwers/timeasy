@@ -11,5 +11,21 @@
     "startTime": "Start",
     "endTime": "Ende",
     "description": "Beschreibung"
+  },
+  "projects": {
+    "headline": "Projekte",
+    "name": "Name",
+    "add" : "Neues Projekt",
+    "edit" : "Projekt bearbeiten",
+    "errorLoadingProject": "Projekt konnte nicht geladen werden.",
+    "errorLoadingProjects": "Die Projekte konnten nicht geladen werden.",
+    "errorUpdatingProject": "Das Projekt konnte nicht gespeichert werden.",
+    "errorDeletingProject": "Das Projekt konnte nicht gelöscht werden.",
+    "errorAddingProject": "Das Projekt konnte nicht erstellt werden."
+  },
+  "globals": {
+    "ok": "OK",
+    "cancel": "Abbrechen",
+    "error": "Fehler"
   }
 }
