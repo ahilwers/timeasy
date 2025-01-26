@@ -7,11 +7,12 @@ import {Router} from '@angular/router';
 import {ConfirmationService, MessageService} from 'primeng/api';
 import {ConfirmDialog} from 'primeng/confirmdialog';
 import {Toast} from 'primeng/toast';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [Button, TableModule, ConfirmDialog, Toast],
+  imports: [Button, TableModule, ConfirmDialog, Toast, TranslatePipe],
   providers: [ConfirmationService, MessageService],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.css'
@@ -22,6 +23,7 @@ export class ProjectListComponent implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  private readonly translateService = inject(TranslateService);
 
   projects = this.projectService.projects();
   deleted = this.projectService.deleted();
@@ -34,7 +36,7 @@ export class ProjectListComponent implements OnInit {
       }
       const error = this.error();
       if (error) {
-        this.messageService.add({severity: 'error', summary: 'Error', detail: error});
+        this.messageService.add({severity: 'error', summary: this.translateService.instant('globals.error'), detail: error});
       }
     });
   }

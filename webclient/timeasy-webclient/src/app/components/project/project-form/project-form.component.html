@@ -1,19 +1,19 @@
 <div class="header-container">
   @if (isNew()) {
-    <h1>Add Project</h1>
+    <h1>{{ 'projects.add' | translate }}</h1>
   } @else {
-    <h1>Edit Project - {{project()?.name ?? ''}}</h1>
+    <h1>{{ 'projects.edit' | translate }} - {{project()?.name ?? ''}}</h1>
   }
 </div>
 
 <form class="form-container" [formGroup]="projectForm" (ngSubmit)="onSubmit()">
   <p-toast></p-toast>
   <div class="form-field">
-    <label for="name">Name</label>
+    <label for="name">{{ 'projects.name' | translate }}</label>
     <input pInputText class="input-text" id="name" formControlName="name" />
   </div>
   <div class="button-container">
-    <p-button type="submit" label="OK" severity="primary"></p-button>
-    <p-button type="button" label="Cancel" severity="secondary" (click)="navigateToProjectList()"></p-button>
+    <p-button type="submit" label="{{ 'globals.ok' | translate }}" severity="primary"></p-button>
+    <p-button type="button" label="{{ 'globals.cancel' | translate }}" severity="secondary" (click)="navigateToProjectList()"></p-button>
   </div>
 </form>
