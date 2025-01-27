@@ -1,6 +1,8 @@
 <h1>{{ 'timeEntries.headline' | translate}}</h1>
 
-<p-table [value]="timeEntries" [tableStyle]="{ 'min-width': '50rem' }">
+<p-toast></p-toast>
+<p-confirmdialog></p-confirmdialog>
+<p-table [value]="timeEntries()" [tableStyle]="{ 'min-width': '50rem' }">
   <ng-template #header>
     <tr>
       <th> {{'timeEntries.startTime' | translate}}</th>
@@ -12,15 +14,15 @@
   <ng-template #body let-timeEntry>
     <tr>
       <td>
-        {{ timeEntry.startTimeUTCUnix * 1000 | utcToLocalDate }}
+        {{ timeEntry.startTimeUTCUnix | utcToLocalDate }}
         <br />
-        {{ timeEntry.startTimeUTCUnix * 1000 | utcToLocalTime }}
+        {{ timeEntry.startTimeUTCUnix | utcToLocalTime }}
       </td>
       <td>
         @if (timeEntry.endTimeUTCUnix>0) {
-          {{ timeEntry.endTimeUTCUnix * 1000 | utcToLocalDate }}
+          {{ timeEntry.endTimeUTCUnix | utcToLocalDate }}
           <br />
-          {{ timeEntry.endTimeUTCUnix * 1000 | utcToLocalTime }}
+          {{ timeEntry.endTimeUTCUnix | utcToLocalTime }}
         }
       </td>
       <td>
@@ -31,12 +33,12 @@
           <p-button
             icon="pi pi-pencil"
             [rounded]="true" [text]="true"
-            (click)="editTImeEntry(timeEntry)">
+            (click)="editTimeEntry(timeEntry)">
           </p-button>
           <p-button
             icon="pi pi-trash"
             [rounded]="true" [text]="true"
-            (click)="deleteTimeEntry(timeEntry)">
+            (click)="deleteTimeEntryRequest(timeEntry)">
           </p-button>
         </div>
       </td>

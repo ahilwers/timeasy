@@ -10,7 +10,11 @@
     "headline": "Time Entries",
     "startTime": "Start Time",
     "endTime": "End Time",
-    "description": "Description"
+    "description": "Description",
+    "timeEntries.errorLoadingTimeEntries": "Failed to load time entries.",
+    "timeEntries.errorDeletingTimeEntry": "Failed to delete time entry.",
+    "timeEntries.errorUpdatingTimeEntry": "Failed to update time entry.",
+    "timeEntries.errorAddingTimeEntry": "Failed to add time entry."
   },
   "projects": {
     "headline": "Projects",

@@ -15,10 +15,7 @@ export class ProjectService {
   private readonly state = new ProjectState();
 
   private readonly translateService = inject(TranslateService);
-
-  constructor(private http: HttpClient) {
-    console.log("ProjectService constructor");
-  }
+  private readonly http = inject(HttpClient);
 
   projects = computed(() => this.state.projects);
   project = computed(() => this.state.project);

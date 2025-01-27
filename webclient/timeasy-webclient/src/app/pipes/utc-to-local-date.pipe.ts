@@ -8,7 +8,7 @@ export class UtcToLocalDatePipe implements PipeTransform {
   constructor(@Inject(LOCALE_ID) private locale: string) {}
 
   transform(value: number): string {
-    const utcDate = new Date(value);
+    const utcDate = new Date(value*1000);
     return utcDate.toLocaleDateString(this.locale, {
       year: 'numeric',
       month: '2-digit',

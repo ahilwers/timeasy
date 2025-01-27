@@ -40,6 +40,16 @@ const routes: Routes = [
     loadComponent: () => import('./components/time-entry/time-entry-list/time-entry-list.component').then(m => m.TimeEntryListComponent),
     canActivate: [canActivateAuth],
   },
+  {
+    path: 'timeentries/edit/:timeEntryId',
+    loadComponent: () => import('./components/time-entry/time-entry-form/time-entry-form.component').then(m => m.TimeEntryFormComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
+    path: 'timeentries/add',
+    loadComponent: () => import('./components/time-entry/time-entry-form/time-entry-form.component').then(m => m.TimeEntryFormComponent),
+    canActivate: [canActivateAuth],
+  },
   { path: '**', redirectTo: '' },
 ];
 

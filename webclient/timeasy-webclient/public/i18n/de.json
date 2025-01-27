@@ -10,7 +10,11 @@
     "headline": "Zeiten",
     "startTime": "Start",
     "endTime": "Ende",
-    "description": "Beschreibung"
+    "description": "Beschreibung",
+    "timeEntries.errorLoadingTimeEntries": "Der Zeiteintrag konnte nicht geladen werden.",
+    "timeEntries.errorDeletingTimeEntry": "Der Zeiteintrag konnte nicht gelöscht werden.",
+    "timeEntries.errorUpdatingTimeEntry": "Der Zeiteintrag konnte nicht gespeichert werden.",
+    "timeEntries.errorAddingTimeEntry": "Der Zeiteintrag konnte nicht erstellt werden."
   },
   "projects": {
     "headline": "Projekte",
