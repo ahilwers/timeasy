@@ -1,1 +1,47 @@
-<p>time-entry-form works!</p>
+<div class="header-container">
+  @if (isNew()) {
+    <h1>{{ 'timeEntries.add' | translate }}</h1>
+  } @else {
+    <h1>{{ 'timeEntries.edit' | translate }} - {{timeEntry()?.description ?? ''}}</h1>
+  }
+</div>
+
+<form class="form-container" [formGroup]="timeEntryForm" (ngSubmit)="onSubmit()">
+  <p-toast></p-toast>
+  <div class="form-timeline">
+    <div class="form-field">
+      <label for="startDate"> {{ 'timeEntries.startDate' | translate }} </label>
+      <p-datepicker id="startDate" formControlName="startDate" [iconDisplay]="'input'" [showIcon]="true"></p-datepicker>
+    </div>
+    <div class="form-field">
+      <label for="startTime"> {{ 'timeEntries.startTime' | translate }} </label>
+      <p-datepicker id="startTime" formControlName="startTime" [timeOnly]="true"[iconDisplay]="'input'" [showIcon]="true">
+        <ng-template #inputicon let-clickCallBack="clickCallBack">
+          <i class="pi pi-clock" (click)="clickCallBack($event)"></i>
+        </ng-template>
+      </p-datepicker>
+    </div>
+  </div>
+  <div class="form-timeline">
+    <div class="form-field">
+      <label for="endDate"> {{ 'timeEntries.endDate' | translate }} </label>
+      <p-datepicker id="endDate" formControlName="endDate" [iconDisplay]="'input'" [showIcon]="true"></p-datepicker>
+    </div>
+    <div class="form-field">
+      <label for="endTime"> {{ 'timeEntries.endTime' | translate }} </label>
+      <p-datepicker id="endTime" formControlName="endTime" [timeOnly]="true"[iconDisplay]="'input'" [showIcon]="true">
+        <ng-template #inputicon let-clickCallBack="clickCallBack">
+          <i class="pi pi-clock" (click)="clickCallBack($event)"></i>
+        </ng-template>
+      </p-datepicker>
+    </div>
+  </div>
+  <div class="form-field">
+    <label for="description">{{ 'timeEntries.description' | translate }}</label>
+    <input pInputText class="input-text" id="description" formControlName="description" />
+  </div>
+  <div class="button-container">
+    <p-button type="submit" label="{{ 'globals.ok' | translate }}" severity="primary"></p-button>
+    <p-button type="button" label="{{ 'globals.cancel' | translate }}" severity="secondary" (click)="navigateToTimeEntryList()"></p-button>
+  </div>
+</form>

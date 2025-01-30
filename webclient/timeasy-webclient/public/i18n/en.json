@@ -9,8 +9,12 @@
   "timeEntries": {
     "headline": "Time Entries",
     "startTime": "Start Time",
+    "startDate": "Start Date",
     "endTime": "End Time",
+    "endDate": "End Date",
     "description": "Description",
+    "add" : "Add Time Entry",
+    "edit" : "Edit Time Entry",
     "timeEntries.errorLoadingTimeEntries": "Failed to load time entries.",
     "timeEntries.errorDeletingTimeEntry": "Failed to delete time entry.",
     "timeEntries.errorUpdatingTimeEntry": "Failed to update time entry.",

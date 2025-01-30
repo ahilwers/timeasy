@@ -1,15 +1,26 @@
 import {Component, effect, inject, OnInit, signal} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MessageService} from 'primeng/api';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {TimeEntry} from '../../../models/timeentry.model';
 import {TimeEntryService} from '../../../services/time-entry.service';
+import {Button} from 'primeng/button';
+import {InputText} from 'primeng/inputtext';
+import {Toast} from 'primeng/toast';
+import {DatePicker} from 'primeng/datepicker';
 
 @Component({
   selector: 'app-time-entry-form',
   standalone: true,
-  imports: [],
+  imports: [
+    Button,
+    InputText,
+    ReactiveFormsModule,
+    Toast,
+    TranslatePipe,
+    DatePicker
+  ],
   providers: [MessageService],
   templateUrl: './time-entry-form.component.html',
   styleUrl: './time-entry-form.component.css'
@@ -36,10 +47,14 @@ export class TimeEntryFormComponent implements OnInit {
     effect(() => {
       const timeEntryData = this.timeEntry();
       if (timeEntryData) {
+        const startTime = new Date(timeEntryData.startTimeUTCUnix*1000);
+        const endTime = timeEntryData.endTimeUTCUnix>0 ? new Date(timeEntryData.startTimeUTCUnix*1000) : undefined;
         this.timeEntryForm.patchValue({
           projectId: timeEntryData.projectId,
-          startTime: timeEntryData.startTimeUTCUnix,
-          endTime: timeEntryData.endTimeUTCUnix,
+          startTime: startTime,
+          startDate: startTime,
+          endTime: endTime,
+          endDate: endTime,
           description: timeEntryData.description
         });
       }
@@ -57,7 +72,9 @@ export class TimeEntryFormComponent implements OnInit {
   ngOnInit() {
     this.timeEntryForm = this.formBuilder.group({
       projectId: ['', [Validators.required]],
-      startTime: ['', [Validators.required]],
+      startTime: [new Date(), [Validators.required]],
+      startDate: [new Date(), [Validators.required]],
+      endDate: ['', []],
       endTime: ['', []],
       description: ['', [Validators.required]]
     });
@@ -73,19 +90,40 @@ export class TimeEntryFormComponent implements OnInit {
   onSubmit() {
     console.log(this.timeEntryForm.value);
     if (this.timeEntryForm.valid) {
+      const startTimeStamp = this.generateTimeStamp(this.timeEntryForm.value.startDate, this.timeEntryForm.value.startTime);
+      const endTimeStamp = this.timeEntryForm.value.endTime ? this.generateTimeStamp(this.timeEntryForm.value.endDate, this.timeEntryForm.value.endTime) : 0;
       const timeEntry: TimeEntry = {
         id: this.timeEntryId,
         projectId: this.timeEntryForm.value.projectId,
-        startTimeUTCUnix: this.timeEntryForm.value.startTime,
-        endTimeUTCUnix: this.timeEntryForm.value.endTime,
+        startTimeUTCUnix: startTimeStamp,
+        endTimeUTCUnix: endTimeStamp,
         description: this.timeEntryForm.value.description
       }
       if (this.isNew()) {
         this.timeEntryService.addTimeEntry(timeEntry);
       } else {
-        this.timeEntryService.updateTimeEntry(timeEntry);
+        console.log(startTimeStamp);
+        console.log(endTimeStamp);
+//        this.timeEntryService.updateTimeEntry(timeEntry);
       }
     }
+  }
+
+  private generateTimeStamp(date: Date, time: Date): number {
+    const combinedDateAndTime = this.combineDateAndTime(date, time);
+    return Math.floor(combinedDateAndTime.getTime()/1000);
+  }
+
+  private combineDateAndTime(date: Date, time: Date): Date {
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      time.getHours(),
+      time.getMinutes(),
+      time.getSeconds(),
+      time.getMilliseconds()
+    )
   }
 
   navigateToTimeEntryList() {
