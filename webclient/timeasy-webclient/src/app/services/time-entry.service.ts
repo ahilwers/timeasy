@@ -5,6 +5,7 @@ import {TimeEntry} from '../models/timeentry.model';
 import {environment} from '../../environments/environment';
 import {TranslateService} from '@ngx-translate/core';
 import {TimeEntryState} from './time-entry.state';
+import {Project} from '../models/project.model';
 
 @Injectable({
   providedIn: 'root'

@@ -1,5 +1,6 @@
 import {signal} from '@angular/core';
 import {TimeEntry} from '../models/timeentry.model';
+import {Project} from '../models/project.model';
 
 export class TimeEntryState {
   readonly timeEntry = signal<TimeEntry | null>(null);

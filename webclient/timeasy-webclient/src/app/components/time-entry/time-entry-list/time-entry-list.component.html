@@ -1,4 +1,9 @@
-<h1>{{ 'timeEntries.headline' | translate}}</h1>
+
+<div class="header-container">
+  <h1>{{ 'timeEntries.headline' | translate}}</h1>
+  <p-button type="button" icon="pi pi-plus" (click)="addTimeEntry()"></p-button>
+</div>
+
 
 <p-toast></p-toast>
 <p-confirmdialog></p-confirmdialog>

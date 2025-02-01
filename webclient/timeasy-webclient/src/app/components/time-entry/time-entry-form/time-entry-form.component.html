@@ -8,6 +8,10 @@
 
 <form class="form-container" [formGroup]="timeEntryForm" (ngSubmit)="onSubmit()">
   <p-toast></p-toast>
+  <div class="form-field">
+    <label for="project"> {{ 'projects.project' | translate }} </label>
+    <p-select id="project" [options]="projects()" formControlName="project" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'timeEntries.selectProject' | translate }}"></p-select>
+  </div>
   <div class="form-timeline">
     <div class="form-field">
       <label for="startDate"> {{ 'timeEntries.startDate' | translate }} </label>

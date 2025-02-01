@@ -84,8 +84,17 @@ export class ProjectFormComponent implements OnInit {
       } else {
         this.projectService.updateProject(project);
       }
+    } else {
+      this.showFormValidationErrors();
     }
   }
+
+  private showFormValidationErrors() {
+    if (this.projectForm.get('name')!.invalid) {
+      this.messageService.add({severity: 'error', summary: this.translateService.instant('globals.error'), detail: this.translateService.instant('projects.specifyName')});
+    }
+  }
+
 
   navigateToProjectList() {
     this.router.navigate([`/projects`]);

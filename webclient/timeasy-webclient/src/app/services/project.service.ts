@@ -23,6 +23,7 @@ export class ProjectService {
   error = computed(() => this.state.error);
   updateSuccessful = computed(() => this.state.updateSuccessful);
   lastUpdatedProject = computed(() => this.state.lastUpdatedProject);
+  selectedProject = computed(() => this.state.selectedProject);
 
   loadProject(id: string): void {
     this.resetState();
@@ -113,6 +114,10 @@ export class ProjectService {
       }),
     ).subscribe(() => {
     })
+  }
+
+  selectProject(project: Project) {
+    this.state.selectedProject.set(project);
   }
 
   resetState() {
