@@ -97,8 +97,12 @@ func (repo *gormTimeEntryRepository) GetAllTimeEntriesOfUserAndProject(userId uu
 
 func (repo *gormTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error) {
 	var timeEntries []model.TimeEntry
-	if err := repo.db.Where("user_id=? AND project_id=? AND DATE(start_time)>=? AND DATE(end_time)<=?",
-		userId, projectId, startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).Order("start_time desc").Order("end_time desc").Find(&timeEntries).Error; err != nil {
+	query := repo.db.Where("user_id=?", userId)
+	if projectId != uuid.Nil {
+		query = query.Where("project_id=?", projectId)
+	}
+	query = query.Where("DATE(start_time)>=? AND DATE(end_time)<=?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+	if err := query.Order("start_time desc").Order("end_time desc").Find(&timeEntries).Error; err != nil {
 		return nil, err
 	}
 	return timeEntries, nil

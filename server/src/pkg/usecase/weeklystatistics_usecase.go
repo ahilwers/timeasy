@@ -17,11 +17,12 @@ func NewWeeklyStatisticsUsecase(timeEntryUsecase TimeEntryUsecase) *WeeklyStatis
 	}
 }
 
-func (u *WeeklyStatisticsUsecase) Build(userId uuid.UUID, project model.Project, weekNumber int, year int) (*model.WeeklyStatistics, error) {
+// Creates weekly statistics for the specified user and project. if the projectId is nil, all projects will be taken into account
+func (u *WeeklyStatisticsUsecase) Build(userId uuid.UUID, projectId uuid.UUID, weekNumber int, year int) (*model.WeeklyStatistics, error) {
 	weeklyStatistics := model.NewWeeklyStatistics()
 	startDate := tools.GetFirstDayOfWeek(weekNumber, year)
 	endDate := tools.GetLastDayOfWeek(weekNumber, year)
-	timeEntries, err := u.timeEntryUsecase.GetTimeEntriesOfUserAndProjectBetweenDates(userId, project.ID, startDate, endDate)
+	timeEntries, err := u.timeEntryUsecase.GetTimeEntriesOfUserAndProjectBetweenDates(userId, projectId, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -32,10 +33,10 @@ func (u *WeeklyStatisticsUsecase) Build(userId uuid.UUID, project model.Project,
 			continue
 		}
 		currentDay := timeEntry.StartTime.Day()
-		statisticsEntry := weeklyStatistics.GetEntryForWeekDay(timeEntry.StartTime.Weekday())
+		statisticsEntry := weeklyStatistics.GetEntryForWeekday(timeEntry.StartTime.Weekday())
 		if (currentDay > lastDay) || (statisticsEntry == nil) {
 			statisticsEntry = model.NewWeeklyStatisticsEntry(timeEntry.StartTime)
-			weeklyStatistics.AddEntryForWeekDay(timeEntry.StartTime.Weekday(), statisticsEntry)
+			weeklyStatistics.AddEntryForWeekday(timeEntry.StartTime.Weekday(), statisticsEntry)
 		}
 		statisticsEntry.Seconds += timeEntry.GetSeconds()
 		lastDay = currentDay

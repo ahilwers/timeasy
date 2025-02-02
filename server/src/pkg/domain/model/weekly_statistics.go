@@ -12,12 +12,20 @@ type WeeklyStatistics struct {
 	entries map[time.Weekday]*WeeklyStatisticsEntry
 }
 
-func (stats *WeeklyStatistics) AddEntryForWeekDay(weekDay time.Weekday, entry *WeeklyStatisticsEntry) {
-	stats.entries[weekDay] = entry
+func (stats *WeeklyStatistics) AddEntryForWeekday(weekday time.Weekday, entry *WeeklyStatisticsEntry) {
+	stats.entries[weekday] = entry
 }
 
-func (stats *WeeklyStatistics) GetEntryForWeekDay(weekDay time.Weekday) *WeeklyStatisticsEntry {
-	return stats.entries[weekDay]
+func (stats *WeeklyStatistics) GetEntryForWeekday(weekday time.Weekday) *WeeklyStatisticsEntry {
+	return stats.entries[weekday]
+}
+
+func (stats *WeeklyStatistics) GetSecondsForWeekday(weekday time.Weekday) int {
+	entry := stats.GetEntryForWeekday(weekday)
+	if entry == nil {
+		return 0
+	}
+	return entry.Seconds
 }
 
 func (stats *WeeklyStatistics) GetSumInSeconds() int {
