@@ -73,7 +73,6 @@ export class ProjectFormComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log(this.projectForm.value);
     if (this.projectForm.valid) {
       const project: Project = {
         Id: this.projectId,

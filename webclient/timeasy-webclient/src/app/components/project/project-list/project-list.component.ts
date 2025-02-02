@@ -56,18 +56,18 @@ export class ProjectListComponent implements OnInit {
   deleteProjectRequest(project: Project) {
     this.confirmationService.confirm({
       target: event?.target as EventTarget,
-      message: `Are you sure that you want to delete the project "${project.name}"?`,
-      header: 'Confirmation',
+      message: this.translateService.instant('projects.confirmDelete'),
+      header: this.translateService.instant('projects.deleteProject'),
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
       rejectButtonProps: {
-        label: 'No',
+        label: this.translateService.instant('globals.no'),
         severity: 'secondary',
         outlined: true,
       },
       acceptButtonProps: {
-        label: 'Yes',
+        label: this.translateService.instant('globals.yes'),
       },
       accept: () => {
         this.deleteProject(project)

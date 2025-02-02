@@ -59,8 +59,6 @@ export class TimeEntryFormComponent implements OnInit {
         this.projectService.loadProject(timeEntryData.projectId);
         const startTime = new Date(timeEntryData.startTimeUTCUnix*1000);
         const endTime = timeEntryData.endTimeUTCUnix>0 ? new Date(timeEntryData.startTimeUTCUnix*1000) : undefined;
-        console.log("loading");
-        console.log(timeEntryData.projectId);
         this.timeEntryForm.patchValue({
           startTime: startTime,
           startDate: startTime,
@@ -71,7 +69,6 @@ export class TimeEntryFormComponent implements OnInit {
       }
     });
     effect(() => {
-      console.log("project")
       const projectData = this.project();
       if (projectData && projectData!=this.currentProjectData) {
         this.currentProjectData = projectData;
@@ -115,7 +112,6 @@ export class TimeEntryFormComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log(this.timeEntryForm.value);
     if (this.timeEntryForm.valid) {
       const startTimeStamp = this.generateTimeStamp(this.timeEntryForm.value.startDate, this.timeEntryForm.value.startTime);
       const endTimeStamp = this.timeEntryForm.value.endTime ? this.generateTimeStamp(this.timeEntryForm.value.endDate, this.timeEntryForm.value.endTime) : 0;

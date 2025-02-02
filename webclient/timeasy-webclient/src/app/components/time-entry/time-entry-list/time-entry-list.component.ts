@@ -67,18 +67,18 @@ export class TimeEntryListComponent implements OnInit {
   deleteTimeEntryRequest(timeEntry: TimeEntry) {
     this.confirmationService.confirm({
       target: event?.target as EventTarget,
-      message: `Are you sure that you want to delete the timeEntry "${timeEntry.description}"?`,
-      header: 'Confirmation',
+      message: this.translateService.instant('timeEntries.confirmDelete', {name: timeEntry.description}),
+      header: this.translateService.instant('timeEntries.deleteTimeEntry'),
       closable: true,
       closeOnEscape: true,
       icon: 'pi pi-exclamation-triangle',
       rejectButtonProps: {
-        label: 'No',
+        label: this.translateService.instant('globals.no'),
         severity: 'secondary',
         outlined: true,
       },
       acceptButtonProps: {
-        label: 'Yes',
+        label: this.translateService.instant('globals.yes'),
       },
       accept: () => {
         this.deleteTimeEntry(timeEntry)
