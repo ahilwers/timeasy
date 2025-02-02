@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -12,6 +13,7 @@ type TimeEntryUsecase interface {
 	GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error)
 	GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error)
 	GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error)
+	GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error)
 	AddTimeEntry(timeEntry *model.TimeEntry) error
 	AddTimeEntryList(timeEntryList []model.TimeEntry) error
 	UpdateTimeEntry(timeEntry *model.TimeEntry) error
@@ -45,6 +47,10 @@ func (tu *timeEntryUsecase) GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.T
 
 func (tu *timeEntryUsecase) GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error) {
 	return tu.repo.GetAllTimeEntriesOfUserAndProject(userId, projectId)
+}
+
+func (tu *timeEntryUsecase) GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error) {
+	return tu.repo.GetTimeEntriesOfUserAndProjectBetweenDates(userId, projectId, startDate, endDate)
 }
 
 func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {
