@@ -253,7 +253,7 @@ func (handler *teamHandler) DeleteUserFromTeam(context *gin.Context) {
 		return
 	}
 
-	userIdToBeDeleted, err := handler.getIdParamValue(context, "userId")
+	userIdToBeDeleted, err := GetMandatoryIdParamValue(context, "userId")
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -297,7 +297,7 @@ func (handler *teamHandler) UpdateUserRolesInTeam(context *gin.Context) {
 		return
 	}
 
-	userToBeUpdatedId, err := handler.getIdParamValue(context, "userId")
+	userToBeUpdatedId, err := GetMandatoryIdParamValue(context, "userId")
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -334,19 +334,7 @@ func (handler *teamHandler) UpdateUserRolesInTeam(context *gin.Context) {
 }
 
 func (handler *teamHandler) getId(context *gin.Context) (uuid.UUID, error) {
-	return handler.getIdParamValue(context, "id")
-}
-
-func (handler *teamHandler) getIdParamValue(context *gin.Context, paramName string) (uuid.UUID, error) {
-	id := context.Param(paramName)
-	if id == "" {
-		return uuid.Nil, fmt.Errorf("please specify a valid id")
-	}
-	userId, err := uuid.FromString(id)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	return userId, nil
+	return GetMandatoryIdParamValue(context, "id")
 }
 
 func (handler *teamHandler) createTeamFromDto(dto teamInputDto) model.Team {

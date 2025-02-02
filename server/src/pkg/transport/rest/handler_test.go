@@ -54,16 +54,18 @@ func (t *authTokenMock) HasRole(role string) (bool, error) {
 }
 
 type HandlerTest struct {
-	ProjectUsecase   usecase.ProjectUsecase
-	TimeEntryUsecase usecase.TimeEntryUsecase
-	TeamUsecase      usecase.TeamUsecase
-	SyncUsecase      usecase.SyncUsecase
-	ProjectHandler   ProjectHandler
-	TimeEntryHandler TimeEntryHandler
-	TeamHandler      TeamHandler
-	SyncHandler      SyncHandler
-	Router           *gin.Engine
-	tokenVerifier    TokenVerifier
+	ProjectUsecase          usecase.ProjectUsecase
+	TimeEntryUsecase        usecase.TimeEntryUsecase
+	TeamUsecase             usecase.TeamUsecase
+	SyncUsecase             usecase.SyncUsecase
+	WeeklyStatisticsUsecase *usecase.WeeklyStatisticsUsecase
+	ProjectHandler          ProjectHandler
+	TimeEntryHandler        TimeEntryHandler
+	TeamHandler             TeamHandler
+	SyncHandler             SyncHandler
+	WeeklyStatisticsHandler WeeklyStatisticsHandler
+	Router                  *gin.Engine
+	tokenVerifier           TokenVerifier
 }
 
 type ErrorResult struct {
@@ -95,6 +97,8 @@ func (t *HandlerTest) initUsecases() {
 
 	syncRepo := database.NewGormSyncRepository(test.DB)
 	t.SyncUsecase = usecase.NewSyncUsecase(syncRepo)
+
+	t.WeeklyStatisticsUsecase = usecase.NewWeeklyStatisticsUsecase(t.TimeEntryUsecase)
 }
 
 func (t *HandlerTest) initHandlers() {
@@ -103,8 +107,9 @@ func (t *HandlerTest) initHandlers() {
 	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
 	t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
+	t.WeeklyStatisticsHandler = NewWeeklyStatisticsHandler(t.tokenVerifier, t.WeeklyStatisticsUsecase)
 
-	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.SyncHandler)
+	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.SyncHandler, t.WeeklyStatisticsHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {
