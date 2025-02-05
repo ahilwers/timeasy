@@ -39,6 +39,7 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.GET("/sync/changed/:timestamp", syncHandler.GetChangedEntries)
 	protectedGroup.POST("/sync/changed", syncHandler.SendLocallyChangedEntries)
 	protectedGroup.GET("/weeklystatistics/:week/:year", weeklyStatisticsHandler.GetWeeklyStatistics)
+	protectedGroup.GET("/currentweeknumber", weeklyStatisticsHandler.GetCurrentWeekNumber)
 
 	return router
 }

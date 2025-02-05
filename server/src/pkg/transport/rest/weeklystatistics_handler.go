@@ -10,6 +10,7 @@ import (
 
 type WeeklyStatisticsHandler interface {
 	GetWeeklyStatistics(context *gin.Context)
+	GetCurrentWeekNumber(context *gin.Context)
 }
 
 func NewWeeklyStatisticsHandler(tokenVerifier TokenVerifier, usecase *usecase.WeeklyStatisticsUsecase) WeeklyStatisticsHandler {
@@ -25,7 +26,9 @@ type weeklyStatisticsHandler struct {
 }
 
 type weeklyStatisticsDto struct {
-	Days []dailyStatisticsDto `json:"days"`
+	weekNumber int
+	year       int
+	Days       []dailyStatisticsDto `json:"days"`
 }
 
 type dailyStatisticsDto struct {
@@ -69,11 +72,11 @@ func (handler *weeklyStatisticsHandler) GetWeeklyStatistics(context *gin.Context
 		return
 	}
 
-	dto := handler.createWeeklyStatisticsDto(*weeklyStatistics)
+	dto := handler.createWeeklyStatisticsDto(*weeklyStatistics, weekNumber, year)
 	context.JSON(http.StatusOK, dto)
 }
 
-func (handler *weeklyStatisticsHandler) createWeeklyStatisticsDto(ws model.WeeklyStatistics) weeklyStatisticsDto {
+func (handler *weeklyStatisticsHandler) createWeeklyStatisticsDto(ws model.WeeklyStatistics, weekNumber int, year int) weeklyStatisticsDto {
 	dto := weeklyStatisticsDto{}
 	days := make([]dailyStatisticsDto, 7)
 	for i := 0; i < 7; i++ {
@@ -89,6 +92,8 @@ func (handler *weeklyStatisticsHandler) createWeeklyStatisticsDto(ws model.Weekl
 			TimeInSeconds: seconds,
 		}
 	}
+	dto.weekNumber = weekNumber
+	dto.year = year
 	dto.Days = days
 	return dto
 }
@@ -112,4 +117,20 @@ func (handler *weeklyStatisticsHandler) getWeekDayAsString(weekday time.Weekday)
 	default:
 		return "Unknown"
 	}
+}
+
+type currentWeekDto struct {
+	WeekNumber int `json:"weekNumber"`
+	Year       int `json:"year"`
+}
+
+func (handler *weeklyStatisticsHandler) GetCurrentWeekNumber(context *gin.Context) {
+	now := time.Now()
+	year, weekNumber := now.ISOWeek()
+
+	dto := currentWeekDto{
+		WeekNumber: weekNumber,
+		Year:       year,
+	}
+	context.JSON(http.StatusOK, dto)
 }

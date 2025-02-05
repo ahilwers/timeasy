@@ -4,6 +4,7 @@
     "dashboard": "Dashboard",
     "projects": "Projekte",
     "timeEntries": "Zeiten",
+    "weeklyOverview": "Wochenübersicht",
     "admin": "Admin"
   },
   "timeEntries": {
@@ -22,6 +23,10 @@
     "errorUpdatingProject": "Das Projekt konnte nicht gespeichert werden.",
     "errorDeletingProject": "Das Projekt konnte nicht gelöscht werden.",
     "errorAddingProject": "Das Projekt konnte nicht erstellt werden."
+  },
+  "weeklyOverview": {
+    "errorLoadingWeeklyStatistics": "Die Wochenuebersicht konnte nicht geladen werden.",
+    "errorLoadingWeekNumber": "Die aktuelle Kalenderwoche konnte nicht geladen werden."
   },
   "globals": {
     "ok": "OK",

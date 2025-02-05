@@ -4,6 +4,7 @@
     "dashboard": "Dashboard",
     "projects": "Projects",
     "timeEntries": "Time Entries",
+    "weeklyOverview": "Weekly Overview",
     "admin": "Admin"
   },
   "timeEntries": {
@@ -22,6 +23,10 @@
     "errorUpdatingProject": "Failed to update project.",
     "errorDeletingProject": "Failed to delete project.",
     "errorAddingProject": "Failed to add project."
+  },
+  "weeklyOverview": {
+    "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",
+    "errorLoadingWeekNumber": "Failed to load week number."
   },
   "globals": {
     "ok": "OK",

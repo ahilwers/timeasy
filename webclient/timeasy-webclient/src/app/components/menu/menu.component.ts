@@ -74,6 +74,11 @@ export class MenuComponent implements OnInit {
         routerLink: '/projects'
       },
       {
+        label: this.translateService.instant('menu.weeklyOverview'),
+        icon: 'pi pi-calendar',
+        routerLink: '/statistics/weeklyoverview'
+      },
+      {
         label: this.translateService.instant('menu.timeEntries'),
         icon: 'pi pi-calendar-clock',
         routerLink: '/timeentries'
