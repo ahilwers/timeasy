@@ -1,21 +1,31 @@
 import {WeeklyStatisticsState} from './weekly-statistics.state';
-import {inject} from '@angular/core';
+import {computed, inject, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../environments/environment';
 import {TranslateService} from '@ngx-translate/core';
 import {WeekNumber} from '../models/week-number.model';
+import {WeeklyStatistics} from '../models/weekly-statistics.model';
+
+@Injectable({
+  providedIn: 'root'
+})
 
 export class WeeklyStatisticsService {
 
-  private readonly apiUrl = `${environment.apiUrl}/weeklystatistics`;
+  private readonly apiUrl = `${environment.apiUrl}`;
   private readonly state = new WeeklyStatisticsState();
 
   private readonly http = inject(HttpClient);
   private readonly translateService = inject(TranslateService);
 
+  weeklyStatistics = computed(() => this.state.weeklyStatistics);
+  currentWeekNumber = computed(() => this.state.currentWeekNumber);
+  error = computed(() => this.state.error);
+
   load(weekNumber: number, year: number): void {
+    console.log("loading statistics")
     this.state.error.set(null);
-    this.http.get<WeeklyStatistics>(`${this.apiUrl}/${weekNumber}/${year}`).subscribe({
+    this.http.get<WeeklyStatistics>(`${this.apiUrl}/weeklystatistics/${weekNumber}/${year}`).subscribe({
       next: (statistics) => {
         this.state.weeklyStatistics.set(statistics);
       },

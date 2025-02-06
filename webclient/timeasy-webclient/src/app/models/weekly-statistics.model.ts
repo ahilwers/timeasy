@@ -1,10 +1,10 @@
-interface WeeklyStatistics {
+export interface WeeklyStatistics {
   weekNumber: number;
   year: number;
   days: DailyStatistics[];
 }
 
-interface DailyStatistics {
+export interface DailyStatistics {
   weekday: string;
   timeInSeconds: number;
 }
