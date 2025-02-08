@@ -9,14 +9,29 @@
   "timeEntries": {
     "headline": "Time Entries",
     "startTime": "Start Time",
+    "startDate": "Start Date",
     "endTime": "End Time",
-    "description": "Description"
+    "endDate": "End Date",
+    "description": "Description",
+    "add" : "Add Time Entry",
+    "edit" : "Edit Time Entry",
+    "selectProject": "Please select a project",
+    "deleteTimeEntry": "Delete Time Entry",
+    "confirmDelete": "Are you sure you want to delete this time entry?",
+    "timeEntries.errorLoadingTimeEntries": "Failed to load time entries.",
+    "timeEntries.errorDeletingTimeEntry": "Failed to delete time entry.",
+    "timeEntries.errorUpdatingTimeEntry": "Failed to update time entry.",
+    "timeEntries.errorAddingTimeEntry": "Failed to add time entry."
   },
   "projects": {
     "headline": "Projects",
     "name": "Name",
     "add" : "Add Project",
     "edit" : "Edit Project",
+    "project": "Project",
+    "specifyName": "Bitte geben Sie einen Namen ein",
+    "deleteProject": "Delete Project",
+    "confirmDelete": "Are you sure you want to delete this project?",
     "errorLoadingProject": "Failed to load project.",
     "errorLoadingProjects": "Failed to load projects.",
     "errorUpdatingProject": "Failed to update project.",
@@ -26,6 +41,9 @@
   "globals": {
     "ok": "OK",
     "cancel": "Cancel",
-    "error": "Error"
+    "error": "Error",
+    "yes": "Yes",
+    "no": "No",
+    "confirmation": "Confirmation"
   }
 }
