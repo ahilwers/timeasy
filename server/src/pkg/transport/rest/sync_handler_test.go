@@ -79,7 +79,7 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", time.Now().Unix()), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", time.Now().UTC().Unix()), nil)
 	handlerTest.Router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
@@ -198,12 +198,12 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
 	// Now let's update the time entry:
 	changeTime := time.Now().Add(time.Hour).UTC()
 	updatedTimeEntry := ChangedTimeEntryDto{
-		Id:                     timeEntry.ID,
-		Description:            "updatedTimeEntry",
-		StartTime:              startTime,
-		EndTime:                endTime,
-		ProjectId:              project.ID,
-		ChangeType:             CHANGED,
+		Id:              timeEntry.ID,
+		Description:     "updatedTimeEntry",
+		StartTime:       startTime,
+		EndTime:         endTime,
+		ProjectId:       project.ID,
+		ChangeType:      CHANGED,
 		ChangeTimestamp: changeTime,
 	}
 
@@ -269,12 +269,12 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 	// Now let's delete the time entry:
 	changeTime := time.Now().Add(time.Hour).UTC()
 	deletedTimeEntry := ChangedTimeEntryDto{
-		Id:                     timeEntry.ID,
-		Description:            "deletedTimeEntry",
-		StartTime:              startTime,
-		EndTime:                endTime,
-		ProjectId:              project.ID,
-		ChangeType:             DELETED,
+		Id:              timeEntry.ID,
+		Description:     "deletedTimeEntry",
+		StartTime:       startTime,
+		EndTime:         endTime,
+		ProjectId:       project.ID,
+		ChangeType:      DELETED,
 		ChangeTimestamp: changeTime,
 	}
 
@@ -345,7 +345,7 @@ func Test_syncHandler_GetChangedProjects(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", time.Now().Unix()), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", time.Now().UTC().Unix()), nil)
 	handlerTest.Router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 

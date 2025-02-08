@@ -41,20 +41,20 @@ func Test_timeEntryHandler_AddTimeEntry(t *testing.T) {
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
 
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
-		"entry1", startTime.Unix(), project.ID))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\", \"projectId\": \"%v\"}",
+		"entry1", startTime.Format(time.RFC3339), project.ID))
 	req, err := http.NewRequest("POST", "/api/v1/timeentries", reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code, GetErrorMessageFromResponse(t, w.Body.Bytes()))
 
-	projectsFromDb, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	entriesFromDb, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(projectsFromDb))
-	assert.Equal(t, "entry1", projectsFromDb[0].Description)
-	assert.Equal(t, userId, projectsFromDb[0].UserId)
-	assert.Equal(t, startTime, projectsFromDb[0].StartTime)
-	assert.True(t, projectsFromDb[0].EndTime.IsZero())
+	assert.Equal(t, 1, len(entriesFromDb))
+	assert.Equal(t, "entry1", entriesFromDb[0].Description)
+	assert.Equal(t, userId, entriesFromDb[0].UserId)
+	assert.Equal(t, startTime, entriesFromDb[0].StartTime)
+	assert.True(t, entriesFromDb[0].EndTime.IsZero())
 }
 
 func Test_timeEntryHandler_AddTimeEntryFailsIfProjectIdMissing(t *testing.T) {
@@ -83,7 +83,7 @@ func Test_timeEntryHandler_AddTimeEntryFailsIfProjectIdMissing(t *testing.T) {
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
 
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v}", "entry1", startTime.Unix()))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\"}", "entry1", startTime.Format(time.RFC3339)))
 	req, err := http.NewRequest("POST", "/api/v1/timeentries", reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -114,8 +114,8 @@ func Test_timeEntryHandler_AddTimeEntryFailsIfProjectDoesNotExist(t *testing.T) 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
 
 	missingProjectId, err := uuid.NewV4()
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
-		"entry1", startTime.Unix(), missingProjectId))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\", \"projectId\": \"%v\"}",
+		"entry1", startTime.Format(time.RFC3339), missingProjectId))
 	req, err := http.NewRequest("POST", "/api/v1/timeentries", reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -161,8 +161,8 @@ func Test_timeEntryHandler_UpdateTimeEntry(t *testing.T) {
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
-		"updatedentry", startTime.Unix(), timeEntry.ProjectId))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\", \"projectId\": \"%v\"}",
+		"updatedentry", startTime.Format(time.RFC3339), timeEntry.ProjectId))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -203,8 +203,8 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfItDoesNotExist(t *testing.T) {
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
-		"updatedentry", startTime.Unix(), project.ID))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\", \"projectId\": \"%v\"}",
+		"updatedentry", startTime.Format(time.RFC3339), project.ID))
 	missingId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/timeentries/%v", missingId), reader)
@@ -255,8 +255,8 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 
 	missingProjectId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
-		"updatedentry", startTime.Unix(), missingProjectId))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\", \"projectId\": \"%v\"}",
+		"updatedentry", startTime.Format(time.RFC3339), missingProjectId))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -310,8 +310,8 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfItDoesNotBelongToTheUser(t *tes
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
-		"updatedentry", startTime.Unix(), timeEntry.ProjectId))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\", \"projectId\": \"%v\"}",
+		"updatedentry", startTime.Format(time.RFC3339), timeEntry.ProjectId))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -365,8 +365,8 @@ func Test_timeEntryHandler_UpdateTimeEntrySucceedsIfItDoesNotBelongToTheUserButT
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTimeUTCUnix\": %v, \"projectId\": \"%v\"}",
-		"updatedentry", startTime.Unix(), timeEntry.ProjectId))
+	reader := strings.NewReader(fmt.Sprintf("{\"description\": \"%v\", \"startTime\": \"%v\", \"projectId\": \"%v\"}",
+		"updatedentry", startTime.Format(time.RFC3339), timeEntry.ProjectId))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/timeentries/%v", timeEntry.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -553,11 +553,11 @@ func Test_timeEntryHandler_DeleteTimeEntrySucceedsIfItDoesNotBelongToTheUserButU
 }
 
 type timeEntryTestDto struct {
-	Id               uuid.UUID
-	Description      string `json:"description" binding:"required"`
-	StartTimeUTCUnix int64  `json:"startTimeUTCUnix" binding:"required"`
-	EndTimeUTCUnix   int64
-	ProjectId        uuid.UUID `json:"projectId" binding:"required"`
+	Id          uuid.UUID
+	Description string    `json:"description" binding:"required"`
+	StartTime   string    `json:"startTime" binding:"required"`
+	EndTime     string    `json:"endTime,omitempty"`
+	ProjectId   uuid.UUID `json:"projectId" binding:"required"`
 }
 
 func Test_timeEntryHandler_GetTimeEntryById(t *testing.T) {
@@ -601,8 +601,10 @@ func Test_timeEntryHandler_GetTimeEntryById(t *testing.T) {
 	var entryFromService timeEntryTestDto
 	json.Unmarshal(w.Body.Bytes(), &entryFromService)
 	assert.Equal(t, timeEntry.Description, entryFromService.Description)
-	assert.Equal(t, startTime.Unix(), entryFromService.StartTimeUTCUnix)
-	assert.Equal(t, int64(0), entryFromService.EndTimeUTCUnix)
+	startTimeFromEntry, err := time.Parse(time.RFC3339, entryFromService.StartTime)
+	assert.Nil(t, err)
+	assert.Equal(t, startTime, startTimeFromEntry)
+	assert.Equal(t, "", entryFromService.EndTime)
 	assert.Equal(t, project.ID, entryFromService.ProjectId)
 }
 
@@ -715,8 +717,10 @@ func Test_timeEntryHandler_GetTimeEntryByIdSucceedsIfItDoesNotBelongToTheUserBut
 	var entryFromService timeEntryTestDto
 	json.Unmarshal(w.Body.Bytes(), &entryFromService)
 	assert.Equal(t, timeEntry.Description, entryFromService.Description)
-	assert.Equal(t, startTime.Unix(), entryFromService.StartTimeUTCUnix)
-	assert.Equal(t, int64(0), entryFromService.EndTimeUTCUnix)
+	startTimeFromEntry, err := time.Parse(time.RFC3339, entryFromService.StartTime)
+	assert.Nil(t, err)
+	assert.Equal(t, startTime, startTimeFromEntry)
+	assert.Equal(t, "", entryFromService.EndTime)
 	assert.Equal(t, project.ID, entryFromService.ProjectId)
 }
 
