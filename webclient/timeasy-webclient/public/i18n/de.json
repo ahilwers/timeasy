@@ -9,15 +9,30 @@
   },
   "timeEntries": {
     "headline": "Zeiten",
-    "startTime": "Start",
-    "endTime": "Ende",
-    "description": "Beschreibung"
+    "startTime": "Startzeit",
+    "startDate": "Startdatum",
+    "endTime": "Endzeit",
+    "endDate": "Enddatum",
+    "description": "Beschreibung",
+    "add" : "Neuer Zeiteintrag",
+    "edit" : "Zeit bearbeiten",
+    "selectProject": "Bitte wählen Sie ein Projekt aus",
+    "deleteTimeEntry": "Zeiteintrag löschen",
+    "confirmDelete": "Wollen Sie den Zeiteintrag wirklich löschen?",
+    "timeEntries.errorLoadingTimeEntries": "Der Zeiteintrag konnte nicht geladen werden.",
+    "timeEntries.errorDeletingTimeEntry": "Der Zeiteintrag konnte nicht gelöscht werden.",
+    "timeEntries.errorUpdatingTimeEntry": "Der Zeiteintrag konnte nicht gespeichert werden.",
+    "timeEntries.errorAddingTimeEntry": "Der Zeiteintrag konnte nicht erstellt werden."
   },
   "projects": {
     "headline": "Projekte",
     "name": "Name",
     "add" : "Neues Projekt",
     "edit" : "Projekt bearbeiten",
+    "project": "Projekt",
+    "specifyName": "Bitte geben Sie einen Namen ein",
+    "deleteProject": "Projekt löschen",
+    "confirmDelete": "Wollen Sie das Projekt wirklich löschen?",
     "errorLoadingProject": "Projekt konnte nicht geladen werden.",
     "errorLoadingProjects": "Die Projekte konnten nicht geladen werden.",
     "errorUpdatingProject": "Das Projekt konnte nicht gespeichert werden.",
@@ -32,6 +47,18 @@
   "globals": {
     "ok": "OK",
     "cancel": "Abbrechen",
-    "error": "Fehler"
+    "error": "Fehler",
+    "yes": "Ja",
+    "no": "Nein",
+    "confirmation": "Bestätigung",
+    "weekdays": {
+      "monday": "Montag",
+      "tuesday": "Dienstag",
+      "wednesday": "Mittwoch",
+      "thursday": "Donnerstag",
+      "friday": "Freitag",
+      "saturday": "Samstag",
+      "sunday": "Sonntag"
+    }
   }
 }

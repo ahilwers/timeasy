@@ -88,14 +88,14 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 	assert.Equal(t, 2, len(syncEntries.TimeEntries))
 
 	assert.Equal(t, deletedTimeEntry.Description, syncEntries.TimeEntries[0].Description)
-	assert.Equal(t, deletedTimeEntry.StartTime, time.Unix(syncEntries.TimeEntries[0].StartTimeUTCUnix, 0).UTC())
-	assert.Equal(t, deletedTimeEntry.EndTime, time.Unix(syncEntries.TimeEntries[0].EndTimeUTCUnix, 0).UTC())
+	assert.Equal(t, deletedTimeEntry.StartTime, syncEntries.TimeEntries[0].StartTime)
+	assert.Equal(t, deletedTimeEntry.EndTime, syncEntries.TimeEntries[0].EndTime)
 	assert.Equal(t, deletedTimeEntry.ProjectId, syncEntries.TimeEntries[0].ProjectId)
 	assert.Equal(t, DELETED, syncEntries.TimeEntries[0].ChangeType)
 
 	assert.Equal(t, updatedTimeEntry.Description, syncEntries.TimeEntries[1].Description)
-	assert.Equal(t, updatedTimeEntry.StartTime, time.Unix(syncEntries.TimeEntries[1].StartTimeUTCUnix, 0).UTC())
-	assert.Equal(t, updatedTimeEntry.EndTime, time.Unix(syncEntries.TimeEntries[1].EndTimeUTCUnix, 0).UTC())
+	assert.Equal(t, updatedTimeEntry.StartTime, syncEntries.TimeEntries[1].StartTime)
+	assert.Equal(t, updatedTimeEntry.EndTime, syncEntries.TimeEntries[1].EndTime)
 	assert.Equal(t, updatedTimeEntry.ProjectId, syncEntries.TimeEntries[1].ProjectId)
 	assert.Equal(t, CHANGED, syncEntries.TimeEntries[1].ChangeType)
 }
@@ -128,12 +128,12 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	assert.Nil(t, err)
 
 	timeEntry1 := ChangedTimeEntryDto{
-		Id:               id,
-		Description:      "timeEntry1",
-		StartTimeUTCUnix: startTime.Unix(),
-		EndTimeUTCUnix:   endTime.Unix(),
-		ProjectId:        project.ID,
-		ChangeType:       NEW,
+		Id:          id,
+		Description: "timeEntry1",
+		StartTime:   startTime,
+		EndTime:     endTime,
+		ProjectId:   project.ID,
+		ChangeType:  NEW,
 	}
 
 	syncEntries := SyncEntries{
@@ -200,11 +200,11 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
 	updatedTimeEntry := ChangedTimeEntryDto{
 		Id:                     timeEntry.ID,
 		Description:            "updatedTimeEntry",
-		StartTimeUTCUnix:       startTime.Unix(),
-		EndTimeUTCUnix:         endTime.Unix(),
+		StartTime:              startTime,
+		EndTime:                endTime,
 		ProjectId:              project.ID,
 		ChangeType:             CHANGED,
-		ChangeTimestampUTCUnix: changeTime.Unix(),
+		ChangeTimestamp: changeTime,
 	}
 
 	syncEntries := SyncEntries{
@@ -271,11 +271,11 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 	deletedTimeEntry := ChangedTimeEntryDto{
 		Id:                     timeEntry.ID,
 		Description:            "deletedTimeEntry",
-		StartTimeUTCUnix:       startTime.Unix(),
-		EndTimeUTCUnix:         endTime.Unix(),
+		StartTime:              startTime,
+		EndTime:                endTime,
 		ProjectId:              project.ID,
 		ChangeType:             DELETED,
-		ChangeTimestampUTCUnix: changeTime.Unix(),
+		ChangeTimestamp: changeTime,
 	}
 
 	syncEntries := SyncEntries{

@@ -41,6 +41,16 @@ const routes: Routes = [
     canActivate: [canActivateAuth],
   },
   {
+    path: 'timeentries/edit/:timeEntryId',
+    loadComponent: () => import('./components/time-entry/time-entry-form/time-entry-form.component').then(m => m.TimeEntryFormComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
+    path: 'timeentries/add',
+    loadComponent: () => import('./components/time-entry/time-entry-form/time-entry-form.component').then(m => m.TimeEntryFormComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
     path: 'statistics/weeklyoverview',
     loadComponent: () => import('./components/statistics/weekly-overview/weekly-overview.component').then(m => m.WeeklyOverviewComponent),
     canActivate: [canActivateAuth],

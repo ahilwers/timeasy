@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -64,18 +65,18 @@ type SyncEntries struct {
 }
 
 type ChangedTimeEntryDto struct {
-	Id                     uuid.UUID
-	Description            string `json:"description" binding:"required"`
-	StartTimeUTCUnix       int64  `json:"startTimeUTCUnix" binding:"required"`
-	EndTimeUTCUnix         int64
-	ProjectId              uuid.UUID  `json:"projectId" binding:"required"`
-	ChangeType             ChangeType `json:"changeType" binding:"required"`
-	ChangeTimestampUTCUnix int64      `json:"changeTimestampUTCUnix" binding:"required"`
+	Id              uuid.UUID
+	Description     string     `json:"description" binding:"required"`
+	StartTime       time.Time  `json:"startTime" binding:"required"`
+	EndTime         time.Time  `json:"endTime"`
+	ProjectId       uuid.UUID  `json:"projectId" binding:"required"`
+	ChangeType      ChangeType `json:"changeType" binding:"required"`
+	ChangeTimestamp time.Time  `json:"changeTimestamp" binding:"required"`
 }
 
 type ChangedProjectDto struct {
-	Id                     uuid.UUID
-	Name                   string     `json:"name" binding:"required"`
-	ChangeType             ChangeType `json:"changeType" binding:"required"`
-	ChangeTimestampUTCUnix int64      `json:"changeTimestampUTCUnix" binding:"required"`
+	Id              uuid.UUID
+	Name            string     `json:"name" binding:"required"`
+	ChangeType      ChangeType `json:"changeType" binding:"required"`
+	ChangeTimestamp time.Time  `json:"changeTimestamp" binding:"required"`
 }

@@ -27,6 +27,7 @@ export class WeeklyStatisticsService {
     this.state.error.set(null);
     this.http.get<WeeklyStatistics>(`${this.apiUrl}/weeklystatistics/${weekNumber}/${year}`).subscribe({
       next: (statistics) => {
+        console.log('Received statistics:', statistics);
         this.state.weeklyStatistics.set(statistics);
       },
       error: (err) => {

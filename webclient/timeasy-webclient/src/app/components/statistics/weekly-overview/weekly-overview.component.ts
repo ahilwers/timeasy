@@ -6,6 +6,8 @@ import {TableModule} from 'primeng/table';
 import {MessageService} from 'primeng/api';
 import {SecondsToTimePipe} from '../../../pipes/seconds-to-time.pipe';
 import {Button} from 'primeng/button';
+import {TranslateWeekdayPipe} from '../../../pipes/translate-weekday.pipe';
+import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 
 @Component({
   selector: 'app-weekly-overview',
@@ -15,7 +17,9 @@ import {Button} from 'primeng/button';
     Toast,
     TableModule,
     SecondsToTimePipe,
-    Button
+    Button,
+    TranslateWeekdayPipe,
+    UtcToLocalDatePipe
   ],
   providers: [MessageService],
   templateUrl: './weekly-overview.component.html',
@@ -67,4 +71,5 @@ export class WeeklyOverviewComponent implements OnInit
     }
     this.selectedWeekNumber.set(week)
   }
+
 }

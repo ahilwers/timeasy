@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 	"timeasy-server/pkg/domain/model"
+	"timeasy-server/pkg/tools"
 	"timeasy-server/pkg/usecase"
 )
 
@@ -26,8 +27,10 @@ type weeklyStatisticsHandler struct {
 }
 
 type weeklyStatisticsDto struct {
-	weekNumber int
-	year       int
+	WeekNumber int                  `json:"weekNumber"`
+	Year       int                  `json:"year"`
+	FirstDay   time.Time            `json:"firstDay"`
+	LastDay    time.Time            `json:"lastDay"`
 	Days       []dailyStatisticsDto `json:"days"`
 }
 
@@ -78,6 +81,8 @@ func (handler *weeklyStatisticsHandler) GetWeeklyStatistics(context *gin.Context
 
 func (handler *weeklyStatisticsHandler) createWeeklyStatisticsDto(ws model.WeeklyStatistics, weekNumber int, year int) weeklyStatisticsDto {
 	dto := weeklyStatisticsDto{}
+	dto.FirstDay = tools.GetFirstDayOfWeek(weekNumber, year)
+	dto.LastDay = tools.GetLastDayOfWeek(weekNumber, year)
 	days := make([]dailyStatisticsDto, 7)
 	for i := 0; i < 7; i++ {
 		var weekday time.Weekday
@@ -92,8 +97,8 @@ func (handler *weeklyStatisticsHandler) createWeeklyStatisticsDto(ws model.Weekl
 			TimeInSeconds: seconds,
 		}
 	}
-	dto.weekNumber = weekNumber
-	dto.year = year
+	dto.WeekNumber = weekNumber
+	dto.Year = year
 	dto.Days = days
 	return dto
 }

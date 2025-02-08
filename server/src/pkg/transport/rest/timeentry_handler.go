@@ -33,10 +33,10 @@ func NewTimeEntryHandler(tokenVerifier TokenVerifier, entryUsecase usecase.TimeE
 }
 
 type timeEntryUpdateDto struct {
-	Description      string `json:"description" binding:"required"`
-	StartTimeUTCUnix int64  `json:"startTimeUTCUnix" binding:"required"`
-	EndTimeUTCUnix   int64
-	ProjectId        uuid.UUID `json:"projectId" binding:"required"`
+	Description    string `json:"description" binding:"required"`
+	StartTime time.Time  `json:"startTime" binding:"required"`
+	EndTime   time.Time `json:"endTime"`
+	ProjectId uuid.UUID `json:"projectId" binding:"required"`
 }
 
 type timeEntryDto struct {
@@ -248,8 +248,8 @@ func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryUpdateDto, user
 }
 
 func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryUpdateDto) {
-	startTime := handler.convertUnixTimeToTime(dto.StartTimeUTCUnix)
-	endTime := handler.convertUnixTimeToTime(dto.EndTimeUTCUnix)
+	startTime := dto.StartTime
+	endTime := dto.EndTime
 	entry.Description = dto.Description
 	entry.StartTime = startTime
 	entry.EndTime = endTime
@@ -269,26 +269,10 @@ func (handler *timeEntryHandler) createDtoFromTimeEntry(timeEntry *model.TimeEnt
 		Id: timeEntry.ID,
 	}
 	dto.Description = timeEntry.Description
-	dto.StartTimeUTCUnix = handler.convertTimeToUnixTime(timeEntry.StartTime)
-	dto.EndTimeUTCUnix = handler.convertTimeToUnixTime(timeEntry.EndTime)
+	dto.StartTime = timeEntry.StartTime
+	dto.EndTime = timeEntry.EndTime
 	dto.ProjectId = timeEntry.ProjectId
 	return dto
-}
-
-func (handler *timeEntryHandler) convertUnixTimeToTime(unixTime int64) time.Time {
-	var result time.Time
-	if unixTime > 0 {
-		result = time.Unix(unixTime, 0).UTC()
-	}
-	return result
-}
-
-func (handler *timeEntryHandler) convertTimeToUnixTime(time time.Time) int64 {
-	result := int64(0)
-	if !time.IsZero() {
-		result = time.Unix()
-	}
-	return result
 }
 
 func (handler *timeEntryHandler) getId(context *gin.Context) (uuid.UUID, error) {

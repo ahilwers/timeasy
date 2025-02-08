@@ -15,10 +15,7 @@ export class ProjectService {
   private readonly state = new ProjectState();
 
   private readonly translateService = inject(TranslateService);
-
-  constructor(private http: HttpClient) {
-    console.log("ProjectService constructor");
-  }
+  private readonly http = inject(HttpClient);
 
   projects = computed(() => this.state.projects);
   project = computed(() => this.state.project);
@@ -26,6 +23,7 @@ export class ProjectService {
   error = computed(() => this.state.error);
   updateSuccessful = computed(() => this.state.updateSuccessful);
   lastUpdatedProject = computed(() => this.state.lastUpdatedProject);
+  selectedProject = computed(() => this.state.selectedProject);
 
   loadProject(id: string): void {
     this.resetState();
@@ -116,6 +114,10 @@ export class ProjectService {
       }),
     ).subscribe(() => {
     })
+  }
+
+  selectProject(project: Project) {
+    this.state.selectedProject.set(project);
   }
 
   resetState() {

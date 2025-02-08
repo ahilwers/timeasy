@@ -1,5 +1,6 @@
 <div class="header-container">
   <h1>{{ 'weeklyOverview.headline' | translate}} {{this.selectedWeekNumber()}}/{{this.selectedYear()}}</h1>
+  <p>{{ weeklyStatistics()?.firstDay! | utcToLocalDate }} - {{ weeklyStatistics()?.lastDay! | utcToLocalDate }}</p>
 </div>
 
 <p-toast></p-toast>
@@ -8,7 +9,7 @@
   <p-table [value]="weeklyStatistics()!.days" [tableStyle]="{ 'min-width': '50rem' }">
     <ng-template #body let-day>
       <tr>
-        <td style="text-align: left; width: auto;">{{ day.weekday }}</td>
+        <td style="text-align: left; width: auto;">{{ day.weekday | translateWeekday }}</td>
         <td style="text-align: right; width: 100px;">{{ day.timeInSeconds | secondsToTime }}</td>
       </tr>
     </ng-template>
