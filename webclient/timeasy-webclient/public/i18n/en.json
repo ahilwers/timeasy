@@ -42,7 +42,9 @@
   "weeklyOverview": {
     "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",
     "errorLoadingWeekNumber": "Failed to load week number.",
-    "headline": "Weekly Overview"
+    "headline": "Weekly Overview",
+    "total": "Total",
+    "allProjects": "All Projects"
   },
   "globals": {
     "ok": "OK",

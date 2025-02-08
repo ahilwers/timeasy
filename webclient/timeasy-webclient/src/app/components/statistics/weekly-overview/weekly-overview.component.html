@@ -6,7 +6,7 @@
 <p-toast></p-toast>
 
 <div class="form-field">
-  <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'projects.project' | translate }}" [showClear]="true" (onChange)="projectSelected($event)"></p-select>
+  <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'weeklyOverview.allProjects' | translate }}" [showClear]="true" (onChange)="projectSelected($event)"></p-select>
 </div>
 @if (weeklyStatistics()) {
   <p-table [value]="weeklyStatistics()!.days" [tableStyle]="{ 'min-width': '50rem' }">
@@ -14,6 +14,12 @@
       <tr>
         <td style="text-align: left; width: auto;">{{ day.weekday | translateWeekday }}</td>
         <td style="text-align: right; width: 100px;">{{ day.timeInSeconds | secondsToTime }}</td>
+      </tr>
+    </ng-template>
+    <ng-template #footer>
+      <tr>
+        <td style="text-align: left; width: auto;"><b>{{ 'weeklyOverview.total' | translate }}</b></td>
+        <td style="text-align: right; width: 100px;"><b>{{ weeklyStatistics()!.sumInSeconds | secondsToTime }}</b></td>
       </tr>
     </ng-template>
   </p-table>

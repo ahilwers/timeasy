@@ -4,6 +4,7 @@ export interface WeeklyStatistics {
   firstDay: Date;
   lastDay : Date;
   days: DailyStatistics[];
+  sumInSeconds: number;
 }
 
 export interface DailyStatistics {
