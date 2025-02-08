@@ -7,10 +7,10 @@ import (
 
 type Project struct {
 	gorm.Model
-	ID     uuid.UUID `gorm:"type:uuid;primaryKey;"`
-	Name   string
-	UserId uuid.UUID  `gorm:"type:uuid;"`
-	TeamID *uuid.UUID `gorm:"type:uuid;"` // Team is optional
+	ID     uuid.UUID  `gorm:"type:uuid;primaryKey;" json:"id"`
+	Name   string     `json:"name"`
+	UserId uuid.UUID  `gorm:"type:uuid;" json:"userId"`
+	TeamID *uuid.UUID `gorm:"type:uuid;" json:"teamId"` // Team is optional
 	Team   Team
 }
 

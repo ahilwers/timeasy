@@ -4,6 +4,7 @@
     "dashboard": "Dashboard",
     "projects": "Projekte",
     "timeEntries": "Zeiten",
+    "weeklyOverview": "Wochenübersicht",
     "admin": "Admin"
   },
   "timeEntries": {
@@ -38,12 +39,28 @@
     "errorDeletingProject": "Das Projekt konnte nicht gelöscht werden.",
     "errorAddingProject": "Das Projekt konnte nicht erstellt werden."
   },
+  "weeklyOverview": {
+    "errorLoadingWeeklyStatistics": "Die Wochenuebersicht konnte nicht geladen werden.",
+    "errorLoadingWeekNumber": "Die aktuelle Kalenderwoche konnte nicht geladen werden.",
+    "headline": "Wochenübersicht",
+    "total": "Gesamt",
+    "allProjects": "Alle Projekte"
+  },
   "globals": {
     "ok": "OK",
     "cancel": "Abbrechen",
     "error": "Fehler",
     "yes": "Ja",
     "no": "Nein",
-    "confirmation": "Bestätigung"
+    "confirmation": "Bestätigung",
+    "weekdays": {
+      "monday": "Montag",
+      "tuesday": "Dienstag",
+      "wednesday": "Mittwoch",
+      "thursday": "Donnerstag",
+      "friday": "Freitag",
+      "saturday": "Samstag",
+      "sunday": "Sonntag"
+    }
   }
 }

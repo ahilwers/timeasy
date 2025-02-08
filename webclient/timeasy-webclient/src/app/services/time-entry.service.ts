@@ -26,17 +26,13 @@ export class TimeEntryService {
 
   loadTimeEntry(id: string): void {
     this.resetState();
-    this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
-      map((timeEntry) => ({
-        id: timeEntry.Id,
-        projectId: timeEntry.projectId,
-        timeEntryId: timeEntry.timeEntryId,
-        description: timeEntry.description,
-        startTimeUTCUnix: timeEntry.startTimeUTCUnix,
-        endTimeUTCUnix: timeEntry.EndTimeUTCUnix,
-      }))
-    ).subscribe({
-      next: (transformedTimeEntry) => {
+    this.http.get<TimeEntry>(`${this.apiUrl}/${id}`).subscribe({
+      next: (timeEntry) => {
+        const transformedTimeEntry = {
+          ...timeEntry,
+          startTime: new Date(timeEntry.startTime),
+          endTime: timeEntry.endTime ? new Date(timeEntry.endTime) : undefined
+        };
         this.state.timeEntry.set(transformedTimeEntry);
       },
       error: (err) => {
@@ -48,24 +44,20 @@ export class TimeEntryService {
 
   loadTimeEntries(): void {
     this.resetState();
-    this.http.get<any[]>(this.apiUrl).pipe(
-      map((timeEntries) =>
-        timeEntries.map((timeEntry) => ({
-          id: timeEntry.Id,
-          projectId: timeEntry.projectId,
-          timeEntryId: timeEntry.timeEntryId,
-          description: timeEntry.description,
-          startTimeUTCUnix: timeEntry.startTimeUTCUnix,
-          endTimeUTCUnix: timeEntry.EndTimeUTCUnix,
-        }))
-      ),
-      catchError((err) => {
+    this.http.get<TimeEntry[]>(this.apiUrl).subscribe({
+      next: (timeEntries) => {
+        const transformedTimeEntries = timeEntries.map((entry) => ({
+          ...entry,
+          startTime: new Date(entry.startTime),
+          endTime: entry.endTime ? new Date(entry.endTime) : undefined
+        }));
+        console.log(transformedTimeEntries);
+        this.state.timeEntries.set(transformedTimeEntries);
+      },
+      error: (err) => {
         console.error('Failed to load time entries:', err);
         this.state.error.set(this.translateService.instant('timeEntries.errorLoadingTimeEntries'));
-        return of([]);
-      })
-    ).subscribe((transformedTimeEntries) => {
-      this.state.timeEntries.set(transformedTimeEntries);
+      }
     });
   }
 

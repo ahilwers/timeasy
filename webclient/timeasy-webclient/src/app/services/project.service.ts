@@ -27,14 +27,9 @@ export class ProjectService {
 
   loadProject(id: string): void {
     this.resetState();
-    this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
-      map((project) => ({
-        Id: project.ID,
-        name: project.Name
-      }))
-    ).subscribe({
-      next: (transformedProject) => {
-        this.state.project.set(transformedProject);
+    this.http.get<Project>(`${this.apiUrl}/${id}`).subscribe({
+      next: (project) => {
+        this.state.project.set(project);
       },
       error: (err) => {
         console.error('Failed to load project:', err);
@@ -45,26 +40,20 @@ export class ProjectService {
 
   loadProjects(): void {
     this.resetState();
-    this.http.get<any[]>(this.apiUrl).pipe(
-      map((projects) =>
-        projects.map((project) => ({
-          Id: project.ID,
-          name: project.Name
-        }))
-      ),
-      catchError((err) => {
+    this.http.get<Project[]>(this.apiUrl).subscribe({
+      next: (projects) => {
+        this.state.projects.set(projects);
+      },
+      error: (err) => {
         console.error('Failed to load projects:', err);
         this.state.error.set(this.translateService.instant('projects.errorLoadingProjects'));
-        return of([]);
-      })
-    ).subscribe((transformedProjects) => {
-      this.state.projects.set(transformedProjects);
+      }
     });
   }
 
   updateProject(data: Project): void {
     this.resetState();
-    this.http.put<Project>(`${this.apiUrl}/${data.Id}`, data).pipe(
+    this.http.put<Project>(`${this.apiUrl}/${data.id}`, data).pipe(
       tap((updatedProject) => {
         this.state.lastUpdatedProject.set(updatedProject);
         this.state.updateSuccessful.set(true);
@@ -100,7 +89,7 @@ export class ProjectService {
 
   deleteProject(data: Project) {
     this.resetState();
-    this.http.delete<Project>(`${this.apiUrl}/${data.Id}`).pipe(
+    this.http.delete<Project>(`${this.apiUrl}/${data.id}`).pipe(
       tap(() => {
         this.state.projectDeleted.set(true);
         this.state.error.set(null);

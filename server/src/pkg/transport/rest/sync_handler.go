@@ -59,13 +59,13 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 			changeTime = entry.CreatedAt
 		}
 		syncTimeEntry := ChangedTimeEntryDto{
-			Id:                     entry.ID,
-			Description:            entry.Description,
-			StartTimeUTCUnix:       entry.StartTime.Unix(),
-			EndTimeUTCUnix:         entry.EndTime.Unix(),
-			ProjectId:              entry.ProjectId,
-			ChangeType:             changeType,
-			ChangeTimestampUTCUnix: changeTime.Unix(),
+			Id:              entry.ID,
+			Description:     entry.Description,
+			StartTime:       entry.StartTime,
+			EndTime:         entry.EndTime,
+			ProjectId:       entry.ProjectId,
+			ChangeType:      changeType,
+			ChangeTimestamp: changeTime,
 		}
 		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
@@ -82,10 +82,10 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 			changeTime = project.CreatedAt
 		}
 		syncProject := ChangedProjectDto{
-			Id:                     project.ID,
-			Name:                   project.Name,
-			ChangeType:             changeType,
-			ChangeTimestampUTCUnix: changeTime.Unix(),
+			Id:              project.ID,
+			Name:            project.Name,
+			ChangeType:      changeType,
+			ChangeTimestamp: changeTime,
 		}
 		syncEntries.Projects = append(syncEntries.Projects, syncProject)
 	}
@@ -139,8 +139,8 @@ func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntry
 		ProjectId:   timeEntryDto.ProjectId,
 		UserId:      userId,
 		Description: timeEntryDto.Description,
-		StartTime:   time.Unix(timeEntryDto.StartTimeUTCUnix, 0).UTC(),
-		EndTime:     time.Unix(timeEntryDto.EndTimeUTCUnix, 0).UTC(),
+		StartTime:   timeEntryDto.StartTime,
+		EndTime:     timeEntryDto.EndTime,
 	}
 	return timeEntry
 }

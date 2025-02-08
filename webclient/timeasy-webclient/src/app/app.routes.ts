@@ -50,6 +50,11 @@ const routes: Routes = [
     loadComponent: () => import('./components/time-entry/time-entry-form/time-entry-form.component').then(m => m.TimeEntryFormComponent),
     canActivate: [canActivateAuth],
   },
+  {
+    path: 'statistics/weeklyoverview',
+    loadComponent: () => import('./components/statistics/weekly-overview/weekly-overview.component').then(m => m.WeeklyOverviewComponent),
+    canActivate: [canActivateAuth],
+  },
   { path: '**', redirectTo: '' },
 ];
 

@@ -4,6 +4,7 @@
     "dashboard": "Dashboard",
     "projects": "Projects",
     "timeEntries": "Time Entries",
+    "weeklyOverview": "Weekly Overview",
     "admin": "Admin"
   },
   "timeEntries": {
@@ -38,12 +39,28 @@
     "errorDeletingProject": "Failed to delete project.",
     "errorAddingProject": "Failed to add project."
   },
+  "weeklyOverview": {
+    "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",
+    "errorLoadingWeekNumber": "Failed to load week number.",
+    "headline": "Weekly Overview",
+    "total": "Total",
+    "allProjects": "All Projects"
+  },
   "globals": {
     "ok": "OK",
     "cancel": "Cancel",
     "error": "Error",
     "yes": "Yes",
     "no": "No",
-    "confirmation": "Confirmation"
+    "confirmation": "Confirmation",
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
   }
 }

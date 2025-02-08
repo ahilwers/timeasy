@@ -8,7 +8,7 @@ import (
 	ginglog "github.com/szuecs/gin-glog"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, syncHandler SyncHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(ginglog.Logger(3 * time.Second))
@@ -38,6 +38,8 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.PUT("/teams/:id/users/:userId/roles", teamHandler.UpdateUserRolesInTeam)
 	protectedGroup.GET("/sync/changed/:timestamp", syncHandler.GetChangedEntries)
 	protectedGroup.POST("/sync/changed", syncHandler.SendLocallyChangedEntries)
+	protectedGroup.GET("/weeklystatistics/:week/:year", weeklyStatisticsHandler.GetWeeklyStatistics)
+	protectedGroup.GET("/currentweeknumber", weeklyStatisticsHandler.GetCurrentWeekNumber)
 
 	return router
 }

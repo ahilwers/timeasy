@@ -29,3 +29,13 @@ func (timeEntry *TimeEntry) BeforeCreate(db *gorm.DB) error {
 	}
 	return nil
 }
+
+func (timeEntry *TimeEntry) GetSeconds() int {
+	var myEndTime time.Time
+	if timeEntry.EndTime.IsZero() {
+		myEndTime = time.Now()
+	} else {
+		myEndTime = timeEntry.EndTime
+	}
+	return int(myEndTime.Sub(timeEntry.StartTime).Seconds())
+}

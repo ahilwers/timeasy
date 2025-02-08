@@ -40,6 +40,9 @@ func main() {
 	syncUsecase := usecase.NewSyncUsecase(database.NewGormSyncRepository(databaseService.Database))
 	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
 
-	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, syncHandler)
+	weeklyStatisticsUsecase := usecase.NewWeeklyStatisticsUsecase(timeEntryUsecase)
+	weeklyStatisticsHandler := rest.NewWeeklyStatisticsHandler(tokenVerifier, weeklyStatisticsUsecase)
+
+	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, syncHandler, weeklyStatisticsHandler)
 	router.Run()
 }

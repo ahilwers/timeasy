@@ -33,14 +33,14 @@ func NewTimeEntryHandler(tokenVerifier TokenVerifier, entryUsecase usecase.TimeE
 }
 
 type timeEntryUpdateDto struct {
-	Description      string `json:"description" binding:"required"`
-	StartTimeUTCUnix int64  `json:"startTimeUTCUnix" binding:"required"`
-	EndTimeUTCUnix   int64
-	ProjectId        uuid.UUID `json:"projectId" binding:"required"`
+	Description string    `json:"description,omitempty"`
+	StartTime   string    `json:"startTime" binding:"required"`
+	EndTime     string    `json:"endTime,omitempty"`
+	ProjectId   uuid.UUID `json:"projectId" binding:"required"`
 }
 
 type timeEntryDto struct {
-	Id uuid.UUID
+	Id string `json:"id" binding:"required"`
 	timeEntryUpdateDto
 }
 
@@ -247,13 +247,22 @@ func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryUpdateDto, user
 	return timeEntry
 }
 
-func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryUpdateDto) {
-	startTime := handler.convertUnixTimeToTime(dto.StartTimeUTCUnix)
-	endTime := handler.convertUnixTimeToTime(dto.EndTimeUTCUnix)
+func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryUpdateDto) error {
 	entry.Description = dto.Description
+	startTime, err := time.Parse(time.RFC3339, dto.StartTime)
+	if err != nil {
+		return err
+	}
 	entry.StartTime = startTime
-	entry.EndTime = endTime
+	if dto.EndTime != "" {
+		endTime, err := time.Parse(time.RFC3339, dto.EndTime)
+		if err != nil {
+			return err
+		}
+		entry.EndTime = endTime
+	}
 	entry.ProjectId = dto.ProjectId
+	return nil
 }
 
 func (handler *timeEntryHandler) convertTimeEntriesToDtos(timeEntries []model.TimeEntry) []timeEntryDto {
@@ -266,29 +275,15 @@ func (handler *timeEntryHandler) convertTimeEntriesToDtos(timeEntries []model.Ti
 
 func (handler *timeEntryHandler) createDtoFromTimeEntry(timeEntry *model.TimeEntry) timeEntryDto {
 	dto := timeEntryDto{
-		Id: timeEntry.ID,
+		Id: timeEntry.ID.String(),
 	}
 	dto.Description = timeEntry.Description
-	dto.StartTimeUTCUnix = handler.convertTimeToUnixTime(timeEntry.StartTime)
-	dto.EndTimeUTCUnix = handler.convertTimeToUnixTime(timeEntry.EndTime)
+	dto.StartTime = timeEntry.StartTime.Format(time.RFC3339)
+	if !timeEntry.EndTime.IsZero() {
+		dto.EndTime = timeEntry.EndTime.Format(time.RFC3339)
+	}
 	dto.ProjectId = timeEntry.ProjectId
 	return dto
-}
-
-func (handler *timeEntryHandler) convertUnixTimeToTime(unixTime int64) time.Time {
-	var result time.Time
-	if unixTime > 0 {
-		result = time.Unix(unixTime, 0).UTC()
-	}
-	return result
-}
-
-func (handler *timeEntryHandler) convertTimeToUnixTime(time time.Time) int64 {
-	result := int64(0)
-	if !time.IsZero() {
-		result = time.Unix()
-	}
-	return result
 }
 
 func (handler *timeEntryHandler) getId(context *gin.Context) (uuid.UUID, error) {
