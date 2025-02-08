@@ -29,8 +29,8 @@ type weeklyStatisticsHandler struct {
 type weeklyStatisticsDto struct {
 	WeekNumber int                  `json:"weekNumber"`
 	Year       int                  `json:"year"`
-	FirstDay   time.Time            `json:"firstDay"`
-	LastDay    time.Time            `json:"lastDay"`
+	FirstDay   string               `json:"firstDay"`
+	LastDay    string               `json:"lastDay"`
 	Days       []dailyStatisticsDto `json:"days"`
 }
 
@@ -81,8 +81,8 @@ func (handler *weeklyStatisticsHandler) GetWeeklyStatistics(context *gin.Context
 
 func (handler *weeklyStatisticsHandler) createWeeklyStatisticsDto(ws model.WeeklyStatistics, weekNumber int, year int) weeklyStatisticsDto {
 	dto := weeklyStatisticsDto{}
-	dto.FirstDay = tools.GetFirstDayOfWeek(weekNumber, year)
-	dto.LastDay = tools.GetLastDayOfWeek(weekNumber, year)
+	dto.FirstDay = tools.GetFirstDayOfWeek(weekNumber, year).Format(time.RFC3339)
+	dto.LastDay = tools.GetLastDayOfWeek(weekNumber, year).Format(time.RFC3339)
 	days := make([]dailyStatisticsDto, 7)
 	for i := 0; i < 7; i++ {
 		var weekday time.Weekday

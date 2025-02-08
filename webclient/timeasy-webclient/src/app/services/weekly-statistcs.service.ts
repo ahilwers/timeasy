@@ -27,8 +27,13 @@ export class WeeklyStatisticsService {
     this.state.error.set(null);
     this.http.get<WeeklyStatistics>(`${this.apiUrl}/weeklystatistics/${weekNumber}/${year}`).subscribe({
       next: (statistics) => {
-        console.log('Received statistics:', statistics);
-        this.state.weeklyStatistics.set(statistics);
+        const transformedStatistics = {
+          ...statistics,
+          firstDay: new Date(statistics.firstDay),
+          lastDay: new Date(statistics.lastDay)
+        };
+        console.log('Received statistics:', transformedStatistics);
+        this.state.weeklyStatistics.set(transformedStatistics);
       },
       error: (err) => {
         console.error(`Failed to loading weekly statistics for week ${weekNumber}/${year}:`, err);

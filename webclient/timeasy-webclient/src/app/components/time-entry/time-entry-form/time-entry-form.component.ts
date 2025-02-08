@@ -57,13 +57,11 @@ export class TimeEntryFormComponent implements OnInit {
       const timeEntryData = this.timeEntry();
       if (timeEntryData) {
         this.projectService.loadProject(timeEntryData.projectId);
-        const startTime = new Date(timeEntryData.startTimeUTCUnix*1000);
-        const endTime = timeEntryData.endTimeUTCUnix>0 ? new Date(timeEntryData.startTimeUTCUnix*1000) : undefined;
         this.timeEntryForm.patchValue({
-          startTime: startTime,
-          startDate: startTime,
-          endTime: endTime,
-          endDate: endTime,
+          startTime: timeEntryData.startTime,
+          startDate: timeEntryData.startTime,
+          endTime: timeEntryData.endTime,
+          endDate: timeEntryData.endTime,
           description: timeEntryData.description
         });
       }
@@ -113,13 +111,13 @@ export class TimeEntryFormComponent implements OnInit {
 
   onSubmit() {
     if (this.timeEntryForm.valid) {
-      const startTimeStamp = this.generateTimeStamp(this.timeEntryForm.value.startDate, this.timeEntryForm.value.startTime);
-      const endTimeStamp = this.timeEntryForm.value.endTime ? this.generateTimeStamp(this.timeEntryForm.value.endDate, this.timeEntryForm.value.endTime) : 0;
+      const startTimeStamp = this.combineDateAndTime(this.timeEntryForm.value.startDate, this.timeEntryForm.value.startTime);
+      const endTimeStamp = this.timeEntryForm.value.endTime ? this.combineDateAndTime(this.timeEntryForm.value.endDate, this.timeEntryForm.value.endTime) : undefined
       const timeEntry: TimeEntry = {
         id: this.timeEntryId,
         projectId: this.timeEntryForm.value.project.Id,
-        startTimeUTCUnix: startTimeStamp,
-        endTimeUTCUnix: endTimeStamp,
+        startTime: startTimeStamp,
+        endTime: endTimeStamp,
         description: this.timeEntryForm.value.description
       }
       this.projectService.selectProject(this.timeEntryForm.value.project);
@@ -137,11 +135,6 @@ export class TimeEntryFormComponent implements OnInit {
     if (this.timeEntryForm.get('project')!.invalid) {
       this.messageService.add({severity: 'error', summary: this.translateService.instant('globals.error'), detail: this.translateService.instant('timeEntries.selectProject')});
     }
-  }
-
-  private generateTimeStamp(date: Date, time: Date): number {
-    const combinedDateAndTime = this.combineDateAndTime(date, time);
-    return Math.floor(combinedDateAndTime.getTime()/1000);
   }
 
   private combineDateAndTime(date: Date, time: Date): Date {

@@ -7,14 +7,11 @@ import { Pipe, PipeTransform, Inject, LOCALE_ID } from '@angular/core';
 export class UtcToLocalDatePipe implements PipeTransform {
   constructor(@Inject(LOCALE_ID) private locale: string) {}
 
-  transform(value: number | Date): string {
-    let utcDate: Date;
-    if (value instanceof Date) {
-      utcDate = value;
-    } else {
-      utcDate = new Date(value*1000);
+  transform(value: Date | undefined): string {
+    if (!value) {
+      return '';
     }
-    return utcDate.toLocaleDateString(this.locale, {
+    return value.toLocaleDateString(this.locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

@@ -33,14 +33,14 @@ func NewTimeEntryHandler(tokenVerifier TokenVerifier, entryUsecase usecase.TimeE
 }
 
 type timeEntryUpdateDto struct {
-	Description    string `json:"description" binding:"required"`
-	StartTime time.Time  `json:"startTime" binding:"required"`
-	EndTime   time.Time `json:"endTime"`
-	ProjectId uuid.UUID `json:"projectId" binding:"required"`
+	Description string    `json:"description,omitempty"`
+	StartTime   string    `json:"startTime" binding:"required"`
+	EndTime     string    `json:"endTime,omitempty"`
+	ProjectId   uuid.UUID `json:"projectId" binding:"required"`
 }
 
 type timeEntryDto struct {
-	Id uuid.UUID
+	Id string `json:"id" binding:"required"`
 	timeEntryUpdateDto
 }
 
@@ -247,13 +247,22 @@ func (handler *timeEntryHandler) createEntryFromDto(dto timeEntryUpdateDto, user
 	return timeEntry
 }
 
-func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryUpdateDto) {
-	startTime := dto.StartTime
-	endTime := dto.EndTime
+func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto timeEntryUpdateDto) error {
 	entry.Description = dto.Description
+	startTime, err := time.Parse(time.RFC3339, dto.StartTime)
+	if err != nil {
+		return err
+	}
 	entry.StartTime = startTime
-	entry.EndTime = endTime
+	if dto.EndTime != "" {
+		endTime, err := time.Parse(time.RFC3339, dto.EndTime)
+		if err != nil {
+			return err
+		}
+		entry.EndTime = endTime
+	}
 	entry.ProjectId = dto.ProjectId
+	return nil
 }
 
 func (handler *timeEntryHandler) convertTimeEntriesToDtos(timeEntries []model.TimeEntry) []timeEntryDto {
@@ -266,11 +275,13 @@ func (handler *timeEntryHandler) convertTimeEntriesToDtos(timeEntries []model.Ti
 
 func (handler *timeEntryHandler) createDtoFromTimeEntry(timeEntry *model.TimeEntry) timeEntryDto {
 	dto := timeEntryDto{
-		Id: timeEntry.ID,
+		Id: timeEntry.ID.String(),
 	}
 	dto.Description = timeEntry.Description
-	dto.StartTime = timeEntry.StartTime
-	dto.EndTime = timeEntry.EndTime
+	dto.StartTime = timeEntry.StartTime.Format(time.RFC3339)
+	if !timeEntry.EndTime.IsZero() {
+		dto.EndTime = timeEntry.EndTime.Format(time.RFC3339)
+	}
 	dto.ProjectId = timeEntry.ProjectId
 	return dto
 }

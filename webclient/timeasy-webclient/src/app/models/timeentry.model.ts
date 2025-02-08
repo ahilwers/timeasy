@@ -3,5 +3,5 @@ export interface TimeEntry {
   projectId: string;
   description: string;
   startTime: Date;
-  endTime: Date;
+  endTime: Date | undefined;
 }

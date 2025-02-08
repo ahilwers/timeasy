@@ -19,15 +19,15 @@
   <ng-template #body let-timeEntry>
     <tr>
       <td>
-        {{ timeEntry.startTimeUTCUnix | utcToLocalDate }}
+        {{ timeEntry.startTime| utcToLocalDate }}
         <br />
-        {{ timeEntry.startTimeUTCUnix | utcToLocalTime }}
+        {{ timeEntry.startTime | utcToLocalTime }}
       </td>
       <td>
-        @if (timeEntry.endTimeUTCUnix>0) {
-          {{ timeEntry.endTimeUTCUnix | utcToLocalDate }}
+        @if (timeEntry.endTime) {
+          {{ timeEntry.endTime | utcToLocalDate }}
           <br />
-          {{ timeEntry.endTimeUTCUnix | utcToLocalTime }}
+          {{ timeEntry.endTime | utcToLocalTime }}
         }
       </td>
       <td>
