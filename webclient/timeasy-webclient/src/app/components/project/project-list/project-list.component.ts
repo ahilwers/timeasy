@@ -46,7 +46,7 @@ export class ProjectListComponent implements OnInit {
   }
 
   editProject(project: Project): void {
-    this.router.navigate([`/projects/edit/${project.Id}`]);
+    this.router.navigate([`/projects/edit/${project.id}`]);
   }
 
   addProject() {

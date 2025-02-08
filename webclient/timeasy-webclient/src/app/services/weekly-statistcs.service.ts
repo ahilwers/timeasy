@@ -22,10 +22,14 @@ export class WeeklyStatisticsService {
   currentWeekNumber = computed(() => this.state.currentWeekNumber);
   error = computed(() => this.state.error);
 
-  load(weekNumber: number, year: number): void {
+  load(weekNumber: number, year: number, projectId: string | undefined): void {
     console.log("loading statistics")
     this.state.error.set(null);
-    this.http.get<WeeklyStatistics>(`${this.apiUrl}/weeklystatistics/${weekNumber}/${year}`).subscribe({
+    let url = `${this.apiUrl}/weeklystatistics/${weekNumber}/${year}`;
+    if (projectId) {
+      url += `?project=${projectId}`;
+    }
+    this.http.get<WeeklyStatistics>(url).subscribe({
       next: (statistics) => {
         const transformedStatistics = {
           ...statistics,

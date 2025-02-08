@@ -8,6 +8,9 @@ import {SecondsToTimePipe} from '../../../pipes/seconds-to-time.pipe';
 import {Button} from 'primeng/button';
 import {TranslateWeekdayPipe} from '../../../pipes/translate-weekday.pipe';
 import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {Select} from 'primeng/select';
+import {ProjectService} from '../../../services/project.service';
 
 @Component({
   selector: 'app-weekly-overview',
@@ -19,7 +22,10 @@ import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
     SecondsToTimePipe,
     Button,
     TranslateWeekdayPipe,
-    UtcToLocalDatePipe
+    UtcToLocalDatePipe,
+    FormsModule,
+    ReactiveFormsModule,
+    Select
   ],
   providers: [MessageService],
   templateUrl: './weekly-overview.component.html',
@@ -29,13 +35,16 @@ import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 export class WeeklyOverviewComponent implements OnInit
 {
   private readonly weeklyStatisticsService = inject(WeeklyStatisticsService);
+  private readonly projectService = inject(ProjectService);
 
   currentWeekNumber = this.weeklyStatisticsService.currentWeekNumber();
   weeklyStatistics = this.weeklyStatisticsService.weeklyStatistics();
   error = this.weeklyStatisticsService.error();
+  projects = this.projectService.projects();
 
   selectedWeekNumber = signal<number>(0);
   selectedYear = signal<number>(new Date().getFullYear());
+  selectedProjectId = signal<string | undefined>(undefined);
 
   constructor() {
     effect(() => {
@@ -45,12 +54,18 @@ export class WeeklyOverviewComponent implements OnInit
     });
     effect(() => {
       if (this.selectedWeekNumber() > 0) {
-        this.weeklyStatisticsService.load(this.selectedWeekNumber(), this.selectedYear());
+        this.weeklyStatisticsService.load(this.selectedWeekNumber(), this.selectedYear(), this.selectedProjectId());
+      }
+    });
+    effect(() => {
+      if (this.selectedProjectId()) {
+        this.weeklyStatisticsService.load(this.selectedWeekNumber(), this.selectedYear(), this.selectedProjectId());
       }
     });
   }
 
   ngOnInit(): void {
+    this.projectService.loadProjects();
     this.weeklyStatisticsService.loadCurrentWeekNumber();
   }
 
@@ -72,4 +87,12 @@ export class WeeklyOverviewComponent implements OnInit
     this.selectedWeekNumber.set(week)
   }
 
+  projectSelected(event: any) {
+    if (event.value) {
+      this.selectedProjectId.set(event.value.id);
+    } else {
+      this.selectedProjectId.set(undefined);
+    }
+
+  }
 }

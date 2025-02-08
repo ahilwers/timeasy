@@ -5,6 +5,9 @@
 
 <p-toast></p-toast>
 
+<div class="form-field">
+  <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'projects.project' | translate }}" [showClear]="true" (onChange)="projectSelected($event)"></p-select>
+</div>
 @if (weeklyStatistics()) {
   <p-table [value]="weeklyStatistics()!.days" [tableStyle]="{ 'min-width': '50rem' }">
     <ng-template #body let-day>
