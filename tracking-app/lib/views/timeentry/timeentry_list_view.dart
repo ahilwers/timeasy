@@ -108,8 +108,9 @@ class _DataListState extends State<DataList> {
               ),
               onPressed: _selectDateRange,
             ),
-            SingleChildScrollView(
+            Expanded(child: SingleChildScrollView(
                 scrollDirection: Axis.vertical, child: _dataBody()),
+            ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
