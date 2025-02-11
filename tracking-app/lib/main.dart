@@ -6,6 +6,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/tools/openid_authorizer.dart';
 import 'package:timeasy/views/imprint.dart';
 import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
@@ -106,6 +107,8 @@ class _MainPageState extends State<MainPage>
   }
 
   void _toggleState() {
+    var authenticator = new OpenIdAuthorizer("http://localhost:8180/realms/timeasy");
+    authenticator.authenticate();
     switch (_currentState) {
       case AppState.STOPPED:
         _startTiming();
