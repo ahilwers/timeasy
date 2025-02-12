@@ -248,6 +248,25 @@ class _MainPageState extends State<MainPage>
           ],
         ),
       ),
+      bottomNavigationBar: NavigationBar(
+        destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.date_range),
+            icon: Icon(Icons.date_range_outlined),
+            label: 'Weekly Overview',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.pending_actions_outlined),
+            icon: Icon(Icons.pending_actions_outlined),
+            label: 'Time Entries',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.format_list_bulleted),
+            icon: Icon(Icons.format_list_bulleted_outlined),
+            label: 'Projects',
+          ),
+        ],
+      ),
     );
   }
 
