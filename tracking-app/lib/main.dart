@@ -7,8 +7,8 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
-import 'package:timeasy/tools/openid_authorizer.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
+import 'package:timeasy/views/settings/settings_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/views/theme.dart';
 import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
@@ -189,11 +189,15 @@ class _MainPageState extends State<MainPage>
       appBar: AppBar(
         title: Text('timeasy'),
         backgroundColor: Theme.of(context).primaryColor,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: Icon(Icons.manage_accounts),
             onPressed: () {
-              _login();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsView()),
+              );
             },
           ),
         ],
@@ -245,12 +249,6 @@ class _MainPageState extends State<MainPage>
         ],
       ),
     );
-  }
-
-  void _login() {
-    var authenticator =
-        new OpenIdAuthorizer("http://localhost:8180/realms/timeasy");
-    authenticator.authenticate();
   }
 
   _loadProjects() {
