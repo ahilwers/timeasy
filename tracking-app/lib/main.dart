@@ -1,20 +1,17 @@
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
+import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
 import 'package:timeasy/tools/openid_authorizer.dart';
-import 'package:timeasy/views/imprint.dart';
-import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
-import 'package:timeasy/views/statistics/weekly_view.dart';
-import 'package:timeasy/models/project.dart';
-import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/views/theme.dart';
+import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
 
 void main() => runApp(MyApp());
 
@@ -61,6 +58,7 @@ class _MainPageState extends State<MainPage>
   AppState _currentState = AppState.STOPPED;
   late Project _currentProject;
   List<Project>? _projects;
+  int _currentPageIndex = 0;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
@@ -107,8 +105,6 @@ class _MainPageState extends State<MainPage>
   }
 
   void _toggleState() {
-    var authenticator = new OpenIdAuthorizer("http://localhost:8180/realms/timeasy");
-    authenticator.authenticate();
     switch (_currentState) {
       case AppState.STOPPED:
         _startTiming();
@@ -135,79 +131,79 @@ class _MainPageState extends State<MainPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      body: Center(
+        child: _getCurrentView(),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentPageIndex,
+        onDestinationSelected: (int index) {
+          _loadProjects();
+          setState(() {
+            _currentPageIndex = index;
+          });
+        },
+        backgroundColor: Colors.transparent,
+        destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.date_range),
+            icon: Icon(Icons.date_range),
+            label: 'Week',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.pending_actions),
+            icon: Icon(Icons.pending_actions),
+            label: 'Time Entries',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.format_list_bulleted),
+            icon: Icon(Icons.format_list_bulleted),
+            label: 'Projects',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _getCurrentView() {
+    switch (_currentPageIndex) {
+      case 0:
+        return _playButtonView();
+      case 1:
+        return WeeklyView(_currentProject);
+      case 2:
+        return TimeEntryListView(_currentProject);
+      case 3:
+        return ProjectListView();
+      default:
+        return _playButtonView();
+    }
+  }
+
+  Widget _playButtonView() {
+    return Scaffold(
       appBar: AppBar(
         title: Text('timeasy'),
         backgroundColor: Theme.of(context).primaryColor,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.manage_accounts),
+            onPressed: () {
+              _login();
+            },
+          ),
+        ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              child: Image.asset(
-                  "assets/hourglass_lightgrey.png"), // Text('timeasy', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white)),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerRight,
-                  end: Alignment.centerLeft,
-                  colors: [
-                    Color(0xff28b0fe),
-                    Color(0xffc80eef),
-                  ],
-                ),
-              ),
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.weeklyOverview),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => WeeklyView(_currentProject)));
-              },
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.timeEntries),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            TimeEntryListView(_currentProject))).then(
-                  (_) {
-                    _updateAppState();
-                  },
-                );
-              },
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.projects),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => ProjectListView())).then(
-                  (_) {
-                    _loadProjects();
-                  },
-                );
-              },
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.info),
-              onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => Imprint()));
-              },
-            ),
-          ],
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new RawMaterialButton(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.center,
+            child: new RawMaterialButton(
               onPressed: _toggleState,
               child: new AnimatedIcon(
                 icon: AnimatedIcons.play_pause,
@@ -220,54 +216,41 @@ class _MainPageState extends State<MainPage>
               fillColor: Theme.of(context).primaryColor,
               padding: const EdgeInsets.all(15.0),
             ),
-            _projects == null
-                ? Text(AppLocalizations.of(context)!.loadingProject)
-                : new DropdownButton<String>(
-                    value: _currentProject.id,
-                    items: _projects!.map(
-                      (Project value) {
-                        return new DropdownMenuItem<String>(
-                          value: value.id,
-                          child: new Text(value.name),
-                        );
-                      },
-                    ).toList(),
-                    onChanged: (String? value) {
-                      _projectRepository.getProjectById(value!).then(
-                        (Project? projectFromDb) {
-                          setState(
-                            () {
-                              _setCurrentProject(projectFromDb!);
-                            },
-                          );
-                          _updateAppState();
-                        },
+          ),
+          _projects == null
+              ? Text(AppLocalizations.of(context)!.loadingProject)
+              : new DropdownButton<String>(
+                  value: _currentProject.id,
+                  items: _projects!.map(
+                    (Project value) {
+                      return new DropdownMenuItem<String>(
+                        value: value.id,
+                        child: new Text(value.name),
                       );
                     },
-                  ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        destinations: const <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.date_range),
-            icon: Icon(Icons.date_range_outlined),
-            label: 'Weekly Overview',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.pending_actions_outlined),
-            icon: Icon(Icons.pending_actions_outlined),
-            label: 'Time Entries',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.format_list_bulleted),
-            icon: Icon(Icons.format_list_bulleted_outlined),
-            label: 'Projects',
-          ),
+                  ).toList(),
+                  onChanged: (String? value) {
+                    _projectRepository.getProjectById(value!).then(
+                      (Project? projectFromDb) {
+                        setState(
+                          () {
+                            _setCurrentProject(projectFromDb!);
+                          },
+                        );
+                        _updateAppState();
+                      },
+                    );
+                  },
+                ),
         ],
       ),
     );
+  }
+
+  void _login() {
+    var authenticator =
+        new OpenIdAuthorizer("http://localhost:8180/realms/timeasy");
+    authenticator.authenticate();
   }
 
   _loadProjects() {
