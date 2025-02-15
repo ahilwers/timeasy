@@ -50,7 +50,7 @@ class OpenIdAuthenticator {
     }
     var credential =
         Credential.fromJson(json.decode(apiCredential.credentialJson!));
-    var token = await credential.getTokenResponse(true);
+    var token = await credential.getTokenResponse();
     apiCredential.accessToken = token.accessToken;
     apiCredential.refreshToken = token.refreshToken;
     apiCredential.credentialJson = json.encode(credential.toJson());
