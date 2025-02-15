@@ -1,8 +1,10 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
@@ -13,7 +15,16 @@ import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/views/theme.dart';
 import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => AuthenticationBloc()),
+      ],
+      child: MyApp(),
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   @override

@@ -41,6 +41,7 @@ dependencies:
   test: ^1.25.2
   openid_client: ^0.4.9
   url_launcher: ^6.3.1
+  flutter_bloc: ^9.0.0
 
 dev_dependencies:
   flutter_test:

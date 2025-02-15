@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-
-import '../../tools/openid_authorizer.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
+import 'package:timeasy/bloc/authentication/authentication_event.dart';
+import 'package:timeasy/bloc/authentication/authentication_state.dart';
 
 class SettingsView extends StatefulWidget {
   @override
@@ -14,24 +16,64 @@ class SettingsViewState extends State<SettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Setting'),
+        title: Text('Settings'),
         backgroundColor: Theme.of(context).primaryColor,
       ),
-      body: Column(
-        children: <Widget>[
-          Text('Settings'),
-          ElevatedButton(
-            child: Text('Login'),
-            onPressed: () => _login(),
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.0), // Abstand vom Rand
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            // Elemente mittig ausrichten
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                builder: (context, state) {
+                  if (state is AuthenticationAuthenticated) {
+                    return Column(
+                      children: <Widget>[
+                        Text(
+                          "Hallo ${state.credentials.username}!",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 20), // Abstand
+                        ElevatedButton(
+                          child: Text('Logout'),
+                          onPressed: () => _logout(),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 15),
+                            textStyle: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    );
+                  } else {
+                    return ElevatedButton(
+                      child: Text('Login'),
+                      onPressed: () => _login(),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        textStyle: TextStyle(fontSize: 16),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   void _login() {
-    var authenticator =
-        new OpenIdAuthorizer("http://localhost:8180/realms/timeasy");
-    authenticator.authenticate();
+    context.read<AuthenticationBloc>().add(LoginEvent());
+  }
+
+  void _logout() {
+    context.read<AuthenticationBloc>().add(LogoutEvent());
   }
 }
