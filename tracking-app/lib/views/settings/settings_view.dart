@@ -47,6 +47,10 @@ class SettingsViewState extends State<SettingsView> {
                             textStyle: TextStyle(fontSize: 16),
                           ),
                         ),
+                        ElevatedButton(
+                          onPressed: () => _refreshToken(),
+                          child: Text("Refresh Token"),
+                        ),
                       ],
                     );
                   } else {
@@ -75,5 +79,9 @@ class SettingsViewState extends State<SettingsView> {
 
   void _logout() {
     context.read<AuthenticationBloc>().add(LogoutEvent());
+  }
+
+  _refreshToken() {
+    context.read<AuthenticationBloc>().add(RefreshTokenEvent());
   }
 }

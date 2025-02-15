@@ -47,7 +47,8 @@ class DBProvider {
         email TEXT,
         accessToken TEXT, 
         refreshToken TEXT, 
-        logoutUrl TEXT
+        logoutUrl TEXT,
+        credentialJson TEXT
       );
     '''
   ];

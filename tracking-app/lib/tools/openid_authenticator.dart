@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:openid_client/openid_client.dart';
@@ -6,7 +7,7 @@ import 'package:timeasy/models/api_credentials.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OpenIdAuthenticator {
-  final scopes = ['profile'];
+  final scopes = ['profile', 'offline_access'];
   final clientId = 'timeasy-tracking-app';
   final String keycloakUri;
 
@@ -33,6 +34,7 @@ class OpenIdAuthenticator {
     apiCredential.email = userInformation.email;
     apiCredential.username = userInformation.preferredUsername;
     apiCredential.name = userInformation.name;
+    apiCredential.credentialJson = json.encode(c.toJson());
     return apiCredential;
   }
 
@@ -40,6 +42,18 @@ class OpenIdAuthenticator {
     if (apiCredential.logoutUrl != null) {
       _urlLauncher(apiCredential.logoutUrl!);
     }
+  }
+
+  Future<void> refreshToken(ApiCredentials apiCredential) async {
+    if (apiCredential.credentialJson == null) {
+      return;
+    }
+    var credential =
+        Credential.fromJson(json.decode(apiCredential.credentialJson!));
+    var token = await credential.getTokenResponse(true);
+    apiCredential.accessToken = token.accessToken;
+    apiCredential.refreshToken = token.refreshToken;
+    apiCredential.credentialJson = json.encode(credential.toJson());
   }
 
   _urlLauncher(String url) async {

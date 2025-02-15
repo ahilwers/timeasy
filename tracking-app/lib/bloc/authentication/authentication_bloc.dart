@@ -13,6 +13,7 @@ class AuthenticationBloc
   AuthenticationBloc() : super(AuthenticationInitial()) {
     on<LoginEvent>(_onLogin);
     on<LogoutEvent>(_onLogout);
+    on<RefreshTokenEvent>(_onRefreshToken);
     on<SetAuthenticationEvent>((event, emit) {
       emit(AuthenticationAuthenticated(event.credentials));
     });
@@ -74,5 +75,19 @@ class AuthenticationBloc
 
   OpenIdAuthenticator _createAuthenticator() {
     return new OpenIdAuthenticator("http://localhost:8180/realms/timeasy");
+  }
+
+  FutureOr<void> _onRefreshToken(
+      RefreshTokenEvent event, Emitter<AuthenticationState> emit) async {
+    try {
+      var repository = new ApiCredentialsRepository();
+      var credentials = await repository.getApiCredentials();
+      var authenticator = _createAuthenticator();
+      await authenticator.refreshToken(credentials);
+      emit(AuthenticationAuthenticated(credentials));
+    } catch (e) {
+      emit(AuthenticationError(e.toString()));
+      emit(AuthenticationInitial());
+    }
   }
 }

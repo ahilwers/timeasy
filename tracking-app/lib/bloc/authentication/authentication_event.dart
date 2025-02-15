@@ -14,6 +14,8 @@ class LoginEvent extends AuthenticationEvent {}
 
 class LogoutEvent extends AuthenticationEvent {}
 
+class RefreshTokenEvent extends AuthenticationEvent {}
+
 class AuthenticationErrorEvent extends AuthenticationEvent {
   final String message;
 

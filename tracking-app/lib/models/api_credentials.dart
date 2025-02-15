@@ -9,6 +9,7 @@ class ApiCredentials {
   static final String accessTokenColumn = "accessToken";
   static final String refreshTokenColumn = "refreshToken";
   static final String logoutUrlColumn = "logoutUrl";
+  static final String credentialJsonColumn = "credentialJson";
 
   late String id;
   String? username;
@@ -17,6 +18,7 @@ class ApiCredentials {
   String? accessToken;
   String? refreshToken;
   String? logoutUrl;
+  String? credentialJson;
 
   ApiCredentials() {
     var uuid = new Uuid();
@@ -30,6 +32,7 @@ class ApiCredentials {
     accessToken = null;
     refreshToken = null;
     logoutUrl = null;
+    credentialJson = null;
   }
 
   ApiCredentials.fromMap(Map<String, dynamic> map) {
@@ -40,6 +43,7 @@ class ApiCredentials {
     accessToken = map[accessTokenColumn];
     refreshToken = map[refreshTokenColumn];
     logoutUrl = map[logoutUrlColumn];
+    credentialJson = map[credentialJsonColumn];
   }
 
   Map<String, dynamic> toMap() {
@@ -50,7 +54,8 @@ class ApiCredentials {
       emailColumn: email,
       accessTokenColumn: accessToken,
       refreshTokenColumn: refreshToken,
-      logoutUrlColumn: logoutUrl
+      logoutUrlColumn: logoutUrl,
+      credentialJsonColumn: credentialJson
     };
   }
 }
