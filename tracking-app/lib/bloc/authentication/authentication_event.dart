@@ -1,9 +1,9 @@
-import '../../models/api_credential.dart';
+import '../../models/api_credentials.dart';
 
 abstract class AuthenticationEvent {}
 
 class SetAuthenticationEvent extends AuthenticationEvent {
-  final ApiCredential credentials;
+  final ApiCredentials credentials;
 
   SetAuthenticationEvent(this.credentials);
 }

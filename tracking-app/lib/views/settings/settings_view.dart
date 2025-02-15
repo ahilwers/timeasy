@@ -33,7 +33,7 @@ class SettingsViewState extends State<SettingsView> {
                     return Column(
                       children: <Widget>[
                         Text(
-                          "Hallo ${state.credentials.username}!",
+                          "Hallo ${state.credentials.name ?? state.credentials.username}!",
                           style: TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),

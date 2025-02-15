@@ -16,16 +16,18 @@ class Project {
 
   Project() {
     var uuid = new Uuid();
-    id = uuid.v1();
+    id = uuid.v4();
   }
 
   Project.fromMap(Map<String, dynamic> map) {
     id = map[idColumn];
     name = map[nameColumn];
     int createdMillis = map[createdColumn];
-    created = new DateTime.fromMillisecondsSinceEpoch(createdMillis, isUtc: true);
+    created =
+        new DateTime.fromMillisecondsSinceEpoch(createdMillis, isUtc: true);
     int updatedMillis = map[updatedColumn];
-    updated = new DateTime.fromMillisecondsSinceEpoch(updatedMillis, isUtc: true);
+    updated =
+        new DateTime.fromMillisecondsSinceEpoch(updatedMillis, isUtc: true);
     int deletedInt = map[deletedColumn];
     deletedInt == 0 ? deleted = false : deleted = true;
   }

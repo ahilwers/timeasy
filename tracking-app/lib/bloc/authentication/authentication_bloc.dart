@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:timeasy/models/api_credential.dart';
+import 'package:timeasy/models/api_credentials.dart';
+import 'package:timeasy/repositories/api-credentials_repository.dart';
 import 'package:timeasy/tools/openid_authenticator.dart';
 
 import 'authentication_event.dart';
@@ -49,9 +50,14 @@ class AuthenticationBloc
     }
   }
 
-  Future<ApiCredential?> _authenticate() async {
+  Future<ApiCredentials?> _authenticate() async {
     var authenticator = _createAuthenticator();
-    return await authenticator.authenticate();
+    var credentials = await authenticator.authenticate();
+    if (credentials != null) {
+      var repository = new ApiCredentialsRepository();
+      await repository.saveApiCredentials(credentials);
+    }
+    return credentials;
   }
 
   Future<void> _logout() async {
@@ -59,6 +65,8 @@ class AuthenticationBloc
       var credentials = (state as AuthenticationAuthenticated).credentials;
       var authenticator = _createAuthenticator();
       await authenticator.logout(credentials);
+      var repository = new ApiCredentialsRepository();
+      await repository.deleteApiCredentials();
     } else {
       throw Exception("logout failed, access token not available");
     }

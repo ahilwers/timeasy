@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:openid_client/openid_client.dart';
 import 'package:openid_client/openid_client_io.dart' as io;
-import 'package:timeasy/models/api_credential.dart';
+import 'package:timeasy/models/api_credentials.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OpenIdAuthenticator {
@@ -12,7 +12,7 @@ class OpenIdAuthenticator {
 
   OpenIdAuthenticator(this.keycloakUri) {}
 
-  Future<ApiCredential?> authenticate() async {
+  Future<ApiCredentials?> authenticate() async {
     var client = await getClient();
     var authenticator = io.Authenticator(client,
         scopes: scopes, port: 4000, urlLancher: _urlLauncher);
@@ -26,16 +26,17 @@ class OpenIdAuthenticator {
     var token = await c.getTokenResponse();
     var userInformation = await c.getUserInfo();
 
-    var apiCredential = ApiCredential();
+    var apiCredential = ApiCredentials();
     apiCredential.accessToken = token.accessToken;
     apiCredential.refreshToken = token.refreshToken;
     apiCredential.logoutUrl = c.generateLogoutUrl()?.toString();
     apiCredential.email = userInformation.email;
     apiCredential.username = userInformation.preferredUsername;
+    apiCredential.name = userInformation.name;
     return apiCredential;
   }
 
-  Future<void> logout(ApiCredential apiCredential) async {
+  Future<void> logout(ApiCredentials apiCredential) async {
     if (apiCredential.logoutUrl != null) {
       _urlLauncher(apiCredential.logoutUrl!);
     }

@@ -1,11 +1,11 @@
-import '../../models/api_credential.dart';
+import 'package:timeasy/models/api_credentials.dart';
 
 abstract class AuthenticationState {}
 
 class AuthenticationInitial extends AuthenticationState {}
 
 class AuthenticationAuthenticated extends AuthenticationState {
-  final ApiCredential credentials;
+  final ApiCredentials credentials;
 
   AuthenticationAuthenticated(this.credentials);
 }
