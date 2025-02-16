@@ -83,8 +83,11 @@ class AuthenticationBloc
       var repository = new ApiCredentialsRepository();
       var credentials = await repository.getApiCredentials();
       var authenticator = _createAuthenticator();
-      await authenticator.refreshToken(credentials);
-      emit(AuthenticationAuthenticated(credentials));
+      if (await authenticator.refreshToken(credentials)) {
+        emit(AuthenticationAuthenticated(credentials));
+      } else {
+        emit(AuthenticationInitial());
+      }
     } catch (e) {
       emit(AuthenticationError(e.toString()));
       emit(AuthenticationInitial());

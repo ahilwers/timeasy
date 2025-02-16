@@ -23,26 +23,12 @@ class SettingsViewState extends State<SettingsView> {
       ),
       body: Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0), // Abstand vom Rand
+          padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             // Elemente mittig ausrichten
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              BlocBuilder<InternetConnectionBloc, InternetConnectionState>(
-                  builder: (context, state) {
-                if (state is InternetConnectionConnected) {
-                  return Text(
-                    "Internet Connected",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  );
-                } else {
-                  return Text(
-                    "Internet Disconnected",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  );
-                }
-              }),
               BlocBuilder<AuthenticationBloc, AuthenticationState>(
                 builder: (context, state) {
                   if (state is AuthenticationAuthenticated) {
@@ -53,7 +39,7 @@ class SettingsViewState extends State<SettingsView> {
                           style: TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 20), // Abstand
+                        SizedBox(height: 20),
                         ElevatedButton(
                           child: Text('Logout'),
                           onPressed: () => _logout(),
@@ -62,10 +48,6 @@ class SettingsViewState extends State<SettingsView> {
                                 horizontal: 30, vertical: 15),
                             textStyle: TextStyle(fontSize: 16),
                           ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => _refreshToken(),
-                          child: Text("Refresh Token"),
                         ),
                       ],
                     );
@@ -82,6 +64,19 @@ class SettingsViewState extends State<SettingsView> {
                   }
                 },
               ),
+              SizedBox(height: 20),
+              BlocBuilder<InternetConnectionBloc, InternetConnectionState>(
+                  builder: (context, state) {
+                if (state is InternetConnectionConnected) {
+                  return Text(
+                    "Internet Connected",
+                  );
+                } else {
+                  return Text(
+                    "Internet Disconnected",
+                  );
+                }
+              }),
             ],
           ),
         ),
@@ -95,9 +90,5 @@ class SettingsViewState extends State<SettingsView> {
 
   void _logout() {
     context.read<AuthenticationBloc>().add(LogoutEvent());
-  }
-
-  _refreshToken() {
-    context.read<AuthenticationBloc>().add(RefreshTokenEvent());
   }
 }

@@ -5,8 +5,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
+import 'package:timeasy/bloc/authentication/authentication_event.dart';
 import 'package:timeasy/bloc/internetconnection/internetconnection_block.dart';
 import 'package:timeasy/bloc/internetconnection/internetconnection_event.dart';
+import 'package:timeasy/bloc/internetconnection/internetconnection_state.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
@@ -69,7 +71,7 @@ class MainPage extends StatefulWidget {
 enum AppState { RUNNING, STOPPED }
 
 class _MainPageState extends State<MainPage>
-    with SingleTickerProviderStateMixin {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   AppState _currentState = AppState.STOPPED;
   late Project _currentProject;
   List<Project>? _projects;
@@ -84,18 +86,19 @@ class _MainPageState extends State<MainPage>
   void initState() {
     super.initState();
     initializeDateFormatting();
-
+    WidgetsBinding.instance.addObserver(this);
     _internetConnectionService = InternetConnectionService(
       onConnectionChanged: (bool hasInternet) {
         _setConnectionState(hasInternet);
+        if (hasInternet) {
+          context.read<AuthenticationBloc>().add(RefreshTokenEvent());
+        }
       },
     );
-
     buttonAnimationController = new AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1000),
     );
-
     var projectRepository = new ProjectRepository();
     projectRepository
         .getLastUsedProjectOrDefault("Project 1")
@@ -111,7 +114,19 @@ class _MainPageState extends State<MainPage>
   @override
   void dispose() {
     _internetConnectionService.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final connectionState = context.read<InternetConnectionBloc>().state;
+      if (connectionState is InternetConnectionConnected) {
+        context.read<AuthenticationBloc>().add(RefreshTokenEvent());
+      }
+    }
+    super.didChangeAppLifecycleState(state);
   }
 
   void _setAppState(AppState state) {

@@ -44,16 +44,20 @@ class OpenIdAuthenticator {
     }
   }
 
-  Future<void> refreshToken(ApiCredentials apiCredential) async {
+  Future<bool> refreshToken(ApiCredentials apiCredential) async {
     if (apiCredential.credentialJson == null) {
-      return;
+      return false;
     }
     var credential =
         Credential.fromJson(json.decode(apiCredential.credentialJson!));
     var token = await credential.getTokenResponse();
+    if (token.accessToken == null) {
+      return false;
+    }
     apiCredential.accessToken = token.accessToken;
     apiCredential.refreshToken = token.refreshToken;
     apiCredential.credentialJson = json.encode(credential.toJson());
+    return true;
   }
 
   _urlLauncher(String url) async {
