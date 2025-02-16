@@ -20,7 +20,7 @@ class TimeEntry {
 
   TimeEntry(String forProjectId) {
     var uuid = new Uuid();
-    id = uuid.v1();
+    id = uuid.v4();
     projectId = forProjectId;
     startTime = DateTime.now().toUtc();
   }
@@ -28,17 +28,21 @@ class TimeEntry {
   TimeEntry.fromMap(Map<String, dynamic> map) {
     id = map[idColumn];
     int startTimeMillis = map[startTimeColumn];
-    startTime = new DateTime.fromMillisecondsSinceEpoch(startTimeMillis, isUtc: true);
+    startTime =
+        new DateTime.fromMillisecondsSinceEpoch(startTimeMillis, isUtc: true);
     int endTimeMillis = map[endTimeColumn];
     if (endTimeMillis > 0) {
-      endTime = new DateTime.fromMillisecondsSinceEpoch(endTimeMillis, isUtc: true);
+      endTime =
+          new DateTime.fromMillisecondsSinceEpoch(endTimeMillis, isUtc: true);
     }
     description = map[descriptionColumn];
     projectId = map[projectIdColumn];
     int createdMillis = map[createdColumn];
-    created = new DateTime.fromMillisecondsSinceEpoch(createdMillis, isUtc: true);
+    created =
+        new DateTime.fromMillisecondsSinceEpoch(createdMillis, isUtc: true);
     int updatedMillis = map[updatedColumn];
-    updated = new DateTime.fromMillisecondsSinceEpoch(updatedMillis, isUtc: true);
+    updated =
+        new DateTime.fromMillisecondsSinceEpoch(updatedMillis, isUtc: true);
   }
 
   Map<String, dynamic> toMap() {
