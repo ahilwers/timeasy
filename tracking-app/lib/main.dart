@@ -5,10 +5,13 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
+import 'package:timeasy/bloc/internetconnection/internetconnection_block.dart';
+import 'package:timeasy/bloc/internetconnection/internetconnection_event.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/tools/internet-connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:timeasy/views/settings/settings_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
@@ -20,6 +23,7 @@ void main() {
     MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => AuthenticationBloc()),
+        BlocProvider(create: (context) => InternetConnectionBloc())
       ],
       child: MyApp(),
     ),
@@ -74,11 +78,18 @@ class _MainPageState extends State<MainPage>
   final ProjectRepository _projectRepository = new ProjectRepository();
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   late AnimationController buttonAnimationController;
+  late InternetConnectionService _internetConnectionService;
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting();
+
+    _internetConnectionService = InternetConnectionService(
+      onConnectionChanged: (bool hasInternet) {
+        _setConnectionState(hasInternet);
+      },
+    );
 
     buttonAnimationController = new AnimationController(
       vsync: this,
@@ -95,6 +106,12 @@ class _MainPageState extends State<MainPage>
       _loadProjects();
       _updateAppState();
     });
+  }
+
+  @override
+  void dispose() {
+    _internetConnectionService.dispose();
+    super.dispose();
   }
 
   void _setAppState(AppState state) {
@@ -286,5 +303,17 @@ class _MainPageState extends State<MainPage>
         _setAppState(AppState.STOPPED);
       }
     });
+  }
+
+  void _setConnectionState(bool hasInternet) {
+    if (hasInternet) {
+      context
+          .read<InternetConnectionBloc>()
+          .add(InternetConnectionConnectedEvent());
+    } else {
+      context
+          .read<InternetConnectionBloc>()
+          .add(InternetConnectionDisconnectedEvent());
+    }
   }
 }

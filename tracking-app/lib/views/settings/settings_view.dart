@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_event.dart';
 import 'package:timeasy/bloc/authentication/authentication_state.dart';
+import 'package:timeasy/bloc/internetconnection/internetconnection_block.dart';
+import 'package:timeasy/bloc/internetconnection/internetconnection_state.dart';
 
 class SettingsView extends StatefulWidget {
   @override
@@ -27,6 +29,20 @@ class SettingsViewState extends State<SettingsView> {
             // Elemente mittig ausrichten
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
+              BlocBuilder<InternetConnectionBloc, InternetConnectionState>(
+                  builder: (context, state) {
+                if (state is InternetConnectionConnected) {
+                  return Text(
+                    "Internet Connected",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  );
+                } else {
+                  return Text(
+                    "Internet Disconnected",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  );
+                }
+              }),
               BlocBuilder<AuthenticationBloc, AuthenticationState>(
                 builder: (context, state) {
                   if (state is AuthenticationAuthenticated) {
