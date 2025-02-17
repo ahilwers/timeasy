@@ -50,6 +50,12 @@ class DBProvider {
         logoutUrl TEXT,
         credentialJson TEXT
       );
+    ''',
+    '''
+     CREATE TABLE Settings (
+        id TEXT,
+        lastSyncTime INTEGER
+      );
     '''
   ];
 
