@@ -13,7 +13,7 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
-import 'package:timeasy/tools/internet-connection_service.dart';
+import 'package:timeasy/services/internet-connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:timeasy/views/settings/settings_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
