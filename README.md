@@ -2,6 +2,8 @@
 
 A time tracker application that ist build for simplicity.
 
+The software is still work in progress - only the standalone iOS app is usable at the moment.
+
 Visit the timeasy website: <https://timeasy.org>
 
 <p>
@@ -9,11 +11,13 @@ Visit the timeasy website: <https://timeasy.org>
       <img src="tracking-app/assets-readme/appstore_logo.png" alt="Download on the App Store"/>
     </a>
 </p>
+<!--
 <p>
     <a href="https://play.google.com/store/apps/details?id=com.hilwerssoftware.timeasy">
         <img src="tracking-app/assets-readme/google_play_logo.png" alt="Get it on Google Play" />
     </a>
 </p>
+-->
 
 # Repository structure
 
