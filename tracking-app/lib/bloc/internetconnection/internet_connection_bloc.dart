@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_event.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_state.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_event.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 
 class InternetConnectionBloc
     extends Bloc<InternetConnectionEvent, InternetConnectionState> {

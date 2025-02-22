@@ -4,14 +4,14 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:timeasy/models/project.dart';
-import 'package:timeasy/models/timeentry.dart';
-import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/models/time_entry.dart';
+import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/tools/date_tools.dart';
 import 'package:timeasy/tools/duration_formatter.dart';
 import 'package:timeasy/tools/excel_export.dart';
-import 'package:timeasy/tools/excel_export_onelineperday.dart';
 import 'package:timeasy/tools/excel_export_allentries.dart';
-import 'package:timeasy/views/timeentry/timeentry_edit_view.dart';
+import 'package:timeasy/tools/excel_export_onelineperday.dart';
+import 'package:timeasy/views/timeentry/time_entry_edit_view.dart';
 
 enum ExportType {
   AllEntries,
@@ -108,8 +108,9 @@ class _DataListState extends State<DataList> {
               ),
               onPressed: _selectDateRange,
             ),
-            Expanded(child: SingleChildScrollView(
-                scrollDirection: Axis.vertical, child: _dataBody()),
+            Expanded(
+              child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical, child: _dataBody()),
             ),
           ],
         ),

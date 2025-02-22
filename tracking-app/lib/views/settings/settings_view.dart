@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_event.dart';
 import 'package:timeasy/bloc/authentication/authentication_state.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_block.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_state.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 
 class SettingsView extends StatefulWidget {
   @override

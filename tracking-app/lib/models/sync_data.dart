@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'project_sync_data.dart';
-import 'timeentry_sync_data.dart';
+import 'time_entry_sync_data.dart';
 
 class SyncData {
   final List<TimeEntrySyncData> timeEntries;

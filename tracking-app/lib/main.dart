@@ -7,20 +7,20 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_event.dart';
 import 'package:timeasy/bloc/authentication/authentication_state.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_block.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_event.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_state.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_event.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 import 'package:timeasy/models/project.dart';
-import 'package:timeasy/models/timeentry.dart';
+import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
-import 'package:timeasy/repositories/timeentry_repository.dart';
-import 'package:timeasy/services/background-sync_service.dart';
-import 'package:timeasy/services/internet-connection_service.dart';
+import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/services/background_sync_service.dart';
+import 'package:timeasy/services/internet_connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:timeasy/views/settings/settings_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/views/theme.dart';
-import 'package:timeasy/views/timeentry/timeentry_list_view.dart';
+import 'package:timeasy/views/timeentry/time_entry_list_view.dart';
 
 void main() {
   runApp(

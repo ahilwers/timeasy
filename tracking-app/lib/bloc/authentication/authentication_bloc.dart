@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:timeasy/models/api_credentials.dart';
-import 'package:timeasy/repositories/api-credentials_repository.dart';
-import 'package:timeasy/services/openid-authentication_service.dart';
+import 'package:timeasy/repositories/api_credentials_repository.dart';
+import 'package:timeasy/services/openid_authentication_service.dart';
 
 import 'authentication_event.dart';
 import 'authentication_state.dart';
