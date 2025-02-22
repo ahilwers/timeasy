@@ -52,6 +52,7 @@ class OpenIdAuthenticationService {
         Credential.fromJson(json.decode(apiCredential.credentialJson!));
     var token = await credential.getTokenResponse();
     if (token.accessToken == null) {
+      apiCredential.clear();
       return false;
     }
     apiCredential.accessToken = token.accessToken;

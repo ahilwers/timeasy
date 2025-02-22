@@ -89,6 +89,7 @@ class AuthenticationBloc
       } else {
         emit(AuthenticationInitial());
       }
+      repository.saveApiCredentials(credentials);
     } catch (e) {
       emit(AuthenticationError(e.toString()));
       emit(AuthenticationInitial());

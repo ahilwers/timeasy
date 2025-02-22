@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_event.dart';
+import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/internetconnection/internetconnection_block.dart';
 import 'package:timeasy/bloc/internetconnection/internetconnection_event.dart';
 import 'package:timeasy/bloc/internetconnection/internetconnection_state.dart';
@@ -13,6 +14,7 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/timeentry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/timeentry_repository.dart';
+import 'package:timeasy/services/background-sync_service.dart';
 import 'package:timeasy/services/internet-connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:timeasy/views/settings/settings_view.dart';
@@ -81,6 +83,8 @@ class _MainPageState extends State<MainPage>
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   late AnimationController buttonAnimationController;
   late InternetConnectionService _internetConnectionService;
+  final BackgroundSyncService _backgroundSyncService =
+      new BackgroundSyncService("");
 
   @override
   void initState() {
@@ -174,41 +178,55 @@ class _MainPageState extends State<MainPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: _getCurrentView(),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentPageIndex,
-        onDestinationSelected: (int index) {
-          _loadProjects();
-          setState(() {
-            _currentPageIndex = index;
-          });
+      body: BlocListener<AuthenticationBloc, AuthenticationState>(
+        listener: (context, state) {
+          if (state is AuthenticationAuthenticated) {
+            _backgroundSyncService.updateToken(state.credentials.accessToken!);
+            _backgroundSyncService.startSync();
+          } else if (state is AuthenticationError) {
+            _backgroundSyncService.stopSync();
+          }
         },
-        backgroundColor: Colors.transparent,
-        destinations: const <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.date_range),
-            icon: Icon(Icons.date_range),
-            label: 'Week',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.pending_actions),
-            icon: Icon(Icons.pending_actions),
-            label: 'Time Entries',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.format_list_bulleted),
-            icon: Icon(Icons.format_list_bulleted),
-            label: 'Projects',
-          ),
-        ],
+        child: Center(
+          child: _getCurrentView(),
+        ),
       ),
+      bottomNavigationBar: _getNavigationBar(),
+    );
+  }
+
+  Widget _getNavigationBar() {
+    return NavigationBar(
+      selectedIndex: _currentPageIndex,
+      onDestinationSelected: (int index) {
+        _loadProjects();
+        setState(() {
+          _currentPageIndex = index;
+        });
+      },
+      backgroundColor: Colors.transparent,
+      destinations: const <Widget>[
+        NavigationDestination(
+          selectedIcon: Icon(Icons.home),
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          selectedIcon: Icon(Icons.date_range),
+          icon: Icon(Icons.date_range),
+          label: 'Week',
+        ),
+        NavigationDestination(
+          selectedIcon: Icon(Icons.pending_actions),
+          icon: Icon(Icons.pending_actions),
+          label: 'Time Entries',
+        ),
+        NavigationDestination(
+          selectedIcon: Icon(Icons.format_list_bulleted),
+          icon: Icon(Icons.format_list_bulleted),
+          label: 'Projects',
+        ),
+      ],
     );
   }
 

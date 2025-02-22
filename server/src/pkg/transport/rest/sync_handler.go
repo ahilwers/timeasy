@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -61,11 +62,13 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 		syncTimeEntry := ChangedTimeEntryDto{
 			Id:              entry.ID,
 			Description:     entry.Description,
-			StartTime:       entry.StartTime,
-			EndTime:         entry.EndTime,
+			StartTime:       entry.StartTime.Format(time.RFC3339),
 			ProjectId:       entry.ProjectId,
 			ChangeType:      changeType,
-			ChangeTimestamp: changeTime,
+			ChangeTimestamp: changeTime.Format(time.RFC3339),
+		}
+		if !entry.EndTime.IsZero() {
+			syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
 		}
 		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
@@ -85,7 +88,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 			Id:              project.ID,
 			Name:            project.Name,
 			ChangeType:      changeType,
-			ChangeTimestamp: changeTime,
+			ChangeTimestamp: changeTime.Format(time.RFC3339),
 		}
 		syncEntries.Projects = append(syncEntries.Projects, syncProject)
 	}
@@ -123,24 +126,38 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 
 func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.SyncData, changedTimeEntries []ChangedTimeEntryDto, userId uuid.UUID) {
 	for _, changedTimeEntry := range changedTimeEntries {
-		timeEntry := handler.createTimeEntryFromDto(changedTimeEntry, userId)
-		switch changedTimeEntry.ChangeType {
-		case NEW, CHANGED:
-			syncData.TimeEntriesToBeUpdated = append(syncData.TimeEntriesToBeUpdated, timeEntry)
-		case DELETED:
-			syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)
+		timeEntry, err := handler.createTimeEntryFromDto(changedTimeEntry, userId)
+		if err == nil {
+			switch changedTimeEntry.ChangeType {
+			case NEW, CHANGED:
+				syncData.TimeEntriesToBeUpdated = append(syncData.TimeEntriesToBeUpdated, timeEntry)
+			case DELETED:
+				syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)
+			}
+		} else {
+			log.Printf("Could not create time entry from dto: %v\n", err)
 		}
 	}
 }
 
-func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntryDto, userId uuid.UUID) model.TimeEntry {
+func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntryDto, userId uuid.UUID) (model.TimeEntry, error) {
+	startTime, err := time.Parse(time.RFC3339, timeEntryDto.StartTime)
+	if err != nil {
+		return model.TimeEntry{}, err
+	}
 	timeEntry := model.TimeEntry{
 		ID:          timeEntryDto.Id,
 		ProjectId:   timeEntryDto.ProjectId,
 		UserId:      userId,
 		Description: timeEntryDto.Description,
-		StartTime:   timeEntryDto.StartTime,
-		EndTime:     timeEntryDto.EndTime,
+		StartTime:   startTime,
 	}
-	return timeEntry
+	if timeEntryDto.EndTime != "" {
+		endTime, err := time.Parse(time.RFC3339, timeEntryDto.EndTime)
+		if err != nil {
+			return model.TimeEntry{}, err
+		}
+		timeEntry.EndTime = endTime
+	}
+	return timeEntry, nil
 }
