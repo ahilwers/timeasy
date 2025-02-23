@@ -15,10 +15,8 @@ class TimeEntryRepository {
   }
 
   deleteTimeEntry(TimeEntry timeEntry) async {
-    timeEntry.updated = DateTime.now().toUtc();
-    final db = await DBProvider.dbProvider.database;
-    return await db.delete(TimeEntry.tableName,
-        where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+    timeEntry.deleted = true;
+    await updateTimeEntry(timeEntry);
   }
 
   closeLatestTimeEntry(String projectId) async {
@@ -42,7 +40,7 @@ class TimeEntryRepository {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.query(TimeEntry.tableName,
         where:
-            "${TimeEntry.endTimeColumn} = ? AND ${TimeEntry.projectIdColumn} = ?",
+            "${TimeEntry.endTimeColumn} = ? AND ${TimeEntry.projectIdColumn} = ? AND DELETED = 0",
         whereArgs: [0, projectId]);
     return queryResult.isNotEmpty ? TimeEntry.fromMap(queryResult.first) : null;
   }
@@ -57,7 +55,7 @@ class TimeEntryRepository {
   Future<List<TimeEntry>> getAllTimeEntries(String projectId) async {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.query(TimeEntry.tableName,
-        where: "${TimeEntry.projectIdColumn} = ?",
+        where: "${TimeEntry.projectIdColumn} = ? AND DELETED=0",
         whereArgs: [projectId],
         orderBy:
             "${TimeEntry.startTimeColumn} desc, ${TimeEntry.endTimeColumn} desc");
@@ -76,7 +74,7 @@ class TimeEntryRepository {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.query(TimeEntry.tableName,
         where:
-            "${TimeEntry.projectIdColumn} = ? AND ${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ?",
+            "${TimeEntry.projectIdColumn} = ? AND ${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ? AND DELETED=0",
         whereArgs: [projectId, startMillis, endMillis],
         orderBy: TimeEntry.startTimeColumn);
     return queryResult.isNotEmpty

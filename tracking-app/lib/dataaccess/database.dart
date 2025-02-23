@@ -56,6 +56,9 @@ class DBProvider {
         id TEXT,
         lastSyncTime INTEGER
       );
+    ''',
+    '''
+      ALTER TABLE TimeEntries ADD COLUMN deleted INTEGER DEFAULT 0;
     '''
   ];
 
