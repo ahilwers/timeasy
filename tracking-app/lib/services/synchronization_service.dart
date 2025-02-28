@@ -1,8 +1,11 @@
+import 'package:timeasy/repositories/settings_repository.dart';
+import 'package:timeasy/services/sync_data_retriever.dart';
+import 'package:timeasy/services/sync_data_sender.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
 
 class SynchronizationService {
-  DateTime? _syncTime;
   late SynchronizationApiService _apiService;
+  final SettingsRepository _settingsRepository = new SettingsRepository();
 
   SynchronizationService(String token) {
     const baseUrl = "http://localhost:8080/api/v1";
@@ -10,12 +13,14 @@ class SynchronizationService {
   }
 
   void synchronize() async {
-    _syncTime = DateTime.now();
     await _sendNewestEntries();
-    await _retrieveNewestEntries();
-    // set lastSyncTime to syncTime and store it
-
-    // better idea: store last updated time of retrieved entries as last sync time
+    var settings = await _settingsRepository.getSettings();
+    var dataRetriever = new SyncDataRetriever(_apiService);
+    await dataRetriever
+        .retrieveNewestEntries(settings.latestRemoteTimeEntryTimestamp);
+    var dataSender = new SyncDataSender(_apiService);
+    await dataSender.sendNewestEntries();
+    _updateLastSyncTimeSettings();
   }
 
   void updateToken(String token) {
@@ -24,12 +29,9 @@ class SynchronizationService {
 
   Future<void> _sendNewestEntries() async {}
 
-  Future<void> _retrieveNewestEntries() async {
-    try {
-      var syncData = await _apiService.getChangedData(null);
-      print(syncData);
-    } catch (e) {
-      print(e.toString());
-    }
+  Future<void> _updateLastSyncTimeSettings() async {
+    var settings = await _settingsRepository.getSettings();
+    settings.lastSyncTime = DateTime.now();
+    await _settingsRepository.saveSettings(settings);
   }
 }

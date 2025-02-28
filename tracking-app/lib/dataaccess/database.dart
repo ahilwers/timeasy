@@ -54,7 +54,11 @@ class DBProvider {
     '''
      CREATE TABLE Settings (
         id TEXT,
-        lastSyncTime INTEGER
+        lastSyncTime INTEGER,
+        latestRemoteTimeEntryTimestamp INTEGER DEFAULT 0,
+        latestRemoteProjectTimestamp INTEGER DEFAULT 0,
+        latestLocalTimeEntryTimestamp INTEGER DEFAULT 0,
+        latestLocalProjectTimestamp INTEGER DEFAULT 0
       );
     ''',
     '''

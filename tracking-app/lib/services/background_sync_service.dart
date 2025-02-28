@@ -16,6 +16,7 @@ class BackgroundSyncService {
   }
 
   void startSync() {
+    synchronize();
     _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
       if (!_isSyncing) {
         await synchronize();

@@ -24,4 +24,11 @@ class SyncData {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'TimeEntries': timeEntries.map((entry) => entry.toJson()).toList(),
+      'Projects': projects.map((project) => project.toJson()).toList(),
+    };
+  }
 }

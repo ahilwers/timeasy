@@ -35,7 +35,8 @@ func (repo *gormSyncRepository) UpdateAndDeleteData(data model.SyncData) error {
 
 func (repo *gormSyncRepository) updateAndDeleteProjects(tx *gorm.DB, data model.SyncData) error {
 	for _, project := range data.ProjectsToBeUpdated {
-		if err := tx.Save(&project).Error; err != nil {
+		err := repo.SaveProject(tx, &project)
+		if err != nil {
 			return err
 		}
 	}
@@ -47,9 +48,31 @@ func (repo *gormSyncRepository) updateAndDeleteProjects(tx *gorm.DB, data model.
 	return nil
 }
 
+func (repo *gormSyncRepository) SaveProject(tx *gorm.DB, project *model.Project) error {
+	existingProject, _ := repo.GetProjectById(project.ID)
+	// Don't overwrite created date and ownership of existing projects
+	if existingProject != nil {
+		project.UserId = existingProject.UserId
+		project.CreatedAt = existingProject.CreatedAt
+	}
+	if err := tx.Save(&project).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *gormSyncRepository) GetProjectById(id uuid.UUID) (*model.Project, error) {
+	var project model.Project
+	if err := repo.db.First(&project, id).Error; err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
 func (repo *gormSyncRepository) updateAndDeleteTimeEntries(tx *gorm.DB, data model.SyncData) error {
 	for _, timeEntry := range data.TimeEntriesToBeUpdated {
-		if err := tx.Save(&timeEntry).Error; err != nil {
+		err := repo.SaveTimeEntry(tx, &timeEntry)
+		if err != nil {
 			return err
 		}
 	}
@@ -59,6 +82,27 @@ func (repo *gormSyncRepository) updateAndDeleteTimeEntries(tx *gorm.DB, data mod
 		}
 	}
 	return nil
+}
+
+func (repo *gormSyncRepository) SaveTimeEntry(tx *gorm.DB, project *model.TimeEntry) error {
+	existingTimeEntry, _ := repo.GetTimeEntryById(project.ID)
+	// Don't overwrite created date and ownership of existing time entries
+	if existingTimeEntry != nil {
+		project.UserId = existingTimeEntry.UserId
+		project.CreatedAt = existingTimeEntry.CreatedAt
+	}
+	if err := tx.Save(&project).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *gormSyncRepository) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
+	var timeEntry model.TimeEntry
+	if err := repo.db.First(&timeEntry, id).Error; err != nil {
+		return nil, err
+	}
+	return &timeEntry, nil
 }
 
 func (repo *gormSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error) {

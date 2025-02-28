@@ -114,6 +114,7 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 	}
 
 	var syncData model.SyncData
+	handler.fillInClientSideChangedProjects(&syncData, syncDtos.Projects, userId)
 	handler.fillInClientSideChangedTimeEntries(&syncData, syncDtos.TimeEntries, userId)
 
 	err = handler.syncUsecase.UpdateAndDeleteData(syncData)
@@ -122,6 +123,27 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, nil)
+}
+
+func (handler *syncHandler) fillInClientSideChangedProjects(syncData *model.SyncData, changedProjects []ChangedProjectDto, userId uuid.UUID) {
+	for _, changedProject := range changedProjects {
+		project := handler.createProjectFromDto(changedProject, userId)
+		switch changedProject.ChangeType {
+		case NEW, CHANGED:
+			syncData.ProjectsToBeUpdated = append(syncData.ProjectsToBeUpdated, project)
+		case DELETED:
+			syncData.ProjectsToBeDeleted = append(syncData.ProjectsToBeDeleted, project)
+		}
+	}
+}
+
+func (handle *syncHandler) createProjectFromDto(projectDto ChangedProjectDto, userId uuid.UUID) model.Project {
+	project := model.Project{
+		ID:     projectDto.Id,
+		Name:   projectDto.Name,
+		UserId: userId,
+	}
+	return project
 }
 
 func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.SyncData, changedTimeEntries []ChangedTimeEntryDto, userId uuid.UUID) {

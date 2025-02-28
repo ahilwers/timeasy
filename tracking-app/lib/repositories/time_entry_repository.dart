@@ -82,6 +82,19 @@ class TimeEntryRepository {
         : [];
   }
 
+  Future<List<TimeEntry>> getTimeEntriesChangedAfter(
+      DateTime? changeTimestamp) async {
+    var timeStamp = 0;
+    if (changeTimestamp != null)
+      timeStamp = changeTimestamp.toUtc().millisecondsSinceEpoch;
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.query(TimeEntry.tableName,
+        where: "${TimeEntry.updatedColumn} > ?", whereArgs: [timeStamp]);
+    return queryResult.isNotEmpty
+        ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList()
+        : [];
+  }
+
   DateTime getDateWithoutTime(DateTime date) {
     return new DateTime(date.year, date.month, date.day);
   }

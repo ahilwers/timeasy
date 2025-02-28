@@ -1,17 +1,17 @@
-import {Component, computed, effect, inject, OnInit, signal, ViewChild} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
-import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {MessageService} from 'primeng/api';
-import {TranslatePipe, TranslateService} from '@ngx-translate/core';
-import {TimeEntry} from '../../../models/timeentry.model';
-import {TimeEntryService} from '../../../services/time-entry.service';
-import {Button} from 'primeng/button';
-import {InputText} from 'primeng/inputtext';
-import {Toast} from 'primeng/toast';
-import {DatePicker} from 'primeng/datepicker';
-import {ProjectService} from '../../../services/project.service';
-import {Select} from 'primeng/select';
-import {Project} from '../../../models/project.model';
+import { Component, computed, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MessageService } from 'primeng/api';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TimeEntry } from '../../../models/timeentry.model';
+import { TimeEntryService } from '../../../services/time-entry.service';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Toast } from 'primeng/toast';
+import { DatePicker } from 'primeng/datepicker';
+import { ProjectService } from '../../../services/project.service';
+import { Select } from 'primeng/select';
+import { Project } from '../../../models/project.model';
 
 @Component({
   selector: 'app-time-entry-form',
@@ -39,7 +39,7 @@ export class TimeEntryFormComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
 
-  timeEntryId : string = '';
+  timeEntryId: string = '';
   timeEntryForm!: FormGroup;
 
   isNew = signal<boolean>(true);
@@ -68,7 +68,7 @@ export class TimeEntryFormComponent implements OnInit {
     });
     effect(() => {
       const projectData = this.project();
-      if (projectData && projectData!=this.currentProjectData) {
+      if (projectData && projectData != this.currentProjectData) {
         this.currentProjectData = projectData;
         this.timeEntryForm.patchValue({
           project: projectData,
@@ -79,7 +79,7 @@ export class TimeEntryFormComponent implements OnInit {
     effect(() => {
       const error = this.error();
       if (error) {
-        this.messageService.add({severity: 'error', summary: this.translateService.instant('globals.error'), detail: error});
+        this.messageService.add({ severity: 'error', summary: this.translateService.instant('globals.error'), detail: error });
       }
     });
     effect(() => {
@@ -102,7 +102,7 @@ export class TimeEntryFormComponent implements OnInit {
     });
 
     this.timeEntryId = this.route.snapshot.paramMap.get('timeEntryId') || '';
-    this.isNew.set(this.timeEntryId==='');
+    this.isNew.set(this.timeEntryId === '');
 
     if (!this.isNew()) {
       this.timeEntryService.loadTimeEntry(this.timeEntryId);
@@ -115,7 +115,7 @@ export class TimeEntryFormComponent implements OnInit {
       const endTimeStamp = this.timeEntryForm.value.endTime ? this.combineDateAndTime(this.timeEntryForm.value.endDate, this.timeEntryForm.value.endTime) : undefined
       const timeEntry: TimeEntry = {
         id: this.timeEntryId,
-        projectId: this.timeEntryForm.value.project.Id,
+        projectId: this.timeEntryForm.value.project.id,
         startTime: startTimeStamp,
         endTime: endTimeStamp,
         description: this.timeEntryForm.value.description
@@ -133,7 +133,7 @@ export class TimeEntryFormComponent implements OnInit {
 
   private showFormValidationErrors() {
     if (this.timeEntryForm.get('project')!.invalid) {
-      this.messageService.add({severity: 'error', summary: this.translateService.instant('globals.error'), detail: this.translateService.instant('timeEntries.selectProject')});
+      this.messageService.add({ severity: 'error', summary: this.translateService.instant('globals.error'), detail: this.translateService.instant('timeEntries.selectProject') });
     }
   }
 
