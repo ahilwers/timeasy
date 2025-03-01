@@ -12,7 +12,7 @@ class SynchronizationService {
     _apiService = SynchronizationApiService(baseUrl: baseUrl, token: token);
   }
 
-  void synchronize() async {
+  Future<void> synchronize() async {
     await _sendNewestEntries();
     var settings = await _settingsRepository.getSettings();
     var dataRetriever = new SyncDataRetriever(_apiService);

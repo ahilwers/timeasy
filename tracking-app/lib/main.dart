@@ -10,6 +10,8 @@ import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_event.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
+import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
+import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
@@ -27,7 +29,15 @@ void main() {
     MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => AuthenticationBloc()),
-        BlocProvider(create: (context) => InternetConnectionBloc())
+        BlocProvider(create: (context) => InternetConnectionBloc()),
+        BlocProvider(create: (context) => SynchronizationBloc()),
+        RepositoryProvider<BackgroundSyncService>(
+          create: (context) {
+            final syncBloc =
+                BlocProvider.of<SynchronizationBloc>(context, listen: false);
+            return BackgroundSyncService("", syncBloc);
+          },
+        ),
       ],
       child: MyApp(),
     ),
@@ -83,8 +93,6 @@ class _MainPageState extends State<MainPage>
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   late AnimationController buttonAnimationController;
   late InternetConnectionService _internetConnectionService;
-  final BackgroundSyncService _backgroundSyncService =
-      new BackgroundSyncService("");
 
   @override
   void initState() {
@@ -180,11 +188,12 @@ class _MainPageState extends State<MainPage>
     return Scaffold(
       body: BlocListener<AuthenticationBloc, AuthenticationState>(
         listener: (context, state) {
+          final backgroundSyncService = context.read<BackgroundSyncService>();
           if (state is AuthenticationAuthenticated) {
-            _backgroundSyncService.updateToken(state.credentials.accessToken!);
-            _backgroundSyncService.startSync();
+            backgroundSyncService.updateToken(state.credentials.accessToken!);
+            backgroundSyncService.startSync();
           } else if (state is AuthenticationError) {
-            _backgroundSyncService.stopSync();
+            backgroundSyncService.stopSync();
           }
         },
         child: Center(
@@ -284,28 +293,36 @@ class _MainPageState extends State<MainPage>
           ),
           _projects == null
               ? Text(AppLocalizations.of(context)!.loadingProject)
-              : new DropdownButton<String>(
-                  value: _currentProject.id,
-                  items: _projects!.map(
-                    (Project value) {
-                      return new DropdownMenuItem<String>(
-                        value: value.id,
-                        child: new Text(value.name),
+              : BlocListener<SynchronizationBloc, SynchronizationState>(
+                  listener: (context, state) {
+                    if (state is SynchronizationSuccess) {
+                      _loadProjects();
+                      _updateAppState();
+                    }
+                  },
+                  child: new DropdownButton<String>(
+                    value: _currentProject.id,
+                    items: _projects!.map(
+                      (Project value) {
+                        return new DropdownMenuItem<String>(
+                          value: value.id,
+                          child: new Text(value.name),
+                        );
+                      },
+                    ).toList(),
+                    onChanged: (String? value) {
+                      _projectRepository.getProjectById(value!).then(
+                        (Project? projectFromDb) {
+                          setState(
+                            () {
+                              _setCurrentProject(projectFromDb!);
+                            },
+                          );
+                          _updateAppState();
+                        },
                       );
                     },
-                  ).toList(),
-                  onChanged: (String? value) {
-                    _projectRepository.getProjectById(value!).then(
-                      (Project? projectFromDb) {
-                        setState(
-                          () {
-                            _setCurrentProject(projectFromDb!);
-                          },
-                        );
-                        _updateAppState();
-                      },
-                    );
-                  },
+                  ),
                 ),
         ],
       ),

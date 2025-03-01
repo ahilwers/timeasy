@@ -18,12 +18,8 @@ class SyncDataRetriever {
   SyncDataRetriever(this._apiService) {}
 
   Future<void> retrieveNewestEntries(DateTime? changedAfter) async {
-    try {
-      var syncData = await _apiService.getChangedData(changedAfter);
-      await _saveEntries(syncData);
-    } catch (e) {
-      print(e.toString());
-    }
+    var syncData = await _apiService.getChangedData(changedAfter);
+    await _saveEntries(syncData);
   }
 
   Future<void> _saveEntries(SyncData syncData) async {
@@ -34,7 +30,8 @@ class SyncDataRetriever {
   Future<void> _saveTimeEntries(List<TimeEntrySyncData> syncData) async {
     DateTime? latestUpdateTime = null;
     for (var entry in syncData) {
-      if (latestUpdateTime == null || entry.changeTimestamp.isAfter(latestUpdateTime)) {
+      if (latestUpdateTime == null ||
+          entry.changeTimestamp.isAfter(latestUpdateTime)) {
         latestUpdateTime = entry.changeTimestamp;
       }
       await _saveTimeEntry(entry);
@@ -44,18 +41,21 @@ class SyncDataRetriever {
 
   Future<void> _saveTimeEntry(TimeEntrySyncData syncData) async {
     var timeEntry = _createTimeEntryFromSyncData(syncData);
-    var existingTimeEntry = await _timeEntryRepository.getTimeEntryById(timeEntry.id);
+    var existingTimeEntry =
+        await _timeEntryRepository.getTimeEntryById(timeEntry.id);
     switch (syncData.changeType) {
       case ChangeType.NEW:
       case ChangeType.CHANGED:
         if (existingTimeEntry == null) {
           await _timeEntryRepository.addTimeEntry(timeEntry);
-        } else if (syncData.changeTimestamp.isAfter(existingTimeEntry.updated)) {
+        } else if (syncData.changeTimestamp
+            .isAfter(existingTimeEntry.updated)) {
           await _timeEntryRepository.updateTimeEntry(timeEntry);
         }
         break;
       case ChangeType.DELETED:
-        if (existingTimeEntry != null && syncData.changeTimestamp.isAfter(existingTimeEntry.updated)) {
+        if (existingTimeEntry != null &&
+            syncData.changeTimestamp.isAfter(existingTimeEntry.updated)) {
           await _timeEntryRepository.deleteTimeEntry(timeEntry);
         }
         break;
@@ -76,7 +76,8 @@ class SyncDataRetriever {
   Future<void> _saveProjects(List<ProjectSyncData> syncData) async {
     DateTime? latestUpdateTime = null;
     for (var project in syncData) {
-      if (latestUpdateTime == null || project.changeTimestamp.isAfter(latestUpdateTime)) {
+      if (latestUpdateTime == null ||
+          project.changeTimestamp.isAfter(latestUpdateTime)) {
         latestUpdateTime = project.changeTimestamp;
       }
       await _saveProject(project);
@@ -97,7 +98,8 @@ class SyncDataRetriever {
         }
         break;
       case ChangeType.DELETED:
-        if (existingProject != null && syncData.changeTimestamp.isAfter(existingProject.updated)) {
+        if (existingProject != null &&
+            syncData.changeTimestamp.isAfter(existingProject.updated)) {
           _projectRepository.deleteProject(project);
         }
         break;
@@ -113,7 +115,8 @@ class SyncDataRetriever {
     return project;
   }
 
-  Future<void> _updateRemoteTimeEntrySettings(DateTime? latestUpdateTime) async {
+  Future<void> _updateRemoteTimeEntrySettings(
+      DateTime? latestUpdateTime) async {
     var settings = await _settingsRepository.getSettings();
     settings.latestRemoteTimeEntryTimestamp = latestUpdateTime;
     await _settingsRepository.saveSettings(settings);

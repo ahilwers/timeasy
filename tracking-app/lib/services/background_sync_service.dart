@@ -1,14 +1,18 @@
 import 'dart:async';
 
+import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
+import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/services/synchronization_service.dart';
 
 class BackgroundSyncService {
   bool _isSyncing = false;
   Timer? _timer;
   late SynchronizationService _syncService;
+  late SynchronizationBloc _synchronizationBloc;
 
-  BackgroundSyncService(String token) {
+  BackgroundSyncService(String token, SynchronizationBloc synchronizationBloc) {
     _syncService = SynchronizationService(token);
+    _synchronizationBloc = synchronizationBloc;
   }
 
   void updateToken(String token) {
@@ -29,12 +33,14 @@ class BackgroundSyncService {
   }
 
   Future<void> synchronize() async {
+    _synchronizationBloc.add(SynchonizationStartEvent());
     if (_isSyncing) return;
     _isSyncing = true;
     try {
-      _syncService.synchronize();
-      await Future.delayed(Duration(seconds: 70));
+      await _syncService.synchronize();
+      _synchronizationBloc.add(SynchronizationSuccessEvent());
     } catch (e) {
+      _synchronizationBloc.add(SynchronizationErrorEvent(e.toString()));
     } finally {
       _isSyncing = false;
     }
