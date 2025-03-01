@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:timeasy/dataaccess/database.dart';
 import 'package:timeasy/models/project.dart';
 
@@ -12,7 +11,8 @@ class ProjectRepository {
   updateProject(Project project) async {
     project.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
-    return await db.update(Project.tableName, project.toMap(), where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+    return await db
+        .update(Project.tableName, project.toMap(), where: "${Project.idColumn} = ?", whereArgs: [project.id]);
   }
 
   deleteProject(Project project) async {
@@ -28,7 +28,8 @@ class ProjectRepository {
 
   Future<List<Project>> getAllProjects() async {
     final db = await DBProvider.dbProvider.database;
-    var queryResult = await db.query(Project.tableName, where: "${Project.deletedColumn} = 0", orderBy: "${Project.nameColumn}");
+    var queryResult =
+        await db.query(Project.tableName, where: "${Project.deletedColumn} = 0", orderBy: "${Project.nameColumn}");
     return queryResult.isNotEmpty ? queryResult.map((entry) => Project.fromMap(entry)).toList() : [];
   }
 
@@ -62,5 +63,14 @@ class ProjectRepository {
   void saveLastUsedProject(Project project) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString("currentProjectId", project.id);
+  }
+
+  Future<List<Project>> getProjectsChangedAfter(DateTime? changeTimestamp) async {
+    var timeStamp = 0;
+    if (changeTimestamp != null) timeStamp = changeTimestamp.toUtc().millisecondsSinceEpoch;
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.query(Project.tableName,
+        where: "${Project.updatedColumn} > ?", whereArgs: [timeStamp], orderBy: "${Project.nameColumn}");
+    return queryResult.isNotEmpty ? queryResult.map((entry) => Project.fromMap(entry)).toList() : [];
   }
 }

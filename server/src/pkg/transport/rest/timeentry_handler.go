@@ -3,6 +3,7 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 	"timeasy-server/pkg/domain/model"
@@ -47,6 +48,7 @@ type timeEntryDto struct {
 func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 	var entryDto timeEntryUpdateDto
 	if err := context.ShouldBindJSON(&entryDto); err != nil {
+		log.Printf("Could not bind json: %v\n", err)
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

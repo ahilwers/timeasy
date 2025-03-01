@@ -1,0 +1,37 @@
+import 'package:timeasy/repositories/settings_repository.dart';
+import 'package:timeasy/services/sync_data_retriever.dart';
+import 'package:timeasy/services/sync_data_sender.dart';
+import 'package:timeasy/services/synchronization_api_service.dart';
+
+class SynchronizationService {
+  late SynchronizationApiService _apiService;
+  final SettingsRepository _settingsRepository = new SettingsRepository();
+
+  SynchronizationService(String token) {
+    const baseUrl = "http://localhost:8080/api/v1";
+    _apiService = SynchronizationApiService(baseUrl: baseUrl, token: token);
+  }
+
+  Future<void> synchronize() async {
+    await _sendNewestEntries();
+    var settings = await _settingsRepository.getSettings();
+    var dataRetriever = new SyncDataRetriever(_apiService);
+    await dataRetriever
+        .retrieveNewestEntries(settings.latestRemoteTimeEntryTimestamp);
+    var dataSender = new SyncDataSender(_apiService);
+    await dataSender.sendNewestEntries();
+    _updateLastSyncTimeSettings();
+  }
+
+  void updateToken(String token) {
+    _apiService.updateToken(token);
+  }
+
+  Future<void> _sendNewestEntries() async {}
+
+  Future<void> _updateLastSyncTimeSettings() async {
+    var settings = await _settingsRepository.getSettings();
+    settings.lastSyncTime = DateTime.now();
+    await _settingsRepository.saveSettings(settings);
+  }
+}

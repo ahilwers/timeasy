@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -61,11 +62,13 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 		syncTimeEntry := ChangedTimeEntryDto{
 			Id:              entry.ID,
 			Description:     entry.Description,
-			StartTime:       entry.StartTime,
-			EndTime:         entry.EndTime,
+			StartTime:       entry.StartTime.Format(time.RFC3339),
 			ProjectId:       entry.ProjectId,
 			ChangeType:      changeType,
-			ChangeTimestamp: changeTime,
+			ChangeTimestamp: changeTime.Format(time.RFC3339),
+		}
+		if !entry.EndTime.IsZero() {
+			syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
 		}
 		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
@@ -85,7 +88,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 			Id:              project.ID,
 			Name:            project.Name,
 			ChangeType:      changeType,
-			ChangeTimestamp: changeTime,
+			ChangeTimestamp: changeTime.Format(time.RFC3339),
 		}
 		syncEntries.Projects = append(syncEntries.Projects, syncProject)
 	}
@@ -111,6 +114,7 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 	}
 
 	var syncData model.SyncData
+	handler.fillInClientSideChangedProjects(&syncData, syncDtos.Projects, userId)
 	handler.fillInClientSideChangedTimeEntries(&syncData, syncDtos.TimeEntries, userId)
 
 	err = handler.syncUsecase.UpdateAndDeleteData(syncData)
@@ -121,26 +125,61 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 	context.JSON(http.StatusOK, nil)
 }
 
-func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.SyncData, changedTimeEntries []ChangedTimeEntryDto, userId uuid.UUID) {
-	for _, changedTimeEntry := range changedTimeEntries {
-		timeEntry := handler.createTimeEntryFromDto(changedTimeEntry, userId)
-		switch changedTimeEntry.ChangeType {
+func (handler *syncHandler) fillInClientSideChangedProjects(syncData *model.SyncData, changedProjects []ChangedProjectDto, userId uuid.UUID) {
+	for _, changedProject := range changedProjects {
+		project := handler.createProjectFromDto(changedProject, userId)
+		switch changedProject.ChangeType {
 		case NEW, CHANGED:
-			syncData.TimeEntriesToBeUpdated = append(syncData.TimeEntriesToBeUpdated, timeEntry)
+			syncData.ProjectsToBeUpdated = append(syncData.ProjectsToBeUpdated, project)
 		case DELETED:
-			syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)
+			syncData.ProjectsToBeDeleted = append(syncData.ProjectsToBeDeleted, project)
 		}
 	}
 }
 
-func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntryDto, userId uuid.UUID) model.TimeEntry {
+func (handle *syncHandler) createProjectFromDto(projectDto ChangedProjectDto, userId uuid.UUID) model.Project {
+	project := model.Project{
+		ID:     projectDto.Id,
+		Name:   projectDto.Name,
+		UserId: userId,
+	}
+	return project
+}
+
+func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.SyncData, changedTimeEntries []ChangedTimeEntryDto, userId uuid.UUID) {
+	for _, changedTimeEntry := range changedTimeEntries {
+		timeEntry, err := handler.createTimeEntryFromDto(changedTimeEntry, userId)
+		if err == nil {
+			switch changedTimeEntry.ChangeType {
+			case NEW, CHANGED:
+				syncData.TimeEntriesToBeUpdated = append(syncData.TimeEntriesToBeUpdated, timeEntry)
+			case DELETED:
+				syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)
+			}
+		} else {
+			log.Printf("Could not create time entry from dto: %v\n", err)
+		}
+	}
+}
+
+func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntryDto, userId uuid.UUID) (model.TimeEntry, error) {
+	startTime, err := time.Parse(time.RFC3339, timeEntryDto.StartTime)
+	if err != nil {
+		return model.TimeEntry{}, err
+	}
 	timeEntry := model.TimeEntry{
 		ID:          timeEntryDto.Id,
 		ProjectId:   timeEntryDto.ProjectId,
 		UserId:      userId,
 		Description: timeEntryDto.Description,
-		StartTime:   timeEntryDto.StartTime,
-		EndTime:     timeEntryDto.EndTime,
+		StartTime:   startTime,
 	}
-	return timeEntry
+	if timeEntryDto.EndTime != "" {
+		endTime, err := time.Parse(time.RFC3339, timeEntryDto.EndTime)
+		if err != nil {
+			return model.TimeEntry{}, err
+		}
+		timeEntry.EndTime = endTime
+	}
+	return timeEntry, nil
 }

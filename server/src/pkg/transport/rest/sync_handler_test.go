@@ -88,14 +88,14 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 	assert.Equal(t, 2, len(syncEntries.TimeEntries))
 
 	assert.Equal(t, deletedTimeEntry.Description, syncEntries.TimeEntries[0].Description)
-	assert.Equal(t, deletedTimeEntry.StartTime, syncEntries.TimeEntries[0].StartTime)
-	assert.Equal(t, deletedTimeEntry.EndTime, syncEntries.TimeEntries[0].EndTime)
+	assert.Equal(t, deletedTimeEntry.StartTime, stringToTime(syncEntries.TimeEntries[0].StartTime))
+	assert.Equal(t, deletedTimeEntry.EndTime, stringToTime(syncEntries.TimeEntries[0].EndTime))
 	assert.Equal(t, deletedTimeEntry.ProjectId, syncEntries.TimeEntries[0].ProjectId)
 	assert.Equal(t, DELETED, syncEntries.TimeEntries[0].ChangeType)
 
 	assert.Equal(t, updatedTimeEntry.Description, syncEntries.TimeEntries[1].Description)
-	assert.Equal(t, updatedTimeEntry.StartTime, syncEntries.TimeEntries[1].StartTime)
-	assert.Equal(t, updatedTimeEntry.EndTime, syncEntries.TimeEntries[1].EndTime)
+	assert.Equal(t, updatedTimeEntry.StartTime, stringToTime(syncEntries.TimeEntries[1].StartTime))
+	assert.Equal(t, updatedTimeEntry.EndTime, stringToTime(syncEntries.TimeEntries[1].EndTime))
 	assert.Equal(t, updatedTimeEntry.ProjectId, syncEntries.TimeEntries[1].ProjectId)
 	assert.Equal(t, CHANGED, syncEntries.TimeEntries[1].ChangeType)
 }
@@ -130,8 +130,8 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	timeEntry1 := ChangedTimeEntryDto{
 		Id:          id,
 		Description: "timeEntry1",
-		StartTime:   startTime,
-		EndTime:     endTime,
+		StartTime:   startTime.Format(time.RFC3339),
+		EndTime:     endTime.Format(time.RFC3339),
 		ProjectId:   project.ID,
 		ChangeType:  NEW,
 	}
@@ -200,11 +200,11 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
 	updatedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
 		Description:     "updatedTimeEntry",
-		StartTime:       startTime,
-		EndTime:         endTime,
+		StartTime:       startTime.Format(time.RFC3339),
+		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
 		ChangeType:      CHANGED,
-		ChangeTimestamp: changeTime,
+		ChangeTimestamp: changeTime.Format(time.RFC3339),
 	}
 
 	syncEntries := SyncEntries{
@@ -271,11 +271,11 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 	deletedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
 		Description:     "deletedTimeEntry",
-		StartTime:       startTime,
-		EndTime:         endTime,
+		StartTime:       startTime.Format(time.RFC3339),
+		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
 		ChangeType:      DELETED,
-		ChangeTimestamp: changeTime,
+		ChangeTimestamp: changeTime.Format(time.RFC3339),
 	}
 
 	syncEntries := SyncEntries{
@@ -358,4 +358,9 @@ func Test_syncHandler_GetChangedProjects(t *testing.T) {
 
 	assert.Equal(t, updatedProject.Name, syncEntries.Projects[1].Name)
 	assert.Equal(t, CHANGED, syncEntries.Projects[1].ChangeType)
+}
+
+func stringToTime(timeString string) time.Time {
+	t, _ := time.Parse(time.RFC3339, timeString)
+	return t
 }

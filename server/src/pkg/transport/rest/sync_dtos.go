@@ -3,10 +3,8 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/gofrs/uuid"
+	"strings"
 )
 
 type ChangeType uint8
@@ -65,18 +63,18 @@ type SyncEntries struct {
 }
 
 type ChangedTimeEntryDto struct {
-	Id              uuid.UUID
+	Id              uuid.UUID  `json:"id" binding:"required"`
 	Description     string     `json:"description" binding:"required"`
-	StartTime       time.Time  `json:"startTime" binding:"required"`
-	EndTime         time.Time  `json:"endTime"`
+	StartTime       string     `json:"startTime" binding:"required"`
+	EndTime         string     `json:"endTime,omitempty"`
 	ProjectId       uuid.UUID  `json:"projectId" binding:"required"`
 	ChangeType      ChangeType `json:"changeType" binding:"required"`
-	ChangeTimestamp time.Time  `json:"changeTimestamp" binding:"required"`
+	ChangeTimestamp string     `json:"changeTimestamp" binding:"required"`
 }
 
 type ChangedProjectDto struct {
-	Id              uuid.UUID
+	Id              uuid.UUID  `json:"id" binding:"required"`
 	Name            string     `json:"name" binding:"required"`
 	ChangeType      ChangeType `json:"changeType" binding:"required"`
-	ChangeTimestamp time.Time  `json:"changeTimestamp" binding:"required"`
+	ChangeTimestamp string     `json:"changeTimestamp" binding:"required"`
 }

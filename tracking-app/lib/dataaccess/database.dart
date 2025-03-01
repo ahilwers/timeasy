@@ -50,6 +50,19 @@ class DBProvider {
         logoutUrl TEXT,
         credentialJson TEXT
       );
+    ''',
+    '''
+     CREATE TABLE Settings (
+        id TEXT,
+        lastSyncTime INTEGER,
+        latestRemoteTimeEntryTimestamp INTEGER DEFAULT 0,
+        latestRemoteProjectTimestamp INTEGER DEFAULT 0,
+        latestLocalTimeEntryTimestamp INTEGER DEFAULT 0,
+        latestLocalProjectTimestamp INTEGER DEFAULT 0
+      );
+    ''',
+    '''
+      ALTER TABLE TimeEntries ADD COLUMN deleted INTEGER DEFAULT 0;
     '''
   ];
 

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_event.dart';
 import 'package:timeasy/bloc/authentication/authentication_state.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_block.dart';
-import 'package:timeasy/bloc/internetconnection/internetconnection_state.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
+import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
+import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
+import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
+import 'package:timeasy/repositories/settings_repository.dart';
 
 class SettingsView extends StatefulWidget {
   @override
@@ -14,8 +18,12 @@ class SettingsView extends StatefulWidget {
 }
 
 class SettingsViewState extends State<SettingsView> {
+  Locale? _locale;
+
   @override
   Widget build(BuildContext context) {
+    _locale = Localizations.localeOf(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Settings'),
@@ -77,6 +85,34 @@ class SettingsViewState extends State<SettingsView> {
                   );
                 }
               }),
+              SizedBox(height: 20),
+              BlocBuilder<SynchronizationBloc, SynchronizationState>(
+                builder: (context, state) {
+                  if (state is SynchronizationSuccess ||
+                      state is SynchronizationInitial) {
+                    return FutureBuilder<String>(
+                      future: _getLastSyncDate(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Text("Letzte Synchronisierung: Lädt...");
+                        } else if (snapshot.hasError) {
+                          return Text("Fehler beim Laden des Datums");
+                        } else {
+                          return Text(
+                              "Letzte Synchronisierung: ${snapshot.data ?? ''}");
+                        }
+                      },
+                    );
+                  } else if (state is SynchronizationError) {
+                    return Text(
+                      "Fehler während der Synchronisierung: ${state.message}",
+                    );
+                  } else {
+                    return Text("");
+                  }
+                },
+              ),
             ],
           ),
         ),
@@ -90,5 +126,14 @@ class SettingsViewState extends State<SettingsView> {
 
   void _logout() {
     context.read<AuthenticationBloc>().add(LogoutEvent());
+  }
+
+  Future<String> _getLastSyncDate() async {
+    var repository = new SettingsRepository();
+    var settings = await repository.getSettings();
+    var formatter = new DateFormat.yMd(_locale.toString()).add_Hm();
+    return settings.lastSyncTime == null
+        ? ""
+        : formatter.format(settings.lastSyncTime!.toLocal());
   }
 }
