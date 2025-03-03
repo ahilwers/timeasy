@@ -5,7 +5,6 @@ import { TimeEntry } from '../models/timeentry.model';
 import { environment } from '../../environments/environment';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeEntryState } from './time-entry.state';
-import { v4 as uuidv4 } from 'uuid'
 import { Project } from '../models/project.model';
 
 @Injectable({
@@ -82,7 +81,6 @@ export class TimeEntryService {
 
   addTimeEntry(data: TimeEntry) {
     this.resetState();
-    data.id = uuidv4();
     this.http.post<TimeEntry>(`${this.apiUrl}`, data).pipe(
       tap((addedTimeEntry) => {
         this.state.lastUpdatedTimeEntry.set(addedTimeEntry);
