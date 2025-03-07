@@ -18,11 +18,12 @@ import localeDe from '@angular/common/locales/de';
 import {registerLocaleData} from '@angular/common';
 import {provideTranslateService, TranslateLoader} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
+import { environment } from '../environments/environment';
 
 export const provideKeycloakAngular = () =>
   provideKeycloak({
     config: {
-      url: 'http://localhost:8180',
+      url: environment.authUrl,
       realm: 'timeasy',
       clientId: 'timeasy-webclient'
     },
@@ -38,8 +39,9 @@ export const provideKeycloakAngular = () =>
     providers: [AutoRefreshTokenService, UserActivityService]
   });
 
+const apiUrl = environment.apiUrl.replace(/\/$/, '');
 const urlCondition = createInterceptorCondition<IncludeBearerTokenCondition>({
-  urlPattern: /^(http:\/\/localhost:8080)(\/.*)?$/i,
+  urlPattern: new RegExp(`^${apiUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}(\\/.*)?$`, 'i'),
   bearerPrefix: 'Bearer'
 });
 
