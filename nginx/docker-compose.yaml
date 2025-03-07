@@ -1,0 +1,8 @@
+version: "3"
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8380:80"
+    volumes:
+      - ~/Development/Projects/timeasy/webclient/timeasy-webclient/dist/timeasy-webclient:/usr/share/nginx/html
