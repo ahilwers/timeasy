@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/transport/rest"
@@ -16,11 +17,14 @@ func main() {
 		panic(err)
 	}
 
+	log.Printf("Connecting to database at %v:%v\n", configuration.DbHost, configuration.DbPort)
 	err = databaseService.Init(configuration.DbHost, configuration.DbName, configuration.DbUser,
 		configuration.DbPassword, configuration.DbPort)
 	if err != nil {
 		panic(err)
 	}
+
+	log.Printf("Authentication server is at %v\n", configuration.KeycloakHost)
 
 	flag.Parse() // Intialize glog flags
 

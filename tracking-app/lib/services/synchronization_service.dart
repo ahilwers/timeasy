@@ -1,3 +1,4 @@
+import 'package:timeasy/environment.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/sync_data_retriever.dart';
 import 'package:timeasy/services/sync_data_sender.dart';
@@ -8,8 +9,8 @@ class SynchronizationService {
   final SettingsRepository _settingsRepository = new SettingsRepository();
 
   SynchronizationService(String token) {
-    const baseUrl = "http://localhost:8080/api/v1";
-    _apiService = SynchronizationApiService(baseUrl: baseUrl, token: token);
+    _apiService = SynchronizationApiService(
+        baseUrl: Environment.apiBaseUrl, token: token);
   }
 
   Future<void> synchronize() async {

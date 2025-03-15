@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:timeasy/environment.dart';
 import 'package:timeasy/models/api_credentials.dart';
 import 'package:timeasy/repositories/api_credentials_repository.dart';
 import 'package:timeasy/services/openid_authentication_service.dart';
@@ -74,8 +75,8 @@ class AuthenticationBloc
   }
 
   OpenIdAuthenticationService _createAuthenticator() {
-    return new OpenIdAuthenticationService(
-        "http://localhost:8180/realms/timeasy");
+    print("Auth-Url: ${Environment.authUrl}");
+    return new OpenIdAuthenticationService(Environment.authUrl);
   }
 
   FutureOr<void> _onRefreshToken(

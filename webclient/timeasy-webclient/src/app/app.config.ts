@@ -29,6 +29,8 @@ export const provideKeycloakAngular = () =>
     },
     initOptions: {
       onLoad: 'check-sso',
+      enableLogging: true,
+      checkLoginIframe: false
     },
     features: [
       withAutoRefreshToken({

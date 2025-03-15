@@ -15,11 +15,14 @@ class SyncData {
   factory SyncData.fromJson(String jsonString) {
     final Map<String, dynamic> jsonData = json.decode(jsonString);
 
+    var timeEntries = jsonData['TimeEntries'] ?? [];
+    var projects = jsonData['Projects'] ?? [];
+
     return SyncData(
-      timeEntries: (jsonData['TimeEntries'] as List<dynamic>)
+      timeEntries: (timeEntries as List<dynamic>)
           .map((entry) => TimeEntrySyncData.fromJson(entry))
           .toList(),
-      projects: (jsonData['Projects'] as List<dynamic>)
+      projects: (projects as List<dynamic>)
           .map((project) => ProjectSyncData.fromJson(project))
           .toList(),
     );
