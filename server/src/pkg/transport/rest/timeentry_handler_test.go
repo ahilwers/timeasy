@@ -804,18 +804,163 @@ func Test_timeEntryHandler_GetAllTimeEntriesOnlyReturnsEntriesOfUser(t *testing.
 	}
 }
 
+func Test_timeEntryHandler_GetAllTimeEntries_WithProjectId_ReturnsTimeEntriesOfProject(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project1 := model.Project{
+		Name:   "project1",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	assert.Nil(t, err)
+	project2 := model.Project{
+		Name:   "project2",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	assert.Nil(t, err)
+
+	addTimeEntries(t, handlerTest, 3, userId, project1)
+	addTimeEntries(t, handlerTest, 2, userId, project2)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/timeentries?projectId="+project1.ID.String(), nil)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var entriesFromService []timeEntryDto
+	json.Unmarshal(w.Body.Bytes(), &entriesFromService)
+	assert.Equal(t, 3, len(entriesFromService))
+	for index, entryFromService := range entriesFromService {
+		assert.Equal(t, fmt.Sprintf("entry %v", index+1), entryFromService.Description)
+		assert.Equal(t, project1.ID, entryFromService.ProjectId)
+	}
+}
+
+func Test_timeEntryHandler_GetAllTimeEntries_WithDateRangeAndProjectId_ReturnsTimeEntriesOfProjectWithinThisRange(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project1 := model.Project{
+		Name:   "project1",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	assert.Nil(t, err)
+	project2 := model.Project{
+		Name:   "project2",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	assert.Nil(t, err)
+
+	var startTime1 = time.Date(2025, 3, 10, 11, 0, 0, 0, time.UTC)
+	addTimeEntriesWithStartIndexAndStartTime(t, handlerTest, 1, 3, userId, project1, startTime1)
+	addTimeEntriesWithStartIndexAndStartTime(t, handlerTest, 1, 3, userId, project2, startTime1)
+	var startTime2 = time.Date(2025, 3, 16, 17, 0, 0, 0, time.UTC)
+	addTimeEntriesWithStartIndexAndStartTime(t, handlerTest, 4, 2, userId, project1, startTime2)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/timeentries?projectId="+project1.ID.String()+"&startDate=2025-03-10&endDate=2025-03-15", nil)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var entriesFromService []timeEntryDto
+	json.Unmarshal(w.Body.Bytes(), &entriesFromService)
+	assert.Equal(t, 3, len(entriesFromService))
+	for index, entryFromService := range entriesFromService {
+		assert.Equal(t, fmt.Sprintf("entry %v", index+1), entryFromService.Description)
+		assert.Equal(t, project1.ID, entryFromService.ProjectId)
+		timeEntryStartTime, convertError := time.Parse(time.RFC3339, entryFromService.StartTime)
+		assert.Nil(t, convertError)
+		assert.True(t, timeEntryStartTime.After(startTime1) && timeEntryStartTime.Before(startTime2))
+	}
+}
+
+func Test_timeEntryHandler_GetAllTimeEntries_WithDateRange_ReturnsTimeEntriesOfAllProjectsWithinThisRange(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project1 := model.Project{
+		Name:   "project1",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	assert.Nil(t, err)
+	project2 := model.Project{
+		Name:   "project2",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	assert.Nil(t, err)
+
+	var startTime1 = time.Date(2025, 3, 10, 11, 0, 0, 0, time.UTC)
+	addTimeEntriesWithStartIndexAndStartTime(t, handlerTest, 1, 3, userId, project1, startTime1)
+	addTimeEntriesWithStartIndexAndStartTime(t, handlerTest, 1, 3, userId, project2, startTime1)
+	var startTime2 = time.Date(2025, 3, 16, 17, 0, 0, 0, time.UTC)
+	addTimeEntriesWithStartIndexAndStartTime(t, handlerTest, 4, 2, userId, project1, startTime2)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/timeentries?&startDate=2025-03-10&endDate=2025-03-15", nil)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var entriesFromService []timeEntryDto
+	json.Unmarshal(w.Body.Bytes(), &entriesFromService)
+	assert.Equal(t, 6, len(entriesFromService))
+}
+
 func addTimeEntries(t *testing.T, handlerTest *HandlerTest, count int, ownerId uuid.UUID, project model.Project) []model.TimeEntry {
 	return addTimeEntriesWithStartIndex(t, handlerTest, 1, count, ownerId, project)
 }
 
 func addTimeEntriesWithStartIndex(t *testing.T, handlerTest *HandlerTest, startIndex int, count int, ownerId uuid.UUID, project model.Project) []model.TimeEntry {
+	return addTimeEntriesWithStartIndexAndStartTime(t, handlerTest, startIndex, count, ownerId, project, time.Now())
+}
+
+func addTimeEntriesWithStartIndexAndStartTime(t *testing.T, handlerTest *HandlerTest, startIndex int, count int, ownerId uuid.UUID, project model.Project, startTime time.Time) []model.TimeEntry {
 	var entries []model.TimeEntry
-	startTime := time.Now()
 	oneHour := 1000 * 1000 * 60 * 60 // duration is in nanoseconds
+	oneHourAndThirtyMinutes := oneHour + 1000*1000*30*60
 	for i := 0; i < count; i++ {
 		entry := model.TimeEntry{
 			Description: fmt.Sprintf("entry %v", startIndex+i),
 			StartTime:   startTime.Add(time.Duration(oneHour * (count - i))),
+			EndTime:     startTime.Add(time.Duration(oneHourAndThirtyMinutes * (count - i))),
 			UserId:      ownerId,
 			ProjectId:   project.ID,
 		}
