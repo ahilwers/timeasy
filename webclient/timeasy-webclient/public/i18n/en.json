@@ -23,7 +23,8 @@
     "timeEntries.errorLoadingTimeEntries": "Failed to load time entries.",
     "timeEntries.errorDeletingTimeEntry": "Failed to delete time entry.",
     "timeEntries.errorUpdatingTimeEntry": "Failed to update time entry.",
-    "timeEntries.errorAddingTimeEntry": "Failed to add time entry."
+    "timeEntries.errorAddingTimeEntry": "Failed to add time entry.",
+    "dateRange": "Date Range"
   },
   "projects": {
     "headline": "Projects",

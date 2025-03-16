@@ -23,6 +23,8 @@ export class TimeEntryService {
   error = computed(() => this.state.error);
   updateSuccessful = computed(() => this.state.updateSuccessful);
   lastUpdatedTimeEntry = computed(() => this.state.lastUpdatedTimeEntry);
+  selectedDateRange = computed(() => this.state.selectedDateRange);
+  selectedProjectId = computed(() => this.state.selectedProjectId);
 
   loadTimeEntry(id: string): void {
     this.resetState();
@@ -42,9 +44,22 @@ export class TimeEntryService {
     });
   }
 
-  loadTimeEntries(): void {
+  loadTimeEntries(projectId: string | undefined, dateRange?: [Date, Date]): void {
+    console.log("loading time entries")
     this.resetState();
-    this.http.get<TimeEntry[]>(this.apiUrl).subscribe({
+    var apiUrl = this.apiUrl;
+    if (projectId) {
+      apiUrl += `?projectId=${projectId}`;
+    }
+    if (dateRange) {
+      if (projectId) {
+        apiUrl +="&";
+      } else {
+        apiUrl += "?";
+      }
+      apiUrl += `startDate=${this.formatDateToRFC3339(dateRange[0])}&endDate=${this.formatDateToRFC3339(dateRange[1])}`;
+    }
+    this.http.get<TimeEntry[]>(apiUrl).subscribe({
       next: (timeEntries) => {
         const transformedTimeEntries = timeEntries.map((entry) => ({
           ...entry,
@@ -59,6 +74,10 @@ export class TimeEntryService {
         this.state.error.set(this.translateService.instant('timeEntries.errorLoadingTimeEntries'));
       }
     });
+  }
+
+  formatDateToRFC3339(date: Date): string {
+    return new Intl.DateTimeFormat('sv-SE').format(date);
   }
 
   updateTimeEntry(data: TimeEntry): void {
@@ -113,6 +132,14 @@ export class TimeEntryService {
       }),
     ).subscribe(() => {
     })
+  }
+
+  selectDateRange(dateRange: [Date, Date]) {
+    this.state.selectedDateRange.set(dateRange);
+  }
+
+  selectProject(projectId: string | undefined) {
+    this.state.selectedProjectId.set(projectId);
   }
 
   resetState() {

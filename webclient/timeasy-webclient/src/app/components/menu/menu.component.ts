@@ -1,7 +1,6 @@
 import {Component, effect, inject, OnInit} from '@angular/core';
 import Keycloak, {KeycloakProfile} from 'keycloak-js';
 import {KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs} from 'keycloak-angular';
-import {Button} from 'primeng/button';
 import {Menu} from 'primeng/menu';
 import {MenuItem} from 'primeng/api';
 import {TranslateService} from '@ngx-translate/core';
@@ -9,7 +8,7 @@ import {TranslateService} from '@ngx-translate/core';
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [Button, Menu],
+  imports: [Menu],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.css'
 })
