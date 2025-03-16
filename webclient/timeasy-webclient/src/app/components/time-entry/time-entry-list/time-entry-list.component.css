@@ -3,3 +3,15 @@
   gap: 5px;
   justify-content: flex-end;
 }
+
+.filter {
+  display: flex;
+  gap: 5px;
+}
+
+.sum {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1em;
+  font-weight: bold;
+}

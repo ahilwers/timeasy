@@ -14,6 +14,8 @@ import {ProjectService} from '../../../services/project.service';
 import {Project} from '../../../models/project.model';
 import {Select} from 'primeng/select';
 import {FormsModule} from '@angular/forms';
+import {DatePicker} from 'primeng/datepicker';
+import {FloatLabel} from 'primeng/floatlabel';
 
 @Component({
   selector: 'app-time-entry-list',
@@ -28,6 +30,8 @@ import {FormsModule} from '@angular/forms';
     Toast,
     Select,
     FormsModule,
+    DatePicker,
+    FloatLabel,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './time-entry-list.component.html',
@@ -42,14 +46,16 @@ export class TimeEntryListComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
+  private selectedDates : Date[] = [];
 
   timeEntries = this.timeEntryService.timeEntries();
   deleted = this.timeEntryService.deleted();
   error = this.timeEntryService.error();
   projects = this.projectService.projects();
+  selectedDateRange = this.timeEntryService.selectedDateRange();
+  selectedProjectId = this.timeEntryService.selectedProjectId();
 
   projectMap = new Map<string, Project>();
-  selectedProjectId = signal<string | undefined>(undefined);
 
   constructor() {
     effect(() => {
@@ -69,13 +75,12 @@ export class TimeEntryListComponent implements OnInit {
       }
     });
     effect(() => {
-      this.timeEntryService.loadTimeEntries(this.selectedProjectId());
+      this.timeEntryService.loadTimeEntries(this.selectedProjectId(), this.selectedDateRange());
     });
   }
 
   ngOnInit(): void {
     this.projectService.loadProjects();
-    this.timeEntryService.loadTimeEntries(this.selectedProjectId());
   }
 
   editTimeEntry(timeEntry: TimeEntry): void {
@@ -118,13 +123,41 @@ export class TimeEntryListComponent implements OnInit {
 
   projectSelected(event: any) {
     if (event.value) {
-      this.selectedProjectId.set(event.value.id);
+      this.timeEntryService.selectProject(event.value);
     } else {
-      this.selectedProjectId.set(undefined);
+      this.timeEntryService.selectProject(undefined);
     }
   }
 
   projectSelectionCleared($event: Event) {
-    this.selectedProjectId.set(undefined);
+    this.timeEntryService.selectProject(undefined);
   }
+
+  updateSelectedDateRange(value: Date) {
+    this.selectedDates.push(value);
+    if (this.selectedDates.length == 2) {
+      this.timeEntryService.selectDateRange([this.selectedDates[0], this.selectedDates[1]])
+      this.selectedDates = [];
+    }
+  }
+
+  getTotalTimeString(entries: TimeEntry[]): string {
+    const { hours, minutes } = this.getTotalTime(entries);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  }
+
+  getTotalTime(entries: TimeEntry[]): { hours: number; minutes: number } {
+    const totalMilliseconds = entries.reduce((sum, entry) => {
+      const start = new Date(entry.startTime).getTime();
+      const end = entry.endTime ? new Date(entry.endTime).getTime() : new Date().getTime();
+      return sum + (end - start);
+    }, 0);
+
+    const totalMinutes = Math.floor(totalMilliseconds / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return { hours, minutes };
+  }
+
 }

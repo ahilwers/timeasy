@@ -252,12 +252,12 @@ func (handler *timeEntryHandler) GetAllTimeEntries(context *gin.Context) {
 	var startDate time.Time
 	var endDate time.Time
 	if startDateStr != "" && endDateStr != "" {
-		startDate, err = time.Parse(time.RFC3339, startDateStr)
+		startDate, err = time.Parse(time.DateOnly, startDateStr)
 		if err != nil {
 			context.JSON(http.StatusBadRequest, gin.H{"error": "invalid startDate format, must be RFC3339"})
 			return
 		}
-		endDate, err = time.Parse(time.RFC3339, endDateStr)
+		endDate, err = time.Parse(time.DateOnly, endDateStr)
 		if err != nil {
 			context.JSON(http.StatusBadRequest, gin.H{"error": "invalid endDate format, must be RFC3339"})
 			return
