@@ -231,8 +231,47 @@ func (handler *timeEntryHandler) GetAllTimeEntries(context *gin.Context) {
 		return
 	}
 
+	projectIdStr := context.Query("projectId")
+	startDateStr := context.Query("startDate")
+	endDateStr := context.Query("endDate")
+
+	projectId := uuid.Nil
+	if projectIdStr != "" {
+		projectId, err = uuid.FromString(projectIdStr)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": "invalid projectId"})
+			return
+		}
+	}
+
+	if (startDateStr != "" && endDateStr == "") || (startDateStr == "" && endDateStr != "") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "both startDate and endDate must be provided"})
+		return
+	}
+
+	var startDate time.Time
+	var endDate time.Time
+	if startDateStr != "" && endDateStr != "" {
+		startDate, err = time.Parse(time.RFC3339, startDateStr)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": "invalid startDate format, must be RFC3339"})
+			return
+		}
+		endDate, err = time.Parse(time.RFC3339, endDateStr)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": "invalid endDate format, must be RFC3339"})
+			return
+		}
+	}
+
 	var timeEntries []model.TimeEntry
-	timeEntries, err = handler.usecase.GetAllTimeEntriesOfUser(userId)
+	if projectId == uuid.Nil && startDate.IsZero() && endDate.IsZero() {
+		timeEntries, err = handler.usecase.GetAllTimeEntriesOfUser(userId)
+	} else if projectId != uuid.Nil && startDate.IsZero() && endDate.IsZero() {
+		timeEntries, err = handler.usecase.GetAllTimeEntriesOfUserAndProject(userId, projectId)
+	} else {
+		timeEntries, err = handler.usecase.GetTimeEntriesOfUserAndProjectBetweenDates(userId, projectId, startDate, endDate)
+	}
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all entries"})
 		return

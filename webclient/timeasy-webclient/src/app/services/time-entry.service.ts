@@ -42,9 +42,14 @@ export class TimeEntryService {
     });
   }
 
-  loadTimeEntries(): void {
+  loadTimeEntries(projectId: string | undefined): void {
+    console.log("loading time entries")
     this.resetState();
-    this.http.get<TimeEntry[]>(this.apiUrl).subscribe({
+    var apiUrl = this.apiUrl;
+    if (projectId) {
+      apiUrl += `?projectId=${projectId}`;
+    }
+    this.http.get<TimeEntry[]>(apiUrl).subscribe({
       next: (timeEntries) => {
         const transformedTimeEntries = timeEntries.map((entry) => ({
           ...entry,

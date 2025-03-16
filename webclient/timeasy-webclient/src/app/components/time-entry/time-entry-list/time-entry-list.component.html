@@ -7,6 +7,9 @@
 
 <p-toast></p-toast>
 <p-confirmdialog></p-confirmdialog>
+<div class="form-field">
+  <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'weeklyOverview.allProjects' | translate }}" [showClear]="true" (onChange)="projectSelected($event)" (onClear)="projectSelectionCleared($event)"></p-select>
+</div>
 <p-table [value]="timeEntries()" [tableStyle]="{ 'min-width': '50rem' }">
   <ng-template #header>
     <tr>

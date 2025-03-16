@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit} from '@angular/core';
+import {Component, effect, inject, OnInit, signal} from '@angular/core';
 import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 import {UtcToLocalTimePipe} from '../../../pipes/utc-to-local-time.pipe';
 import {Button} from 'primeng/button';
@@ -12,6 +12,8 @@ import {ConfirmDialog} from 'primeng/confirmdialog';
 import {Toast} from 'primeng/toast';
 import {ProjectService} from '../../../services/project.service';
 import {Project} from '../../../models/project.model';
+import {Select} from 'primeng/select';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-time-entry-list',
@@ -24,6 +26,8 @@ import {Project} from '../../../models/project.model';
     TranslatePipe,
     ConfirmDialog,
     Toast,
+    Select,
+    FormsModule,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './time-entry-list.component.html',
@@ -45,11 +49,12 @@ export class TimeEntryListComponent implements OnInit {
   projects = this.projectService.projects();
 
   projectMap = new Map<string, Project>();
+  selectedProjectId = signal<string | undefined>(undefined);
 
   constructor() {
     effect(() => {
       if (this.deleted()) {
-        this.timeEntryService.loadTimeEntries();
+        this.timeEntryService.loadTimeEntries(this.selectedProjectId());
       }
       const error = this.error();
       if (error) {
@@ -63,11 +68,14 @@ export class TimeEntryListComponent implements OnInit {
         });
       }
     });
+    effect(() => {
+      this.timeEntryService.loadTimeEntries(this.selectedProjectId());
+    });
   }
 
   ngOnInit(): void {
     this.projectService.loadProjects();
-    this.timeEntryService.loadTimeEntries()
+    this.timeEntryService.loadTimeEntries(this.selectedProjectId());
   }
 
   editTimeEntry(timeEntry: TimeEntry): void {
@@ -106,5 +114,17 @@ export class TimeEntryListComponent implements OnInit {
 
   getProjectName(projectId: string): string {
     return this.projectMap.get(projectId)?.name || '';
+  }
+
+  projectSelected(event: any) {
+    if (event.value) {
+      this.selectedProjectId.set(event.value.id);
+    } else {
+      this.selectedProjectId.set(undefined);
+    }
+  }
+
+  projectSelectionCleared($event: Event) {
+    this.selectedProjectId.set(undefined);
   }
 }
