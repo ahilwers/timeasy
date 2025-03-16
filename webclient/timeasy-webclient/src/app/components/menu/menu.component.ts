@@ -13,6 +13,7 @@ import {TranslateService} from '@ngx-translate/core';
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.css'
 })
+
 export class MenuComponent implements OnInit {
   authenticated : boolean = false;
   userProfile : KeycloakProfile = {};

@@ -2,12 +2,5 @@
   <div>
     <p-menu [model]="menuItems" />
   </div>
-  <div>
-    @if (!authenticated) {
-      <p-button (click)="login()" label="Login"/>
-    } @else {
-      <p-button (click)="logout()" label="Logout"/>
-    }
-  </div>
 </nav>
 

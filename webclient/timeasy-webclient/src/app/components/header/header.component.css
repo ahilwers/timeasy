@@ -1,7 +1,39 @@
 .header {
-  background-color: var(--p-surface-950);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   text-align: left;
   padding: 10px;
+  margin-left: 0.5em;
   font-size: 1.5em;
   flex-shrink: 0;
 }
+
+.logo-container {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+
+.logo-text {
+  font-size: 1.5rem;
+}
+
+.menu-container {
+   display: flex;
+   align-items: center;
+ }
+
+.menu-contents {
+   display: flex;
+  flex-direction: column;
+   align-items: center;
+   gap: 1rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
