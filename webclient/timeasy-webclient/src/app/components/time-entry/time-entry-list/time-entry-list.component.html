@@ -13,6 +13,7 @@
       <th> {{'timeEntries.startTime' | translate}}</th>
       <th> {{'timeEntries.endTime' | translate}}</th>
       <th> {{'timeEntries.description' | translate}}</th>
+      <th> {{'timeEntries.project' | translate}}</th>
       <th></th>
     </tr>
   </ng-template>
@@ -32,6 +33,9 @@
       </td>
       <td>
         {{ timeEntry.description }}
+      </td>
+      <td>
+        {{ getProjectName(timeEntry.projectId) }}
       </td>
       <td>
         <div class="buttonCol">

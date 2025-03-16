@@ -14,6 +14,7 @@
     "endTime": "End Time",
     "endDate": "End Date",
     "description": "Description",
+    "project": "Project",
     "add" : "Add Time Entry",
     "edit" : "Edit Time Entry",
     "selectProject": "Please select a project",
