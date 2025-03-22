@@ -14,6 +14,8 @@ COPY cmd/ ./cmd/
 COPY pkg/ ./pkg/
 
 RUN go build -o ./timeasy-server ./cmd/service
+# Install support for time zones
+RUN apk add --no-cache tzdata
 
 EXPOSE 8080
 
