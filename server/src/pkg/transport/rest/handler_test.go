@@ -64,6 +64,7 @@ type HandlerTest struct {
 	TeamHandler             TeamHandler
 	SyncHandler             SyncHandler
 	WeeklyStatisticsHandler WeeklyStatisticsHandler
+	TimeEntryExportHandler  TimeEntryExportHandler
 	Router                  *gin.Engine
 	tokenVerifier           TokenVerifier
 }
@@ -108,8 +109,9 @@ func (t *HandlerTest) initHandlers() {
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
 	t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
 	t.WeeklyStatisticsHandler = NewWeeklyStatisticsHandler(t.tokenVerifier, t.WeeklyStatisticsUsecase)
+	t.TimeEntryExportHandler = NewTimeEntryExportHandler(t.tokenVerifier, t.TimeEntryUsecase)
 
-	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.SyncHandler, t.WeeklyStatisticsHandler)
+	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {

@@ -1,7 +1,10 @@
 
 <div class="header-container">
   <h1>{{ 'timeEntries.headline' | translate}}</h1>
-  <p-button type="button" icon="pi pi-plus" (click)="addTimeEntry()"></p-button>
+  <div class="header-buttons">
+    <p-button type="button" icon="pi pi-plus" (click)="addTimeEntry()"></p-button>
+    <p-splitbutton icon="pi pi-file-export" (onClick)="exportTimeEntries(TimeEntryExportFomat.CSV)" [model]="exportMenuItems" />
+  </div>
 </div>
 
 
@@ -12,7 +15,7 @@
     <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'weeklyOverview.allProjects' | translate }}" [showClear]="true" optionValue="id" [ngModel]="selectedProjectId()" (onChange)="projectSelected($event)" (onClear)="projectSelectionCleared($event)"></p-select>
   </div>
   <div class="form-field">
-      <p-datepicker selectionMode="range" [readonlyInput]="true" placeholder="{{ 'timeEntries.dateRange' | translate }}" showIcon iconDisplay="input" [ngModel]="selectedDateRange()" (onSelect)="updateSelectedDateRange($event)" />
+    <p-datepicker selectionMode="range" [readonlyInput]="true" placeholder="{{ 'timeEntries.dateRange' | translate }}" showIcon iconDisplay="input" [ngModel]="selectedDateRange()" (onSelect)="updateSelectedDateRange($event)" ></p-datepicker>
   </div>
 </div>
 <p-table [value]="timeEntries()" [tableStyle]="{ 'min-width': '50rem' }">

@@ -8,7 +8,7 @@ import (
 	ginglog "github.com/szuecs/gin-glog"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(ginglog.Logger(3 * time.Second))
@@ -25,6 +25,9 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.DELETE("/projects/:id", projectHandler.DeleteProject)
 	protectedGroup.GET("/timeentries/:id", timeEntryHandler.GetTimeEntryById)
 	protectedGroup.GET("/timeentries", timeEntryHandler.GetAllTimeEntries)
+	protectedGroup.GET("/timeentries/ascsv", timeEntryExportHandler.ExportTimeEntriesToCsv)
+	protectedGroup.GET("/timeentries/asxlsx", timeEntryExportHandler.ExportTimeEntriesToXls)
+	protectedGroup.GET("/timeentries/asxlsxonelineperday", timeEntryExportHandler.ExportTimeEntriesToXlsOneLinePerDay)
 	protectedGroup.POST("/timeentries", timeEntryHandler.AddTimeEntry)
 	protectedGroup.PUT("/timeentries/:id", timeEntryHandler.UpdateTimeEntry)
 	protectedGroup.DELETE("/timeentries/:id", timeEntryHandler.DeleteTimeEntry)
