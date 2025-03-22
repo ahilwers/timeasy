@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit, signal} from '@angular/core';
+import {Component, effect, inject, OnInit} from '@angular/core';
 import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 import {UtcToLocalTimePipe} from '../../../pipes/utc-to-local-time.pipe';
 import {Button} from 'primeng/button';
@@ -6,8 +6,8 @@ import {TableModule} from 'primeng/table';
 import {TimeEntry} from '../../../models/timeentry.model';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {Router} from '@angular/router';
-import {ConfirmationService, MessageService} from 'primeng/api';
-import {TimeEntryService} from '../../../services/time-entry.service';
+import {ConfirmationService, MenuItem, MessageService} from 'primeng/api';
+import {TimeEntryExportFomat, TimeEntryService} from '../../../services/time-entry.service';
 import {ConfirmDialog} from 'primeng/confirmdialog';
 import {Toast} from 'primeng/toast';
 import {ProjectService} from '../../../services/project.service';
@@ -16,6 +16,7 @@ import {Select} from 'primeng/select';
 import {FormsModule} from '@angular/forms';
 import {DatePicker} from 'primeng/datepicker';
 import {FloatLabel} from 'primeng/floatlabel';
+import {SplitButton} from 'primeng/splitbutton';
 
 @Component({
   selector: 'app-time-entry-list',
@@ -32,6 +33,7 @@ import {FloatLabel} from 'primeng/floatlabel';
     FormsModule,
     DatePicker,
     FloatLabel,
+    SplitButton,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './time-entry-list.component.html',
@@ -56,6 +58,7 @@ export class TimeEntryListComponent implements OnInit {
   selectedProjectId = this.timeEntryService.selectedProjectId();
 
   projectMap = new Map<string, Project>();
+  exportMenuItems: MenuItem[];
 
   constructor() {
     effect(() => {
@@ -77,6 +80,26 @@ export class TimeEntryListComponent implements OnInit {
     effect(() => {
       this.timeEntryService.loadTimeEntries(this.selectedProjectId(), this.selectedDateRange());
     });
+    this.exportMenuItems = [
+      {
+        label: 'CSV',
+        command: () => {
+          this.exportTimeEntries(TimeEntryExportFomat.CSV);
+        }
+      },
+      {
+        label: 'XLSX',
+        command: () => {
+          this.exportTimeEntries(TimeEntryExportFomat.XLSX);
+        }
+      },
+      {
+        label: 'XLSX (eine Zeile pro Tag)' ,
+        command: () => {
+          this.exportTimeEntries(TimeEntryExportFomat.XLSX_ONELINEPERDAY);
+        }
+      },
+    ];
   }
 
   ngOnInit(): void {
@@ -160,4 +183,9 @@ export class TimeEntryListComponent implements OnInit {
     return { hours, minutes };
   }
 
+  exportTimeEntries(exportFormat: TimeEntryExportFomat) {
+    this.timeEntryService.exportTimeEntries(this.selectedProjectId(), this.selectedDateRange(), exportFormat);
+  }
+
+  protected readonly TimeEntryExportFomat = TimeEntryExportFomat;
 }

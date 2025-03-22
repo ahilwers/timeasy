@@ -5,7 +5,12 @@ import { TimeEntry } from '../models/timeentry.model';
 import { environment } from '../../environments/environment';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeEntryState } from './time-entry.state';
-import { Project } from '../models/project.model';
+
+export enum TimeEntryExportFomat {
+  CSV = 'CSV',
+  XLSX = 'XLSX',
+  XLSX_ONELINEPERDAY = 'XLSX_ONELINEPERDAY'
+}
 
 @Injectable({
   providedIn: 'root'
@@ -147,4 +152,54 @@ export class TimeEntryService {
   }
 
 
+  exportTimeEntries(projectId: string | undefined, dateRange?: [Date, Date], exportFormat?: TimeEntryExportFomat) {
+    let apiUrl = this.apiUrl;
+    switch (exportFormat) {
+      case TimeEntryExportFomat.XLSX:
+        apiUrl += "/asxlsx";
+        break;
+      case TimeEntryExportFomat.XLSX_ONELINEPERDAY:
+        apiUrl += "/asxlsxonelineperday";
+        break;
+      default:
+        apiUrl += "/ascsv";
+    }
+    if (projectId) {
+      apiUrl += `?projectId=${projectId}`;
+    }
+    if (dateRange) {
+      if (projectId) {
+        apiUrl += "&";
+      } else {
+        apiUrl += "?";
+      }
+      apiUrl += `startDate=${this.formatDateToRFC3339(dateRange[0])}&endDate=${this.formatDateToRFC3339(dateRange[1])}`;
+    }
+
+    // API-Request mit responseType 'blob' (da eine Datei zurückgegeben wird)
+    this.http.get(apiUrl, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const contentType = blob.type;
+
+        // Prüfen, ob die Datei ein XLSX oder CSV ist
+        let fileExtension = ".csv";
+        if (contentType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+          fileExtension = ".xlsx";
+        }
+
+        // Datei-Download starten
+        const fileName = `export${fileExtension}`;
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      },
+      error: (err) => {
+        const errorMessage = err.error?.message || this.translateService.instant('timeEntries.errorExportingTimeEntries');
+        this.state.error.set(errorMessage);
+      }
+    });
+  }
 }
