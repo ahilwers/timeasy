@@ -34,7 +34,8 @@ func NewProjectHandler(tokenVerifier TokenVerifier, usecase usecase.ProjectUseca
 }
 
 type projectInput struct {
-	Name string `json:"name" binding:"required"`
+	Name  string `json:"name" binding:"required"`
+	Color string `json:"color" binding:"required"`
 }
 
 type projectTeamAssignmentInput struct {
@@ -60,6 +61,7 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 	}
 	newProject := model.Project{
 		Name:   prj.Name,
+		Color:  prj.Color,
 		UserId: userId,
 	}
 
@@ -116,6 +118,7 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 	}
 
 	project.Name = prj.Name
+	project.Color = prj.Color
 
 	err = handler.usecase.UpdateProject(project)
 	if err != nil {

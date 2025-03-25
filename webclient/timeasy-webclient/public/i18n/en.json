@@ -39,7 +39,9 @@
     "errorLoadingProjects": "Failed to load projects.",
     "errorUpdatingProject": "Failed to update project.",
     "errorDeletingProject": "Failed to delete project.",
-    "errorAddingProject": "Failed to add project."
+    "errorAddingProject": "Failed to add project.",
+    "color": "Color",
+    "selectColor": "Please select a color"
   },
   "weeklyOverview": {
     "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",
