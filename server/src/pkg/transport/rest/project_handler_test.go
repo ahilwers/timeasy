@@ -299,7 +299,7 @@ func Test_projectHandler_AddProject(t *testing.T) {
 	defer teardownTest(t)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "project1"))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "project1", "#ff0000"))
 	req, err := http.NewRequest("POST", "/api/v1/projects", reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -330,7 +330,7 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	project := addProject(t, handlerTest, "project", userId)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "updatedProject", "#ff0000"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -372,7 +372,7 @@ func Test_projectHandler_UpdateProjectAsTeamLead(t *testing.T) {
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "updatedProject", "#ff0000"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -417,7 +417,7 @@ func Test_projectHandler_UpdateProjectIfUserIsNotTeamLead(t *testing.T) {
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "updatedProject", "#ff0000"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -449,7 +449,7 @@ func Test_projectHandler_UpdateProjectFailsIfItDoesNotExist(t *testing.T) {
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "updatedProject", "#ff0000"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", projectId), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -479,7 +479,7 @@ func Test_projectHandler_UpdateProjectFailsIfItBelongsToAnotherUser(t *testing.T
 	project := addProject(t, handlerTest, "project", projectOwnerId)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "updatedProject", "#ff0000"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -513,7 +513,7 @@ func Test_projectHandler_UpdateProjectSucceedsIfItBelongsToAnotherUserAndUserIsA
 	project := addProject(t, handlerTest, "project", projectOwnerId)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\"}", "updatedProject"))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "updatedProject", "#ff0000"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
