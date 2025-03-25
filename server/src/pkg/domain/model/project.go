@@ -12,6 +12,7 @@ type Project struct {
 	UserId uuid.UUID  `gorm:"type:uuid;" json:"userId"`
 	TeamID *uuid.UUID `gorm:"type:uuid;" json:"teamId"` // Team is optional
 	Team   Team
+	Color  string `json:"color"`
 }
 
 func (project *Project) BeforeCreate(db *gorm.DB) error {

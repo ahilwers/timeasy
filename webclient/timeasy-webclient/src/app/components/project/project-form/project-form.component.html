@@ -12,6 +12,41 @@
     <label for="name">{{ 'projects.name' | translate }}</label>
     <input pInputText class="input-text" id="name" formControlName="name" />
   </div>
+
+
+  <div class="form-field">
+    <label for="color">{{ 'projects.color' | translate }}</label>
+    <p-dropdown
+      id="color"
+      formControlName="color"
+      [options]="colors"
+      optionLabel="name"
+      optionValue="hex"
+      placeholder="{{ 'projects.selectColor' | translate }}"
+      [virtualScroll]="false"
+    >
+      <ng-template let-color pTemplate="item">
+        <div style="display: flex; align-items: center;">
+        <span
+          style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #ccc;"
+          [style.background]="color.hex"
+        ></span>
+          <span>{{ color.name }}</span>
+        </div>
+      </ng-template>
+      <ng-template let-color pTemplate="selectedItem">
+        <div style="display: flex; align-items: center;">
+        <span
+          style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #ccc;"
+          [style.background]="color?.hex"
+        ></span>
+          <span>{{ color?.name }}</span>
+        </div>
+      </ng-template>
+    </p-dropdown>
+  </div>
+
+
   <div class="button-container">
     <p-button type="submit" label="{{ 'globals.ok' | translate }}" severity="primary"></p-button>
     <p-button type="button" label="{{ 'globals.cancel' | translate }}" severity="secondary" (click)="navigateToProjectList()"></p-button>

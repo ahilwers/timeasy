@@ -8,6 +8,7 @@ import {Button} from 'primeng/button';
 import {Toast} from 'primeng/toast';
 import {MessageService} from 'primeng/api';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
+import {DropdownModule} from 'primeng/dropdown';
 
 @Component({
   selector: 'app-project-form',
@@ -17,7 +18,8 @@ import {TranslatePipe, TranslateService} from '@ngx-translate/core';
     InputText,
     Button,
     Toast,
-    TranslatePipe
+    TranslatePipe,
+    DropdownModule
   ],
   providers: [MessageService],
   templateUrl: './project-form.component.html',
@@ -39,13 +41,27 @@ export class ProjectFormComponent implements OnInit {
   error = this.projectService.error();
   updateSuccessful = this.projectService.updateSuccessful();
 
+  colors = [
+    { name: 'Blue', hex: '#1E90FF' },
+    { name: 'Green', hex: '#2ECC71' },
+    { name: 'Red', hex: '#E74C3C' },
+    { name: 'Orange', hex: '#E67E22' },
+    { name: 'Purple', hex: '#9B59B6' },
+    { name: 'Cyan', hex: '#1ABC9C' },
+    { name: 'Yellow', hex: '#F1C40F' },
+    { name: 'Pink', hex: '#E91E63' },
+    { name: 'Gray', hex: '#95A5A6' },
+    { name: 'Brown', hex: '#A0522D' },
+  ];
+
   constructor() {
     this.projectService.resetState();
     effect(() => {
       const projectData = this.project();
-      if (projectData) {
+      if (projectData && !this.isNew()) {
         this.projectForm.patchValue({
-          name: projectData.name
+          name: projectData.name,
+          color: projectData.color
         });
       }
       const updateSuccessful = this.updateSuccessful();
@@ -61,7 +77,8 @@ export class ProjectFormComponent implements OnInit {
 
   ngOnInit() {
     this.projectForm = this.formBuilder.group({
-      name: ['', [Validators.required]]
+      name: ['', [Validators.required]],
+      color: [this.colors[0].hex, [Validators.required]]
     });
 
     this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
@@ -76,7 +93,8 @@ export class ProjectFormComponent implements OnInit {
     if (this.projectForm.valid) {
       const project: Project = {
         id: this.projectId,
-        name: this.projectForm.value.name
+        name: this.projectForm.value.name,
+        color: this.projectForm.value.color
       }
       if (this.isNew()) {
         this.projectService.addProject(project);
