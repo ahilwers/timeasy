@@ -1,0 +1,54 @@
+version: "3"
+
+volumes:
+  timeasy-data:
+    name: timeasy-data
+    driver: local
+
+networks:
+  timeasy:
+    driver: bridge
+
+services:
+  timeasy-database:
+    image: "postgres"
+    container_name: "timeasy-database"
+    environment:
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=dbpassword
+      - POSTGRES_DB=timeasy
+    volumes:
+      - timeasy-data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+    networks:
+      - timeasy
+
+  timeasy-server:
+    ports:
+      - "8080:8080"
+    container_name: "timeasy-server"
+    restart: always
+    image: "timeasy-server"
+    depends_on:
+      - timeasy-database
+    environment:
+      - TIMEASY_DATABASE_HOST=timeasy-database
+      - TIMEASY_DATABASE_PORT=5432
+      - TIMEASY_DATABASE_NAME=timeasy
+      - TIMEASY_DATABASE_USER=dbuser
+      - TIMEASY_DATABASE_PASSWORD=dbpassword
+      - TIMEASY_KEYCLOAK_HOST=https://auth.timeasy.org
+    networks:
+      - timeasy
+
+  timeasy-webclient:
+    ports:
+      - "80:80"
+    container_name: "timeasy-webclient"
+    restart: always
+    image: "timeasy-webclient"
+    depends_on:
+      - timeasy-server
+    networks:
+      - timeasy
