@@ -3,7 +3,9 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"github.com/shopspring/decimal"
 	"testing"
+	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/test"
 
@@ -18,11 +20,17 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 
 	userId := GetTestUserId(t)
 
+	hourlyRate, err := decimal.NewFromString("10.23")
+	assert.Nil(t, err)
+
 	prj := model.Project{
-		Name:   "Testproject",
-		UserId: userId,
+		Name:              "Testproject",
+		UserId:            userId,
+		Deadline:          time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC),
+		HourlyRate:        hourlyRate,
+		TimeBudgetInHours: 50,
 	}
-	err := usecaseTest.ProjectUsecase.AddProject(&prj)
+	err = usecaseTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)
 
 	var projectFromDb model.Project
@@ -31,6 +39,9 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	}
 	assert.Equal(t, prj.Name, projectFromDb.Name)
 	assert.Equal(t, userId, projectFromDb.UserId)
+	assert.Equal(t, prj.Deadline, projectFromDb.Deadline)
+	assert.Equal(t, prj.HourlyRate, projectFromDb.HourlyRate)
+	assert.Equal(t, prj.TimeBudgetInHours, projectFromDb.TimeBudgetInHours)
 	assert.Nil(t, projectFromDb.TeamID)
 }
 
