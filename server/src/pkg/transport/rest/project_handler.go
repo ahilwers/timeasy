@@ -2,7 +2,10 @@ package rest
 
 import (
 	"fmt"
+	"github.com/shopspring/decimal"
+	"log"
 	"net/http"
+	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/usecase"
 
@@ -34,8 +37,11 @@ func NewProjectHandler(tokenVerifier TokenVerifier, usecase usecase.ProjectUseca
 }
 
 type projectInput struct {
-	Name  string `json:"name" binding:"required"`
-	Color string `json:"color" binding:"required"`
+	Name              string   `json:"name" binding:"required"`
+	Color             string   `json:"color" binding:"required"`
+	Deadline          *string  `json:"deadline,omitempty"`
+	HourlyRate        *float32 `json:"hourlyRate,omitempty"`
+	TimeBudgetInHours *int     `json:"timeBudget,omitempty"`
 }
 
 type projectTeamAssignmentInput struct {
@@ -60,11 +66,9 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		return
 	}
 	newProject := model.Project{
-		Name:   prj.Name,
-		Color:  prj.Color,
 		UserId: userId,
 	}
-
+	handler.fillProjectFromDto(&newProject, prj)
 	err = handler.usecase.AddProject(&newProject)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -86,6 +90,7 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 	var prj projectInput
 	if err := context.ShouldBindJSON(&prj); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("could not bind json of project: %v\n", err)
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
@@ -117,14 +122,35 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 		}
 	}
 
-	project.Name = prj.Name
-	project.Color = prj.Color
+	handler.fillProjectFromDto(project, prj)
 
 	err = handler.usecase.UpdateProject(project)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 	context.JSON(http.StatusOK, prj)
+}
+
+func (handler *projectHandler) fillProjectFromDto(project *model.Project, dto projectInput) error {
+	project.Name = dto.Name
+	project.Color = dto.Color
+
+	if dto.TimeBudgetInHours != nil {
+		project.TimeBudgetInHours = *dto.TimeBudgetInHours
+	}
+
+	if dto.HourlyRate != nil {
+		project.HourlyRate = decimal.NewFromFloat32(*dto.HourlyRate)
+	}
+
+	if dto.Deadline != nil {
+		deadline, err := time.Parse("2006-01-02", *dto.Deadline)
+		if err != nil {
+			return err
+		}
+		project.Deadline = deadline
+	}
+	return nil
 }
 
 func (handler *projectHandler) GetProjectById(context *gin.Context) {
