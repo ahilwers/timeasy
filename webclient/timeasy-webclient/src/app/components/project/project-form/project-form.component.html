@@ -47,6 +47,16 @@
   </div>
 
   <div class="form-field">
+    <label for="hourlyRate">{{ 'projects.hourlyRate' | translate }}</label>
+    <p-inputnumber id="hourlyRate" formControlName="hourlyRate" inputId="hourlyRate" mode="decimal" [useGrouping]="false" [minFractionDigits]="2" [maxFractionDigits]="2"/>
+  </div>
+
+  <div class="form-field">
+    <label for="timeBudget">{{ 'projects.timeBudget' | translate }}</label>
+    <p-inputnumber id="timeBudget" formControlName="timeBudget" inputId="timeBudget" [useGrouping]="false" />
+  </div>
+
+  <div class="form-field">
     <label for="deadline">{{ 'projects.deadline' | translate }}</label>
     <p-datepicker id="deadline" formControlName="deadline" [iconDisplay]="'input'" [showIcon]="true" [showButtonBar]="true" inputId="deadline" />
   </div>

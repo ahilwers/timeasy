@@ -36,11 +36,11 @@ func NewProjectHandler(tokenVerifier TokenVerifier, usecase usecase.ProjectUseca
 }
 
 type projectInput struct {
-	Name              string          `json:"name" binding:"required"`
-	Color             string          `json:"color" binding:"required"`
-	Deadline          *model.DateOnly `json:"deadline,omitempty"`
-	HourlyRate        *float32        `json:"hourlyRate,omitempty"`
-	TimeBudgetInHours *int            `json:"timeBudget,omitempty"`
+	Name       string          `json:"name" binding:"required"`
+	Color      string          `json:"color" binding:"required"`
+	Deadline   *model.DateOnly `json:"deadline,omitempty"`
+	HourlyRate *float32        `json:"hourlyRate,omitempty"`
+	TimeBudget *int            `json:"timeBudget,omitempty"`
 }
 
 type projectTeamAssignmentInput struct {
@@ -134,8 +134,8 @@ func (handler *projectHandler) fillProjectFromDto(project *model.Project, dto pr
 	project.Name = dto.Name
 	project.Color = dto.Color
 
-	if dto.TimeBudgetInHours != nil {
-		project.TimeBudgetInHours = *dto.TimeBudgetInHours
+	if dto.TimeBudget != nil {
+		project.TimeBudget = *dto.TimeBudget
 	}
 
 	if dto.HourlyRate != nil {

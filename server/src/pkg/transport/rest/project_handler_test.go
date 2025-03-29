@@ -348,7 +348,7 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	expectedHourlyRate, err := decimal.NewFromString("23.10")
 	assert.Nil(t, err)
 	assert.Equal(t, expectedHourlyRate, projectsFromDb[0].HourlyRate)
-	assert.Equal(t, 20, projectsFromDb[0].TimeBudgetInHours)
+	assert.Equal(t, 20, projectsFromDb[0].TimeBudget)
 }
 
 func Test_projectHandler_UpdateProject_ShouldNotUpdateFieldsThatAreNotProvided(t *testing.T) {
@@ -381,7 +381,7 @@ func Test_projectHandler_UpdateProject_ShouldNotUpdateFieldsThatAreNotProvided(t
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
 	assert.Equal(t, project.Deadline, projectsFromDb[0].Deadline)
 	assert.True(t, project.HourlyRate.Equal(projectsFromDb[0].HourlyRate))
-	assert.Equal(t, project.TimeBudgetInHours, projectsFromDb[0].TimeBudgetInHours)
+	assert.Equal(t, project.TimeBudget, projectsFromDb[0].TimeBudget)
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
 }
 
@@ -415,7 +415,7 @@ func Test_projectHandler_UpdateProject_ShouldNotUpdateDeadlineIfItsEmpty(t *test
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
 	assert.True(t, projectsFromDb[0].Deadline.IsZero())
 	assert.True(t, project.HourlyRate.Equal(projectsFromDb[0].HourlyRate))
-	assert.Equal(t, project.TimeBudgetInHours, projectsFromDb[0].TimeBudgetInHours)
+	assert.Equal(t, project.TimeBudget, projectsFromDb[0].TimeBudget)
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
 }
 
@@ -890,12 +890,12 @@ func addProjectsWithStartIndex(t *testing.T, handlerTest *HandlerTest, startInde
 
 func addProject(t *testing.T, handlerTest *HandlerTest, name string, userId uuid.UUID) model.Project {
 	prj := model.Project{
-		Name:              name,
-		UserId:            userId,
-		Color:             "#ff0000",
-		HourlyRate:        decimal.NewFromInt(20),
-		TimeBudgetInHours: 10,
-		Deadline:          model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
+		Name:       name,
+		UserId:     userId,
+		Color:      "#ff0000",
+		HourlyRate: decimal.NewFromInt(20),
+		TimeBudget: 10,
+		Deadline:   model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
 	}
 	err := handlerTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)

@@ -62,6 +62,9 @@ export class ProjectService {
 
   updateProject(data: Project): void {
     this.resetState();
+    if (!environment.production) {
+      console.log('Payload:', JSON.stringify(data, null, 2));
+    }
     this.http.put<Project>(`${this.apiUrl}/${data.id}`, data).pipe(
       tap((updatedProject) => {
         this.state.lastUpdatedProject.set(updatedProject);

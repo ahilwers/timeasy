@@ -5,6 +5,6 @@ export interface Project {
   name: string;
   color: string;
   deadline?: DateOnly | null;
-  hourlyRate?: number;
-  timeBudgetInHours?: number;
+  hourlyRate: number;
+  timeBudget: number;
 }

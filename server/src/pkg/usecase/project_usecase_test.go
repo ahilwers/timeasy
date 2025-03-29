@@ -24,11 +24,11 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	assert.Nil(t, err)
 
 	prj := model.Project{
-		Name:              "Testproject",
-		UserId:            userId,
-		Deadline:          model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
-		HourlyRate:        hourlyRate,
-		TimeBudgetInHours: 50,
+		Name:       "Testproject",
+		UserId:     userId,
+		Deadline:   model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
+		HourlyRate: hourlyRate,
+		TimeBudget: 50,
 	}
 	err = usecaseTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)
@@ -41,7 +41,7 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	assert.Equal(t, userId, projectFromDb.UserId)
 	assert.Equal(t, prj.Deadline, projectFromDb.Deadline)
 	assert.Equal(t, prj.HourlyRate, projectFromDb.HourlyRate)
-	assert.Equal(t, prj.TimeBudgetInHours, projectFromDb.TimeBudgetInHours)
+	assert.Equal(t, prj.TimeBudget, projectFromDb.TimeBudget)
 	assert.Nil(t, projectFromDb.TeamID)
 }
 
