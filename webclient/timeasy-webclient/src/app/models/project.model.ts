@@ -7,4 +7,5 @@ export interface Project {
   deadline?: DateOnly | null;
   hourlyRate: number;
   timeBudget: number;
+  isActive: boolean;
 }

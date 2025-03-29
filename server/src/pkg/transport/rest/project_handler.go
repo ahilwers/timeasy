@@ -41,6 +41,7 @@ type projectInput struct {
 	Deadline   *model.DateOnly `json:"deadline,omitempty"`
 	HourlyRate *float32        `json:"hourlyRate,omitempty"`
 	TimeBudget *int            `json:"timeBudget,omitempty"`
+	IsActive   *bool           `json:"isActive,omitempty"`
 }
 
 type projectTeamAssignmentInput struct {
@@ -148,6 +149,10 @@ func (handler *projectHandler) fillProjectFromDto(project *model.Project, dto pr
 		} else {
 			project.Deadline = *dto.Deadline
 		}
+	}
+
+	if dto.IsActive != nil {
+		project.IsActive = *dto.IsActive
 	}
 	return nil
 }

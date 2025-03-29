@@ -53,12 +53,17 @@
 
   <div class="form-field">
     <label for="timeBudget">{{ 'projects.timeBudget' | translate }}</label>
-    <p-inputnumber id="timeBudget" formControlName="timeBudget" inputId="timeBudget" [useGrouping]="false" />
+    <p-inputnumber id="timeBudget" formControlName="timeBudget" inputId="timeBudget" [useGrouping]="false" suffix=" {{ 'projects.hours' | translate }}" />
   </div>
 
   <div class="form-field">
     <label for="deadline">{{ 'projects.deadline' | translate }}</label>
     <p-datepicker id="deadline" formControlName="deadline" [iconDisplay]="'input'" [showIcon]="true" [showButtonBar]="true" inputId="deadline" />
+  </div>
+
+  <div class="form-field">
+    <label for="isActive">{{ 'projects.isActive' | translate }}</label>
+    <p-toggleswitch id="isActive" formControlName="isActive" inputId="isActive" />
   </div>
 
   <div class="button-container">

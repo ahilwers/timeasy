@@ -44,7 +44,9 @@
     "selectColor": "Please select a color",
     "deadline": "Deadline",
     "hourlyRate": "Hourly Rate",
-    "timeBudget": "Time Budget (in hours)"
+    "timeBudget": "Time Budget",
+    "hours": "h",
+    "isActive": "Active"
   },
   "weeklyOverview": {
     "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",

@@ -8,11 +8,15 @@ import {ConfirmationService, MessageService} from 'primeng/api';
 import {ConfirmDialog} from 'primeng/confirmdialog';
 import {Toast} from 'primeng/toast';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
+import {DateOnlyPipe} from '../../../pipes/dateonly.pipe';
+import {MoneyPipe} from '../../../pipes/money.pipe';
+import {NgClass} from '@angular/common';
+import {DateOnly} from '../../../models/date_only';
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [Button, TableModule, ConfirmDialog, Toast, TranslatePipe],
+  imports: [Button, TableModule, ConfirmDialog, Toast, TranslatePipe, DateOnlyPipe, MoneyPipe, NgClass],
   providers: [ConfirmationService, MessageService],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.css'
@@ -28,6 +32,7 @@ export class ProjectListComponent implements OnInit {
   projects = this.projectService.projects();
   deleted = this.projectService.deleted();
   error = this.projectService.error();
+  today = DateOnly.fromDate(new Date());
 
   constructor() {
     effect(() => {

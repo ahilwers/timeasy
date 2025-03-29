@@ -4,3 +4,27 @@
   justify-content: flex-end;
 }
 
+.text-right {
+  text-align: right;
+}
+
+.col-name {
+  width: auto;
+}
+
+.col-hourlyRate,
+.col-timeBudget,
+.col-deadline {
+  width: 8rem;
+  white-space: nowrap;
+}
+
+.col-actions {
+  width: 5rem;
+}
+
+.past-deadline {
+  color: red;
+  font-weight: 500;
+}
+

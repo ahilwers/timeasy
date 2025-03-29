@@ -17,6 +17,7 @@ type Project struct {
 	Deadline   DateOnly        `gorm:"type:date;" json:"deadline,omitempty"`
 	HourlyRate decimal.Decimal `gorm:"type:numeric(10,2);default:0.00;" json:"hourlyRate,omitempty"`
 	TimeBudget int             `gorm:"default:0;" json:"timeBudget,omitempty"`
+	IsActive   bool            `gorm:"default:true;" json:"isActive,omitempty"`
 }
 
 func (project *Project) BeforeCreate(db *gorm.DB) error {
