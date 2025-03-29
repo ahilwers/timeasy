@@ -143,7 +143,11 @@ func (handler *projectHandler) fillProjectFromDto(project *model.Project, dto pr
 	}
 
 	if dto.Deadline != nil {
-		project.Deadline = *dto.Deadline
+		if dto.Deadline.IsZero() {
+			project.Deadline = model.DateOnly{}
+		} else {
+			project.Deadline = *dto.Deadline
+		}
 	}
 	return nil
 }

@@ -9,6 +9,8 @@ import {Toast} from 'primeng/toast';
 import {MessageService} from 'primeng/api';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {DropdownModule} from 'primeng/dropdown';
+import {DatePicker} from 'primeng/datepicker';
+import {DateOnly} from '../../../models/date_only';
 
 @Component({
   selector: 'app-project-form',
@@ -19,7 +21,8 @@ import {DropdownModule} from 'primeng/dropdown';
     Button,
     Toast,
     TranslatePipe,
-    DropdownModule
+    DropdownModule,
+    DatePicker
   ],
   providers: [MessageService],
   templateUrl: './project-form.component.html',
@@ -61,7 +64,10 @@ export class ProjectFormComponent implements OnInit {
       if (projectData && !this.isNew()) {
         this.projectForm.patchValue({
           name: projectData.name,
-          color: projectData.color
+          color: projectData.color,
+          deadline: projectData.deadline ? projectData.deadline.toDate() : null,
+          hourlyRate: projectData.hourlyRate,
+          timeBudgetInHours: projectData.timeBudgetInHours
         });
       }
       const updateSuccessful = this.updateSuccessful();
@@ -78,7 +84,10 @@ export class ProjectFormComponent implements OnInit {
   ngOnInit() {
     this.projectForm = this.formBuilder.group({
       name: ['', [Validators.required]],
-      color: [this.colors[0].hex, [Validators.required]]
+      color: [this.colors[0].hex, [Validators.required]],
+      deadline: [null],
+      hourlyRate: [0],
+      timeBudgetInHours: [0]
     });
 
     this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
@@ -91,10 +100,12 @@ export class ProjectFormComponent implements OnInit {
 
   onSubmit() {
     if (this.projectForm.valid) {
+      const deadlineDate: Date | null = this.projectForm.value.deadline;
       const project: Project = {
         id: this.projectId,
         name: this.projectForm.value.name,
-        color: this.projectForm.value.color
+        color: this.projectForm.value.color,
+        deadline: deadlineDate ? DateOnly.fromDate(deadlineDate) : new DateOnly(0,0,0)
       }
       if (this.isNew()) {
         this.projectService.addProject(project);

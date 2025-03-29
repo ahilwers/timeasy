@@ -16,6 +16,15 @@ func NewDateOnly(t time.Time) DateOnly {
 	return DateOnly(date)
 }
 
+// ToTime converts DateOnly back to time.Time
+func (d DateOnly) ToTime() time.Time {
+	return time.Time(d)
+}
+
+func (d DateOnly) IsZero() bool {
+	return time.Time(d).IsZero()
+}
+
 // MarshalJSON formats the date as "YYYY-MM-DD"
 func (d DateOnly) MarshalJSON() ([]byte, error) {
 	t := time.Time(d)
@@ -59,9 +68,4 @@ func (d *DateOnly) Scan(value interface{}) error {
 	default:
 		return fmt.Errorf("cannot scan value %v into DateOnly", value)
 	}
-}
-
-// ToTime converts DateOnly back to time.Time
-func (d DateOnly) ToTime() time.Time {
-	return time.Time(d)
 }

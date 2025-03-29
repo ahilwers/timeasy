@@ -5,6 +5,7 @@ import {Project} from '../models/project.model';
 import {ProjectState} from './project.state';
 import {environment} from '../../environments/environment';
 import {TranslateService} from '@ngx-translate/core';
+import {DateOnly} from '../models/date_only';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,11 @@ export class ProjectService {
     this.resetState();
     this.http.get<Project>(`${this.apiUrl}/${id}`).subscribe({
       next: (project) => {
-        this.state.project.set(project);
+        const transformedProject = {
+          ...project,
+          deadline: project.deadline ? DateOnly.fromString(project.deadline as unknown as string) : undefined
+        };
+        this.state.project.set(transformedProject);
       },
       error: (err) => {
         console.error('Failed to load project:', err);
@@ -42,7 +47,11 @@ export class ProjectService {
     this.resetState();
     this.http.get<Project[]>(this.apiUrl).subscribe({
       next: (projects) => {
-        this.state.projects.set(projects);
+        const transformedProjects = projects.map((project) => ({
+          ...project,
+          deadline: project.deadline ? DateOnly.fromString(project.deadline as unknown as string) : undefined
+        }));
+        this.state.projects.set(transformedProjects);
       },
       error: (err) => {
         console.error('Failed to load projects:', err);

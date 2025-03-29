@@ -385,6 +385,40 @@ func Test_projectHandler_UpdateProject_ShouldNotUpdateFieldsThatAreNotProvided(t
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
 }
 
+func Test_projectHandler_UpdateProject_ShouldNotUpdateDeadlineIfItsEmpty(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := addProject(t, handlerTest, "project", userId)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\", \"deadline\": \"%v\"}", "updatedProject", "#ff0000", ""))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := handlerTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.True(t, projectsFromDb[0].Deadline.IsZero())
+	assert.True(t, project.HourlyRate.Equal(projectsFromDb[0].HourlyRate))
+	assert.Equal(t, project.TimeBudgetInHours, projectsFromDb[0].TimeBudgetInHours)
+	assert.Equal(t, userId, projectsFromDb[0].UserId)
+}
+
 func Test_projectHandler_UpdateProjectAsTeamLead(t *testing.T) {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)

@@ -46,6 +46,10 @@
     </p-dropdown>
   </div>
 
+  <div class="form-field">
+    <label for="deadline">{{ 'projects.deadline' | translate }}</label>
+    <p-datepicker id="deadline" formControlName="deadline" [iconDisplay]="'input'" [showIcon]="true" [showButtonBar]="true" inputId="deadline" />
+  </div>
 
   <div class="button-container">
     <p-button type="submit" label="{{ 'globals.ok' | translate }}" severity="primary"></p-button>
