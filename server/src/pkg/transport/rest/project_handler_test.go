@@ -343,7 +343,7 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
-	newDeadline := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	newDeadline := model.NewDateOnly(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))
 	assert.Equal(t, newDeadline, projectsFromDb[0].Deadline)
 	expectedHourlyRate, err := decimal.NewFromString("23.10")
 	assert.Nil(t, err)
@@ -861,7 +861,7 @@ func addProject(t *testing.T, handlerTest *HandlerTest, name string, userId uuid
 		Color:             "#ff0000",
 		HourlyRate:        decimal.NewFromInt(20),
 		TimeBudgetInHours: 10,
-		Deadline:          time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC),
+		Deadline:          model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
 	}
 	err := handlerTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)

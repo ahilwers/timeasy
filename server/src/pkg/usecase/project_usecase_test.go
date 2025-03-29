@@ -26,7 +26,7 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	prj := model.Project{
 		Name:              "Testproject",
 		UserId:            userId,
-		Deadline:          time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC),
+		Deadline:          model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
 		HourlyRate:        hourlyRate,
 		TimeBudgetInHours: 50,
 	}

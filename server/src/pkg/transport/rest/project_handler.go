@@ -5,7 +5,6 @@ import (
 	"github.com/shopspring/decimal"
 	"log"
 	"net/http"
-	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/usecase"
 
@@ -37,11 +36,11 @@ func NewProjectHandler(tokenVerifier TokenVerifier, usecase usecase.ProjectUseca
 }
 
 type projectInput struct {
-	Name              string   `json:"name" binding:"required"`
-	Color             string   `json:"color" binding:"required"`
-	Deadline          *string  `json:"deadline,omitempty"`
-	HourlyRate        *float32 `json:"hourlyRate,omitempty"`
-	TimeBudgetInHours *int     `json:"timeBudget,omitempty"`
+	Name              string          `json:"name" binding:"required"`
+	Color             string          `json:"color" binding:"required"`
+	Deadline          *model.DateOnly `json:"deadline,omitempty"`
+	HourlyRate        *float32        `json:"hourlyRate,omitempty"`
+	TimeBudgetInHours *int            `json:"timeBudget,omitempty"`
 }
 
 type projectTeamAssignmentInput struct {
@@ -144,11 +143,7 @@ func (handler *projectHandler) fillProjectFromDto(project *model.Project, dto pr
 	}
 
 	if dto.Deadline != nil {
-		deadline, err := time.Parse("2006-01-02", *dto.Deadline)
-		if err != nil {
-			return err
-		}
-		project.Deadline = deadline
+		project.Deadline = *dto.Deadline
 	}
 	return nil
 }

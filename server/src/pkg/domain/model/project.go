@@ -4,7 +4,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Project struct {
@@ -15,7 +14,7 @@ type Project struct {
 	TeamID            *uuid.UUID `gorm:"type:uuid;" json:"teamId"` // Team is optional
 	Team              Team
 	Color             string          `gorm:"default:#1E90FF;" json:"color,omitempty"`
-	Deadline          time.Time       `gorm:"type:date;" json:"deadline,omitempty"`
+	Deadline          DateOnly        `gorm:"type:date;" json:"deadline,omitempty"`
 	HourlyRate        decimal.Decimal `gorm:"type:numeric(10,2);default:0.00;" json:"hourlyRate,omitempty"`
 	TimeBudgetInHours int             `gorm:"default:0;" json:"timeBudget,omitempty"`
 }
