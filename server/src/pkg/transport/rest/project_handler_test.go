@@ -3,10 +3,12 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/shopspring/decimal"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 	"timeasy-server/pkg/domain/model"
 
 	"github.com/gofrs/uuid"
@@ -330,6 +332,43 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	project := addProject(t, handlerTest, "project", userId)
 
 	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\", \"deadline\": \"%v\", \"hourlyRate\": %v, \"timeBudget\": %v}", "updatedProject", "#ff0000", "2020-01-01", 23.10, 20))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := handlerTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.Equal(t, userId, projectsFromDb[0].UserId)
+	newDeadline := model.NewDateOnly(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))
+	assert.Equal(t, newDeadline, projectsFromDb[0].Deadline)
+	expectedHourlyRate, err := decimal.NewFromString("23.10")
+	assert.Nil(t, err)
+	assert.Equal(t, expectedHourlyRate, projectsFromDb[0].HourlyRate)
+	assert.Equal(t, 20, projectsFromDb[0].TimeBudget)
+}
+
+func Test_projectHandler_UpdateProject_ShouldNotUpdateFieldsThatAreNotProvided(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := addProject(t, handlerTest, "project", userId)
+
+	w := httptest.NewRecorder()
 	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\"}", "updatedProject", "#ff0000"))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	assert.Nil(t, err)
@@ -340,6 +379,43 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.Equal(t, project.Deadline, projectsFromDb[0].Deadline)
+	assert.True(t, project.HourlyRate.Equal(projectsFromDb[0].HourlyRate))
+	assert.Equal(t, project.TimeBudget, projectsFromDb[0].TimeBudget)
+	assert.Equal(t, userId, projectsFromDb[0].UserId)
+}
+
+func Test_projectHandler_UpdateProject_ShouldNotUpdateDeadlineIfItsEmpty(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := addProject(t, handlerTest, "project", userId)
+
+	w := httptest.NewRecorder()
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\", \"deadline\": \"%v\"}", "updatedProject", "#ff0000", ""))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
+	assert.Nil(t, err)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	projectsFromDb, err := handlerTest.ProjectUsecase.GetAllProjects()
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(projectsFromDb))
+	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
+	assert.True(t, projectsFromDb[0].Deadline.IsZero())
+	assert.True(t, project.HourlyRate.Equal(projectsFromDb[0].HourlyRate))
+	assert.Equal(t, project.TimeBudget, projectsFromDb[0].TimeBudget)
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
 }
 
@@ -814,8 +890,12 @@ func addProjectsWithStartIndex(t *testing.T, handlerTest *HandlerTest, startInde
 
 func addProject(t *testing.T, handlerTest *HandlerTest, name string, userId uuid.UUID) model.Project {
 	prj := model.Project{
-		Name:   name,
-		UserId: userId,
+		Name:       name,
+		UserId:     userId,
+		Color:      "#ff0000",
+		HourlyRate: decimal.NewFromInt(20),
+		TimeBudget: 10,
+		Deadline:   model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
 	}
 	err := handlerTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)

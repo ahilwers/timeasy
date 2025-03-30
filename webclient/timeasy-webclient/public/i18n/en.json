@@ -41,7 +41,12 @@
     "errorDeletingProject": "Failed to delete project.",
     "errorAddingProject": "Failed to add project.",
     "color": "Color",
-    "selectColor": "Please select a color"
+    "selectColor": "Please select a color",
+    "deadline": "Deadline",
+    "hourlyRate": "Hourly Rate",
+    "timeBudget": "Time Budget",
+    "hours": "h",
+    "isActive": "Active"
   },
   "weeklyOverview": {
     "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",

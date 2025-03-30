@@ -9,6 +9,10 @@ import {Toast} from 'primeng/toast';
 import {MessageService} from 'primeng/api';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {DropdownModule} from 'primeng/dropdown';
+import {DatePicker} from 'primeng/datepicker';
+import {DateOnly} from '../../../models/date_only';
+import {InputNumber} from 'primeng/inputnumber';
+import {ToggleSwitch} from 'primeng/toggleswitch';
 
 @Component({
   selector: 'app-project-form',
@@ -19,7 +23,10 @@ import {DropdownModule} from 'primeng/dropdown';
     Button,
     Toast,
     TranslatePipe,
-    DropdownModule
+    DropdownModule,
+    DatePicker,
+    InputNumber,
+    ToggleSwitch
   ],
   providers: [MessageService],
   templateUrl: './project-form.component.html',
@@ -61,7 +68,11 @@ export class ProjectFormComponent implements OnInit {
       if (projectData && !this.isNew()) {
         this.projectForm.patchValue({
           name: projectData.name,
-          color: projectData.color
+          color: projectData.color,
+          deadline: projectData.deadline ? projectData.deadline.toDate() : null,
+          hourlyRate: projectData.hourlyRate ? projectData.hourlyRate : 0,
+          timeBudget: projectData.timeBudget ? projectData.timeBudget : 0,
+          isActive: projectData.isActive,
         });
       }
       const updateSuccessful = this.updateSuccessful();
@@ -78,7 +89,11 @@ export class ProjectFormComponent implements OnInit {
   ngOnInit() {
     this.projectForm = this.formBuilder.group({
       name: ['', [Validators.required]],
-      color: [this.colors[0].hex, [Validators.required]]
+      color: [this.colors[0].hex, [Validators.required]],
+      deadline: [null],
+      hourlyRate: [0 as number],
+      timeBudget: [0 as number],
+      isActive: [true as boolean]
     });
 
     this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
@@ -91,10 +106,15 @@ export class ProjectFormComponent implements OnInit {
 
   onSubmit() {
     if (this.projectForm.valid) {
+      const deadlineDate: Date | null = this.projectForm.value.deadline;
       const project: Project = {
         id: this.projectId,
         name: this.projectForm.value.name,
-        color: this.projectForm.value.color
+        color: this.projectForm.value.color,
+        deadline: deadlineDate ? DateOnly.fromDate(deadlineDate) : new DateOnly(0,0,0),
+        hourlyRate: this.projectForm.value.hourlyRate ? Number(this.projectForm.value.hourlyRate) : 0,
+        timeBudget: this.projectForm.value.timeBudget ? Number(this.projectForm.value.timeBudget) : 0,
+        isActive: this.projectForm.value.isActive
       }
       if (this.isNew()) {
         this.projectService.addProject(project);
@@ -111,7 +131,6 @@ export class ProjectFormComponent implements OnInit {
       this.messageService.add({severity: 'error', summary: this.translateService.instant('globals.error'), detail: this.translateService.instant('projects.specifyName')});
     }
   }
-
 
   navigateToProjectList() {
     this.router.navigate([`/projects`]);

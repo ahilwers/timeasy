@@ -9,14 +9,30 @@
 <p-table [value]="projects()" [tableStyle]="{ 'min-width': '50rem' }">
   <ng-template #header>
     <tr>
-      <th>{{ 'projects.name' | translate}}</th>
-      <th></th>
+      <th class="col-name">{{ 'projects.name' | translate }}</th>
+      <th class="col-hourlyRate">{{ 'projects.hourlyRate' | translate }}</th>
+      <th class="col-timeBudget">{{ 'projects.timeBudget' | translate }}</th>
+      <th class="col-deadline">{{ 'projects.deadline' | translate }}</th>
+      <th class="col-actions"></th>
     </tr>
   </ng-template>
   <ng-template #body let-project>
     <tr>
-      <td>{{ project.name }}</td>
-      <td>
+      <td class="col-name">
+        <span
+          style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #ccc;"
+          [style.background]="project.color"
+        ></span>
+        {{ project.name }}
+      </td>
+      <td class="col-name text-right">{{ project.hourlyRate | money }}</td>
+      <td class="col-timeBudget text-right">
+        @if (project.timeBudget > 0) {
+          {{ project.timeBudget }} {{ 'projects.hours' | translate }}
+        }
+      </td>
+      <td class="col-deadline" [ngClass]="{'past-deadline': project.isActive && project.deadline?.toDate() < today.toDate()}">{{ project.deadline | dateOnly }}</td>
+      <td class="col-actions">
         <div class="buttonCol">
           <p-button
             icon="pi pi-pencil"
