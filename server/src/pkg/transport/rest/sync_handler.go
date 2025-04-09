@@ -59,9 +59,10 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 			changeType = NEW
 			changeTime = entry.CreatedAt
 		}
+		desc := entry.Description
 		syncTimeEntry := ChangedTimeEntryDto{
 			Id:              entry.ID,
-			Description:     entry.Description,
+			Description:     &desc,
 			StartTime:       entry.StartTime.Format(time.RFC3339),
 			ProjectId:       entry.ProjectId,
 			ChangeType:      changeType,
@@ -84,9 +85,19 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 			changeType = NEW
 			changeTime = project.CreatedAt
 		}
+		deadline := project.Deadline
+		hourlyRate := project.HourlyRate
+		timeBudget := project.TimeBudget
+		isActive := project.IsActive
+		color := project.Color
 		syncProject := ChangedProjectDto{
 			Id:              project.ID,
 			Name:            project.Name,
+			Color:           &color,
+			Deadline:        &deadline,
+			HourlyRate:      &hourlyRate,
+			TimeBudget:      &timeBudget,
+			IsActive:        &isActive,
 			ChangeType:      changeType,
 			ChangeTimestamp: changeTime.Format(time.RFC3339),
 		}
@@ -137,11 +148,40 @@ func (handler *syncHandler) fillInClientSideChangedProjects(syncData *model.Sync
 	}
 }
 
-func (handle *syncHandler) createProjectFromDto(projectDto ChangedProjectDto, userId uuid.UUID) model.Project {
+func (handler *syncHandler) createProjectFromDto(projectDto ChangedProjectDto, userId uuid.UUID) model.Project {
 	project := model.Project{
 		ID:     projectDto.Id,
-		Name:   projectDto.Name,
 		UserId: userId,
+	}
+	existingProject, err := handler.syncUsecase.GetProjectById(projectDto.Id)
+	if err == nil && existingProject != nil {
+		project = *existingProject
+	}
+
+	project.Name = projectDto.Name
+
+	if projectDto.Color != nil {
+		project.Color = *projectDto.Color
+	}
+
+	if projectDto.TimeBudget != nil {
+		project.TimeBudget = *projectDto.TimeBudget
+	}
+
+	if projectDto.HourlyRate != nil {
+		project.HourlyRate = *projectDto.HourlyRate
+	}
+
+	if projectDto.Deadline != nil {
+		if projectDto.Deadline.IsZero() {
+			project.Deadline = model.DateOnly{}
+		} else {
+			project.Deadline = *projectDto.Deadline
+		}
+	}
+
+	if projectDto.IsActive != nil {
+		project.IsActive = *projectDto.IsActive
 	}
 	return project
 }
@@ -163,16 +203,25 @@ func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.S
 }
 
 func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntryDto, userId uuid.UUID) (model.TimeEntry, error) {
+	timeEntry := model.TimeEntry{
+		ID:     timeEntryDto.Id,
+		UserId: userId,
+	}
+	existingTimeEntry, err := handler.syncUsecase.GetTimeEntryById(timeEntryDto.Id)
+	if err == nil && existingTimeEntry != nil {
+		timeEntry = *existingTimeEntry
+	}
+
+	timeEntry.ProjectId = timeEntryDto.ProjectId
+
 	startTime, err := time.Parse(time.RFC3339, timeEntryDto.StartTime)
 	if err != nil {
 		return model.TimeEntry{}, err
 	}
-	timeEntry := model.TimeEntry{
-		ID:          timeEntryDto.Id,
-		ProjectId:   timeEntryDto.ProjectId,
-		UserId:      userId,
-		Description: timeEntryDto.Description,
-		StartTime:   startTime,
+	timeEntry.StartTime = startTime
+
+	if timeEntryDto.Description != nil {
+		timeEntry.Description = *timeEntryDto.Description
 	}
 	if timeEntryDto.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, timeEntryDto.EndTime)

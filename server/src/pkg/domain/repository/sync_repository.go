@@ -11,4 +11,6 @@ type SyncRepository interface {
 	UpdateAndDeleteData(data model.SyncData) error
 	GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
 	GetUpdatedProjectsOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error)
+	GetProjectById(id uuid.UUID) (*model.Project, error)
+	GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error)
 }
