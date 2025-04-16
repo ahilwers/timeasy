@@ -7,6 +7,9 @@
     "weeklyOverview": "Wochenübersicht",
     "admin": "Admin"
   },
+  "dashboard": {
+    "headline": "Dashboard"
+  },
   "timeEntries": {
     "headline": "Zeiten",
     "startTime": "Startzeit",
