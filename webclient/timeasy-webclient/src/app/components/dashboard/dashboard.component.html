@@ -2,8 +2,16 @@
   <h1>{{ 'dashboard.headline' | translate}}</h1>
 </div>
 
-<div>
-  <p-card header="Simple Card">
-    <app-weekly-statistics-chart></app-weekly-statistics-chart>
-  </p-card>
+<div class="card-wrapper">
+  <div class="card-weekly-statistics card-full-height">
+    <p-card header="Simple Card" class="card-full-height">
+      <app-weekly-statistics-chart></app-weekly-statistics-chart>
+    </p-card>
+  </div>
+
+  <div class="card-weekly-pie-chart card-full-height">
+    <p-card header="Simple Card" class="card-full-height">
+      <app-weekly-pie-chart></app-weekly-pie-chart>
+    </p-card>
+  </div>
 </div>

@@ -2,6 +2,7 @@ import {Component} from '@angular/core';
 import {TranslatePipe} from '@ngx-translate/core';
 import {Card} from 'primeng/card';
 import {WeeklyStatisticsChartComponent} from '../charts/weekly-statistics-chart.component';
+import {WeeklyPieChartComponent} from '../charts/weekly-pie-chart.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -10,7 +11,8 @@ import {WeeklyStatisticsChartComponent} from '../charts/weekly-statistics-chart.
   imports: [
     TranslatePipe,
     Card,
-    WeeklyStatisticsChartComponent
+    WeeklyStatisticsChartComponent,
+    WeeklyPieChartComponent
   ],
   styleUrl: './dashboard.component.css'
 })

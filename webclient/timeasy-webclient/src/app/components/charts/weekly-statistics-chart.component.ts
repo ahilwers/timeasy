@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, inject, PLATFORM_ID} from '@angular/core';
+import {ChangeDetectorRef, Component, inject, OnInit, PLATFORM_ID} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import {UIChart} from 'primeng/chart';
 
@@ -12,7 +12,7 @@ import {UIChart} from 'primeng/chart';
   styleUrls: ['./weekly-statistics-chart.component.css']
 })
 
-export class WeeklyStatisticsChartComponent {
+export class WeeklyStatisticsChartComponent implements OnInit {
   data: any;
 
   options: any;
