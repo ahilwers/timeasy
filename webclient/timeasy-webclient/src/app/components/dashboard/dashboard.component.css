@@ -1,18 +1,32 @@
-.card-wrapper {
+.card-layout {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
   align-items: stretch;
-  min-height: 500px;
+  height: 400px;
 }
+
 
 .card-weekly-statistics {
   flex: 2;
+  min-width: 0;
 }
 
 .card-weekly-pie-chart {
   flex: 1;
+  min-width: 0;
 }
 
-.card-full-height {
-  height: 100%;
+@media (max-width: 768px) {
+  .card-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .card-weekly-statistics,
+  .card-weekly-pie-chart {
+    flex: unset;
+    width: 100%;
+    height: auto;
+  }
 }
