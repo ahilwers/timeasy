@@ -1,6 +1,7 @@
-import {ChangeDetectorRef, Component, inject, OnInit, PLATFORM_ID} from '@angular/core';
+import {ChangeDetectorRef, Component, effect, inject, OnInit, PLATFORM_ID, signal} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import {UIChart} from 'primeng/chart';
+import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 
 @Component({
   selector: 'app-weekly-statistics-chart',
@@ -13,6 +14,16 @@ import {UIChart} from 'primeng/chart';
 })
 
 export class WeeklyStatisticsChartComponent implements OnInit {
+
+  private readonly weeklyStatisticsService = inject(WeeklyStatisticsService);
+
+  currentWeekNumber = this.weeklyStatisticsService.currentWeekNumber();
+  weeklyStatistics = this.weeklyStatisticsService.weeklyStatistics();
+  error = this.weeklyStatisticsService.error();
+
+  selectedWeekNumber = signal<number>(0);
+  selectedYear = signal<number>(new Date().getFullYear());
+
   data: any;
 
   options: any;
@@ -20,11 +31,27 @@ export class WeeklyStatisticsChartComponent implements OnInit {
   platformId = inject(PLATFORM_ID);
 
   constructor(private cd: ChangeDetectorRef) {
+    this.weeklyStatisticsService.reset();
+    effect(() => {
+      if (this.currentWeekNumber()>0) {
+        this.selectedWeekNumber.set(this.currentWeekNumber());
+      }
+    });
+    effect(() => {
+      if (this.selectedWeekNumber() > 0) {
+        this.weeklyStatisticsService.load(this.selectedWeekNumber(), this.selectedYear(), undefined);
+      }
+    });
+    effect(() => {
+      if (this.weeklyStatistics()) {
+        this.initChart();
+      }
+    });
   }
 
 
   ngOnInit() {
-    this.initChart();
+    this.weeklyStatisticsService.loadCurrentWeekNumber();
   }
 
   initChart() {
@@ -36,26 +63,7 @@ export class WeeklyStatisticsChartComponent implements OnInit {
 
       this.data = {
         labels: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
-        datasets: [
-          {
-            type: 'bar',
-            label: 'Projekt 1',
-            backgroundColor: documentStyle.getPropertyValue('--p-cyan-500'),
-            data: [50, 25, 12, 48, 90, 76, 42]
-          },
-          {
-            type: 'bar',
-            label: 'Projekt 2',
-            backgroundColor: documentStyle.getPropertyValue('--p-gray-500'),
-            data: [21, 84, 24, 75, 37, 65, 34]
-          },
-          {
-            type: 'bar',
-            label: 'Projekt 3',
-            backgroundColor: documentStyle.getPropertyValue('--p-orange-500'),
-            data: [41, 52, 24, 74, 23, 21, 32]
-          }
-        ]
+        datasets: this.buildBarData()
       };
 
       this.options = {
@@ -99,4 +107,35 @@ export class WeeklyStatisticsChartComponent implements OnInit {
     }
   }
 
+  buildBarData () {
+    const projectMap = new Map<string, { name: string; color: string; data: number[] }>();
+    if (this.weeklyStatistics()) {
+      const stats = this.weeklyStatistics();
+      var dayIndex = 0;
+      for (const day of stats!.days!) {
+        if (day.timesPerProject) {
+          for (const project of day.timesPerProject) {
+            let projectData = projectMap.get(project.projectId);
+            if (!projectData) {
+              projectData = {name: project.projectName, color: project.projectColor, data: Array(7).fill(0)};
+              projectMap.set(project.projectId, projectData);
+            }
+            projectData.data[dayIndex] = project.timeInSeconds;
+          }
+        }
+        dayIndex++;
+      }
+    }
+    const sortedProjects = Array.from(projectMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    const datasets = [];
+    for (const project of sortedProjects) {
+      datasets.push({
+        type: 'bar',
+        label: project.name,
+        backgroundColor: project.color,
+        data: project.data
+      });
+    }
+    return datasets;
+  }
 }

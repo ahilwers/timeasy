@@ -10,4 +10,13 @@ export interface WeeklyStatistics {
 export interface DailyStatistics {
   weekday: string;
   timeInSeconds: number;
+  timesPerProject?: TimePerProject[];
 }
+
+export interface TimePerProject {
+  projectId: string;
+  projectName: string;
+  projectColor: string;
+  timeInSeconds: number;
+}
+

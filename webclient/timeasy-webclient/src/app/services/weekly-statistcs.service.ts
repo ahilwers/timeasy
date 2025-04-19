@@ -58,4 +58,10 @@ export class WeeklyStatisticsService {
       }
     });
   }
+
+  reset(): void {
+    this.state.weeklyStatistics.set(null);
+    this.state.currentWeekNumber.set(0);
+    this.state.error.set(null);
+  }
 }

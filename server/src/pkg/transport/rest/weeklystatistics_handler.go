@@ -41,12 +41,13 @@ type weeklyStatisticsDto struct {
 type dailyStatisticsDto struct {
 	Weekday         string               `json:"weekday"`
 	TimeInSeconds   int                  `json:"timeInSeconds"`
-	TimesPerProject *[]timePerProjectDto `json:"timesPerProject;omitempty"`
+	TimesPerProject *[]timePerProjectDto `json:"timesPerProject,omitempty"`
 }
 
 type timePerProjectDto struct {
 	ProjectId     uuid.UUID `json:"projectId"`
 	ProjectName   string    `json:"projectName"`
+	ProjectColor  string    `json:"projectColor"`
 	TimeInSeconds int       `json:"timeInSeconds"`
 }
 
@@ -141,6 +142,7 @@ func (handler *weeklyStatisticsHandler) createDtoFromTimePerProject(timePerProje
 	return timePerProjectDto{
 		ProjectId:     timePerProject.ProjectId,
 		ProjectName:   project.Name,
+		ProjectColor:  project.Color,
 		TimeInSeconds: timePerProject.Seconds,
 	}, nil
 }
