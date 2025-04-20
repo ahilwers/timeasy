@@ -35,7 +35,7 @@ func (repo *gormSyncRepository) UpdateAndDeleteData(data model.SyncData) error {
 
 func (repo *gormSyncRepository) updateAndDeleteProjects(tx *gorm.DB, data model.SyncData) error {
 	for _, project := range data.ProjectsToBeUpdated {
-		err := repo.SaveProject(tx, &project)
+		err := repo.saveProject(tx, &project)
 		if err != nil {
 			return err
 		}
@@ -48,13 +48,7 @@ func (repo *gormSyncRepository) updateAndDeleteProjects(tx *gorm.DB, data model.
 	return nil
 }
 
-func (repo *gormSyncRepository) SaveProject(tx *gorm.DB, project *model.Project) error {
-	existingProject, _ := repo.GetProjectById(project.ID)
-	// Don't overwrite created date and ownership of existing projects
-	if existingProject != nil {
-		project.UserId = existingProject.UserId
-		project.CreatedAt = existingProject.CreatedAt
-	}
+func (repo *gormSyncRepository) saveProject(tx *gorm.DB, project *model.Project) error {
 	if err := tx.Save(&project).Error; err != nil {
 		return err
 	}
@@ -71,7 +65,7 @@ func (repo *gormSyncRepository) GetProjectById(id uuid.UUID) (*model.Project, er
 
 func (repo *gormSyncRepository) updateAndDeleteTimeEntries(tx *gorm.DB, data model.SyncData) error {
 	for _, timeEntry := range data.TimeEntriesToBeUpdated {
-		err := repo.SaveTimeEntry(tx, &timeEntry)
+		err := repo.saveTimeEntry(tx, &timeEntry)
 		if err != nil {
 			return err
 		}
@@ -84,13 +78,7 @@ func (repo *gormSyncRepository) updateAndDeleteTimeEntries(tx *gorm.DB, data mod
 	return nil
 }
 
-func (repo *gormSyncRepository) SaveTimeEntry(tx *gorm.DB, project *model.TimeEntry) error {
-	existingTimeEntry, _ := repo.GetTimeEntryById(project.ID)
-	// Don't overwrite created date and ownership of existing time entries
-	if existingTimeEntry != nil {
-		project.UserId = existingTimeEntry.UserId
-		project.CreatedAt = existingTimeEntry.CreatedAt
-	}
+func (repo *gormSyncRepository) saveTimeEntry(tx *gorm.DB, project *model.TimeEntry) error {
 	if err := tx.Save(&project).Error; err != nil {
 		return err
 	}
