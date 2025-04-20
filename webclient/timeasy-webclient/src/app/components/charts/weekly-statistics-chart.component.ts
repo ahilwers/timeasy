@@ -1,7 +1,20 @@
-import {ChangeDetectorRef, Component, effect, inject, OnInit, PLATFORM_ID, signal} from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  effect,
+  Inject,
+  inject,
+  LOCALE_ID,
+  OnInit,
+  PLATFORM_ID,
+  signal
+} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import {UIChart} from 'primeng/chart';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
+import {TranslateService} from '@ngx-translate/core';
+import {TooltipItem} from 'chart.js';
+import {formatSecondsToReadableTime} from '../../utils/time-utils';
 
 @Component({
   selector: 'app-weekly-statistics-chart',
@@ -16,6 +29,7 @@ import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 export class WeeklyStatisticsChartComponent implements OnInit {
 
   private readonly weeklyStatisticsService = inject(WeeklyStatisticsService);
+  private readonly translateService = inject(TranslateService)
 
   currentWeekNumber = this.weeklyStatisticsService.currentWeekNumber();
   weeklyStatistics = this.weeklyStatisticsService.weeklyStatistics();
@@ -30,7 +44,7 @@ export class WeeklyStatisticsChartComponent implements OnInit {
 
   platformId = inject(PLATFORM_ID);
 
-  constructor(private cd: ChangeDetectorRef) {
+  constructor(private cd: ChangeDetectorRef, @Inject(LOCALE_ID) private locale: string) {
     this.weeklyStatisticsService.reset();
     effect(() => {
       if (this.currentWeekNumber()>0) {
@@ -62,7 +76,15 @@ export class WeeklyStatisticsChartComponent implements OnInit {
       const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
 
       this.data = {
-        labels: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
+        labels: [
+          this.translateService.instant('globals.weekdays.monday'),
+          this.translateService.instant('globals.weekdays.tuesday'),
+          this.translateService.instant('globals.weekdays.wednesday'),
+          this.translateService.instant('globals.weekdays.thursday'),
+          this.translateService.instant('globals.weekdays.friday'),
+          this.translateService.instant('globals.weekdays.saturday'),
+          this.translateService.instant('globals.weekdays.sunday')
+        ],
         datasets: this.buildBarData()
       };
 
@@ -72,7 +94,13 @@ export class WeeklyStatisticsChartComponent implements OnInit {
         plugins: {
           tooltip: {
             mode: 'index',
-            intersect: false
+            intersect: false,
+            callbacks: {
+              label: (context: TooltipItem<'bar'>) => {
+                const seconds = context.raw as number;
+                return `${context.dataset.label}: ${formatSecondsToReadableTime(seconds, this.locale)}`;
+              }
+            }
           },
           legend: {
             labels: {
@@ -94,7 +122,10 @@ export class WeeklyStatisticsChartComponent implements OnInit {
           y: {
             stacked: true,
             ticks: {
-              color: textColorSecondary
+              color: textColorSecondary,
+              callback: (value: string | number) => {
+                return formatSecondsToReadableTime(Number(value), this.locale);
+              }
             },
             grid: {
               color: surfaceBorder,

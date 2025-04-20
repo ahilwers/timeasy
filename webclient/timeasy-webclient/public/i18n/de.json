@@ -8,7 +8,9 @@
     "admin": "Admin"
   },
   "dashboard": {
-    "headline": "Dashboard"
+    "headline": "Dashboard",
+    "yourWeek": "Deine Woche",
+    "projectsThisWeek": "Projekte in dieser Woche"
   },
   "timeEntries": {
     "headline": "Zeiten",

@@ -1,7 +1,9 @@
-import {ChangeDetectorRef, Component, effect, inject, PLATFORM_ID, signal} from '@angular/core';
+import {ChangeDetectorRef, Component, effect, Inject, inject, LOCALE_ID, PLATFORM_ID, signal} from '@angular/core';
 import {ChartModule} from 'primeng/chart';
 import {isPlatformBrowser} from '@angular/common';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
+import {TooltipItem} from 'chart.js';
+import {formatSecondsToReadableTime} from '../../utils/time-utils';
 
 @Component({
   selector: 'app-weekly-pie-chart',
@@ -14,6 +16,7 @@ import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 })
 
 export class WeeklyPieChartComponent {
+
   private readonly weeklyStatisticsService = inject(WeeklyStatisticsService);
 
   currentWeekNumber = this.weeklyStatisticsService.currentWeekNumber();
@@ -26,7 +29,7 @@ export class WeeklyPieChartComponent {
   options: any;
   platformId = inject(PLATFORM_ID);
 
-  constructor(private cd: ChangeDetectorRef) {
+  constructor(private cd: ChangeDetectorRef, @Inject(LOCALE_ID) private locale: string) {
     this.weeklyStatisticsService.reset();
     effect(() => {
       if (this.currentWeekNumber()>0) {
@@ -61,6 +64,15 @@ export class WeeklyPieChartComponent {
             labels: {
               usePointStyle: true,
               color: textColor
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (context: TooltipItem<'bar'>) => {
+                const seconds = context.raw as number;
+                const formatted = formatSecondsToReadableTime(seconds, this.locale);
+                return `${context.label}: ${formatted}`;
+              }
             }
           }
         }
@@ -128,4 +140,5 @@ export class WeeklyPieChartComponent {
 
     return `rgb(${r}, ${g}, ${b})`;
   }
+
 }

@@ -3,13 +3,13 @@
 </div>
 <div class="card-layout">
   <div class="card-weekly-statistics">
-    <app-card>
+    <app-card header="{{ 'dashboard.yourWeek' | translate}}">
       <app-weekly-statistics-chart></app-weekly-statistics-chart>
     </app-card>
   </div>
 
   <div class="card-weekly-pie-chart">
-    <app-card>
+    <app-card header="{{ 'dashboard.projectsThisWeek' | translate}}">
       <app-weekly-pie-chart></app-weekly-pie-chart>
     </app-card>
   </div>
