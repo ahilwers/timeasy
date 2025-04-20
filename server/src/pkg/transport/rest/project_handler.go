@@ -52,6 +52,7 @@ type projectTeamAssignmentInput struct {
 func (handler *projectHandler) AddProject(context *gin.Context) {
 	var prj projectInput
 	if err := context.ShouldBindJSON(&prj); err != nil {
+		log.Printf("could not set project data: %v\n", err)
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -68,7 +69,11 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 	newProject := model.Project{
 		UserId: userId,
 	}
-	handler.fillProjectFromDto(&newProject, prj)
+	err = handler.fillProjectFromDto(&newProject, prj)
+	if err != nil {
+		log.Printf("could not set project data: %v\n", err)
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
 	err = handler.usecase.AddProject(&newProject)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -122,7 +127,12 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 		}
 	}
 
-	handler.fillProjectFromDto(project, prj)
+	err = handler.fillProjectFromDto(project, prj)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("could not set project data: %v\n", err)
+		return
+	}
 
 	err = handler.usecase.UpdateProject(project)
 	if err != nil {
