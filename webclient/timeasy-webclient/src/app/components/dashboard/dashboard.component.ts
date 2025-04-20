@@ -3,6 +3,7 @@ import {TranslatePipe} from '@ngx-translate/core';
 import {WeeklyStatisticsChartComponent} from '../charts/weekly-statistics-chart.component';
 import {WeeklyPieChartComponent} from '../charts/weekly-pie-chart.component';
 import {CardComponent} from '../card/card.component';
+import {TimeTrackingComponent} from './time-tracking.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,7 +13,8 @@ import {CardComponent} from '../card/card.component';
     TranslatePipe,
     WeeklyStatisticsChartComponent,
     WeeklyPieChartComponent,
-    CardComponent
+    CardComponent,
+    TimeTrackingComponent
   ],
   styleUrl: './dashboard.component.css'
 })

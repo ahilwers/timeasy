@@ -59,11 +59,6 @@ export class MenuComponent implements OnInit {
   updateMenu() {
     this.menuItems = [
       {
-        label: this.translateService.instant('menu.home'),
-        icon: 'pi pi-home',
-        routerLink: '/'
-      },
-      {
         label: this.translateService.instant('menu.dashboard'),
         icon: 'pi pi-gauge',
         routerLink: '/dashboard'
@@ -92,6 +87,5 @@ export class MenuComponent implements OnInit {
         routerLink: '/admin'
       });
     }
-
   }
 }

@@ -1,3 +1,10 @@
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
 .card-layout {
   display: flex;
   gap: 1rem;
@@ -5,7 +12,6 @@
   align-items: stretch;
   height: 400px;
 }
-
 
 .card-weekly-statistics {
   flex: 2;
@@ -15,6 +21,18 @@
 .card-weekly-pie-chart {
   flex: 1;
   min-width: 0;
+}
+
+.time-tracking-layout {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  align-items: center;
+  width: 100%;
+}
+
+.card-time-tracking {
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -30,3 +48,5 @@
     height: auto;
   }
 }
+
+

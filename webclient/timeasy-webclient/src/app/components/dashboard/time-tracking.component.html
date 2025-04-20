@@ -1,0 +1,17 @@
+<div class="main-layout">
+  <div class="input-field-container">
+    <input pInputText type="text" id="description" autocomplete="off" placeholder="{{ 'timeTracking.whatAreYouWorkingOn' | translate}}" class="input-field" />
+  </div>
+  <div>
+    {{ "in" | translate }}
+  </div>
+  <div>
+    <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'timeTracking.project' | translate }}" (onChange)="projectSelected($event)"></p-select>
+  </div>
+  <div>
+    <app-timer></app-timer>
+  </div>
+  <div>
+    <p-button icon="pi pi-play" [rounded]="true" (onClick)="onPlay()" [disabled]="!selectedProject"></p-button>
+  </div>
+</div>

@@ -60,6 +60,11 @@
     "total": "Total",
     "allProjects": "All Projects"
   },
+  "timeTracking": {
+    "whatAreYouWorkingOn": "What are you working on?",
+    "in": "in",
+    "project": "Project"
+  },
   "globals": {
     "ok": "OK",
     "cancel": "Cancel",
