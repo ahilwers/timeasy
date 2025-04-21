@@ -68,7 +68,10 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     providePrimeNG({
       theme: {
-        preset: ColorPreset
+        preset: ColorPreset,
+        options: {
+          darkModeSelector: false || 'none' // Remove this to enable dark mode
+        }
       },
       ripple: true
     }),
