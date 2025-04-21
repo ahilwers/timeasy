@@ -45,6 +45,17 @@ func (repo *gormTimeEntryRepository) GetTimeEntryById(id uuid.UUID) (*model.Time
 	return &timeEntry, nil
 }
 
+func (repo *gormTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error) {
+	var timeEntries []model.TimeEntry
+	if err := repo.db.Order("start_time desc").Find(&timeEntries, "user_id=? AND end_time=?", userId, "0001-01-01 00:00:00").Error; err != nil {
+		return nil, err
+	}
+	if len(timeEntries) == 0 {
+		return nil, nil
+	}
+	return &timeEntries[0], nil
+}
+
 func (repo *gormTimeEntryRepository) UpdateTimeEntry(timeEntry *model.TimeEntry) error {
 	if err := repo.db.Save(timeEntry).Error; err != nil {
 		return err

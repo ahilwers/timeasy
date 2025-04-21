@@ -18,6 +18,7 @@ type TimeEntryHandler interface {
 	UpdateTimeEntry(context *gin.Context)
 	DeleteTimeEntry(context *gin.Context)
 	GetTimeEntryById(context *gin.Context)
+	GetLastOpenTimeEntry(context *gin.Context)
 	GetAllTimeEntries(context *gin.Context)
 }
 
@@ -215,6 +216,29 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 				entryId)})
 			return
 		}
+	}
+	context.JSON(http.StatusOK, handler.createDtoFromTimeEntry(timeEntry))
+}
+
+func (handler *timeEntryHandler) GetLastOpenTimeEntry(context *gin.Context) {
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	authUserId, err := token.GetUserId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	timeEntry, err := handler.usecase.GetLastOpenTimeEntry(authUserId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if timeEntry == nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("no open time entry for user %v found", authUserId)})
+		return
 	}
 	context.JSON(http.StatusOK, handler.createDtoFromTimeEntry(timeEntry))
 }

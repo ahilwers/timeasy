@@ -24,6 +24,7 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.POST("/projects/team", projectHandler.AssignProjectToTeam)
 	protectedGroup.DELETE("/projects/:id", projectHandler.DeleteProject)
 	protectedGroup.GET("/timeentries/:id", timeEntryHandler.GetTimeEntryById)
+	protectedGroup.GET("/timeentries/lastopen", timeEntryHandler.GetLastOpenTimeEntry)
 	protectedGroup.GET("/timeentries", timeEntryHandler.GetAllTimeEntries)
 	protectedGroup.GET("/timeentries/ascsv", timeEntryExportHandler.ExportTimeEntriesToCsv)
 	protectedGroup.GET("/timeentries/asxlsx", timeEntryExportHandler.ExportTimeEntriesToXls)
