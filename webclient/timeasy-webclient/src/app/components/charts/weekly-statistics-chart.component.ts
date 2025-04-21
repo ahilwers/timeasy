@@ -12,7 +12,7 @@ import {
 import {isPlatformBrowser} from '@angular/common';
 import {UIChart} from 'primeng/chart';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {TooltipItem} from 'chart.js';
 import {formatSecondsToReadableTime} from '../../utils/time-utils';
 
@@ -21,7 +21,8 @@ import {formatSecondsToReadableTime} from '../../utils/time-utils';
   standalone: true,
   templateUrl: './weekly-statistics-chart.component.html',
   imports: [
-    UIChart
+    UIChart,
+    TranslatePipe
   ],
   styleUrls: ['./weekly-statistics-chart.component.css']
 })
@@ -39,10 +40,9 @@ export class WeeklyStatisticsChartComponent implements OnInit {
   selectedYear = signal<number>(new Date().getFullYear());
 
   data: any;
-
   options: any;
-
   platformId = inject(PLATFORM_ID);
+  timeSum: number = 0;
 
   constructor(private cd: ChangeDetectorRef, @Inject(LOCALE_ID) private locale: string) {
     this.weeklyStatisticsService.reset();
@@ -139,6 +139,7 @@ export class WeeklyStatisticsChartComponent implements OnInit {
   }
 
   buildBarData () {
+    this.timeSum = 0;
     const projectMap = new Map<string, { name: string; color: string; data: number[] }>();
     if (this.weeklyStatistics()) {
       const stats = this.weeklyStatistics();
@@ -152,6 +153,7 @@ export class WeeklyStatisticsChartComponent implements OnInit {
               projectMap.set(project.projectId, projectData);
             }
             projectData.data[dayIndex] = project.timeInSeconds;
+            this.timeSum += project.timeInSeconds;
           }
         }
         dayIndex++;

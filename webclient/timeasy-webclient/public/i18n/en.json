@@ -10,7 +10,8 @@
   "dashboard": {
     "headline": "Dashboard",
     "yourWeek": "Your Week",
-    "projectsThisWeek": "Projects This Week"
+    "projectsThisWeek": "Projects This Week",
+    "noDataThisWeek": "You didn't track any times this week yet."
   },
   "timeEntries": {
     "headline": "Time Entries",

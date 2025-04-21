@@ -4,6 +4,7 @@ import {isPlatformBrowser} from '@angular/common';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 import {TooltipItem} from 'chart.js';
 import {formatSecondsToReadableTime} from '../../utils/time-utils';
+import {TranslatePipe} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-weekly-pie-chart',
@@ -11,6 +12,7 @@ import {formatSecondsToReadableTime} from '../../utils/time-utils';
   templateUrl: './weekly-pie-chart.component.html',
   imports: [
     ChartModule,
+    TranslatePipe,
   ],
   styleUrls: ['./weekly-pie-chart.component.css']
 })
@@ -28,6 +30,7 @@ export class WeeklyPieChartComponent {
   data: any;
   options: any;
   platformId = inject(PLATFORM_ID);
+  timeSum: number = 0;
 
   constructor(private cd: ChangeDetectorRef, @Inject(LOCALE_ID) private locale: string) {
     this.weeklyStatisticsService.reset();
@@ -83,6 +86,7 @@ export class WeeklyPieChartComponent {
   }
 
   buildChartData () {
+    this.timeSum = 0;
     const projectMap = new Map<string, { name: string; color: string; data: number }>();
     if (this.weeklyStatistics()) {
       const stats = this.weeklyStatistics();
@@ -95,6 +99,7 @@ export class WeeklyPieChartComponent {
               projectMap.set(project.projectId, projectData);
             }
             projectData.data += project.timeInSeconds;
+            this.timeSum += project.timeInSeconds;
           }
         }
       }
