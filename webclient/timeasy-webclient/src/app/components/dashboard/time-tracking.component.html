@@ -1,17 +1,23 @@
 <div class="main-layout">
   <div class="input-field-container">
-    <input pInputText type="text" id="description" autocomplete="off" placeholder="{{ 'timeTracking.whatAreYouWorkingOn' | translate}}" class="input-field" />
+    <input [ngModel]="description()" (ngModelChange)="onDescriptionChanged($event)" pInputText type="text" id="description" autocomplete="off" placeholder="{{ 'timeTracking.whatAreYouWorkingOn' | translate}}" class="input-field" />
   </div>
   <div>
     {{ "in" | translate }}
   </div>
   <div>
-    <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'timeTracking.project' | translate }}" (onChange)="projectSelected($event)"></p-select>
+    <p-select id="project" [(ngModel)]="selectedProject" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'timeTracking.project' | translate }}" (onChange)="projectSelected($event)"></p-select>
   </div>
   <div>
-    <app-timer></app-timer>
+    <app-timer #timerRef></app-timer>
   </div>
-  <div>
-    <p-button icon="pi pi-play" [rounded]="true" (onClick)="onPlay()" [disabled]="!selectedProject"></p-button>
-  </div>
+  @if (running) {
+    <div>
+      <p-button icon="pi pi-pause" [rounded]="true" (onClick)="onPause()" [disabled]="!selectedProject"></p-button>
+    </div>
+  } @else {
+    <div>
+      <p-button icon="pi pi-play" [rounded]="true" (onClick)="onPlay()" [disabled]="!selectedProject"></p-button>
+    </div>
+  }
 </div>
