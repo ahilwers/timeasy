@@ -59,7 +59,6 @@ export class TimeTrackingComponent implements OnInit {
     });
     effect(() => {
       if (this.project()) {
-        console.log("project loaded")
         this.selectedProject = this.project();
       }
     });
@@ -71,7 +70,6 @@ export class TimeTrackingComponent implements OnInit {
     effect(() => {
       if (this.descriptionManuallyChanged()) {
         const value = this.description();
-        console.log("tt");
         clearTimeout(this.debounceTimer);
         this.debounceTimer = setTimeout(() => {
           this.saveDescription(value);
@@ -120,7 +118,6 @@ export class TimeTrackingComponent implements OnInit {
 
   saveDescription(description: string) {
     if (this.timeEntry) {
-      console.log("saving description")
       this.timeEntry.description = description;
       this.timeEntryService.updateTimeEntry(this.timeEntry);
     }
