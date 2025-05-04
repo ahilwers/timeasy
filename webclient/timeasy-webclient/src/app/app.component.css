@@ -17,3 +17,12 @@
   background-color: var(--p-surface-a);
 }
 
+@media (max-width: 768px) {
+  .menu {
+    display: none; /* Hide the side menu on mobile */
+  }
+
+  .content {
+    width: 100%; /* Full width content on mobile */
+  }
+}
