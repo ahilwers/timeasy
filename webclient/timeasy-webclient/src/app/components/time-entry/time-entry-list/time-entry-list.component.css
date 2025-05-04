@@ -20,3 +20,69 @@
   display: flex;
   gap: 4px;
 }
+
+/* Column widths */
+.col-startTime,
+.col-endTime {
+  width: 10rem;
+  white-space: nowrap;
+}
+
+.col-description {
+  width: auto;
+}
+
+.col-project {
+  width: 12rem;
+}
+
+.col-actions {
+  width: 5rem;
+}
+
+/* Mobile description row styling */
+.mobile-description-row {
+  display: none;
+}
+
+.mobile-description {
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.mobile-project {
+  font-style: italic;
+  margin-left: 0.5rem;
+}
+
+/* Responsive styles */
+@media (max-width: 1000px) {
+  /* Hide description and project columns */
+  .col-description,
+  .col-project {
+    display: none;
+  }
+  
+  /* Show mobile description row */
+  .mobile-description-row {
+    display: table-row;
+    background-color: #f8f9fa;
+  }
+  
+  /* Adjust filter layout for mobile */
+  .filter {
+    flex-direction: column;
+  }
+  
+  /* Ensure table fits on mobile screens */
+  :host ::ng-deep p-table table {
+    min-width: auto !important;
+    width: 100%;
+  }
+  
+  /* Make action buttons more compact */
+  .buttonCol {
+    gap: 2px;
+  }
+}
