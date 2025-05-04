@@ -6,10 +6,8 @@ import {
   inject,
   LOCALE_ID,
   OnInit,
-  PLATFORM_ID,
   signal
 } from '@angular/core';
-import {isPlatformBrowser} from '@angular/common';
 import {UIChart} from 'primeng/chart';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
@@ -41,7 +39,6 @@ export class WeeklyStatisticsChartComponent implements OnInit {
 
   data: any;
   options: any;
-  platformId = inject(PLATFORM_ID);
   timeSum: number = 0;
 
   constructor(private cd: ChangeDetectorRef, @Inject(LOCALE_ID) private locale: string) {
@@ -69,73 +66,71 @@ export class WeeklyStatisticsChartComponent implements OnInit {
   }
 
   initChart() {
-    if (isPlatformBrowser(this.platformId)) {
-      const documentStyle = getComputedStyle(document.documentElement);
-      const textColor = documentStyle.getPropertyValue('--p-text-color');
-      const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color');
-      const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
+    const documentStyle = getComputedStyle(document.documentElement);
+    const textColor = documentStyle.getPropertyValue('--p-text-color');
+    const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color');
+    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
 
-      this.data = {
-        labels: [
-          this.translateService.instant('globals.weekdays.monday'),
-          this.translateService.instant('globals.weekdays.tuesday'),
-          this.translateService.instant('globals.weekdays.wednesday'),
-          this.translateService.instant('globals.weekdays.thursday'),
-          this.translateService.instant('globals.weekdays.friday'),
-          this.translateService.instant('globals.weekdays.saturday'),
-          this.translateService.instant('globals.weekdays.sunday')
-        ],
-        datasets: this.buildBarData()
-      };
+    this.data = {
+      labels: [
+        this.translateService.instant('globals.weekdays.monday'),
+        this.translateService.instant('globals.weekdays.tuesday'),
+        this.translateService.instant('globals.weekdays.wednesday'),
+        this.translateService.instant('globals.weekdays.thursday'),
+        this.translateService.instant('globals.weekdays.friday'),
+        this.translateService.instant('globals.weekdays.saturday'),
+        this.translateService.instant('globals.weekdays.sunday')
+      ],
+      datasets: this.buildBarData()
+    };
 
-      this.options = {
-        maintainAspectRatio: false,
-        aspectRatio: 0.8,
-        plugins: {
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            callbacks: {
-              label: (context: TooltipItem<'bar'>) => {
-                const seconds = context.raw as number;
-                return `${context.dataset.label}: ${formatSecondsToReadableTime(seconds, this.locale)}`;
-              }
-            }
-          },
-          legend: {
-            labels: {
-              color: textColor
+    this.options = {
+      maintainAspectRatio: false,
+      aspectRatio: 0.8,
+      plugins: {
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: (context: TooltipItem<'bar'>) => {
+              const seconds = context.raw as number;
+              return `${context.dataset.label}: ${formatSecondsToReadableTime(seconds, this.locale)}`;
             }
           }
         },
-        scales: {
-          x: {
-            stacked: true,
-            ticks: {
-              color: textColorSecondary
-            },
-            grid: {
-              color: surfaceBorder,
-              drawBorder: false
-            }
-          },
-          y: {
-            stacked: true,
-            ticks: {
-              color: textColorSecondary,
-              callback: (value: string | number) => {
-                return formatSecondsToReadableTime(Number(value), this.locale);
-              }
-            },
-            grid: {
-              color: surfaceBorder,
-              drawBorder: false
-            }
+        legend: {
+          labels: {
+            color: textColor
           }
         }
-      };
-      this.cd.markForCheck()
-    }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: {
+            color: textColorSecondary
+          },
+          grid: {
+            color: surfaceBorder,
+            drawBorder: false
+          }
+        },
+        y: {
+          stacked: true,
+          ticks: {
+            color: textColorSecondary,
+            callback: (value: string | number) => {
+              return formatSecondsToReadableTime(Number(value), this.locale);
+            }
+          },
+          grid: {
+            color: surfaceBorder,
+            drawBorder: false
+          }
+        }
+      }
+    };
+    this.cd.markForCheck()
   }
 
   buildBarData () {

@@ -1,6 +1,14 @@
-import {ChangeDetectorRef, Component, effect, Inject, inject, LOCALE_ID, PLATFORM_ID, signal} from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  effect,
+  Inject,
+  inject,
+  LOCALE_ID,
+  OnInit,
+  signal
+} from '@angular/core';
 import {ChartModule} from 'primeng/chart';
-import {isPlatformBrowser} from '@angular/common';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 import {TooltipItem} from 'chart.js';
 import {formatSecondsToReadableTime} from '../../utils/time-utils';
@@ -17,7 +25,7 @@ import {TranslatePipe} from '@ngx-translate/core';
   styleUrls: ['./weekly-pie-chart.component.css']
 })
 
-export class WeeklyPieChartComponent {
+export class WeeklyPieChartComponent implements OnInit {
 
   private readonly weeklyStatisticsService = inject(WeeklyStatisticsService);
 
@@ -29,7 +37,6 @@ export class WeeklyPieChartComponent {
   selectedYear = signal<number>(new Date().getFullYear());
   data: any;
   options: any;
-  platformId = inject(PLATFORM_ID);
   timeSum: number = 0;
 
   constructor(private cd: ChangeDetectorRef, @Inject(LOCALE_ID) private locale: string) {
@@ -56,33 +63,30 @@ export class WeeklyPieChartComponent {
   }
 
   initChart() {
-    if (isPlatformBrowser(this.platformId)) {
-      const documentStyle = getComputedStyle(document.documentElement);
-      const textColor = documentStyle.getPropertyValue('--text-color');
-      this.data = this.buildChartData();
+    const documentStyle = getComputedStyle(document.documentElement);
+    const textColor = documentStyle.getPropertyValue('--text-color');
+    this.data = this.buildChartData();
 
-      this.options = {
-        plugins: {
-          legend: {
-            labels: {
-              usePointStyle: true,
-              color: textColor
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: (context: TooltipItem<'bar'>) => {
-                const seconds = context.raw as number;
-                const formatted = formatSecondsToReadableTime(seconds, this.locale);
-                return `${context.label}: ${formatted}`;
-              }
+    this.options = {
+      plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true,
+            color: textColor
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (context: TooltipItem<'bar'>) => {
+              const seconds = context.raw as number;
+              const formatted = formatSecondsToReadableTime(seconds, this.locale);
+              return `${context.label}: ${formatted}`;
             }
           }
         }
-      };
-      this.cd.markForCheck()
-    }
-
+      }
+    };
+    this.cd.markForCheck()
   }
 
   buildChartData () {

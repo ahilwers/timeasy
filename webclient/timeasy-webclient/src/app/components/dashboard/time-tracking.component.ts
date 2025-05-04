@@ -1,5 +1,4 @@
 import {Component, effect, inject, OnInit, signal, ViewChild} from '@angular/core';
-import {FloatLabel} from 'primeng/floatlabel';
 import {InputText} from 'primeng/inputtext';
 import {Button} from 'primeng/button';
 import {Select} from 'primeng/select';
@@ -16,7 +15,6 @@ import {TimeEntry} from '../../models/timeentry.model';
   templateUrl: './time-tracking.component.html',
   styleUrls: ['./time-tracking.component.css'],
   imports: [
-    FloatLabel,
     InputText,
     Button,
     Select,
