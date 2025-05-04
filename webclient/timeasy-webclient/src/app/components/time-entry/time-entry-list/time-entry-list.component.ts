@@ -15,7 +15,6 @@ import {Project} from '../../../models/project.model';
 import {Select} from 'primeng/select';
 import {FormsModule} from '@angular/forms';
 import {DatePicker} from 'primeng/datepicker';
-import {FloatLabel} from 'primeng/floatlabel';
 import {SplitButton} from 'primeng/splitbutton';
 
 @Component({
@@ -32,7 +31,6 @@ import {SplitButton} from 'primeng/splitbutton';
     Select,
     FormsModule,
     DatePicker,
-    FloatLabel,
     SplitButton,
   ],
   providers: [ConfirmationService, MessageService],

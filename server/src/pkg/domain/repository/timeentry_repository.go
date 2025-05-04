@@ -14,6 +14,7 @@ type TimeEntryRepository interface {
 	UpdateTimeEntryList(timeEntryList []model.TimeEntry) error
 	DeleteTimeEntry(project *model.TimeEntry) error
 	GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error)
+	GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error)
 	GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error)
 	GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error)
 	GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error)

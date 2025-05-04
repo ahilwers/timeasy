@@ -24,6 +24,7 @@ export class TimeEntryService {
 
   timeEntries = computed(() => this.state.timeEntries);
   timeEntry = computed(() => this.state.timeEntry);
+  lastOpenTimeEntry = computed(() => this.state.lastOpenTimeEntry);
   deleted = computed(() => this.state.timeEntryDeleted);
   error = computed(() => this.state.error);
   updateSuccessful = computed(() => this.state.updateSuccessful);
@@ -46,6 +47,20 @@ export class TimeEntryService {
         console.error('Failed to load time entry:', err);
         this.state.error.set(this.translateService.instant('timeEntries.errorLoadingTimeEntry'));
       }
+    });
+  }
+
+  loadLastOpenTimeEntry(): void {
+    this.resetState();
+    this.http.get<TimeEntry>(`${this.apiUrl}/lastopen`).subscribe({
+      next: (timeEntry) => {
+        const transformedTimeEntry = {
+          ...timeEntry,
+          startTime: new Date(timeEntry.startTime),
+          endTime: timeEntry.endTime ? new Date(timeEntry.endTime) : undefined
+        };
+        this.state.lastOpenTimeEntry.set(transformedTimeEntry);
+      },
     });
   }
 

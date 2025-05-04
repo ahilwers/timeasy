@@ -14,6 +14,7 @@ type TimeEntryUsecase interface {
 	GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error)
 	GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error)
 	GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error)
+	GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error)
 	AddTimeEntry(timeEntry *model.TimeEntry) error
 	AddTimeEntryList(timeEntryList []model.TimeEntry) error
 	UpdateTimeEntry(timeEntry *model.TimeEntry) error
@@ -51,6 +52,10 @@ func (tu *timeEntryUsecase) GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, 
 
 func (tu *timeEntryUsecase) GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error) {
 	return tu.repo.GetTimeEntriesOfUserAndProjectBetweenDates(userId, projectId, startDate, endDate)
+}
+
+func (tu *timeEntryUsecase) GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error) {
+	return tu.repo.GetLastOpenTimeEntry(userId)
 }
 
 func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {

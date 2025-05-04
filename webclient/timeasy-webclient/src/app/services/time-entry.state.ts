@@ -10,6 +10,7 @@ export class TimeEntryState {
   readonly lastUpdatedTimeEntry = signal<TimeEntry | null>(null);
   readonly selectedDateRange = signal<[Date, Date]>(this.getDefaultDateRange());
   readonly selectedProjectId = signal<string | undefined>(undefined);
+  readonly lastOpenTimeEntry = signal<TimeEntry | null>(null);
 
   reset() {
     this.timeEntry.set(null);
@@ -18,6 +19,7 @@ export class TimeEntryState {
     this.error.set(null);
     this.updateSuccessful.set(false);
     this.lastUpdatedTimeEntry.set(null);
+    this.lastOpenTimeEntry.set(null);
   }
 
   getDefaultDateRange(): [Date, Date] {

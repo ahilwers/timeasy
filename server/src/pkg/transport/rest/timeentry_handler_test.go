@@ -724,6 +724,161 @@ func Test_timeEntryHandler_GetTimeEntryByIdSucceedsIfItDoesNotBelongToTheUserBut
 	assert.Equal(t, project.ID, entryFromService.ProjectId)
 }
 
+func Test_timeEntryHandler_GetLastOpenTimeEntry_ReturnsLastOpenTimeEntry(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry1",
+		StartTime:   startTime,
+		ProjectId:   project.ID,
+		UserId:      userId,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	assert.Nil(t, err)
+	timeEntry2 := model.TimeEntry{
+		Description: "timeentry2",
+		StartTime:   startTime.Add(time.Hour),
+		ProjectId:   project.ID,
+		UserId:      userId,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/timeentries/lastopen", nil)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var entryFromService timeEntryTestDto
+	json.Unmarshal(w.Body.Bytes(), &entryFromService)
+	assert.Equal(t, timeEntry2.Description, entryFromService.Description)
+	startTimeFromEntry, err := time.Parse(time.RFC3339, entryFromService.StartTime)
+	assert.Nil(t, err)
+	assert.Equal(t, timeEntry2.StartTime, startTimeFromEntry)
+	assert.Equal(t, "", entryFromService.EndTime)
+	assert.Equal(t, project.ID, entryFromService.ProjectId)
+}
+
+func Test_timeEntryHandler_GetLastOpenTimeEntry_WithMultipleUsers_ReturnsLastOpenTimeEntryOfCorrectUser(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	otherUserId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry1",
+		StartTime:   startTime,
+		ProjectId:   project.ID,
+		UserId:      userId,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	assert.Nil(t, err)
+	timeEntry2 := model.TimeEntry{
+		Description: "timeentry2",
+		StartTime:   startTime.Add(time.Hour),
+		ProjectId:   project.ID,
+		UserId:      otherUserId,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/timeentries/lastopen", nil)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	var entryFromService timeEntryTestDto
+	json.Unmarshal(w.Body.Bytes(), &entryFromService)
+	assert.Equal(t, timeEntry1.Description, entryFromService.Description)
+	startTimeFromEntry, err := time.Parse(time.RFC3339, entryFromService.StartTime)
+	assert.Nil(t, err)
+	assert.Equal(t, timeEntry1.StartTime, startTimeFromEntry)
+	assert.Equal(t, "", entryFromService.EndTime)
+	assert.Equal(t, project.ID, entryFromService.ProjectId)
+}
+
+func Test_timeEntryHandler_GetLastOpenTimeEntry_WithoutOpenTimeEntry_ReturnsErrorNotFound(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry1",
+		StartTime:   startTime,
+		EndTime:     startTime.Add(time.Hour),
+		ProjectId:   project.ID,
+		UserId:      userId,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/timeentries/lastopen", nil)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 404, w.Code)
+}
+
 func Test_timeEntryHandler_GetAllTimeEntries(t *testing.T) {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)

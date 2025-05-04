@@ -7,6 +7,12 @@
     "weeklyOverview": "Wochenübersicht",
     "admin": "Admin"
   },
+  "dashboard": {
+    "headline": "Dashboard",
+    "yourWeek": "Deine Woche",
+    "projectsThisWeek": "Projekte in dieser Woche",
+    "noDataThisWeek": "Du hast in dieser Woche noch keine Zeiten erfasst."
+  },
   "timeEntries": {
     "headline": "Zeiten",
     "startTime": "Startzeit",
@@ -54,6 +60,11 @@
     "headline": "Wochenübersicht",
     "total": "Gesamt",
     "allProjects": "Alle Projekte"
+  },
+  "timeTracking": {
+    "whatAreYouWorkingOn": "Was machst Du gerade?",
+    "in": "in",
+    "project": "Projekt"
   },
   "globals": {
     "ok": "OK",

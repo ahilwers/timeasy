@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"github.com/gofrs/uuid"
+	"time"
+)
 
 func NewWeeklyStatistics() *WeeklyStatistics {
 	return &WeeklyStatistics{
@@ -43,8 +46,14 @@ func NewWeeklyStatisticsEntry(date time.Time) *WeeklyStatisticsEntry {
 }
 
 type WeeklyStatisticsEntry struct {
-	Date    time.Time
-	Seconds int
+	Date            time.Time
+	Seconds         int
+	TimesPerProject map[uuid.UUID]*TimePerProject
+}
+
+type TimePerProject struct {
+	ProjectId uuid.UUID
+	Seconds   int
 }
 
 func (entry *WeeklyStatisticsEntry) GetMinutes() float32 {
@@ -53,4 +62,19 @@ func (entry *WeeklyStatisticsEntry) GetMinutes() float32 {
 
 func (entry *WeeklyStatisticsEntry) GetHours() float32 {
 	return entry.GetMinutes() / 60
+}
+
+func (entry *WeeklyStatisticsEntry) AddSecondsForProject(projectId uuid.UUID, seconds int) {
+	if entry.TimesPerProject == nil {
+		entry.TimesPerProject = make(map[uuid.UUID]*TimePerProject)
+	}
+	timeOfProject := entry.TimesPerProject[projectId]
+	if timeOfProject == nil {
+		timeOfProject = &TimePerProject{
+			ProjectId: projectId,
+			Seconds:   0,
+		}
+	}
+	timeOfProject.Seconds += seconds
+	entry.TimesPerProject[projectId] = timeOfProject
 }

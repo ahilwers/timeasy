@@ -236,6 +236,117 @@ func Test_timeEntryUsecase_GetTimeEntryById(t *testing.T) {
 	assert.True(t, entry.EndTime.IsZero())
 }
 
+func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_ReturnsTheLastOpenTimeEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now(),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	assert.Nil(t, err)
+	timeEntry2 := model.TimeEntry{
+		Description: "timeentry2",
+		StartTime:   time.Now().Add(time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	assert.Nil(t, err)
+	timeEntry3 := model.TimeEntry{
+		Description: "timeentry3",
+		StartTime:   time.Now().Add(time.Hour * 2),
+		EndTime:     time.Now().Add(time.Hour * 3),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry3)
+	assert.Nil(t, err)
+
+	entry, err := usecaseTest.TimeEntryUsecase.GetLastOpenTimeEntry(userId)
+	assert.Nil(t, err)
+	assert.NotNil(t, entry)
+	assert.Equal(t, timeEntry2.Description, entry.Description)
+	assertTimesAreEqual(t, timeEntry2.StartTime, entry.StartTime)
+	assert.Equal(t, userId, entry.UserId)
+	assert.Equal(t, project.ID, entry.ProjectId)
+	assert.True(t, entry.EndTime.IsZero())
+}
+
+func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_WithMultipleUsers_ReturnsTheLastOpenTimeEntryOfCorrectUser(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	otherUserId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now(),
+		UserId:      otherUserId,
+		ProjectId:   project.ID,
+	}
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	assert.Nil(t, err)
+	timeEntry2 := model.TimeEntry{
+		Description: "timeentry2",
+		StartTime:   time.Now().Add(time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	assert.Nil(t, err)
+	timeEntry3 := model.TimeEntry{
+		Description: "timeentry3",
+		StartTime:   time.Now().Add(time.Hour * 2),
+		UserId:      otherUserId,
+		ProjectId:   project.ID,
+	}
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry3)
+	assert.Nil(t, err)
+
+	entry, err := usecaseTest.TimeEntryUsecase.GetLastOpenTimeEntry(userId)
+	assert.Nil(t, err)
+	assert.NotNil(t, entry)
+	assert.Equal(t, timeEntry2.Description, entry.Description)
+	assertTimesAreEqual(t, timeEntry2.StartTime, entry.StartTime)
+	assert.Equal(t, userId, entry.UserId)
+	assert.Equal(t, project.ID, entry.ProjectId)
+	assert.True(t, entry.EndTime.IsZero())
+}
+
+func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_WithoutOpenTimeEntry_ReturnsNil(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+
+	timeEntry1 := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now(),
+		EndTime:     time.Now().Add(time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	assert.Nil(t, err)
+
+	entry, err := usecaseTest.TimeEntryUsecase.GetLastOpenTimeEntry(userId)
+	assert.Nil(t, err)
+	assert.Nil(t, entry)
+}
+
 func Test_timeEntryUsecase_GetTimeEntryByIdFailsIfItDoesNotExist(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)

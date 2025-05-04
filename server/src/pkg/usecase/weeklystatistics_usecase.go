@@ -39,6 +39,7 @@ func (u *WeeklyStatisticsUsecase) Build(userId uuid.UUID, projectId uuid.UUID, w
 			weeklyStatistics.AddEntryForWeekday(timeEntry.StartTime.Weekday(), statisticsEntry)
 		}
 		statisticsEntry.Seconds += timeEntry.GetSeconds()
+		statisticsEntry.AddSecondsForProject(timeEntry.ProjectId, timeEntry.GetSeconds())
 		lastDay = currentDay
 	}
 	return weeklyStatistics, nil

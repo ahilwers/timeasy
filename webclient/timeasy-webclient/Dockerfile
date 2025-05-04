@@ -10,4 +10,5 @@ COPY . .
 RUN ng build --configuration=production
 FROM nginx:latest
 COPY --from=build app/dist/timeasy-webclient /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

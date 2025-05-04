@@ -1,0 +1,23 @@
+<div class="header-container">
+  <h1>{{ 'dashboard.headline' | translate}}</h1>
+</div>
+<div class="dashboard-container">
+  <div class="time-tracking-layout">
+    <app-time-tracking class="card-time-tracking"></app-time-tracking>
+  </div>
+  <div>
+    <div class="card-layout">
+      <div class="card-weekly-statistics">
+        <app-card header="{{ 'dashboard.yourWeek' | translate}}">
+          <app-weekly-statistics-chart></app-weekly-statistics-chart>
+        </app-card>
+      </div>
+      <div class="card-weekly-pie-chart">
+        <app-card header="{{ 'dashboard.projectsThisWeek' | translate}}">
+          <app-weekly-pie-chart></app-weekly-pie-chart>
+        </app-card>
+      </div>
+    </div>
+  </div>
+</div>
+

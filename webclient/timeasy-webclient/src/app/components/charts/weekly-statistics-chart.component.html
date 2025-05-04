@@ -1,0 +1,7 @@
+@if (timeSum>0) {
+  <p-chart type="bar" [data]="data" [options]="options" />
+} @else {
+  <p>
+    {{ "dashboard.noDataThisWeek" | translate }}
+  </p>
+}
