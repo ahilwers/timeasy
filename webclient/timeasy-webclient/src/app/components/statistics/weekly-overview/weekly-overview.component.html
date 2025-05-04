@@ -9,7 +9,7 @@
   <p-select id="project" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'weeklyOverview.allProjects' | translate }}" [showClear]="true" (onChange)="projectSelected($event)"></p-select>
 </div>
 @if (weeklyStatistics()) {
-  <p-table [value]="weeklyStatistics()!.days" [tableStyle]="{ 'min-width': '50rem' }">
+  <p-table [value]="weeklyStatistics()!.days" [tableStyle]="{ 'min-width': '20rem' }">
     <ng-template #body let-day>
       <tr>
         <td style="text-align: left; width: auto;">{{ day.weekday | translateWeekday }}</td>
