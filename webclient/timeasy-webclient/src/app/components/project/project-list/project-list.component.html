@@ -6,8 +6,8 @@
 <p-toast></p-toast>
 
 <p-confirmdialog></p-confirmdialog>
-<p-table [value]="projects()" [tableStyle]="{ 'min-width': '50rem' }">
-  <ng-template #header>
+<p-table [value]="projects()" [tableStyle]="{ 'min-width': '20rem' }" styleClass="responsive-table">
+  <ng-template pTemplate="header">
     <tr>
       <th class="col-name">{{ 'projects.name' | translate }}</th>
       <th class="col-hourlyRate">{{ 'projects.hourlyRate' | translate }}</th>
@@ -16,7 +16,7 @@
       <th class="col-actions"></th>
     </tr>
   </ng-template>
-  <ng-template #body let-project>
+  <ng-template pTemplate="body" let-project>
     <tr>
       <td class="col-name">
         <span
@@ -25,7 +25,7 @@
         ></span>
         {{ project.name }}
       </td>
-      <td class="col-name text-right">{{ project.hourlyRate | money }}</td>
+      <td class="col-hourlyRate text-right">{{ project.hourlyRate | money }}</td>
       <td class="col-timeBudget text-right">
         @if (project.timeBudget > 0) {
           {{ project.timeBudget }} {{ 'projects.hours' | translate }}
@@ -49,6 +49,3 @@
     </tr>
   </ng-template>
 </p-table>
-
-
-

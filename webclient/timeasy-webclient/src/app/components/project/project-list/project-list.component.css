@@ -28,3 +28,27 @@
   font-weight: 500;
 }
 
+/* Responsive styles for mobile devices */
+@media (max-width: 1000px) {
+  .col-hourlyRate,
+  .col-timeBudget,
+  .col-deadline {
+    display: none;
+  }
+
+  /* Adjust table width for mobile */
+  :host ::ng-deep p-table table {
+    min-width: auto !important;
+    width: 100%;
+  }
+
+  /* Make action buttons more compact */
+  .buttonCol {
+    gap: 2px;
+  }
+
+  /* Ensure name column has enough space */
+  .col-name {
+    min-width: 60%;
+  }
+}

@@ -21,25 +21,45 @@
     </svg>
     <span class="logo-text">timeasy</span>
   </div>
-  <div>
-    <p-button icon="pi pi-user" [rounded]="true" [text]="true" (onClick)="toggle({event : $event})" severity="secondary"/>
-    <p-popover #op>
-      <div class="menu-contents">
-            @if (authenticated) {
-              <div class="user-info">
-                <span>{{ userProfile.username }}</span>
-                <span>{{ userProfile.firstName }} {{ userProfile.lastName }}</span>
-              </div>
+  
+  <div class="header-right">
+    <!-- Mobile Burger Button -->
+    <div class="burger-menu" [class.hidden]="mobileMenuOpen" (click)="toggleMobileMenu()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="burger-icon" [class.open]="mobileMenuOpen">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </div>
+    
+    <!-- User Profile Button -->
+    <div class="user-button">
+      <p-button icon="pi pi-user" [rounded]="true" [text]="true" (onClick)="toggle({event : $event})" severity="secondary"/>
+      <p-popover #op>
+        <div class="menu-contents">
+              @if (authenticated) {
+                <div class="user-info">
+                  <span>{{ userProfile.username }}</span>
+                  <span>{{ userProfile.firstName }} {{ userProfile.lastName }}</span>
+                </div>
+              }
+          <div>
+            @if (!authenticated) {
+              <p-button (click)="login()" label="Login"/>
+            } @else {
+              <p-button (click)="logout()" label="Logout"/>
             }
-        <div>
-          @if (!authenticated) {
-            <p-button (click)="login()" label="Login"/>
-          } @else {
-            <p-button (click)="logout()" label="Logout"/>
-          }
+          </div>
         </div>
-      </div>
-    </p-popover>
+      </p-popover>
+    </div>
   </div>
-
 </header>
+
+<!-- Mobile Navigation Overlay -->
+<div class="mobile-nav" [class.open]="mobileMenuOpen">
+  <div class="mobile-menu-close" (click)="closeMobileMenu()">
+    <i class="pi pi-times"></i>
+  </div>
+  <p-menu [model]="menuItems" (click)="closeMobileMenu()"></p-menu>
+</div>
