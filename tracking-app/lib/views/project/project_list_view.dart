@@ -31,6 +31,15 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     _loadProjects();
   }
 
+  // Convert hex color string to Color object
+  Color _hexToColor(String hexString) {
+    hexString = hexString.replaceAll('#', '');
+    if (hexString.length == 6) {
+      hexString = 'FF' + hexString;
+    }
+    return Color(int.parse(hexString, radix: 16));
+  }
+
   @override
   Widget build(BuildContext context) {
     if (projects == null) {
@@ -62,6 +71,14 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
       itemCount: projects!.length,
       itemBuilder: (context, index) {
         return ListTile(
+          leading: Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              color: _hexToColor(projects![index].color),
+              shape: BoxShape.circle,
+            ),
+          ),
           title: Text(projects![index].name),
           onTap: () {
             _addOrEditProject(projectIdToEdit: projects![index].id);
