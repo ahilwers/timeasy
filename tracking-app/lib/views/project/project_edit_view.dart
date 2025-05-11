@@ -34,6 +34,20 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
   Project? _project;
   final ProjectRepository _projectRepository = new ProjectRepository();
   final _formEditProjectKey = GlobalKey<FormState>();
+  
+  // Color options for the project
+  final List<Map<String, String>> colors = [
+    { 'name': 'colorBlue', 'hex': '#1E90FF' },
+    { 'name': 'colorGreen', 'hex': '#2ECC71' },
+    { 'name': 'colorRed', 'hex': '#E74C3C' },
+    { 'name': 'colorOrange', 'hex': '#E67E22' },
+    { 'name': 'colorPurple', 'hex': '#9B59B6' },
+    { 'name': 'colorCyan', 'hex': '#1ABC9C' },
+    { 'name': 'colorYellow', 'hex': '#F1C40F' },
+    { 'name': 'colorPink', 'hex': '#E91E63' },
+    { 'name': 'colorGray', 'hex': '#95A5A6' },
+    { 'name': 'colorBrown', 'hex': '#A0522D' },
+  ];
 
   _ProjectEditWidgetState([String? projectId]) {
     _projectId = projectId;
@@ -55,6 +69,52 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     } else {
       _project = new Project();
     }
+  }
+
+  // Convert hex color string to Color object
+  Color _hexToColor(String hexString) {
+    hexString = hexString.replaceAll('#', '');
+    if (hexString.length == 6) {
+      hexString = 'FF' + hexString;
+    }
+    return Color(int.parse(hexString, radix: 16));
+  }
+
+  // Get translated color name
+  String _getColorName(String colorKey, BuildContext context) {
+    switch (colorKey) {
+      case 'colorBlue':
+        return AppLocalizations.of(context)!.colorBlue;
+      case 'colorGreen':
+        return AppLocalizations.of(context)!.colorGreen;
+      case 'colorRed':
+        return AppLocalizations.of(context)!.colorRed;
+      case 'colorOrange':
+        return AppLocalizations.of(context)!.colorOrange;
+      case 'colorPurple':
+        return AppLocalizations.of(context)!.colorPurple;
+      case 'colorCyan':
+        return AppLocalizations.of(context)!.colorCyan;
+      case 'colorYellow':
+        return AppLocalizations.of(context)!.colorYellow;
+      case 'colorPink':
+        return AppLocalizations.of(context)!.colorPink;
+      case 'colorGray':
+        return AppLocalizations.of(context)!.colorGray;
+      case 'colorBrown':
+        return AppLocalizations.of(context)!.colorBrown;
+      default:
+        return AppLocalizations.of(context)!.colorBlue;
+    }
+  }
+
+  // Get color key from hex value
+  String _getColorKeyFromHex(String hexValue) {
+    final color = colors.firstWhere(
+      (color) => color['hex'] == hexValue,
+      orElse: () => colors[0], // Default to blue if not found
+    );
+    return color['name']!;
   }
 
   @override
@@ -101,17 +161,67 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
           margin: EdgeInsets.all(16.0),
           child: Form(
             key: _formEditProjectKey,
-            child: TextFormField(
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.projectName,
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.text,
-              initialValue: _project!.name,
-              validator: (value) {
-                return _validateProjectName(value!);
-              },
-              onSaved: (value) => _project!.name = value!,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.projectName,
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.text,
+                  initialValue: _project!.name,
+                  validator: (value) {
+                    return _validateProjectName(value!);
+                  },
+                  onSaved: (value) => _project!.name = value!,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  AppLocalizations.of(context)!.projectColor,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _getColorKeyFromHex(_project!.color),
+                  items: colors.map((color) {
+                    return DropdownMenuItem<String>(
+                      value: color['name'],
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: _hexToColor(color['hex']!),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(_getColorName(color['name']!, context)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        final selectedColor = colors.firstWhere((color) => color['name'] == value);
+                        _project!.color = selectedColor['hex']!;
+                      });
+                    }
+                  },
+                  onSaved: (value) {
+                    if (value != null) {
+                      final selectedColor = colors.firstWhere((color) => color['name'] == value);
+                      _project!.color = selectedColor['hex']!;
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ),

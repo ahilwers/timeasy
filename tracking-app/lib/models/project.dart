@@ -7,9 +7,11 @@ class Project {
   static final String createdColumn = "created";
   static final String updatedColumn = "updated";
   static final String deletedColumn = "deleted";
+  static final String colorColumn = "color";
 
   late String id;
   String name = "";
+  String color = "#1E90FF"; // Default blue color
   DateTime created = DateTime.now().toUtc();
   DateTime updated = DateTime.now().toUtc();
   bool deleted = false;
@@ -22,6 +24,7 @@ class Project {
   Project.fromMap(Map<String, dynamic> map) {
     id = map[idColumn];
     name = map[nameColumn];
+    color = map[colorColumn] ?? "#1E90FF"; // Default to blue if not set
     int createdMillis = map[createdColumn];
     created =
         new DateTime.fromMillisecondsSinceEpoch(createdMillis, isUtc: true);
@@ -36,6 +39,7 @@ class Project {
     return <String, dynamic>{
       idColumn: id,
       nameColumn: name,
+      colorColumn: color,
       createdColumn: created.millisecondsSinceEpoch,
       updatedColumn: updated.millisecondsSinceEpoch,
       deletedColumn: deleted ? 1 : 0,

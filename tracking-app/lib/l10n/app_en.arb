@@ -79,5 +79,19 @@
     "export": "Export",
     "timesExported": "Times exported successfully",
     "date": "Date",
-    "pause": "Break"
+    "pause": "Break",
+    "projectColor": "Project color",
+    "@projectColor": {
+        "description": "Label for the project color selection"
+    },
+    "colorBlue": "Blue",
+    "colorGreen": "Green",
+    "colorRed": "Red",
+    "colorOrange": "Orange",
+    "colorPurple": "Purple",
+    "colorCyan": "Cyan",
+    "colorYellow": "Yellow",
+    "colorPink": "Pink",
+    "colorGray": "Gray",
+    "colorBrown": "Brown"
 }

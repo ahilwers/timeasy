@@ -44,5 +44,16 @@
     "export": "Exportieren",
     "timesExported": "Zeiten erfolgreich exportiert",
     "date": "Datum",
-    "pause": "Pause"
-}   
+    "pause": "Pause",
+    "projectColor": "Projektfarbe",
+    "colorBlue": "Blau",
+    "colorGreen": "Grün",
+    "colorRed": "Rot",
+    "colorOrange": "Orange",
+    "colorPurple": "Lila",
+    "colorCyan": "Türkis",
+    "colorYellow": "Gelb",
+    "colorPink": "Rosa",
+    "colorGray": "Grau",
+    "colorBrown": "Braun"
+}

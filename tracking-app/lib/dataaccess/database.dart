@@ -63,6 +63,9 @@ class DBProvider {
     ''',
     '''
       ALTER TABLE TimeEntries ADD COLUMN deleted INTEGER DEFAULT 0;
+    ''',
+    '''
+      ALTER TABLE Projects ADD COLUMN color TEXT DEFAULT '#1E90FF';
     '''
   ];
 
