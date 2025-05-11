@@ -5,12 +5,14 @@ import 'change_type.dart';
 class ProjectSyncData {
   final String id;
   final String name;
+  final String color;
   final ChangeType changeType;
   final DateTime changeTimestamp;
 
   ProjectSyncData({
     required this.id,
     required this.name,
+    this.color = '#1E90FF',
     required this.changeType,
     required this.changeTimestamp,
   });
@@ -19,6 +21,7 @@ class ProjectSyncData {
     return ProjectSyncData(
       id: json['id'] as String,
       name: json['name'] as String,
+      color: json['color'] as String? ?? '#1E90FF', 
       changeType:
           ChangeTypeHelper.convertFromString(json['changeType'] as String),
       changeTimestamp:
@@ -30,6 +33,7 @@ class ProjectSyncData {
     return {
       'id': id,
       'name': name,
+      'color': color,
       'changeType': ChangeTypeHelper.convertToString(changeType),
       'changeTimestamp': changeTimestamp.toUtc().toIso8601String(),
     };

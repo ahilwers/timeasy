@@ -106,10 +106,11 @@ class SyncDataRetriever {
     }
   }
 
-  _createProjectFromSyncData(ProjectSyncData syncData) {
+  Project _createProjectFromSyncData(ProjectSyncData syncData) {
     var project = new Project();
     project.id = syncData.id;
     project.name = syncData.name;
+    project.color = syncData.color;
     project.updated = syncData.changeTimestamp;
     project.created = DateTime.now();
     return project;

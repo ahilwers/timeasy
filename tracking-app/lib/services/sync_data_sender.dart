@@ -48,6 +48,7 @@ class SyncDataSender {
       var projectSyncData = new ProjectSyncData(
         id: project.id,
         name: project.name,
+        color: project.color,
         changeType: changeType,
         changeTimestamp: project.updated,
       );
