@@ -11,7 +11,7 @@ import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_event.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
-import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
+import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
@@ -19,7 +19,6 @@ import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
 import 'package:timeasy/services/internet_connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
-import 'package:timeasy/views/settings/settings_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/views/theme.dart';
 import 'package:timeasy/views/timeentry/time_entry_list_view.dart';
@@ -205,34 +204,34 @@ class _MainPageState extends State<MainPage>
   }
 
   Widget _getNavigationBar() {
-    return NavigationBar(
-      selectedIndex: _currentPageIndex,
-      onDestinationSelected: (int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return BottomNavigationBar(
+      currentIndex: _currentPageIndex,
+      backgroundColor: isDark ? Colors.black : Colors.white,
+      selectedItemColor: isDark ? Colors.white : Colors.black,
+      unselectedItemColor: Colors.grey,
+      onTap: (index) {
         _loadProjects();
         setState(() {
           _currentPageIndex = index;
         });
       },
-      backgroundColor: Colors.transparent,
-      destinations: const <Widget>[
-        NavigationDestination(
-          selectedIcon: Icon(Icons.home),
+      items: const [
+        BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: 'Home',
         ),
-        NavigationDestination(
-          selectedIcon: Icon(Icons.date_range),
-          icon: Icon(Icons.date_range),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
           label: 'Week',
         ),
-        NavigationDestination(
-          selectedIcon: Icon(Icons.pending_actions),
-          icon: Icon(Icons.pending_actions),
-          label: 'Time Entries',
+        BottomNavigationBarItem(
+          icon: Icon(Icons.access_time),
+          label: 'Time',
         ),
-        NavigationDestination(
-          selectedIcon: Icon(Icons.format_list_bulleted),
-          icon: Icon(Icons.format_list_bulleted),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.list),
           label: 'Projects',
         ),
       ],
@@ -255,78 +254,79 @@ class _MainPageState extends State<MainPage>
   }
 
   Widget _playButtonView() {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('timeasy'),
-        backgroundColor: Theme.of(context).primaryColor,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.manage_accounts),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsView()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.center,
-            child: new RawMaterialButton(
-              onPressed: _toggleState,
-              child: new AnimatedIcon(
-                icon: AnimatedIcons.play_pause,
-                color: Colors.white,
-                size: 128.0,
-                progress: buttonAnimationController,
-              ),
-              shape: new CircleBorder(),
-              elevation: 2.0,
-              fillColor: Theme.of(context).primaryColor,
-              padding: const EdgeInsets.all(15.0),
-            ),
-          ),
-          _projects == null
-              ? Text(AppLocalizations.of(context)!.loadingProject)
-              : BlocListener<SynchronizationBloc, SynchronizationState>(
-                  listener: (context, state) {
-                    if (state is SynchronizationSuccess) {
-                      _loadProjects();
-                      _updateAppState();
-                    }
-                  },
-                  child: new DropdownButton<String>(
-                    value: _currentProject.id,
-                    items: _projects!.map(
-                      (Project value) {
-                        return new DropdownMenuItem<String>(
-                          value: value.id,
-                          child: new Text(value.name),
-                        );
-                      },
-                    ).toList(),
-                    onChanged: (String? value) {
-                      _projectRepository.getProjectById(value!).then(
-                        (Project? projectFromDb) {
-                          setState(
-                            () {
-                              _setCurrentProject(projectFromDb!);
-                            },
-                          );
-                          _updateAppState();
-                        },
-                      );
-                    },
-                  ),
-                ),
-        ],
-      ),
-    );
+    return ProjectSwiper();
+    // return Scaffold(
+    //   appBar: AppBar(
+    //     title: Text('timeasy'),
+    //     backgroundColor: Theme.of(context).primaryColor,
+    //     automaticallyImplyLeading: false,
+    //     actions: [
+    //       IconButton(
+    //         icon: Icon(Icons.manage_accounts),
+    //         onPressed: () {
+    //           Navigator.push(
+    //             context,
+    //             MaterialPageRoute(builder: (context) => SettingsView()),
+    //           );
+    //         },
+    //       ),
+    //     ],
+    //   ),
+    //   body: Column(
+    //     mainAxisAlignment: MainAxisAlignment.center,
+    //     children: <Widget>[
+    //       Align(
+    //         alignment: Alignment.center,
+    //         child: new RawMaterialButton(
+    //           onPressed: _toggleState,
+    //           child: new AnimatedIcon(
+    //             icon: AnimatedIcons.play_pause,
+    //             color: Colors.white,
+    //             size: 128.0,
+    //             progress: buttonAnimationController,
+    //           ),
+    //           shape: new CircleBorder(),
+    //           elevation: 2.0,
+    //           fillColor: Theme.of(context).primaryColor,
+    //           padding: const EdgeInsets.all(15.0),
+    //         ),
+    //       ),
+    //       _projects == null
+    //           ? Text(AppLocalizations.of(context)!.loadingProject)
+    //           : BlocListener<SynchronizationBloc, SynchronizationState>(
+    //               listener: (context, state) {
+    //                 if (state is SynchronizationSuccess) {
+    //                   _loadProjects();
+    //                   _updateAppState();
+    //                 }
+    //               },
+    //               child: new DropdownButton<String>(
+    //                 value: _currentProject.id,
+    //                 items: _projects!.map(
+    //                   (Project value) {
+    //                     return new DropdownMenuItem<String>(
+    //                       value: value.id,
+    //                       child: new Text(value.name),
+    //                     );
+    //                   },
+    //                 ).toList(),
+    //                 onChanged: (String? value) {
+    //                   _projectRepository.getProjectById(value!).then(
+    //                     (Project? projectFromDb) {
+    //                       setState(
+    //                         () {
+    //                           _setCurrentProject(projectFromDb!);
+    //                         },
+    //                       );
+    //                       _updateAppState();
+    //                     },
+    //                   );
+    //                 },
+    //               ),
+    //             ),
+    //     ],
+    //   ),
+    // );
   }
 
   _loadProjects() {
