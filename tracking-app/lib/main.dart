@@ -10,6 +10,8 @@ import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_event.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
@@ -30,6 +32,7 @@ void main() {
         BlocProvider(create: (context) => AuthenticationBloc()),
         BlocProvider(create: (context) => InternetConnectionBloc()),
         BlocProvider(create: (context) => SynchronizationBloc()),
+        BlocProvider(create: (context) => SelectedProjectBloc()),
         RepositoryProvider<BackgroundSyncService>(
           create: (context) {
             final syncBloc =
@@ -119,6 +122,20 @@ class _MainPageState extends State<MainPage>
       });
       _loadProjects();
       _updateAppState();
+    });
+
+    Future.delayed(Duration.zero, () {
+      context.read<SelectedProjectBloc>().stream.listen((state) {
+        if (state is SelectedProjectSet &&
+            state.project != null &&
+            _currentProject != null &&
+            state.project!.id != _currentProject.id) {
+          setState(() {
+            _setCurrentProject(state.project!);
+          });
+          _updateAppState();
+        }
+      });
     });
   }
 

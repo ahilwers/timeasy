@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 
@@ -38,6 +41,13 @@ class _ProjectSwiperState extends State<ProjectSwiper> {
     final isAddButton = false; //Todo: need to implement
     final projectColor = hexToColor(project.color);
 
+    // When projects are loaded, set the current project in the SelectedProjectBloc
+    if (_projects != null && _projects!.isNotEmpty) {
+      context.read<SelectedProjectBloc>().add(
+            SetSelectedProjectEvent(_projects![_currentPage]),
+          );
+    }
+
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
       body: SafeArea(
@@ -59,7 +69,16 @@ class _ProjectSwiperState extends State<ProjectSwiper> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                onPageChanged: (index) => setState(() => _currentPage = index),
+                onPageChanged: (index) {
+                  setState(() => _currentPage = index);
+                  
+                  // Update the selected project when page changes
+                  if (_projects != null && _projects!.isNotEmpty) {
+                    context.read<SelectedProjectBloc>().add(
+                          SetSelectedProjectEvent(_projects![index]),
+                        );
+                  }
+                },
                 itemCount: _projects == null ? 0 : _projects!.length,
                 itemBuilder: (context, index) {
                   final proj = _projects![index];
