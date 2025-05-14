@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 
@@ -27,6 +28,7 @@ class _ProjectSwiperState extends State<ProjectSwiper> {
   final ProjectRepository _projectRepository = new ProjectRepository();
 
   int _currentPage = 0;
+  bool _initialScrollDone = false;
 
   @override
   void initState() {
@@ -40,6 +42,11 @@ class _ProjectSwiperState extends State<ProjectSwiper> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isAddButton = false; //Todo: need to implement
     final projectColor = hexToColor(project.color);
+
+    // Check if we need to scroll to the selected project
+    if (_projects != null && _projects!.isNotEmpty && !_initialScrollDone) {
+      _scrollToSelectedProject(context);
+    }
 
     // When projects are loaded, set the current project in the SelectedProjectBloc
     if (_projects != null && _projects!.isNotEmpty) {
@@ -57,7 +64,7 @@ class _ProjectSwiperState extends State<ProjectSwiper> {
               padding: const EdgeInsets.all(16.0),
               child: Center(
                 child: Text(
-                  project.name,
+                  _projects != null && _projects!.isNotEmpty ? _projects![_currentPage].name : '',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -174,5 +181,32 @@ class _ProjectSwiperState extends State<ProjectSwiper> {
         _projects = projectsFromDb;
       });
     });
+  }
+  
+  // Scroll to the selected project without triggering the event
+  void _scrollToSelectedProject(BuildContext context) {
+    final selectedProjectState = context.read<SelectedProjectBloc>().state;
+    
+    if (selectedProjectState is SelectedProjectSet && 
+        selectedProjectState.project != null && 
+        _projects != null) {
+      
+      // Find the index of the selected project
+      final selectedProjectId = selectedProjectState.project!.id;
+      final selectedIndex = _projects!.indexWhere((p) => p.id == selectedProjectId);
+      
+      if (selectedIndex != -1 && selectedIndex != _currentPage) {
+        // Jump to the page without animation to avoid triggering onPageChanged
+        _controller.jumpToPage(selectedIndex);
+        setState(() {
+          _currentPage = selectedIndex;
+          _initialScrollDone = true;
+        });
+      } else {
+        _initialScrollDone = true;
+      }
+    } else {
+      _initialScrollDone = true;
+    }
   }
 }
