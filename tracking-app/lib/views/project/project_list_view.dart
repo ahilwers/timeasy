@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
+import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
 
 class ProjectListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: new ProjectListWidget());
+    return Scaffold(
+      appBar: ProjectHeader(title: AppLocalizations.of(context)!.projects),
+      body: ProjectListWidget(),
+    );
   }
 }
 
@@ -50,10 +52,6 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
       );
     } else {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(_getTitle()),
-          backgroundColor: Theme.of(context).primaryColor,
-        ),
         body: _dataBody(context),
         floatingActionButton: FloatingActionButton(
           onPressed: () {

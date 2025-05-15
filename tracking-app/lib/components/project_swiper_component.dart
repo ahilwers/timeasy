@@ -4,6 +4,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
+import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 
@@ -60,19 +61,7 @@ class _ProjectSwiperState extends State<ProjectSwiper> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: Text(
-                  _projects != null && _projects!.isNotEmpty ? _projects![_currentPage].name : '',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-              ),
-            ),
+            ProjectHeader(),
             Expanded(
               child: PageView.builder(
                 controller: _controller,

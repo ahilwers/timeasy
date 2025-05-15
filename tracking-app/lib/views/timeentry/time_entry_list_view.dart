@@ -1,8 +1,12 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
+import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
@@ -25,7 +29,20 @@ class TimeEntryListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: new DataList(_project));
+    return Scaffold(
+      appBar: ProjectHeader(),
+      body: BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
+        builder: (context, state) {
+          Project projectToUse = _project;
+          
+          if (state is SelectedProjectSet && state.project != null) {
+            projectToUse = state.project!;
+          }
+          
+          return DataList(projectToUse);
+        },
+      ),
+    );
   }
 }
 
@@ -70,47 +87,48 @@ class _DataListState extends State<DataList> {
       exportStart = AppLocalizations.of(context)!.start;
       exportEnd = AppLocalizations.of(context)!.end;
       exportPause = AppLocalizations.of(context)!.pause;
-      return Scaffold(
-        appBar: new AppBar(
-          title: new Text(AppLocalizations.of(context)!.loadingTimes),
-        ),
+      return Center(
+        child: CircularProgressIndicator(),
       );
     } else {
       locale = Localizations.localeOf(context);
       return Scaffold(
-        appBar: AppBar(
-          title: Text(_getTitle()),
-          backgroundColor: Theme.of(context).primaryColor,
-          actions: <Widget>[
-            TextButton(
-              child: Text(
-                AppLocalizations.of(context)!.export,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium!
-                    .copyWith(color: Colors.white),
-              ),
-              onPressed: () {
-                _showExportDialog(context);
-              },
-            ),
-          ],
-        ),
         body: Column(
-          children: <Widget>[
-            TextButton(
-              child: Text(
-                _getCurrentDateRangeText(),
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium!
-                    .copyWith(fontWeight: FontWeight.bold),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: _selectDateRange,
+                    child: Row(
+                      children: [
+                        Icon(Icons.date_range),
+                        SizedBox(width: 8),
+                        Text(_getCurrentDateRangeText()),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      _showExportDialog(context);
+                    },
+                    child: Row(
+                      children: [
+                        Icon(Icons.download),
+                        SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.export),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              onPressed: _selectDateRange,
             ),
             Expanded(
               child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical, child: _dataBody()),
+                child: _buildTimeEntryList(),
+              ),
             ),
           ],
         ),
@@ -133,7 +151,7 @@ class _DataListState extends State<DataList> {
         formatter.format(dateRange.end);
   }
 
-  _dataBody() {
+  _buildTimeEntryList() {
     var timeFormatter = new DateFormat.yMd(locale.toString()).add_Hm();
     return DataTable(
         columns: [

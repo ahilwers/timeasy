@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
+import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/tools/date_tools.dart';
 import 'package:timeasy/views/statistics/weekly_statistics_widget.dart';
@@ -12,7 +16,18 @@ class WeeklyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: WeeklyViewWidget(_project),
+      appBar: ProjectHeader(),
+      body: BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
+        builder: (context, state) {
+          Project projectToUse = _project;
+
+          if (state is SelectedProjectSet && state.project != null) {
+            projectToUse = state.project!;
+          }
+
+          return WeeklyViewWidget(projectToUse);
+        },
+      ),
     );
   }
 }
@@ -52,10 +67,6 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitle()),
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
       body: PageView.builder(
         controller: _pageController,
         itemBuilder: (context, position) {
