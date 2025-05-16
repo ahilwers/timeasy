@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
-import 'package:timeasy/models/project.dart';
+import 'package:timeasy/views/settings/settings_view.dart';
 
 // Helper function to convert hex color string to Color
 Color hexToColor(String hexString) {
@@ -17,12 +17,14 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackButton;
   final VoidCallback? onBackPressed;
   final List<Widget>? actions;
+  final bool showSettingsButton;
 
   const ProjectHeader({
     this.title,
     this.showBackButton = false,
     this.onBackPressed,
     this.actions,
+    this.showSettingsButton = true,
   });
 
   @override
@@ -33,9 +35,32 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
     return BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
       builder: (context, state) {
         String displayTitle = title ?? '';
-        
-        if (title == null && state is SelectedProjectSet && state.project != null) {
+
+        if (title == null &&
+            state is SelectedProjectSet &&
+            state.project != null) {
           displayTitle = state.project!.name;
+        }
+
+        List<Widget> headerActions = [];
+
+        headerActions.add(
+          IconButton(
+            icon: Icon(
+              Icons.manage_accounts,
+              color: Colors.black,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsView()),
+              );
+            },
+          ),
+        );
+
+        if (actions != null) {
+          headerActions.addAll(actions!);
         }
 
         return AppBar(
@@ -59,7 +84,7 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           centerTitle: true,
-          actions: actions,
+          actions: headerActions,
         );
       },
     );
