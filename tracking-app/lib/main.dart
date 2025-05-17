@@ -11,13 +11,12 @@ import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_event.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
-import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
-import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
 import 'package:timeasy/services/internet_connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
@@ -52,49 +51,35 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'timeasy',
       debugShowCheckedModeBanner: false,
-      localizationsDelegates: [
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [
+      supportedLocales: const [
         Locale('en', ''),
         Locale('de', ''),
       ],
       theme: FlexColorScheme.light(colors: timeasyTheme.light).toTheme,
       darkTheme: FlexColorScheme.dark(colors: timeasyTheme.dark).toTheme,
-      // Use dark or light theme based on system setting.
       themeMode: ThemeMode.system,
-      home: MainPage(title: 'timeasy'),
+      home: MainPage(),
     );
   }
 }
 
 class MainPage extends StatefulWidget {
-  final String? title;
-
-  MainPage({Key? key, this.title}) : super(key: key);
-
   @override
-  _MainPageState createState() {
-    return new _MainPageState();
-  }
+  State<MainPage> createState() => _MainPageState();
 }
 
-enum AppState { RUNNING, STOPPED }
-
-class _MainPageState extends State<MainPage>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  AppState _currentState = AppState.STOPPED;
-  late Project _currentProject;
-  List<Project>? _projects;
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   int _currentPageIndex = 0;
-
-  final ProjectRepository _projectRepository = new ProjectRepository();
-  final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
-  late AnimationController buttonAnimationController;
+  final ProjectRepository _projectRepository = ProjectRepository();
   late InternetConnectionService _internetConnectionService;
+  List<Project>? _projects;
+  late Project _currentProject;
 
   @override
   void initState() {
@@ -109,21 +94,24 @@ class _MainPageState extends State<MainPage>
         }
       },
     );
-    buttonAnimationController = new AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 1000),
-    );
-    var projectRepository = new ProjectRepository();
-    projectRepository
+    
+    // Initialize the selected project
+    _projectRepository
         .getLastUsedProjectOrDefault("Project 1")
         .then((Project project) {
       setState(() {
         _setCurrentProject(project);
       });
+      
+      // Set the selected project in the SelectedProjectBloc
+      context.read<SelectedProjectBloc>().add(
+            SetSelectedProjectEvent(project),
+          );
+      
       _loadProjects();
-      _updateAppState();
     });
 
+    // Monitor changes to the selected project
     Future.delayed(Duration.zero, () {
       context.read<SelectedProjectBloc>().stream.listen((state) {
         if (state is SelectedProjectSet &&
@@ -133,7 +121,6 @@ class _MainPageState extends State<MainPage>
           setState(() {
             _setCurrentProject(state.project!);
           });
-          _updateAppState();
         }
       });
     });
@@ -155,48 +142,6 @@ class _MainPageState extends State<MainPage>
       }
     }
     super.didChangeAppLifecycleState(state);
-  }
-
-  void _setAppState(AppState state) {
-    switch (state) {
-      case AppState.RUNNING:
-        if (_currentState == AppState.STOPPED) {
-          buttonAnimationController.forward();
-        }
-        break;
-      case AppState.STOPPED:
-        if (_currentState == AppState.RUNNING) {
-          buttonAnimationController.reverse();
-        }
-        break;
-    }
-    setState(() {
-      _currentState = state;
-    });
-  }
-
-  void _toggleState() {
-    switch (_currentState) {
-      case AppState.STOPPED:
-        _startTiming();
-        break;
-      case AppState.RUNNING:
-        _stopTiming();
-        break;
-    }
-  }
-
-  void _startTiming() async {
-    var repository = new TimeEntryRepository();
-    await repository.closeLatestTimeEntry(_currentProject.id);
-    await repository.getLatestOpenTimeEntryOrCreateNew(_currentProject.id);
-    _setAppState(AppState.RUNNING);
-  }
-
-  void _stopTiming() async {
-    var repository = new TimeEntryRepository();
-    await repository.closeLatestTimeEntry(_currentProject.id);
-    _setAppState(AppState.STOPPED);
   }
 
   @override
@@ -272,78 +217,6 @@ class _MainPageState extends State<MainPage>
 
   Widget _playButtonView() {
     return ProjectSwiper();
-    // return Scaffold(
-    //   appBar: AppBar(
-    //     title: Text('timeasy'),
-    //     backgroundColor: Theme.of(context).primaryColor,
-    //     automaticallyImplyLeading: false,
-    //     actions: [
-    //       IconButton(
-    //         icon: Icon(Icons.manage_accounts),
-    //         onPressed: () {
-    //           Navigator.push(
-    //             context,
-    //             MaterialPageRoute(builder: (context) => SettingsView()),
-    //           );
-    //         },
-    //       ),
-    //     ],
-    //   ),
-    //   body: Column(
-    //     mainAxisAlignment: MainAxisAlignment.center,
-    //     children: <Widget>[
-    //       Align(
-    //         alignment: Alignment.center,
-    //         child: new RawMaterialButton(
-    //           onPressed: _toggleState,
-    //           child: new AnimatedIcon(
-    //             icon: AnimatedIcons.play_pause,
-    //             color: Colors.white,
-    //             size: 128.0,
-    //             progress: buttonAnimationController,
-    //           ),
-    //           shape: new CircleBorder(),
-    //           elevation: 2.0,
-    //           fillColor: Theme.of(context).primaryColor,
-    //           padding: const EdgeInsets.all(15.0),
-    //         ),
-    //       ),
-    //       _projects == null
-    //           ? Text(AppLocalizations.of(context)!.loadingProject)
-    //           : BlocListener<SynchronizationBloc, SynchronizationState>(
-    //               listener: (context, state) {
-    //                 if (state is SynchronizationSuccess) {
-    //                   _loadProjects();
-    //                   _updateAppState();
-    //                 }
-    //               },
-    //               child: new DropdownButton<String>(
-    //                 value: _currentProject.id,
-    //                 items: _projects!.map(
-    //                   (Project value) {
-    //                     return new DropdownMenuItem<String>(
-    //                       value: value.id,
-    //                       child: new Text(value.name),
-    //                     );
-    //                   },
-    //                 ).toList(),
-    //                 onChanged: (String? value) {
-    //                   _projectRepository.getProjectById(value!).then(
-    //                     (Project? projectFromDb) {
-    //                       setState(
-    //                         () {
-    //                           _setCurrentProject(projectFromDb!);
-    //                         },
-    //                       );
-    //                       _updateAppState();
-    //                     },
-    //                   );
-    //                 },
-    //               ),
-    //             ),
-    //     ],
-    //   ),
-    // );
   }
 
   _loadProjects() {
@@ -357,19 +230,6 @@ class _MainPageState extends State<MainPage>
   _setCurrentProject(Project project) {
     _currentProject = project;
     _projectRepository.saveLastUsedProject(project);
-  }
-
-  _updateAppState() {
-    // Set the current state if there's a timing already running:
-    _timeEntryRepository
-        .getLatestOpenTimeEntry(_currentProject.id)
-        .then((TimeEntry? entry) {
-      if (entry != null) {
-        _setAppState(AppState.RUNNING);
-      } else {
-        _setAppState(AppState.STOPPED);
-      }
-    });
   }
 
   void _setConnectionState(bool hasInternet) {
