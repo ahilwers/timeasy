@@ -32,6 +32,10 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final backgroundColor = isDark ? Colors.black : Colors.white;
+    
     return BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
       builder: (context, state) {
         String displayTitle = title ?? '';
@@ -48,7 +52,7 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
           IconButton(
             icon: Icon(
               Icons.manage_accounts,
-              color: Colors.black,
+              color: textColor,
             ),
             onPressed: () {
               Navigator.push(
@@ -64,13 +68,13 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
         }
 
         return AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: backgroundColor,
           elevation: 0,
           leading: showBackButton
               ? IconButton(
                   icon: Icon(
                     Icons.arrow_back,
-                    color: Colors.black,
+                    color: textColor,
                   ),
                   onPressed: onBackPressed,
                 )
@@ -80,7 +84,7 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: textColor,
             ),
           ),
           centerTitle: true,
