@@ -11,6 +11,7 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/views/project/project_edit_view.dart';
 
 // Helper function to convert hex color string to Color
 Color hexToColor(String hexString) {
@@ -223,6 +224,77 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     }
   }
 
+  void _createNewProject() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProjectEditView(),
+        fullscreenDialog: true,
+      ),
+    );
+    
+    // Check if a project was returned (user clicked Save)
+    if (result != null && result is Project) {
+      // Reload projects
+      await _loadProjectsAndSelectProject(result.id);
+    } else {
+      // User canceled, just reload projects
+      _loadProjects();
+    }
+  }
+
+  Future<void> _loadProjectsAndSelectProject(String projectId) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      List<Project> projectsFromDb = await _projectRepository.getAllProjects();
+      
+      if (mounted) {
+        if (projectsFromDb.isEmpty) {
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+        
+        setState(() {
+          _projects = projectsFromDb;
+          _isLoading = false;
+        });
+        
+        // Find the index of the project to select
+        final index = _projects.indexWhere((p) => p.id == projectId);
+        if (index != -1) {
+          // Jump to the page and update current page
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _controller.jumpToPage(index);
+              setState(() {
+                _currentPage = index;
+              });
+              
+              // Set the project in the bloc
+              context.read<SelectedProjectBloc>().add(
+                    SetSelectedProjectEvent(_projects[index]),
+                  );
+              
+              // Check timing status
+              _checkTimingStatus();
+            }
+          });
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        print("Error loading projects: $error");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -230,12 +302,30 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     }
 
     if (_projects.isEmpty) {
-      return Center(child: Text('No projects found'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('No projects found'),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _createNewProject,
+              child: Text('Create New Project'),
+            ),
+          ],
+        ),
+      );
     }
 
-    final project = _projects[_currentPage];
+    // Get the current project if available
+    final project = _currentPage < _projects.length 
+        ? _projects[_currentPage]
+        : null;
+    
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final projectColor = hexToColor(project.color);
+    final projectColor = project != null 
+        ? hexToColor(project.color)
+        : Colors.grey;
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
@@ -252,21 +342,81 @@ class _ProjectSwiperState extends State<ProjectSwiper>
               Expanded(
                 child: PageView.builder(
                   controller: _controller,
-                  itemCount: _projects.length,
+                  itemCount: _projects.length + 1, // +1 for the "add new" page
                   onPageChanged: (int page) {
                     setState(() {
                       _currentPage = page;
                     });
                     
-                    // Update the selected project in the bloc
-                    context.read<SelectedProjectBloc>().add(
-                          SetSelectedProjectEvent(_projects[page]),
-                        );
-                    
-                    // Check timing status for the new project
-                    _checkTimingStatus();
+                    // Update the selected project in the bloc only if we're on a valid project
+                    if (page < _projects.length) {
+                      context.read<SelectedProjectBloc>().add(
+                            SetSelectedProjectEvent(_projects[page]),
+                          );
+                      
+                      // Check timing status for the new project
+                      _checkTimingStatus();
+                    }
                   },
                   itemBuilder: (context, index) {
+                    // If this is the last page (add new project page)
+                    if (index == _projects.length) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              onTap: _createNewProject,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 180,
+                                    height: 180,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.grey,
+                                        width: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 130,
+                                    height: 130,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.grey,
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.add,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              child: Text(
+                                "Create a new project",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: isDark ? Colors.white : Colors.black,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    
+                    // Regular project page
                     final proj = _projects[index];
                     return Center(
                       child: Column(
@@ -345,11 +495,13 @@ class _ProjectSwiperState extends State<ProjectSwiper>
               const SizedBox(height: 16),
               SmoothPageIndicator(
                 controller: _controller,
-                count: _projects.length,
+                count: _projects.length + 1, // +1 for the "add new" page
                 effect: ExpandingDotsEffect(
                   dotHeight: 8,
                   dotWidth: 8,
-                  activeDotColor: projectColor,
+                  activeDotColor: _currentPage < _projects.length 
+                      ? hexToColor(_projects[_currentPage].color)
+                      : Colors.grey,
                   dotColor: Colors.grey.shade300,
                 ),
               ),

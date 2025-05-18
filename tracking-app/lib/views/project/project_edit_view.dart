@@ -136,7 +136,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                 final form = _formEditProjectKey.currentState;
                 if (form!.validate()) {
                   _saveProject(form);
-                  Navigator.pop(context);
+                  Navigator.pop(context, _project); // Return the project to the caller
                 }
               },
               child: Text(
