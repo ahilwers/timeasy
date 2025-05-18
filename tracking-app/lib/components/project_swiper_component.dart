@@ -13,6 +13,7 @@ import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'dart:async';
 
 // Helper function to convert hex color string to Color
 Color hexToColor(String hexString) {
@@ -43,6 +44,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
   bool _isLoading = true;
   AppState _currentState = AppState.STOPPED;
   TextEditingController _descriptionController = TextEditingController();
+  Timer? _debounceTimer;
+  TimeEntry? _currentOpenTimeEntry;
 
   @override
   void initState() {
@@ -52,7 +55,47 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       vsync: this,
       duration: Duration(milliseconds: 1000),
     );
+    
+    // Add listener to the description controller to save changes after 500ms of inactivity
+    _descriptionController.addListener(_onDescriptionChanged);
+    
     _loadProjects();
+  }
+
+  @override
+  void dispose() {
+    _buttonAnimationController.dispose();
+    _controller.dispose();
+    _descriptionController.removeListener(_onDescriptionChanged);
+    _descriptionController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  // This method is called whenever the text changes
+  void _onDescriptionChanged() {
+    if (_currentState == AppState.RUNNING && _currentOpenTimeEntry != null) {
+      // Cancel the previous timer if it exists
+      _debounceTimer?.cancel();
+      
+      // Start a new timer
+      _debounceTimer = Timer(Duration(milliseconds: 500), () {
+        _saveDescription();
+      });
+    }
+  }
+
+  // Save the description to the current open time entry
+  Future<void> _saveDescription() async {
+    if (_currentOpenTimeEntry != null) {
+      final description = _descriptionController.text.trim();
+      
+      // Only save if the description has changed
+      if (_currentOpenTimeEntry!.description != description) {
+        _currentOpenTimeEntry!.description = description;
+        await _timeEntryRepository.updateTimeEntry(_currentOpenTimeEntry!);
+      }
+    }
   }
 
   @override
@@ -77,14 +120,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         }
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _buttonAnimationController.dispose();
-    _controller.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadProjects() async {
@@ -148,11 +183,21 @@ class _ProjectSwiperState extends State<ProjectSwiper>
           setState(() {
             _currentState = AppState.RUNNING;
             _buttonAnimationController.forward();
+            _currentOpenTimeEntry = entry;
+            
+            // Update the description field with the current time entry's description
+            if (entry.description != null && entry.description!.isNotEmpty) {
+              _descriptionController.text = entry.description!;
+            } else {
+              _descriptionController.clear();
+            }
           });
         } else {
           setState(() {
             _currentState = AppState.STOPPED;
             _buttonAnimationController.reverse();
+            _currentOpenTimeEntry = null;
+            _descriptionController.clear();
           });
         }
       }
@@ -178,11 +223,15 @@ class _ProjectSwiperState extends State<ProjectSwiper>
 
     // Add the time entry
     await _timeEntryRepository.addTimeEntry(timeEntry);
+    
+    // Store reference to the current open time entry
+    _currentOpenTimeEntry = timeEntry;
 
     setState(() {
       _currentState = AppState.RUNNING;
       _buttonAnimationController.forward();
-      _descriptionController.clear();
+      // Don't clear the description field anymore
+      // _descriptionController.clear();
     });
   }
 
