@@ -152,47 +152,222 @@ class _DataListState extends State<DataList> {
   }
 
   _buildTimeEntryList() {
-    var timeFormatter = new DateFormat.yMd(locale.toString()).add_Hm();
-    return DataTable(
-        columns: [
-          DataColumn(
-              label: Text(AppLocalizations.of(context)!.start),
-              numeric: false,
-              tooltip: AppLocalizations.of(context)!.tooltipTimeStart),
-          DataColumn(
-              label: Text(AppLocalizations.of(context)!.end),
-              numeric: false,
-              tooltip: AppLocalizations.of(context)!.tooltipTimeEnd),
-          DataColumn(
-              label: Text(AppLocalizations.of(context)!.hours),
-              numeric: true,
-              tooltip: AppLocalizations.of(context)!.tooltipHours),
-        ],
-        rows: timeEntries!
-            .map((timeEntry) => DataRow(
-                  cells: [
-                    DataCell(
-                        Text(timeFormatter
-                            .format(timeEntry.startTime.toLocal())), onTap: () {
-                      _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
-                    }),
-                    DataCell(
-                        Text(timeEntry.endTime != null
-                            ? timeFormatter.format(timeEntry.endTime!.toLocal())
-                            : ""), onTap: () {
-                      _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
-                    }),
-                    DataCell(
-                        Text(timeEntry.endTime != null
-                            ? _durationFormatter.formatDuration(timeEntry
-                                .endTime!
-                                .difference(timeEntry.startTime))
-                            : ""), onTap: () {
-                      _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
-                    })
+    var dateFormatter = new DateFormat.yMd(locale.toString());
+    var timeFormatter = new DateFormat.Hm(locale.toString());
+    
+    if (timeEntries!.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            AppLocalizations.of(context)!.noTimeEntries,
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      itemCount: timeEntries!.length,
+      itemBuilder: (context, index) {
+        final timeEntry = timeEntries![index];
+        final formattedStartDate = dateFormatter.format(timeEntry.startTime.toLocal());
+        final formattedStartTime = timeFormatter.format(timeEntry.startTime.toLocal());
+        
+        final formattedEndDate = timeEntry.endTime != null 
+            ? dateFormatter.format(timeEntry.endTime!.toLocal())
+            : "";
+        final formattedEndTime = timeEntry.endTime != null 
+            ? timeFormatter.format(timeEntry.endTime!.toLocal())
+            : "";
+            
+        // Calculate duration - use current time if endTime is null
+        final duration = timeEntry.endTime != null
+            ? _durationFormatter.formatDuration(
+                timeEntry.endTime!.difference(timeEntry.startTime))
+            : _durationFormatter.formatDuration(
+                DateTime.now().difference(timeEntry.startTime));
+            
+        return Dismissible(
+          key: Key(timeEntry.id ?? index.toString()),
+          background: Container(
+            color: Colors.blue,
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Icon(
+              Icons.edit,
+              color: Colors.white,
+            ),
+          ),
+          secondaryBackground: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Icon(
+              Icons.delete,
+              color: Colors.white,
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            if (direction == DismissDirection.endToStart) {
+              // Delete action
+              final bool? result = await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(AppLocalizations.of(context)!.deleteTimeEntry),
+                    content: Text(AppLocalizations.of(context)!.deleteTimeEntryConfirmation),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text(AppLocalizations.of(context)!.cancel),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text(AppLocalizations.of(context)!.delete),
+                      ),
+                    ],
+                  );
+                },
+              );
+              return result ?? false;
+            } else {
+              // Edit action - don't actually dismiss, just navigate
+              _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
+              return false;
+            }
+          },
+          onDismissed: (direction) {
+            if (direction == DismissDirection.endToStart) {
+              // Store a copy of the time entry for potential undo
+              final deletedTimeEntry = timeEntry;
+              final deletedIndex = index;
+              
+              // Delete the item
+              _timeEntryRepository.deleteTimeEntryById(timeEntry.id!).then((_) {
+                setState(() {
+                  timeEntries!.removeAt(index);
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context)!.timeEntryDeleted),
+                    action: SnackBarAction(
+                      label: AppLocalizations.of(context)!.undo,
+                      onPressed: () {
+                        // Undo deletion
+                        _timeEntryRepository.addTimeEntry(deletedTimeEntry).then((_) {
+                          _loadTimeEntries(_currentDateRange ?? _getInitialDateRange());
+                        });
+                      },
+                    ),
+                  ),
+                );
+              });
+            }
+          },
+          child: Card(
+            margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: InkWell(
+              onTap: () {
+                // Navigate to edit screen when tapping on the card
+                _addOrEditTimeEntry(timeEntryIdToEdit: timeEntry.id);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${AppLocalizations.of(context)!.start}:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              '$formattedStartDate, $formattedStartTime',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        if (timeEntry.endTime != null)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${AppLocalizations.of(context)!.end}:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                '$formattedEndDate, $formattedEndTime',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                    if (timeEntry.description != null && timeEntry.description!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          timeEntry.description!,
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    // Always show hours - for ongoing entries, use current time for calculation
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${AppLocalizations.of(context)!.hours}: ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            duration,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // Add a small indicator for ongoing entries
+                          if (timeEntry.endTime == null)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: Icon(
+                                Icons.update,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
-                ))
-            .toList());
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _addOrEditTimeEntry({String? timeEntryIdToEdit}) {

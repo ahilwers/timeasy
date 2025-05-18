@@ -18,6 +18,14 @@ class TimeEntryRepository {
     timeEntry.deleted = true;
     await updateTimeEntry(timeEntry);
   }
+  
+  // Delete a time entry by ID
+  Future<void> deleteTimeEntryById(String id) async {
+    final timeEntry = await getTimeEntryById(id);
+    if (timeEntry != null) {
+      await deleteTimeEntry(timeEntry);
+    }
+  }
 
   closeLatestTimeEntry(String projectId) async {
     var latestTimeEntry = await getLatestOpenTimeEntry(projectId);

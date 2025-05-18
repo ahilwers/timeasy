@@ -137,5 +137,29 @@
     "whatDidYouDo": "What did you do?",
     "@whatDidYouDo": {
         "description": "Hint text for the time entry description field in edit view"
+    },
+    "deleteTimeEntry": "Delete Time Entry",
+    "@deleteTimeEntry": {
+        "description": "Title for the delete time entry confirmation dialog"
+    },
+    "deleteTimeEntryConfirmation": "Are you sure you want to delete this time entry?",
+    "@deleteTimeEntryConfirmation": {
+        "description": "Confirmation message for deleting a time entry"
+    },
+    "cancel": "Cancel",
+    "@cancel": {
+        "description": "Cancel button text"
+    },
+    "timeEntryDeleted": "Time entry deleted",
+    "@timeEntryDeleted": {
+        "description": "Message shown when a time entry is deleted"
+    },
+    "undo": "Undo",
+    "@undo": {
+        "description": "Undo button text"
+    },
+    "noTimeEntries": "No time entries found for this period",
+    "@noTimeEntries": {
+        "description": "Message shown when no time entries are available"
     }
 }

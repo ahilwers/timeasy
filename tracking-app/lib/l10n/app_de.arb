@@ -66,5 +66,11 @@
     "navProjects": "Projekte",
     "appTitle": "timeasy",
     "entryDescription": "Beschreibung",
-    "whatDidYouDo": "Was hast du gemacht?"
+    "whatDidYouDo": "Was hast du gemacht?",
+    "deleteTimeEntry": "Zeiteintrag löschen",
+    "deleteTimeEntryConfirmation": "Sind Sie sicher, dass Sie diesen Zeiteintrag löschen möchten?",
+    "cancel": "Abbrechen",
+    "timeEntryDeleted": "Zeiteintrag gelöscht",
+    "undo": "Rückgängig",
+    "noTimeEntries": "Keine Zeiteinträge für diesen Zeitraum gefunden"
 }
