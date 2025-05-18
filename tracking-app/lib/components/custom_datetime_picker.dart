@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:time_picker_spinner_pop_up/time_picker_spinner_pop_up.dart';
 
 class CustomDateTimePicker extends StatelessWidget {
   final DateTime? dateTime;
@@ -160,91 +162,127 @@ class CustomDateTimePicker extends StatelessWidget {
 
   Future<void> _selectDate(BuildContext context) async {
     final initialDate = dateTime ?? DateTime.now();
-    final DateTime? picked = await showDatePicker(
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
+    
+    // Create a temporary variable to hold the selected date
+    DateTime? selectedDate;
+    
+    // Show the time picker spinner directly
+    await showCupertinoModalPopup(
       context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2010),
-      lastDate: DateTime(2201),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: accentColor ?? Theme.of(context).colorScheme.primary,
-            ),
+      builder: (BuildContext context) {
+        return Container(
+          height: 280,
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(localizations.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (selectedDate != null) {
+                        Navigator.pop(context, selectedDate);
+                      } else {
+                        Navigator.pop(context, initialDate);
+                      }
+                    },
+                    child: Text(localizations.save),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.date,
+                  initialDateTime: initialDate,
+                  minimumDate: DateTime(2010),
+                  maximumDate: DateTime(2201),
+                  onDateTimeChanged: (DateTime dateTime) {
+                    selectedDate = dateTime;
+                  },
+                ),
+              ),
+            ],
           ),
-          child: child!,
         );
       },
-    );
-    
-    if (picked != null) {
-      final newDateTime = _combineDateAndTime(
-        picked, 
-        dateTime != null ? TimeOfDay.fromDateTime(dateTime!.toLocal()) : TimeOfDay.now()
-      );
-      onDateTimeChanged(newDateTime);
-    }
+    ).then((value) {
+      if (value != null) {
+        final newDateTime = _combineDateAndTime(
+          value, 
+          dateTime != null ? TimeOfDay.fromDateTime(dateTime!.toLocal()) : TimeOfDay.now()
+        );
+        onDateTimeChanged(newDateTime);
+      }
+    });
   }
 
   Future<void> _selectTime(BuildContext context) async {
     final initialTime = dateTime != null 
-        ? TimeOfDay.fromDateTime(dateTime!.toLocal()) 
-        : TimeOfDay.now();
-        
-    final TimeOfDay? picked = await showTimePicker(
+        ? dateTime!.toLocal() 
+        : DateTime.now();
+    
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
+    
+    // Create a temporary variable to hold the selected time
+    DateTime? selectedTime;
+    
+    // Show the time picker spinner directly
+    await showCupertinoModalPopup(
       context: context,
-      initialTime: initialTime,
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: accentColor ?? Theme.of(context).colorScheme.primary,
-              onPrimary: Theme.of(context).brightness == Brightness.dark 
-                  ? Colors.white 
-                  : Colors.black,
-            ),
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              hourMinuteShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      builder: (BuildContext context) {
+        return Container(
+          height: 280,
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(localizations.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (selectedTime != null) {
+                        Navigator.pop(context, selectedTime);
+                      } else {
+                        Navigator.pop(context, initialTime);
+                      }
+                    },
+                    child: Text(localizations.save),
+                  ),
+                ],
               ),
-              dayPeriodShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  initialDateTime: initialTime,
+                  minuteInterval: 1,
+                  use24hFormat: true,
+                  onDateTimeChanged: (DateTime dateTime) {
+                    selectedTime = dateTime;
+                  },
+                ),
               ),
-              dayPeriodColor: MaterialStateColor.resolveWith((states) => 
-                states.contains(MaterialState.selected) 
-                  ? (accentColor ?? Theme.of(context).colorScheme.primary).withOpacity(0.12)
-                  : Colors.transparent
-              ),
-              dayPeriodTextColor: MaterialStateColor.resolveWith((states) => 
-                states.contains(MaterialState.selected)
-                  ? (accentColor ?? Theme.of(context).colorScheme.primary)
-                  : Theme.of(context).colorScheme.onSurface
-              ),
-              hourMinuteColor: MaterialStateColor.resolveWith((states) => 
-                states.contains(MaterialState.selected)
-                  ? (accentColor ?? Theme.of(context).colorScheme.primary)
-                  : Theme.of(context).colorScheme.surface
-              ),
-              hourMinuteTextColor: MaterialStateColor.resolveWith((states) => 
-                states.contains(MaterialState.selected)
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurface
-              ),
-            ),
+            ],
           ),
-          child: child!,
         );
       },
-    );
-    
-    if (picked != null) {
-      final newDateTime = _combineDateAndTime(
-        dateTime != null ? dateTime!.toLocal() : DateTime.now(),
-        picked
-      );
-      onDateTimeChanged(newDateTime);
-    }
+    ).then((value) {
+      if (value != null) {
+        final newDateTime = _combineDateAndTime(
+          dateTime != null ? dateTime!.toLocal() : DateTime.now(),
+          TimeOfDay(hour: value.hour, minute: value.minute)
+        );
+        onDateTimeChanged(newDateTime);
+      }
+    });
   }
 
   DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
