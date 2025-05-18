@@ -79,7 +79,8 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   final ProjectRepository _projectRepository = ProjectRepository();
   late InternetConnectionService _internetConnectionService;
   List<Project>? _projects;
-  late Project _currentProject;
+  Project? _currentProject;
+  bool _hasProjects = false;
 
   @override
   void initState() {
@@ -96,17 +97,29 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     );
 
     // Initialize the selected project
-    _projectRepository
-        .getLastUsedProjectOrDefault("Project 1")
-        .then((Project project) {
-      setState(() {
-        _setCurrentProject(project);
-      });
+    _projectRepository.getLastUsedProjectOrDefault().then((Project? project) {
+      if (project != null) {
+        setState(() {
+          _setCurrentProject(project);
+          _hasProjects = true;
+        });
 
-      // Set the selected project in the SelectedProjectBloc
-      context.read<SelectedProjectBloc>().add(
-            SetSelectedProjectEvent(project),
-          );
+        // Set the selected project in the SelectedProjectBloc
+        context.read<SelectedProjectBloc>().add(
+              SetSelectedProjectEvent(project),
+            );
+      } else {
+        // No projects exist
+        setState(() {
+          _hasProjects = false;
+          _currentPageIndex = 0; // Force to Home tab
+        });
+
+        // Clear the selected project in the SelectedProjectBloc
+        context.read<SelectedProjectBloc>().add(
+              ClearSelectedProjectEvent(),
+            );
+      }
 
       _loadProjects();
     });
@@ -115,11 +128,18 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     Future.delayed(Duration.zero, () {
       context.read<SelectedProjectBloc>().stream.listen((state) {
         if (state is SelectedProjectSet &&
-            state.project != null &&
-            _currentProject != null &&
-            state.project!.id != _currentProject.id) {
+            state.project != null) {
           setState(() {
             _setCurrentProject(state.project!);
+            _hasProjects = true;
+            
+            // Reload projects to ensure we have the latest data
+            _loadProjects();
+          });
+        } else if (state is SelectedProjectCleared) {
+          setState(() {
+            _hasProjects = false;
+            _currentPageIndex = 0; // Force to Home tab
           });
         }
       });
@@ -175,6 +195,11 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       selectedItemColor: isDark ? Colors.white : Colors.black,
       unselectedItemColor: Colors.grey,
       onTap: (index) {
+        // Only allow navigation to Home and Projects tabs if no projects exist
+        if (!_hasProjects && index != 0 && index != 3) {
+          return;
+        }
+
         _loadProjects();
         setState(() {
           _currentPageIndex = index;
@@ -186,11 +211,17 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
           label: localizations.navHome,
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
+          icon: Icon(
+            Icons.calendar_today,
+            color: _hasProjects ? null : Colors.grey.shade300,
+          ),
           label: localizations.navWeek,
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.access_time),
+          icon: Icon(
+            Icons.access_time,
+            color: _hasProjects ? null : Colors.grey.shade300,
+          ),
           label: localizations.navTime,
         ),
         BottomNavigationBarItem(
@@ -202,13 +233,23 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   }
 
   Widget _getCurrentView() {
+    // If no projects exist and we're not on the Home or Projects tab,
+    // force to the Home tab
+    if (!_hasProjects && _currentPageIndex != 0 && _currentPageIndex != 3) {
+      setState(() {
+        _currentPageIndex = 0;
+      });
+    }
+
     switch (_currentPageIndex) {
       case 0:
         return _playButtonView();
       case 1:
-        return WeeklyView(_currentProject);
+        return _hasProjects ? WeeklyView(_currentProject!) : _playButtonView();
       case 2:
-        return TimeEntryListView(_currentProject);
+        return _hasProjects
+            ? TimeEntryListView(_currentProject!)
+            : _playButtonView();
       case 3:
         return ProjectListView();
       default:
@@ -224,6 +265,17 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
       setState(() {
         _projects = projectsFromDb;
+        _hasProjects = projectsFromDb.isNotEmpty;
+        
+        // If we have projects but no current project is set, set the first one
+        if (_hasProjects && _currentProject == null && projectsFromDb.isNotEmpty) {
+          _setCurrentProject(projectsFromDb[0]);
+          
+          // Update the selected project in the bloc
+          context.read<SelectedProjectBloc>().add(
+                SetSelectedProjectEvent(projectsFromDb[0]),
+              );
+        }
       });
     });
   }
@@ -233,7 +285,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     _projectRepository.saveLastUsedProject(project);
   }
 
-  void _setConnectionState(bool hasInternet) {
+  _setConnectionState(bool hasInternet) {
     if (hasInternet) {
       context
           .read<InternetConnectionBloc>()

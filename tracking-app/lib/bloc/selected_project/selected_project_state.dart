@@ -13,3 +13,7 @@ class SelectedProjectInitial extends SelectedProjectState {
 class SelectedProjectSet extends SelectedProjectState {
   SelectedProjectSet(Project project) : super(project);
 }
+
+class SelectedProjectCleared extends SelectedProjectState {
+  SelectedProjectCleared() : super(null);
+}

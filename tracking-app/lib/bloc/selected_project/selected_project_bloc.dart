@@ -9,7 +9,7 @@ class SelectedProjectBloc
       emit(SelectedProjectSet(event.project!));
     });
     on<ClearSelectedProjectEvent>((event, emit) {
-      emit(SelectedProjectInitial());
+      emit(SelectedProjectCleared());
     });
   }
 }

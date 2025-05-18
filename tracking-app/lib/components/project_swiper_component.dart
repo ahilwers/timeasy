@@ -47,13 +47,11 @@ class _ProjectSwiperState extends State<ProjectSwiper>
   @override
   void initState() {
     super.initState();
-    _controller = PageController(initialPage: 0);
+    _controller = PageController();
     _buttonAnimationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1000),
     );
-    
-    // Load projects immediately after initialization
     _loadProjects();
   }
 
@@ -89,70 +87,58 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     super.dispose();
   }
 
-  void _loadProjects() {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadProjects() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
 
-    _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
-      if (mounted) {
-        if (projectsFromDb.isEmpty) {
-          setState(() {
-            _isLoading = false;
+      final projects = await _projectRepository.getAllProjects();
+
+      setState(() {
+        _projects = projects;
+        _isLoading = false;
+
+        // If there are no projects, set the current page to the "add new project" page
+        if (_projects.isEmpty) {
+          // We need to use a small delay to ensure the PageView is built
+          Future.delayed(Duration(milliseconds: 100), () {
+            if (_controller.hasClients) {
+              _controller.jumpToPage(0); // The "add new project" page will be at index 0
+            }
           });
-          return;
-        }
-        
-        setState(() {
-          _projects = projectsFromDb;
-          _isLoading = false;
-        });
-        
-        // After loading projects, check if there's a selected project to scroll to
-        final selectedProjectState = context.read<SelectedProjectBloc>().state;
-        if (selectedProjectState is SelectedProjectSet && selectedProjectState.project != null) {
-          final selectedProject = selectedProjectState.project!;
-          final index = _projects.indexWhere((p) => p.id == selectedProject.id);
-          if (index != -1) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _controller.jumpToPage(index);
-                setState(() {
-                  _currentPage = index;
-                });
-                
-                // Ensure the current project is set in the SelectedProjectBloc
-                context.read<SelectedProjectBloc>().add(
-                      SetSelectedProjectEvent(_projects[_currentPage]),
-                    );
-              }
-            });
+        } else {
+          // Find the index of the current project
+          final currentProject = context.read<SelectedProjectBloc>().state.project;
+          if (currentProject != null) {
+            final index = _projects.indexWhere((p) => p.id == currentProject.id);
+            if (index != -1) {
+              _currentPage = index;
+              // We need to use a small delay to ensure the PageView is built
+              Future.delayed(Duration(milliseconds: 100), () {
+                if (_controller.hasClients) {
+                  _controller.jumpToPage(index);
+                }
+              });
+            }
           }
-        } else if (_projects.isNotEmpty) {
-          // If no project is selected but we have projects, select the first one
-          context.read<SelectedProjectBloc>().add(
-                SetSelectedProjectEvent(_projects[0]),
-              );
         }
-        
-        // Check the timing status for the current project
-        _checkTimingStatus();
-      }
-    }).catchError((error) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        print("Error loading projects: $error");
-      }
-    });
+      });
+
+      _checkTimingStatus();
+    } catch (error) {
+      setState(() {
+        _isLoading = false;
+      });
+      print("Error loading projects: $error");
+    }
   }
 
   void _checkTimingStatus() {
     if (_projects.isEmpty || _currentPage >= _projects.length) {
       return;
     }
-    
+
     final currentProject = _projects[_currentPage];
     _timeEntryRepository
         .getLatestOpenTimeEntry(currentProject.id)
@@ -177,22 +163,22 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     if (_projects.isEmpty || _currentPage >= _projects.length) {
       return;
     }
-    
+
     final currentProject = _projects[_currentPage];
     await _timeEntryRepository.closeLatestTimeEntry(currentProject.id);
-    
+
     // Create a new time entry
     final timeEntry = TimeEntry(currentProject.id);
-    
+
     // Set description if provided
     final description = _descriptionController.text.trim();
     if (description.isNotEmpty) {
       timeEntry.description = description;
     }
-    
+
     // Add the time entry
     await _timeEntryRepository.addTimeEntry(timeEntry);
-    
+
     setState(() {
       _currentState = AppState.RUNNING;
       _buttonAnimationController.forward();
@@ -204,10 +190,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     if (_projects.isEmpty || _currentPage >= _projects.length) {
       return;
     }
-    
+
     final currentProject = _projects[_currentPage];
     await _timeEntryRepository.closeLatestTimeEntry(currentProject.id);
-    
+
     setState(() {
       _currentState = AppState.STOPPED;
       _buttonAnimationController.reverse();
@@ -225,108 +211,58 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     }
   }
 
-  void _createNewProject() async {
-    final result = await Navigator.of(context).push(
+  Future<void> _createNewProject() async {
+    // Navigate to the project edit view
+    final result = await Navigator.push(
+      context,
       MaterialPageRoute(
         builder: (context) => ProjectEditView(),
         fullscreenDialog: true,
       ),
     );
-    
+
     // Check if a project was returned (user clicked Save)
     if (result != null && result is Project) {
       // Reload projects
-      await _loadProjectsAndSelectProject(result.id);
+      await _loadProjects();
+      
+      // Explicitly set the newly created project in the SelectedProjectBloc
+      context.read<SelectedProjectBloc>().add(
+        SetSelectedProjectEvent(result),
+      );
+      
+      // Find the index of the new project and jump to it
+      final index = _projects.indexWhere((p) => p.id == result.id);
+      if (index != -1) {
+        setState(() {
+          _currentPage = index;
+        });
+        
+        if (_controller.hasClients) {
+          _controller.jumpToPage(index);
+        }
+      }
     } else {
       // User canceled, just reload projects
       _loadProjects();
     }
   }
 
-  Future<void> _loadProjectsAndSelectProject(String projectId) async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      List<Project> projectsFromDb = await _projectRepository.getAllProjects();
-      
-      if (mounted) {
-        if (projectsFromDb.isEmpty) {
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
-        
-        setState(() {
-          _projects = projectsFromDb;
-          _isLoading = false;
-        });
-        
-        // Find the index of the project to select
-        final index = _projects.indexWhere((p) => p.id == projectId);
-        if (index != -1) {
-          // Jump to the page and update current page
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _controller.jumpToPage(index);
-              setState(() {
-                _currentPage = index;
-              });
-              
-              // Set the project in the bloc
-              context.read<SelectedProjectBloc>().add(
-                    SetSelectedProjectEvent(_projects[index]),
-                  );
-              
-              // Check timing status
-              _checkTimingStatus();
-            }
-          });
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        print("Error loading projects: $error");
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_isLoading) {
       return Center(child: CircularProgressIndicator());
     }
 
-    if (_projects.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(localizations.noProjectsFound),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _createNewProject,
-              child: Text(localizations.createNewProject),
-            ),
-          ],
-        ),
-      );
-    }
-
     // Get the current project if available
-    final project = _currentPage < _projects.length 
+    final project = _projects.isNotEmpty && _currentPage < _projects.length
         ? _projects[_currentPage]
         : null;
-    
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final projectColor = project != null 
+
+    final projectColor = project != null
         ? hexToColor(project.color)
         : Colors.grey;
 
@@ -345,25 +281,25 @@ class _ProjectSwiperState extends State<ProjectSwiper>
               Expanded(
                 child: PageView.builder(
                   controller: _controller,
-                  itemCount: _projects.length + 1, // +1 for the "add new" page
+                  itemCount: _projects.isEmpty ? 1 : _projects.length + 1, // If no projects, just show the add page
                   onPageChanged: (int page) {
                     setState(() {
                       _currentPage = page;
                     });
-                    
+
                     // Update the selected project in the bloc only if we're on a valid project
-                    if (page < _projects.length) {
+                    if (_projects.isNotEmpty && page < _projects.length) {
                       context.read<SelectedProjectBloc>().add(
                             SetSelectedProjectEvent(_projects[page]),
                           );
-                      
+
                       // Check timing status for the new project
                       _checkTimingStatus();
                     }
                   },
                   itemBuilder: (context, index) {
-                    // If this is the last page (add new project page)
-                    if (index == _projects.length) {
+                    // If this is the last page (add new project page) or there are no projects
+                    if (_projects.isEmpty || index == _projects.length) {
                       return Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -418,7 +354,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                         ),
                       );
                     }
-                    
+
                     // Regular project page
                     final proj = _projects[index];
                     return Center(
@@ -498,11 +434,11 @@ class _ProjectSwiperState extends State<ProjectSwiper>
               const SizedBox(height: 16),
               SmoothPageIndicator(
                 controller: _controller,
-                count: _projects.length + 1, // +1 for the "add new" page
+                count: _projects.isEmpty ? 1 : _projects.length + 1, // If no projects, just show the add page
                 effect: ExpandingDotsEffect(
                   dotHeight: 8,
                   dotWidth: 8,
-                  activeDotColor: _currentPage < _projects.length 
+                  activeDotColor: _currentPage < _projects.length
                       ? hexToColor(_projects[_currentPage].color)
                       : Colors.grey,
                   dotColor: Colors.grey.shade300,
