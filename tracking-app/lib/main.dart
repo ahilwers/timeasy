@@ -94,7 +94,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
         }
       },
     );
-    
+
     // Initialize the selected project
     _projectRepository
         .getLastUsedProjectOrDefault("Project 1")
@@ -102,12 +102,12 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       setState(() {
         _setCurrentProject(project);
       });
-      
+
       // Set the selected project in the SelectedProjectBloc
       context.read<SelectedProjectBloc>().add(
             SetSelectedProjectEvent(project),
           );
-      
+
       _loadProjects();
     });
 
@@ -167,6 +167,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
   Widget _getNavigationBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final localizations = AppLocalizations.of(context)!;
 
     return BottomNavigationBar(
       currentIndex: _currentPageIndex,
@@ -179,22 +180,22 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
           _currentPageIndex = index;
         });
       },
-      items: const [
+      items: [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: 'Home',
+          label: localizations.navHome,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.calendar_today),
-          label: 'Week',
+          label: localizations.navWeek,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.access_time),
-          label: 'Time',
+          label: localizations.navTime,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.list),
-          label: 'Projects',
+          label: localizations.navProjects,
         ),
       ],
     );

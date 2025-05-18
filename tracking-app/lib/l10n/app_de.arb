@@ -55,5 +55,14 @@
     "colorYellow": "Gelb",
     "colorPink": "Rosa",
     "colorGray": "Grau",
-    "colorBrown": "Braun"
+    "colorBrown": "Braun",
+    "noProjectsFound": "Keine Projekte gefunden",
+    "createNewProject": "Neues Projekt erstellen",
+    "addNewProject": "Erstelle ein neues Projekt",
+    "whatAreYouDoingNow": "Was machst du gerade?",
+    "navHome": "Start",
+    "navWeek": "Woche",
+    "navTime": "Zeit",
+    "navProjects": "Projekte",
+    "appTitle": "timeasy"
 }

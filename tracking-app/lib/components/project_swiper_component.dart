@@ -12,6 +12,7 @@ import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // Helper function to convert hex color string to Color
 Color hexToColor(String hexString) {
@@ -297,6 +298,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    
     if (_isLoading) {
       return Center(child: CircularProgressIndicator());
     }
@@ -306,11 +309,11 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('No projects found'),
+            Text(localizations.noProjectsFound),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _createNewProject,
-              child: Text('Create New Project'),
+              child: Text(localizations.createNewProject),
             ),
           ],
         ),
@@ -403,7 +406,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 40),
                               child: Text(
-                                "Create a new project",
+                                localizations.addNewProject,
                                 style: TextStyle(
                                   fontSize: 18,
                                   color: isDark ? Colors.white : Colors.black,
@@ -472,7 +475,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                 color: isDark ? Colors.white : Colors.black,
                               ),
                               decoration: InputDecoration(
-                                hintText: "What are you doing right now?",
+                                hintText: localizations.whatAreYouDoingNow,
                                 hintStyle: TextStyle(
                                   color: isDark ? Colors.white70 : Colors.black54,
                                 ),

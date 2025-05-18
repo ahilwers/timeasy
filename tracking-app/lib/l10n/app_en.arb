@@ -93,5 +93,41 @@
     "colorYellow": "Yellow",
     "colorPink": "Pink",
     "colorGray": "Gray",
-    "colorBrown": "Brown"
+    "colorBrown": "Brown",
+    "noProjectsFound": "No projects found",
+    "@noProjectsFound": {
+        "description": "Displayed when no projects are available"
+    },
+    "createNewProject": "Create New Project",
+    "@createNewProject": {
+        "description": "Button text to create a new project"
+    },
+    "addNewProject": "Create a new project",
+    "@addNewProject": {
+        "description": "Text shown on the add new project page"
+    },
+    "whatAreYouDoingNow": "What are you doing right now?",
+    "@whatAreYouDoingNow": {
+        "description": "Hint text for the time entry description field"
+    },
+    "navHome": "Home",
+    "@navHome": {
+        "description": "Navigation label for the home tab"
+    },
+    "navWeek": "Week",
+    "@navWeek": {
+        "description": "Navigation label for the weekly overview tab"
+    },
+    "navTime": "Time",
+    "@navTime": {
+        "description": "Navigation label for the time entries tab"
+    },
+    "navProjects": "Projects",
+    "@navProjects": {
+        "description": "Navigation label for the projects tab"
+    },
+    "appTitle": "timeasy",
+    "@appTitle": {
+        "description": "The title of the application"
+    }
 }
