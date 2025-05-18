@@ -48,20 +48,23 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
 
         List<Widget> headerActions = [];
 
-        headerActions.add(
-          IconButton(
-            icon: Icon(
-              Icons.manage_accounts,
-              color: textColor,
+        // Only add settings button if showSettingsButton is true
+        if (showSettingsButton) {
+          headerActions.add(
+            IconButton(
+              icon: Icon(
+                Icons.manage_accounts,
+                color: textColor,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SettingsView()),
+                );
+              },
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsView()),
-              );
-            },
-          ),
-        );
+          );
+        }
 
         if (actions != null) {
           headerActions.addAll(actions!);

@@ -21,7 +21,6 @@ class TimeEntryListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ProjectHeader(),
       body: BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
         builder: (context, state) {
           Project projectToUse = _project;
@@ -68,12 +67,44 @@ class _DataListState extends State<DataList> {
   @override
   Widget build(BuildContext context) {
     if (timeEntries == null) {
-      return Center(
-        child: CircularProgressIndicator(),
+      return Scaffold(
+        appBar: ProjectHeader(
+          actions: [
+            IconButton(
+              icon: Icon(
+                Icons.add,
+                // Ensure the icon is visible in both light and dark mode
+                color: Theme.of(context).brightness == Brightness.light 
+                    ? Colors.black 
+                    : Colors.white,
+              ),
+              onPressed: () => _addOrEditTimeEntry(),
+            ),
+          ],
+          showSettingsButton: false, // Explicitly disable settings button
+        ),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     } else {
       locale = Localizations.localeOf(context);
       return Scaffold(
+        appBar: ProjectHeader(
+          actions: [
+            IconButton(
+              icon: Icon(
+                Icons.add,
+                // Ensure the icon is visible in both light and dark mode
+                color: Theme.of(context).brightness == Brightness.light 
+                    ? Colors.black 
+                    : Colors.white,
+              ),
+              onPressed: () => _addOrEditTimeEntry(),
+            ),
+          ],
+          showSettingsButton: false, // Explicitly disable settings button
+        ),
         body: Column(
           children: [
             Padding(
@@ -100,13 +131,6 @@ class _DataListState extends State<DataList> {
               ),
             ),
           ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            _addOrEditTimeEntry();
-          },
-          child: Icon(Icons.add),
-          backgroundColor: Theme.of(context).primaryColor,
         ),
       );
     }
