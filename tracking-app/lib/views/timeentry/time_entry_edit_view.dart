@@ -63,8 +63,24 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
   Widget build(BuildContext context) {
     if (_timeEntry == null) {
       return Scaffold(
-        appBar: new AppBar(
-          title: new Text(AppLocalizations.of(context)!.loadingTimeEntry),
+        appBar: AppBar(
+          title: Text(
+            AppLocalizations.of(context)!.loadingTimeEntry,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+            ),
+          ),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          elevation: 0,
+          iconTheme: IconThemeData(
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+          ),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
       );
     } else {
@@ -73,10 +89,32 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       var timeFormatter = new DateFormat.Hm(locale.toString());
       return Scaffold(
           appBar: AppBar(
-            title: Text(_getTitle()),
-            backgroundColor: Theme.of(context).primaryColor,
+            title: Text(
+              _getTitle(),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+              ),
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            elevation: 0,
+            iconTheme: IconThemeData(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+            ),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+            centerTitle: true,
             actions: <Widget>[
-              TextButton(
+              // Save button with icon
+              IconButton(
+                icon: Icon(
+                  Icons.save,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                ),
+                tooltip: AppLocalizations.of(context)!.save,
                 onPressed: () {
                   final form = _formEditTimeEntryKey.currentState;
                   if (form!.validate()) {
@@ -103,28 +141,19 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                     }
                   }
                 },
-                child: Text(
-                  AppLocalizations.of(context)!.save,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium!
-                      .copyWith(color: Colors.white),
-                ),
               ),
-              _timeEntryId != null
-                  ? TextButton(
-                      onPressed: () {
-                        deleteTimeEntryWithRequest(context);
-                      },
-                      child: Text(
-                        AppLocalizations.of(context)!.delete,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium!
-                            .copyWith(color: Colors.white),
-                      ),
-                    )
-                  : Container(),
+              // Delete button with icon (only shown when editing an existing time entry)
+              if (_timeEntryId != null)
+                IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                  ),
+                  tooltip: AppLocalizations.of(context)!.delete,
+                  onPressed: () {
+                    deleteTimeEntryWithRequest(context);
+                  },
+                ),
             ],
           ),
           body: Container(
