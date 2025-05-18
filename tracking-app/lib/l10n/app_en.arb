@@ -129,5 +129,13 @@
     "appTitle": "timeasy",
     "@appTitle": {
         "description": "The title of the application"
+    },
+    "entryDescription": "Description",
+    "@entryDescription": {
+        "description": "Label for the time entry description field"
+    },
+    "whatDidYouDo": "What did you do?",
+    "@whatDidYouDo": {
+        "description": "Hint text for the time entry description field in edit view"
     }
 }

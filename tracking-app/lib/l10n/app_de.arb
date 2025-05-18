@@ -64,5 +64,7 @@
     "navWeek": "Woche",
     "navTime": "Zeit",
     "navProjects": "Projekte",
-    "appTitle": "timeasy"
+    "appTitle": "timeasy",
+    "entryDescription": "Beschreibung",
+    "whatDidYouDo": "Was hast du gemacht?"
 }

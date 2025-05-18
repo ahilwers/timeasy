@@ -267,7 +267,31 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                               : AppLocalizations.of(context)!.endTime),
                         ),
                       ],
-                    )
+                    ),
+                    SizedBox(height: 24),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        Text('${AppLocalizations.of(context)!.entryDescription}:',
+                            style: TextStyle(fontWeight: FontWeight.bold))
+                      ]
+                    ),
+                    SizedBox(height: 8),
+                    TextFormField(
+                      initialValue: _timeEntry!.description ?? '',
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.whatDidYouDo,
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      maxLines: 3,
+                      onChanged: (value) {
+                        setState(() {
+                          _timeEntry!.description = value;
+                        });
+                      },
+                    ),
                   ],
                 )),
           ));
