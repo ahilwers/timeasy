@@ -32,7 +32,10 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Use the theme's primary color for text and the appropriate background color based on theme
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = Theme.of(context).primaryColor;
+    final backgroundColor = isDark ? Colors.black : Colors.white;
 
     return BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
       builder: (context, state) {
@@ -69,6 +72,7 @@ class ProjectHeader extends StatelessWidget implements PreferredSizeWidget {
         }
 
         return AppBar(
+          backgroundColor: backgroundColor,
           elevation: 0,
           leading: showBackButton
               ? IconButton(

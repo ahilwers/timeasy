@@ -69,9 +69,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
+              color: Theme.of(context).primaryColor,
             ),
           ),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -79,9 +77,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
               : Colors.white,
           elevation: 0,
           iconTheme: IconThemeData(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
+            color: Theme.of(context).primaryColor,
           ),
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -100,9 +96,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.black,
+                color: Theme.of(context).primaryColor,
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -110,9 +104,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                 : Colors.white,
             elevation: 0,
             iconTheme: IconThemeData(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
+              color: Theme.of(context).primaryColor,
             ),
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
@@ -126,9 +118,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                   AppLocalizations.of(context)!.save,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    // Ensure good visibility in both light and dark mode
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
                 onPressed: () {
