@@ -181,5 +181,33 @@
     "orLogin": "or login",
     "@orLogin": {
         "description": "Text for the login link when there are no projects"
+    },
+    "freeUseHeading": "Use timeasy for free – no sign-up needed.",
+    "@freeUseHeading": {
+        "description": "Heading for the promotional text in settings view"
+    },
+    "freeUseDescription": "You can start tracking your time right away, completely free of charge.",
+    "@freeUseDescription": {
+        "description": "Description for free usage in settings view"
+    },
+    "subscriptionBenefits": "Want to get even more out of it? A subscription gives you automatic sync, powerful insights, exports, and many other features to make your day easier.",
+    "@subscriptionBenefits": {
+        "description": "Description of subscription benefits in settings view"
+    },
+    "signInPromo": "Sign in and unlock the full power of timeasy!",
+    "@signInPromo": {
+        "description": "Call to action for signing in"
+    },
+    "alreadyHaveAccount": "Already have an account?",
+    "@alreadyHaveAccount": {
+        "description": "Text for users who already have an account"
+    },
+    "signInHere": "Sign in here",
+    "@signInHere": {
+        "description": "Link text for signing in"
+    },
+    "settings": "Settings",
+    "@settings": {
+        "description": "Title for the settings screen"
     }
 }
