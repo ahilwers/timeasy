@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
@@ -12,7 +13,6 @@ import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'dart:async';
 
 // Helper function to convert hex color string to Color
@@ -35,15 +35,16 @@ class ProjectSwiper extends StatefulWidget {
 
 class _ProjectSwiperState extends State<ProjectSwiper>
     with TickerProviderStateMixin {
-  final ProjectRepository _projectRepository = ProjectRepository();
-  final TimeEntryRepository _timeEntryRepository = TimeEntryRepository();
+  final ProjectRepository _projectRepository = new ProjectRepository();
+  final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
+  final TextEditingController _descriptionController = TextEditingController();
+  List<Project> _projects = [];
+  List<String> _suggestions = [];
+  bool _isLoading = true;
+  int _currentPage = 0;
   late PageController _controller;
   late AnimationController _buttonAnimationController;
-  List<Project> _projects = [];
-  int _currentPage = 0;
-  bool _isLoading = true;
   AppState _currentState = AppState.STOPPED;
-  TextEditingController _descriptionController = TextEditingController();
   Timer? _debounceTimer;
   TimeEntry? _currentOpenTimeEntry;
 
@@ -55,10 +56,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       vsync: this,
       duration: Duration(milliseconds: 1000),
     );
-    
-    // Add listener to the description controller to save changes after 500ms of inactivity
     _descriptionController.addListener(_onDescriptionChanged);
-    
     _loadProjects();
   }
 
@@ -123,50 +121,55 @@ class _ProjectSwiperState extends State<ProjectSwiper>
   }
 
   Future<void> _loadProjects() async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
+    setState(() {
+      _isLoading = true;
+    });
 
-      final projects = await _projectRepository.getAllProjects();
+    var projects = await _projectRepository.getAllProjects();
 
-      setState(() {
-        _projects = projects;
-        _isLoading = false;
+    setState(() {
+      _projects = projects;
+      _isLoading = false;
 
-        // If there are no projects, set the current page to the "add new project" page
-        if (_projects.isEmpty) {
-          // We need to use a small delay to ensure the PageView is built
-          Future.delayed(Duration(milliseconds: 100), () {
-            if (_controller.hasClients) {
-              _controller.jumpToPage(0); // The "add new project" page will be at index 0
-            }
-          });
-        } else {
-          // Find the index of the current project
-          final currentProject = context.read<SelectedProjectBloc>().state.project;
-          if (currentProject != null) {
-            final index = _projects.indexWhere((p) => p.id == currentProject.id);
-            if (index != -1) {
-              _currentPage = index;
-              // We need to use a small delay to ensure the PageView is built
-              Future.delayed(Duration(milliseconds: 100), () {
-                if (_controller.hasClients) {
-                  _controller.jumpToPage(index);
-                }
-              });
-            }
+      // If there are no projects, set the current page to the "add new project" page
+      if (_projects.isEmpty) {
+        // We need to use a small delay to ensure the PageView is built
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (_controller.hasClients) {
+            _controller.jumpToPage(0); // The "add new project" page will be at index 0
+          }
+        });
+      } else {
+        // Find the index of the current project
+        final currentProject = context.read<SelectedProjectBloc>().state.project;
+        if (currentProject != null) {
+          final index = _projects.indexWhere((p) => p.id == currentProject.id);
+          if (index != -1) {
+            _currentPage = index;
+            // We need to use a small delay to ensure the PageView is built
+            Future.delayed(Duration(milliseconds: 100), () {
+              if (_controller.hasClients) {
+                _controller.jumpToPage(index);
+              }
+            });
           }
         }
-      });
+      }
+    });
 
-      _checkTimingStatus();
-    } catch (error) {
-      setState(() {
-        _isLoading = false;
-      });
-      print("Error loading projects: $error");
+    // Load suggestions for the current project if available
+    if (_projects.isNotEmpty && _currentPage < _projects.length) {
+      _loadSuggestions(_projects[_currentPage].id);
     }
+
+    _checkTimingStatus();
+  }
+
+  void _loadSuggestions(String projectId) async {
+    final suggestions = await _timeEntryRepository.getLastUniqueDescriptions(projectId);
+    setState(() {
+      _suggestions = suggestions;
+    });
   }
 
   void _checkTimingStatus() {
@@ -311,6 +314,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         ? _projects[_currentPage]
         : null;
 
+    // Get project color for UI elements
     final projectColor = project != null
         ? hexToColor(project.color)
         : Colors.grey;
@@ -341,6 +345,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                       context.read<SelectedProjectBloc>().add(
                             SetSelectedProjectEvent(_projects[page]),
                           );
+
+                      // Load suggestions for the new project
+                      _loadSuggestions(_projects[page].id);
 
                       // Check timing status for the new project
                       _checkTimingStatus();
@@ -454,24 +461,93 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                           const SizedBox(height: 30),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 40),
-                            child: TextField(
-                              controller: _descriptionController,
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: localizations.whatAreYouDoingNow,
-                                hintStyle: TextStyle(
-                                  color: isDark ? Colors.white70 : Colors.black54,
-                                ),
-                                filled: true,
-                                fillColor:
-                                    isDark ? Colors.white12 : Colors.black12,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
+                            child: Autocomplete<String>(
+                              optionsBuilder: (TextEditingValue textEditingValue) {
+                                if (textEditingValue.text.isEmpty) {
+                                  return const Iterable<String>.empty();
+                                }
+                                return _suggestions.where((String option) {
+                                  return option.toLowerCase()
+                                      .contains(textEditingValue.text.toLowerCase());
+                                });
+                              },
+                              onSelected: (String selection) {
+                                _descriptionController.text = selection;
+                              },
+                              fieldViewBuilder: (
+                                BuildContext context,
+                                TextEditingController fieldController,
+                                FocusNode fieldFocusNode,
+                                VoidCallback onFieldSubmitted,
+                              ) {
+                                // Sync the autocomplete controller with our description controller
+                                fieldController.text = _descriptionController.text;
+                                fieldController.addListener(() {
+                                  _descriptionController.text = fieldController.text;
+                                });
+                                
+                                return TextField(
+                                  controller: fieldController,
+                                  focusNode: fieldFocusNode,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: localizations.whatAreYouDoingNow,
+                                    hintStyle: TextStyle(
+                                      color: isDark ? Colors.white70 : Colors.black54,
+                                    ),
+                                    filled: true,
+                                    fillColor:
+                                        isDark ? Colors.white12 : Colors.black12,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                );
+                              },
+                              optionsViewBuilder: (
+                                BuildContext context,
+                                AutocompleteOnSelected<String> onSelected,
+                                Iterable<String> options,
+                              ) {
+                                return Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Material(
+                                    elevation: 4.0,
+                                    color: isDark ? Colors.grey[800] : Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Container(
+                                      width: 300,
+                                      constraints: BoxConstraints(maxHeight: 200),
+                                      child: ListView.builder(
+                                        padding: EdgeInsets.zero,
+                                        shrinkWrap: true,
+                                        itemCount: options.length,
+                                        itemBuilder: (BuildContext context, int index) {
+                                          final String option = options.elementAt(index);
+                                          return InkWell(
+                                            onTap: () {
+                                              onSelected(option);
+                                            },
+                                            child: ListTile(
+                                              title: Text(
+                                                option,
+                                                style: TextStyle(
+                                                  color: isDark ? Colors.white : Colors.black,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],

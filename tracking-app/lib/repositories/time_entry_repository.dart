@@ -107,4 +107,24 @@ class TimeEntryRepository {
   DateTime getDateWithoutTime(DateTime date) {
     return new DateTime(date.year, date.month, date.day);
   }
+
+  // Get the last 100 unique descriptions for a project
+  Future<List<String>> getLastUniqueDescriptions(String projectId, {int limit = 100}) async {
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.rawQuery('''
+      SELECT DISTINCT ${TimeEntry.descriptionColumn} 
+      FROM ${TimeEntry.tableName} 
+      WHERE ${TimeEntry.projectIdColumn} = ? 
+      AND ${TimeEntry.descriptionColumn} IS NOT NULL 
+      AND ${TimeEntry.descriptionColumn} != '' 
+      AND DELETED = 0
+      ORDER BY ${TimeEntry.startTimeColumn} DESC
+      LIMIT ?
+    ''', [projectId, limit]);
+    
+    return queryResult
+        .map((entry) => entry[TimeEntry.descriptionColumn] as String)
+        .where((description) => description.isNotEmpty)
+        .toList();
+  }
 }
