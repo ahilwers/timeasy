@@ -484,13 +484,15 @@ class _ProjectSwiperState extends State<ProjectSwiper>
               SmoothPageIndicator(
                 controller: _controller,
                 count: _projects.isEmpty ? 1 : _projects.length + 1, // If no projects, just show the add page
-                effect: ExpandingDotsEffect(
+                effect: WormEffect(
                   dotHeight: 8,
-                  dotWidth: 8,
+                  dotWidth: 10,
                   activeDotColor: _currentPage < _projects.length
                       ? hexToColor(_projects[_currentPage].color)
                       : Colors.grey,
                   dotColor: Colors.grey.shade300,
+                  spacing: 8,
+                  radius: 4,
                 ),
               ),
               const SizedBox(height: 16),
