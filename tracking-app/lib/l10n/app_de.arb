@@ -72,5 +72,7 @@
     "cancel": "Abbrechen",
     "timeEntryDeleted": "Zeiteintrag gelöscht",
     "undo": "Rückgängig",
-    "noTimeEntries": "Keine Zeiteinträge für diesen Zeitraum gefunden"
+    "noTimeEntries": "Keine Zeiteinträge für diesen Zeitraum gefunden",
+    "deleteProjectConfirmation": "Sind Sie sicher, dass Sie dieses Projekt löschen möchten?",
+    "projectDeleted": "Projekt gelöscht"
 }

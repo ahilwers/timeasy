@@ -161,5 +161,7 @@
     "noTimeEntries": "No time entries found for this period",
     "@noTimeEntries": {
         "description": "Message shown when no time entries are available"
-    }
+    },
+    "deleteProjectConfirmation": "Are you sure you want to delete this project?",
+    "projectDeleted": "Project deleted"
 }
