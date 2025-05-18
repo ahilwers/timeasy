@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
+import 'package:timeasy/components/custom_datetime_picker.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 
@@ -140,65 +141,19 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                           Text('${AppLocalizations.of(context)!.start}:',
                               style: TextStyle(fontWeight: FontWeight.bold))
                         ]),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        TextButton(
-                          onPressed: () {
-                            _selectDate(context, _timeEntry!.startTime)
-                                .then((DateTime? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localStartTime =
-                                      _timeEntry!.startTime.toLocal();
-                                  _timeEntry!.startTime = new DateTime(
-                                          picked.year,
-                                          picked.month,
-                                          picked.day,
-                                          localStartTime.hour,
-                                          localStartTime.minute)
-                                      .toUtc();
-                                  // Also set the end time automatically if it's not already set:
-                                  if (_needToSetEndTime()) {
-                                    _timeEntry!.endTime = _timeEntry!.startTime;
-                                  }
-                                });
-                              }
-                            });
-                          },
-                          child: Text(dateFormatter
-                              .format(_timeEntry!.startTime.toLocal())),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            var startTime = TimeOfDay.fromDateTime(
-                                _timeEntry!.startTime.toLocal());
-                            _selectTime(context, startTime)
-                                .then((TimeOfDay? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localStartTime =
-                                      _timeEntry!.startTime.toLocal();
-                                  _timeEntry!.startTime = new DateTime(
-                                          localStartTime.year,
-                                          localStartTime.month,
-                                          localStartTime.day,
-                                          picked.hour,
-                                          picked.minute)
-                                      .toUtc();
-                                  // Also set the end time automatically if it's not already set:
-                                  if (_needToSetEndTime()) {
-                                    _timeEntry!.endTime = _timeEntry!.startTime;
-                                  }
-                                });
-                              }
-                            });
-                          },
-                          child: Text(timeFormatter
-                              .format(_timeEntry!.startTime.toLocal())),
-                        ),
-                      ],
+                    CustomDateTimePicker(
+                      dateTime: _timeEntry!.startTime.toLocal(),
+                      onDateTimeChanged: (DateTime newDateTime) {
+                        setState(() {
+                          _timeEntry!.startTime = newDateTime.toUtc();
+                          // Also set the end time automatically if it's not already set:
+                          if (_needToSetEndTime()) {
+                            _timeEntry!.endTime = _timeEntry!.startTime;
+                          }
+                        });
+                      },
                     ),
+                    SizedBox(height: 16),
                     Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -206,84 +161,44 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                           Text('${AppLocalizations.of(context)!.end}:',
                               style: TextStyle(fontWeight: FontWeight.bold))
                         ]),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        TextButton(
-                          onPressed: () {
-                            var endTime = _timeEntry!.endTime != null
-                                ? _timeEntry!.endTime
-                                : DateTime.now().toUtc();
-                            _selectDate(context, endTime!)
-                                .then((DateTime? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localEndTime = _timeEntry!.endTime != null
-                                      ? _timeEntry!.endTime?.toLocal()
-                                      : DateTime.now();
-                                  _timeEntry!.endTime = new DateTime(
-                                          picked.year,
-                                          picked.month,
-                                          picked.day,
-                                          localEndTime!.hour,
-                                          localEndTime.minute)
-                                      .toUtc();
-                                });
-                              }
-                            });
-                          },
-                          child: Text(_timeEntry!.endTime != null
-                              ? dateFormatter
-                                  .format(_timeEntry!.endTime!.toLocal())
-                              : AppLocalizations.of(context)!.endDate),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            var endTime = TimeOfDay.fromDateTime(
-                                _timeEntry!.endTime != null
-                                    ? _timeEntry!.endTime!.toLocal()
-                                    : DateTime.now());
-                            _selectTime(context, endTime)
-                                .then((TimeOfDay? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localEndTime = _timeEntry!.endTime != null
-                                      ? _timeEntry!.endTime!.toLocal()
-                                      : DateTime.now();
-                                  _timeEntry!.endTime = new DateTime(
-                                          localEndTime.year,
-                                          localEndTime.month,
-                                          localEndTime.day,
-                                          picked.hour,
-                                          picked.minute)
-                                      .toUtc();
-                                });
-                              }
-                            });
-                          },
-                          child: Text(_timeEntry!.endTime != null
-                              ? timeFormatter
-                                  .format(_timeEntry!.endTime!.toLocal())
-                              : AppLocalizations.of(context)!.endTime),
-                        ),
-                      ],
+                    CustomDateTimePicker(
+                      dateTime: _timeEntry!.endTime?.toLocal(),
+                      dateHint: AppLocalizations.of(context)!.endDate,
+                      timeHint: AppLocalizations.of(context)!.endTime,
+                      onDateTimeChanged: (DateTime newDateTime) {
+                        setState(() {
+                          _timeEntry!.endTime = newDateTime.toUtc();
+                        });
+                      },
                     ),
                     SizedBox(height: 24),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: <Widget>[
-                        Text('${AppLocalizations.of(context)!.entryDescription}:',
-                            style: TextStyle(fontWeight: FontWeight.bold))
-                      ]
-                    ),
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                              '${AppLocalizations.of(context)!.entryDescription}:',
+                              style: TextStyle(fontWeight: FontWeight.bold))
+                        ]),
                     SizedBox(height: 8),
                     TextFormField(
                       initialValue: _timeEntry!.description ?? '',
                       decoration: InputDecoration(
                         hintText: AppLocalizations.of(context)!.whatDidYouDo,
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Theme.of(context).inputDecorationTheme.border
+                                    is OutlineInputBorder
+                                ? (Theme.of(context).inputDecorationTheme.border
+                                        as OutlineInputBorder)
+                                    .borderSide
+                                    .color
+                                : Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       ),
                       maxLines: 3,
                       onChanged: (value) {
@@ -300,26 +215,6 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
 
   bool _needToSetEndTime() {
     return (!_endTimeWasEmpty) && (_timeEntry!.endTime == null);
-  }
-
-  Future<DateTime?> _selectDate(
-      BuildContext context, DateTime initialDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2010),
-      lastDate: DateTime(2201),
-    );
-    return picked;
-  }
-
-  Future<TimeOfDay?> _selectTime(
-      BuildContext context, TimeOfDay initialSelectedTime) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: initialSelectedTime,
-    );
-    return picked;
   }
 
   String _getTitle() {
