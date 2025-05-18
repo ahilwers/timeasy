@@ -61,8 +61,8 @@ class MyApp extends StatelessWidget {
         Locale('en', ''),
         Locale('de', ''),
       ],
-      theme: FlexColorScheme.light(colors: timeasyTheme.light).toTheme,
-      darkTheme: FlexColorScheme.dark(colors: timeasyTheme.dark).toTheme,
+      theme: getLightTheme(),
+      darkTheme: getDarkTheme(),
       themeMode: ThemeMode.system,
       home: MainPage(),
     );

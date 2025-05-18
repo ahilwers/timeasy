@@ -129,7 +129,6 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
       return Scaffold(
         appBar: AppBar(
           title: Text(_getTitle()),
-          backgroundColor: Theme.of(context).primaryColor,
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -141,7 +140,10 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
               },
               child: Text(
                 AppLocalizations.of(context)!.save,
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).primaryColor,
+                ),
               ),
             ),
             _projectId != null
@@ -151,7 +153,10 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                     },
                     child: Text(
                       AppLocalizations.of(context)!.delete,
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
                   )
                 : Container(),
