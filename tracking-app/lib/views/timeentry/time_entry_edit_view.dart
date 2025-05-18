@@ -69,13 +69,19 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
             ),
           ),
-          backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.black
+              : Colors.white,
           elevation: 0,
           iconTheme: IconThemeData(
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
           ),
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -94,27 +100,37 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
               ),
             ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white,
             elevation: 0,
             iconTheme: IconThemeData(
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
             ),
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
             centerTitle: true,
-            actions: <Widget>[
-              // Save button with icon
-              IconButton(
-                icon: Icon(
-                  Icons.save,
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+            actions: [
+              // Save button with text
+              TextButton(
+                child: Text(
+                  AppLocalizations.of(context)!.save,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    // Ensure good visibility in both light and dark mode
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
-                tooltip: AppLocalizations.of(context)!.save,
                 onPressed: () {
                   final form = _formEditTimeEntryKey.currentState;
                   if (form!.validate()) {
@@ -142,18 +158,6 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                   }
                 },
               ),
-              // Delete button with icon (only shown when editing an existing time entry)
-              if (_timeEntryId != null)
-                IconButton(
-                  icon: Icon(
-                    Icons.delete,
-                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                  ),
-                  tooltip: AppLocalizations.of(context)!.delete,
-                  onPressed: () {
-                    deleteTimeEntryWithRequest(context);
-                  },
-                ),
             ],
           ),
           body: Container(
@@ -260,42 +264,6 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       _timeEntryRepository.updateTimeEntry(_timeEntry!);
     } else {
       _timeEntryRepository.addTimeEntry(_timeEntry!);
-    }
-  }
-
-  Future<ConfirmAction?> deleteTimeEntryWithRequest(
-      BuildContext context) async {
-    return showDialog<ConfirmAction>(
-      context: context,
-      barrierDismissible: false, // user must tap button for close dialog!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.delete),
-          content: Text(AppLocalizations.of(context)!.deleteTimeEntryRequest),
-          actions: <Widget>[
-            TextButton(
-              child: Text(AppLocalizations.of(context)!.no),
-              onPressed: () {
-                Navigator.of(context).pop(ConfirmAction.CANCEL);
-              },
-            ),
-            TextButton(
-              child: Text(AppLocalizations.of(context)!.yes),
-              onPressed: () {
-                deleteTimeEntry();
-                Navigator.of(context).pop(ConfirmAction.ACCEPT);
-                Navigator.pop(context);
-              },
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  void deleteTimeEntry() {
-    if (_timeEntryId != null) {
-      _timeEntryRepository.deleteTimeEntry(_timeEntry!);
     }
   }
 }
