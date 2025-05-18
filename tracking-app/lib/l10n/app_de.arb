@@ -74,5 +74,8 @@
     "undo": "Rückgängig",
     "noTimeEntries": "Keine Zeiteinträge für diesen Zeitraum gefunden",
     "deleteProjectConfirmation": "Sind Sie sicher, dass Sie dieses Projekt löschen möchten?",
-    "projectDeleted": "Projekt gelöscht"
+    "projectDeleted": "Projekt gelöscht",
+    "notLoggedIn": "Du bist nicht angemeldet.",
+    "loginNow": "Jetzt anmelden",
+    "orLogin": "oder melde dich an"
 }

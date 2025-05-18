@@ -160,8 +160,26 @@
     },
     "noTimeEntries": "No time entries found for this period",
     "@noTimeEntries": {
-        "description": "Message shown when no time entries are available"
+        "description": "Message shown when there are no time entries for a selected period"
     },
     "deleteProjectConfirmation": "Are you sure you want to delete this project?",
-    "projectDeleted": "Project deleted"
+    "@deleteProjectConfirmation": {
+        "description": "Confirmation message for deleting a project"
+    },
+    "projectDeleted": "Project deleted",
+    "@projectDeleted": {
+        "description": "Message shown when a project is deleted"
+    },
+    "notLoggedIn": "You are not logged in.",
+    "@notLoggedIn": {
+        "description": "Message shown when the user is not logged in"
+    },
+    "loginNow": "Login now",
+    "@loginNow": {
+        "description": "Text for the login link"
+    },
+    "orLogin": "or login",
+    "@orLogin": {
+        "description": "Text for the login link when there are no projects"
+    }
 }

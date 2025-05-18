@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
+import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
@@ -13,6 +15,7 @@ import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
+import 'package:timeasy/views/settings/settings_view.dart';
 import 'dart:async';
 
 // Helper function to convert hex color string to Color
@@ -406,6 +409,37 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                 textAlign: TextAlign.center,
                               ),
                             ),
+                            BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                              builder: (context, authState) {
+                                // Only show if not authenticated and there are no projects
+                                if (authState is! AuthenticationAuthenticated && _projects.isEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => SettingsView(),
+                                            fullscreenDialog: true,
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        localizations.orLogin,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context).primaryColor,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink(); // Return empty widget if logged in or has projects
+                              },
+                            ),
                           ],
                         ),
                       );
@@ -557,6 +591,48 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                 ),
               ),
               const SizedBox(height: 16),
+              BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                builder: (context, state) {
+                  // Only show the login reminder if the user is not authenticated
+                  if (state is! AuthenticationAuthenticated) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            localizations.notLoggedIn,
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SettingsView(),
+                                  fullscreenDialog: true,
+                                ),
+                              );
+                            },
+                            child: Text(
+                              localizations.loginNow,
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                decoration: TextDecoration.underline,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink(); // Return empty widget if logged in
+                },
+              ),
               SmoothPageIndicator(
                 controller: _controller,
                 count: _projects.isEmpty ? 1 : _projects.length + 1, // If no projects, just show the add page
