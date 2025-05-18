@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -12,15 +11,7 @@ import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/tools/date_tools.dart';
 import 'package:timeasy/tools/duration_formatter.dart';
-import 'package:timeasy/tools/excel_export.dart';
-import 'package:timeasy/tools/excel_export_allentries.dart';
-import 'package:timeasy/tools/excel_export_onelineperday.dart';
 import 'package:timeasy/views/timeentry/time_entry_edit_view.dart';
-
-enum ExportType {
-  AllEntries,
-  OneLinePerDay,
-}
 
 class TimeEntryListView extends StatelessWidget {
   final Project _project;
@@ -34,11 +25,11 @@ class TimeEntryListView extends StatelessWidget {
       body: BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
         builder: (context, state) {
           Project projectToUse = _project;
-          
+
           if (state is SelectedProjectSet && state.project != null) {
             projectToUse = state.project!;
           }
-          
+
           return DataList(projectToUse);
         },
       ),
@@ -62,11 +53,6 @@ class _DataListState extends State<DataList> {
   DateTimeRange? _currentDateRange;
   final Project _project;
   Locale? locale;
-  String exportMessage = "";
-  String exportDate = "";
-  String exportStart = "";
-  String exportEnd = "";
-  String exportPause = "";
 
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final DurationFormatter _durationFormatter = new DurationFormatter();
@@ -82,11 +68,6 @@ class _DataListState extends State<DataList> {
   @override
   Widget build(BuildContext context) {
     if (timeEntries == null) {
-      exportMessage = AppLocalizations.of(context)!.timesExported;
-      exportDate = AppLocalizations.of(context)!.date;
-      exportStart = AppLocalizations.of(context)!.start;
-      exportEnd = AppLocalizations.of(context)!.end;
-      exportPause = AppLocalizations.of(context)!.pause;
       return Center(
         child: CircularProgressIndicator(),
       );
@@ -107,18 +88,6 @@ class _DataListState extends State<DataList> {
                         Icon(Icons.date_range),
                         SizedBox(width: 8),
                         Text(_getCurrentDateRangeText()),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      _showExportDialog(context);
-                    },
-                    child: Row(
-                      children: [
-                        Icon(Icons.download),
-                        SizedBox(width: 8),
-                        Text(AppLocalizations.of(context)!.export),
                       ],
                     ),
                   ),
@@ -154,7 +123,7 @@ class _DataListState extends State<DataList> {
   _buildTimeEntryList() {
     var dateFormatter = new DateFormat.yMd(locale.toString());
     var timeFormatter = new DateFormat.Hm(locale.toString());
-    
+
     if (timeEntries!.isEmpty) {
       return Center(
         child: Padding(
@@ -166,30 +135,32 @@ class _DataListState extends State<DataList> {
         ),
       );
     }
-    
+
     return ListView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       itemCount: timeEntries!.length,
       itemBuilder: (context, index) {
         final timeEntry = timeEntries![index];
-        final formattedStartDate = dateFormatter.format(timeEntry.startTime.toLocal());
-        final formattedStartTime = timeFormatter.format(timeEntry.startTime.toLocal());
-        
-        final formattedEndDate = timeEntry.endTime != null 
+        final formattedStartDate =
+            dateFormatter.format(timeEntry.startTime.toLocal());
+        final formattedStartTime =
+            timeFormatter.format(timeEntry.startTime.toLocal());
+
+        final formattedEndDate = timeEntry.endTime != null
             ? dateFormatter.format(timeEntry.endTime!.toLocal())
             : "";
-        final formattedEndTime = timeEntry.endTime != null 
+        final formattedEndTime = timeEntry.endTime != null
             ? timeFormatter.format(timeEntry.endTime!.toLocal())
             : "";
-            
+
         // Calculate duration - use current time if endTime is null
         final duration = timeEntry.endTime != null
             ? _durationFormatter.formatDuration(
                 timeEntry.endTime!.difference(timeEntry.startTime))
-            : _durationFormatter.formatDuration(
-                DateTime.now().difference(timeEntry.startTime));
-            
+            : _durationFormatter
+                .formatDuration(DateTime.now().difference(timeEntry.startTime));
+
         return Dismissible(
           key: Key(timeEntry.id ?? index.toString()),
           background: Container(
@@ -218,7 +189,8 @@ class _DataListState extends State<DataList> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: Text(AppLocalizations.of(context)!.deleteTimeEntry),
-                    content: Text(AppLocalizations.of(context)!.deleteTimeEntryConfirmation),
+                    content: Text(AppLocalizations.of(context)!
+                        .deleteTimeEntryConfirmation),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
@@ -244,7 +216,7 @@ class _DataListState extends State<DataList> {
               // Store a copy of the time entry for potential undo
               final deletedTimeEntry = timeEntry;
               final deletedIndex = index;
-              
+
               // Delete the item
               _timeEntryRepository.deleteTimeEntryById(timeEntry.id!).then((_) {
                 setState(() {
@@ -252,13 +224,17 @@ class _DataListState extends State<DataList> {
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(AppLocalizations.of(context)!.timeEntryDeleted),
+                    content:
+                        Text(AppLocalizations.of(context)!.timeEntryDeleted),
                     action: SnackBarAction(
                       label: AppLocalizations.of(context)!.undo,
                       onPressed: () {
                         // Undo deletion
-                        _timeEntryRepository.addTimeEntry(deletedTimeEntry).then((_) {
-                          _loadTimeEntries(_currentDateRange ?? _getInitialDateRange());
+                        _timeEntryRepository
+                            .addTimeEntry(deletedTimeEntry)
+                            .then((_) {
+                          _loadTimeEntries(
+                              _currentDateRange ?? _getInitialDateRange());
                         });
                       },
                     ),
@@ -319,7 +295,8 @@ class _DataListState extends State<DataList> {
                           ),
                       ],
                     ),
-                    if (timeEntry.description != null && timeEntry.description!.isNotEmpty)
+                    if (timeEntry.description != null &&
+                        timeEntry.description!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
@@ -398,39 +375,6 @@ class _DataListState extends State<DataList> {
     return "${AppLocalizations.of(context)!.times} (${_project.name})";
   }
 
-  Future<void> _saveTimeEntries(
-      BuildContext context, ExportType exportType) async {
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-    if (selectedDirectory == null) {
-      return;
-    }
-    var dateRange = _currentDateRange ?? _getInitialDateRange();
-    _exportTimeEntries(context, exportType, selectedDirectory, dateRange);
-  }
-
-  void _exportTimeEntries(BuildContext context, ExportType exportType,
-      String directory, DateTimeRange dateRange) {
-    var filename = _generateFilename(dateRange);
-    ExcelExport? export = null;
-    switch (exportType) {
-      case ExportType.AllEntries:
-        export =
-            ExcelExportAllEntries(directory, filename, dateRange, _project.id);
-        break;
-      case ExportType.OneLinePerDay:
-        export = ExcelExportOneLinePerDay(
-            directory, filename, dateRange, _project.id);
-        break;
-      default:
-    }
-    export?.addTranslation("date", exportDate);
-    export?.addTranslation("start", exportStart);
-    export?.addTranslation("end", exportEnd);
-    export?.addTranslation("pause", exportPause);
-
-    export?.Export().then((value) => showToast(exportMessage));
-  }
-
   String _generateFilename(DateTimeRange dateRange) {
     var fromDate =
         "${dateRange.start.year}-${dateRange.start.month.toString().padLeft(2, '0')}-${dateRange.start.day.toString().padLeft(2, '0')}";
@@ -468,53 +412,5 @@ class _DataListState extends State<DataList> {
       firstDate: DateTime.fromMillisecondsSinceEpoch(0),
       lastDate: dateRange.end,
     ).then((value) => _loadTimeEntries(value ?? dateRange));
-  }
-
-  void _showExportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
-          title: Text('Wähle eine Option'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                  _saveTimeEntries(
-                      context, ExportType.AllEntries); // Call the method
-                },
-                child: Text('Alle Zeiteinträge'),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                  _saveTimeEntries(
-                      context, ExportType.OneLinePerDay); // Call the method
-                },
-                child: Text('Eine Zeile pro Tag'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 }
