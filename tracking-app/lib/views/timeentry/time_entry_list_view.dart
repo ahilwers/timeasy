@@ -71,13 +71,7 @@ class _DataListState extends State<DataList> {
         appBar: ProjectHeader(
           actions: [
             IconButton(
-              icon: Icon(
-                Icons.add,
-                // Ensure the icon is visible in both light and dark mode
-                color: Theme.of(context).brightness == Brightness.light 
-                    ? Colors.black 
-                    : Colors.white,
-              ),
+              icon: Icon(Icons.add),
               onPressed: () => _addOrEditTimeEntry(),
             ),
           ],
@@ -93,13 +87,7 @@ class _DataListState extends State<DataList> {
         appBar: ProjectHeader(
           actions: [
             IconButton(
-              icon: Icon(
-                Icons.add,
-                // Ensure the icon is visible in both light and dark mode
-                color: Theme.of(context).brightness == Brightness.light 
-                    ? Colors.black 
-                    : Colors.white,
-              ),
+              icon: Icon(Icons.add),
               onPressed: () => _addOrEditTimeEntry(),
             ),
           ],
@@ -123,6 +111,39 @@ class _DataListState extends State<DataList> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.weeklyHourSum,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      _calculateTotalHours(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             Expanded(
@@ -436,5 +457,25 @@ class _DataListState extends State<DataList> {
       firstDate: DateTime.fromMillisecondsSinceEpoch(0),
       lastDate: dateRange.end,
     ).then((value) => _loadTimeEntries(value ?? dateRange));
+  }
+
+  String _calculateTotalHours() {
+    if (timeEntries == null || timeEntries!.isEmpty) {
+      return "0:00";
+    }
+
+    Duration totalDuration = Duration.zero;
+
+    for (var entry in timeEntries!) {
+      if (entry.endTime != null) {
+        // For completed entries, use the actual duration
+        totalDuration += entry.endTime!.difference(entry.startTime);
+      } else {
+        // For ongoing entries, calculate duration up to now
+        totalDuration += DateTime.now().difference(entry.startTime);
+      }
+    }
+
+    return _durationFormatter.formatDuration(totalDuration);
   }
 }

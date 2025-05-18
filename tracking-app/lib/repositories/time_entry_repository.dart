@@ -18,7 +18,7 @@ class TimeEntryRepository {
     timeEntry.deleted = true;
     await updateTimeEntry(timeEntry);
   }
-  
+
   // Delete a time entry by ID
   Future<void> deleteTimeEntryById(String id) async {
     final timeEntry = await getTimeEntryById(id);
@@ -84,7 +84,8 @@ class TimeEntryRepository {
         where:
             "${TimeEntry.projectIdColumn} = ? AND ${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ? AND DELETED=0",
         whereArgs: [projectId, startMillis, endMillis],
-        orderBy: TimeEntry.startTimeColumn);
+        orderBy:
+            "${TimeEntry.startTimeColumn} desc, ${TimeEntry.endTimeColumn} desc");
     return queryResult.isNotEmpty
         ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList()
         : [];
