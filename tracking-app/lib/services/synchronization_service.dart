@@ -14,7 +14,6 @@ class SynchronizationService {
   }
 
   Future<void> synchronize() async {
-    await _sendNewestEntries();
     var settings = await _settingsRepository.getSettings();
     var dataRetriever = new SyncDataRetriever(_apiService);
     await dataRetriever
@@ -27,8 +26,6 @@ class SynchronizationService {
   void updateToken(String token) {
     _apiService.updateToken(token);
   }
-
-  Future<void> _sendNewestEntries() async {}
 
   Future<void> _updateLastSyncTimeSettings() async {
     var settings = await _settingsRepository.getSettings();
