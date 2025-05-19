@@ -18,6 +18,7 @@ import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/services/internet_connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
@@ -46,9 +47,13 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  // Global navigator key for accessing context anywhere
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'timeasy',
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
@@ -87,6 +92,19 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     super.initState();
     initializeDateFormatting();
     WidgetsBinding.instance.addObserver(this);
+    
+    // Initialize the EventSyncService with the available blocs
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        EventSyncService().initialize(
+          authBloc: context.read<AuthenticationBloc>(),
+          internetBloc: context.read<InternetConnectionBloc>(),
+          syncBloc: context.read<SynchronizationBloc>(),
+          initialToken: "",
+        );
+      }
+    });
+    
     _internetConnectionService = InternetConnectionService(
       onConnectionChanged: (bool hasInternet) {
         _setConnectionState(hasInternet);
@@ -170,9 +188,11 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       body: BlocListener<AuthenticationBloc, AuthenticationState>(
         listener: (context, state) {
           final backgroundSyncService = context.read<BackgroundSyncService>();
+          final eventSyncService = EventSyncService();
           if (state is AuthenticationAuthenticated) {
             backgroundSyncService.updateToken(state.credentials.accessToken!);
             backgroundSyncService.startSync();
+            eventSyncService.updateToken(state.credentials.accessToken!);
           } else if (state is AuthenticationError) {
             backgroundSyncService.stopSync();
           }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -14,9 +16,9 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
 import 'package:timeasy/views/settings/settings_view.dart';
-import 'dart:async';
 
 // Helper function to convert hex color string to Color
 Color hexToColor(String hexString) {
@@ -78,7 +80,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     if (_currentState == AppState.RUNNING && _currentOpenTimeEntry != null) {
       // Cancel the previous timer if it exists
       _debounceTimer?.cancel();
-      
+
       // Start a new timer
       _debounceTimer = Timer(Duration(milliseconds: 500), () {
         _saveDescription();
@@ -90,11 +92,13 @@ class _ProjectSwiperState extends State<ProjectSwiper>
   Future<void> _saveDescription() async {
     if (_currentOpenTimeEntry != null) {
       final description = _descriptionController.text.trim();
-      
+
       // Only save if the description has changed
       if (_currentOpenTimeEntry!.description != description) {
         _currentOpenTimeEntry!.description = description;
         await _timeEntryRepository.updateTimeEntry(_currentOpenTimeEntry!);
+
+        EventSyncService().synchronizeOnEvent();
       }
     }
   }
@@ -105,7 +109,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     // When the widget is rebuilt (e.g., when switching tabs), update the page
     if (!_isLoading && _projects.isNotEmpty) {
       final selectedProjectState = context.read<SelectedProjectBloc>().state;
-      if (selectedProjectState is SelectedProjectSet && selectedProjectState.project != null) {
+      if (selectedProjectState is SelectedProjectSet &&
+          selectedProjectState.project != null) {
         final selectedProject = selectedProjectState.project!;
         final index = _projects.indexWhere((p) => p.id == selectedProject.id);
         if (index != -1 && index != _currentPage) {
@@ -139,12 +144,14 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         // We need to use a small delay to ensure the PageView is built
         Future.delayed(Duration(milliseconds: 100), () {
           if (_controller.hasClients) {
-            _controller.jumpToPage(0); // The "add new project" page will be at index 0
+            _controller
+                .jumpToPage(0); // The "add new project" page will be at index 0
           }
         });
       } else {
         // Find the index of the current project
-        final currentProject = context.read<SelectedProjectBloc>().state.project;
+        final currentProject =
+            context.read<SelectedProjectBloc>().state.project;
         if (currentProject != null) {
           final index = _projects.indexWhere((p) => p.id == currentProject.id);
           if (index != -1) {
@@ -169,7 +176,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
   }
 
   void _loadSuggestions(String projectId) async {
-    final suggestions = await _timeEntryRepository.getLastUniqueDescriptions(projectId);
+    final suggestions =
+        await _timeEntryRepository.getLastUniqueDescriptions(projectId);
     setState(() {
       _suggestions = suggestions;
     });
@@ -190,7 +198,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
             _currentState = AppState.RUNNING;
             _buttonAnimationController.forward();
             _currentOpenTimeEntry = entry;
-            
+
             // Update the description field with the current time entry's description
             if (entry.description != null && entry.description!.isNotEmpty) {
               _descriptionController.text = entry.description!;
@@ -229,7 +237,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
 
     // Add the time entry
     await _timeEntryRepository.addTimeEntry(timeEntry);
-    
+
     // Store reference to the current open time entry
     _currentOpenTimeEntry = timeEntry;
 
@@ -239,6 +247,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       // Don't clear the description field anymore
       // _descriptionController.clear();
     });
+
+    EventSyncService().synchronizeOnEvent();
   }
 
   void _stopTiming() async {
@@ -253,6 +263,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       _currentState = AppState.STOPPED;
       _buttonAnimationController.reverse();
     });
+
+    EventSyncService().synchronizeOnEvent();
   }
 
   void _toggleState() {
@@ -280,19 +292,19 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     if (result != null && result is Project) {
       // Reload projects
       await _loadProjects();
-      
+
       // Explicitly set the newly created project in the SelectedProjectBloc
       context.read<SelectedProjectBloc>().add(
-        SetSelectedProjectEvent(result),
-      );
-      
+            SetSelectedProjectEvent(result),
+          );
+
       // Find the index of the new project and jump to it
       final index = _projects.indexWhere((p) => p.id == result.id);
       if (index != -1) {
         setState(() {
           _currentPage = index;
         });
-        
+
         if (_controller.hasClients) {
           _controller.jumpToPage(index);
         }
@@ -318,9 +330,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         : null;
 
     // Get project color for UI elements
-    final projectColor = project != null
-        ? hexToColor(project.color)
-        : Colors.grey;
+    final projectColor =
+        project != null ? hexToColor(project.color) : Colors.grey;
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
@@ -337,7 +348,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
               Expanded(
                 child: PageView.builder(
                   controller: _controller,
-                  itemCount: _projects.isEmpty ? 1 : _projects.length + 1, // If no projects, just show the add page
+                  itemCount: _projects.isEmpty ? 1 : _projects.length + 1,
+                  // If no projects, just show the add page
                   onPageChanged: (int page) {
                     setState(() {
                       _currentPage = page;
@@ -399,7 +411,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                             ),
                             const SizedBox(height: 30),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 40),
                               child: Text(
                                 localizations.addNewProject,
                                 style: TextStyle(
@@ -409,10 +422,12 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                 textAlign: TextAlign.center,
                               ),
                             ),
-                            BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                            BlocBuilder<AuthenticationBloc,
+                                AuthenticationState>(
                               builder: (context, authState) {
                                 // Only show if not authenticated and there are no projects
-                                if (authState is! AuthenticationAuthenticated && _projects.isEmpty) {
+                                if (authState is! AuthenticationAuthenticated &&
+                                    _projects.isEmpty) {
                                   return Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: GestureDetector(
@@ -420,7 +435,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => SettingsView(),
+                                            builder: (context) =>
+                                                SettingsView(),
                                             fullscreenDialog: true,
                                           ),
                                         );
@@ -437,7 +453,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                     ),
                                   );
                                 }
-                                return const SizedBox.shrink(); // Return empty widget if logged in or has projects
+                                return const SizedBox
+                                    .shrink(); // Return empty widget if logged in or has projects
                               },
                             ),
                           ],
@@ -478,7 +495,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                     child: index == _currentPage
                                         ? AnimatedIcon(
                                             icon: AnimatedIcons.play_pause,
-                                            progress: _buttonAnimationController,
+                                            progress:
+                                                _buttonAnimationController,
                                             color: Colors.white,
                                             size: 50,
                                           )
@@ -496,13 +514,14 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 40),
                             child: Autocomplete<String>(
-                              optionsBuilder: (TextEditingValue textEditingValue) {
+                              optionsBuilder:
+                                  (TextEditingValue textEditingValue) {
                                 if (textEditingValue.text.isEmpty) {
                                   return const Iterable<String>.empty();
                                 }
                                 return _suggestions.where((String option) {
-                                  return option.toLowerCase()
-                                      .contains(textEditingValue.text.toLowerCase());
+                                  return option.toLowerCase().contains(
+                                      textEditingValue.text.toLowerCase());
                                 });
                               },
                               onSelected: (String selection) {
@@ -515,11 +534,13 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                 VoidCallback onFieldSubmitted,
                               ) {
                                 // Sync the autocomplete controller with our description controller
-                                fieldController.text = _descriptionController.text;
+                                fieldController.text =
+                                    _descriptionController.text;
                                 fieldController.addListener(() {
-                                  _descriptionController.text = fieldController.text;
+                                  _descriptionController.text =
+                                      fieldController.text;
                                 });
-                                
+
                                 return TextField(
                                   controller: fieldController,
                                   focusNode: fieldFocusNode,
@@ -529,11 +550,14 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                   decoration: InputDecoration(
                                     hintText: localizations.whatAreYouDoingNow,
                                     hintStyle: TextStyle(
-                                      color: isDark ? Colors.white70 : Colors.black54,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black54,
                                     ),
                                     filled: true,
-                                    fillColor:
-                                        isDark ? Colors.white12 : Colors.black12,
+                                    fillColor: isDark
+                                        ? Colors.white12
+                                        : Colors.black12,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide.none,
@@ -550,19 +574,24 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                   alignment: Alignment.topLeft,
                                   child: Material(
                                     elevation: 4.0,
-                                    color: isDark ? Colors.grey[800] : Colors.white,
+                                    color: isDark
+                                        ? Colors.grey[800]
+                                        : Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Container(
                                       width: 300,
-                                      constraints: BoxConstraints(maxHeight: 200),
+                                      constraints:
+                                          BoxConstraints(maxHeight: 200),
                                       child: ListView.builder(
                                         padding: EdgeInsets.zero,
                                         shrinkWrap: true,
                                         itemCount: options.length,
-                                        itemBuilder: (BuildContext context, int index) {
-                                          final String option = options.elementAt(index);
+                                        itemBuilder:
+                                            (BuildContext context, int index) {
+                                          final String option =
+                                              options.elementAt(index);
                                           return InkWell(
                                             onTap: () {
                                               onSelected(option);
@@ -571,7 +600,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                               title: Text(
                                                 option,
                                                 style: TextStyle(
-                                                  color: isDark ? Colors.white : Colors.black,
+                                                  color: isDark
+                                                      ? Colors.white
+                                                      : Colors.black,
                                                 ),
                                               ),
                                             ),
@@ -630,12 +661,14 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                       ),
                     );
                   }
-                  return const SizedBox.shrink(); // Return empty widget if logged in
+                  return const SizedBox
+                      .shrink(); // Return empty widget if logged in
                 },
               ),
               SmoothPageIndicator(
                 controller: _controller,
-                count: _projects.isEmpty ? 1 : _projects.length + 1, // If no projects, just show the add page
+                count: _projects.isEmpty ? 1 : _projects.length + 1,
+                // If no projects, just show the add page
                 effect: WormEffect(
                   dotHeight: 8,
                   dotWidth: 10,
