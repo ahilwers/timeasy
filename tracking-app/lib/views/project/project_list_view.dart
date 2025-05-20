@@ -3,6 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
 
 class ProjectListView extends StatelessWidget {
@@ -144,6 +145,10 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
                 setState(() {
                   projects!.removeAt(deletedIndex);
                 });
+                
+                // Trigger synchronization after deleting a project
+                EventSyncService().synchronizeOnEvent();
+                
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(AppLocalizations.of(context)!.projectDeleted),

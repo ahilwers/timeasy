@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 
 enum ConfirmAction { CANCEL, ACCEPT }
 
@@ -31,6 +32,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
   String? _projectId;
   Project? _project;
   final ProjectRepository _projectRepository = new ProjectRepository();
+  final EventSyncService _eventSyncService = new EventSyncService();
   final _formEditProjectKey = GlobalKey<FormState>();
 
   // Color options for the project
@@ -285,5 +287,6 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     } else {
       _projectRepository.addProject(_project!);
     }
+    EventSyncService().synchronizeOnEvent();
   }
 }

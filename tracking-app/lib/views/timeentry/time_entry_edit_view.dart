@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:timeasy/components/custom_datetime_picker.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 
 enum ConfirmAction { CANCEL, ACCEPT }
 
@@ -255,5 +256,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     } else {
       _timeEntryRepository.addTimeEntry(_timeEntry!);
     }
+    // Trigger synchronization after saving a time entry
+    EventSyncService().synchronizeOnEvent();
   }
 }

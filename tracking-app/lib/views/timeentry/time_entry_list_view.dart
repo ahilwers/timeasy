@@ -9,6 +9,7 @@ import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/tools/date_tools.dart';
 import 'package:timeasy/tools/duration_formatter.dart';
 import 'package:timeasy/views/timeentry/time_entry_edit_view.dart';
@@ -267,6 +268,10 @@ class _DataListState extends State<DataList> {
                 setState(() {
                   timeEntries!.removeAt(index);
                 });
+                
+                // Trigger synchronization after deleting a time entry
+                EventSyncService().synchronizeOnEvent();
+                
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content:

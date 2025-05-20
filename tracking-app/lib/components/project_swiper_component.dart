@@ -63,6 +63,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     );
     _descriptionController.addListener(_onDescriptionChanged);
     _loadProjects();
+    // Trigger synchronization when the component is opened
+    EventSyncService().synchronizeOnEvent();
   }
 
   @override
@@ -309,9 +311,12 @@ class _ProjectSwiperState extends State<ProjectSwiper>
           _controller.jumpToPage(index);
         }
       }
+      
+      // Trigger synchronization after creating a new project
+      EventSyncService().synchronizeOnEvent();
     } else {
       // User canceled, just reload projects
-      _loadProjects();
+      await _loadProjects();
     }
   }
 
