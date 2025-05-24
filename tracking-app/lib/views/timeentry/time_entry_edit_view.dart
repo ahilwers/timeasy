@@ -256,6 +256,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     } else {
       _timeEntryRepository.addTimeEntry(_timeEntry!);
     }
+    
     // Trigger synchronization after saving a time entry
     EventSyncService().synchronizeOnEvent();
   }

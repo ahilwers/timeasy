@@ -64,7 +64,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     _descriptionController.addListener(_onDescriptionChanged);
     _loadProjects();
     // Trigger synchronization when the component is opened
-    EventSyncService().synchronizeOnEvent();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      EventSyncService().synchronizeOnEvent();
+    });
   }
 
   @override

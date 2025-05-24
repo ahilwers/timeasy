@@ -63,12 +63,19 @@ class EventSyncService {
     return _internetBloc!.state is InternetConnectionConnected;
   }
 
+  bool isInitialized() {
+    return _isInitialized;
+  }
+
   /// Triggers synchronization if the user is authenticated and has internet connection.
   /// This method is designed to be called when data is changed and a manual synchronization
   /// needs to be triggered.
   /// It runs synchronization in the background and doesn't block the UI.
   Future<void> synchronizeOnEvent() async {
-    _ensureInitialized();
+    if (!_isInitialized) {
+      return;
+    }
+
     if (!isAuthenticated()) {
       return;
     }

@@ -287,6 +287,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     } else {
       _projectRepository.addProject(_project!);
     }
+    
     EventSyncService().synchronizeOnEvent();
   }
 }
