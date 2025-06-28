@@ -49,7 +49,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 	}
 
 	var syncEntries SyncEntries
-	entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, time.UnixMilli(unixTime))
+	entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, handler.parseTimestamp(unixTime))
 	for _, entry := range entries {
 		changeType := CHANGED
 		changeTime := entry.UpdatedAt
@@ -77,7 +77,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
 
-	projects, err := handler.syncUsecase.GetChangedProjects(userId, time.UnixMilli(unixTime))
+	projects, err := handler.syncUsecase.GetChangedProjects(userId, handler.parseTimestamp(unixTime))
 	for _, project := range projects {
 		changeType := CHANGED
 		changeTime := project.UpdatedAt
@@ -108,6 +108,13 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, syncEntries)
+}
+
+func (handler *syncHandler) parseTimestamp(timestamp int64) time.Time {
+	if timestamp > 1e12 {
+		return time.UnixMilli(timestamp)
+	}
+	return time.Unix(timestamp, 0)
 }
 
 func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
