@@ -268,10 +268,10 @@ class _DataListState extends State<DataList> {
                 setState(() {
                   timeEntries!.removeAt(index);
                 });
-                
+
                 // Trigger synchronization after deleting a time entry
-                EventSyncService().synchronizeOnEvent();
-                
+                EventSyncService().sendDataToServer();
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content:

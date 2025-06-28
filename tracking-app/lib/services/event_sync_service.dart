@@ -68,30 +68,50 @@ class EventSyncService {
   }
 
   /// Triggers synchronization if the user is authenticated and has internet connection.
-  /// This method is designed to be called when data is changed and a manual synchronization
-  /// needs to be triggered.
   /// It runs synchronization in the background and doesn't block the UI.
   Future<void> synchronizeOnEvent() async {
-    if (!_isInitialized) {
-      return;
-    }
-
-    if (!isAuthenticated()) {
-      return;
-    }
-    if (!isConnected()) {
-      return;
-    }
-    if (isSyncing()) {
+    if (!canSync()) {
       return;
     }
     _syncBloc!.add(SynchonizationStartEvent());
     try {
-      await _syncService!.synchronize();
-      _syncBloc!.add(SynchronizationSuccessEvent());
+      var retrieveResult = await _syncService!.synchronize();
+      _syncBloc!.add(SynchronizationSuccessEvent(retrieveResult));
     } catch (e) {
       _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
     }
+  }
+
+  /// Sends the changed local data to the server if the user is authenticated and has internet connection.
+  /// This method is designed to be called when data is changed and a manual synchronization
+  /// needs to be triggered.
+  /// It runs synchronization in the background and doesn't block the UI.
+  Future<void> sendDataToServer() async {
+    if (!canSync()) {
+      return;
+    }
+    try {
+      await _syncService!.sendChangesToServer();
+    } catch (e) {
+      _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
+    }
+  }
+
+  bool canSync() {
+    if (!_isInitialized) {
+      return false;
+    }
+
+    if (!isAuthenticated()) {
+      return false;
+    }
+    if (!isConnected()) {
+      return false;
+    }
+    if (isSyncing()) {
+      return false;
+    }
+    return true;
   }
 
   void _ensureInitialized() {

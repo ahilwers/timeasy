@@ -43,12 +43,12 @@ class BackgroundSyncService {
     if (isSyncing()) {
       return;
     }
-    
+
     _synchronizationBloc.add(SynchonizationStartEvent());
-    
+
     try {
-      await _syncService.synchronize();
-      _synchronizationBloc.add(SynchronizationSuccessEvent());
+      var retrieveResult = await _syncService.synchronize();
+      _synchronizationBloc.add(SynchronizationSuccessEvent(retrieveResult));
     } catch (e) {
       _synchronizationBloc.add(SynchronizationErrorEvent(e.toString()));
     }

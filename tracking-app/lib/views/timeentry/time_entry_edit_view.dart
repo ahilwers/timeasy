@@ -143,7 +143,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                       ScaffoldMessenger.of(context)
                           .showSnackBar(SnackBar(content: Text(errorMessage)));
                     } else {
-                      _saveProject(form);
+                      _saveTimeEntry(form);
                       Navigator.pop(context);
                     }
                   }
@@ -249,15 +249,15 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     }
   }
 
-  void _saveProject(FormState form) {
+  void _saveTimeEntry(FormState form) {
     form.save();
     if (_timeEntryId != null) {
       _timeEntryRepository.updateTimeEntry(_timeEntry!);
     } else {
       _timeEntryRepository.addTimeEntry(_timeEntry!);
     }
-    
+
     // Trigger synchronization after saving a time entry
-    EventSyncService().synchronizeOnEvent();
+    EventSyncService().sendDataToServer();
   }
 }

@@ -8,6 +8,7 @@ import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
+import 'package:timeasy/tools/retrieve_changes_result.dart';
 
 class SyncDataRetriever {
   final SynchronizationApiService _apiService;
@@ -17,9 +18,12 @@ class SyncDataRetriever {
 
   SyncDataRetriever(this._apiService) {}
 
-  Future<void> retrieveNewestEntries(DateTime? changedAfter) async {
+  Future<RetrieveChangesResult> retrieveNewestEntries(
+      DateTime? changedAfter) async {
     var syncData = await _apiService.getChangedData(changedAfter);
     await _saveEntries(syncData);
+    return new RetrieveChangesResult(
+        syncData.projects.isNotEmpty, syncData.timeEntries.isNotEmpty);
   }
 
   Future<void> _saveEntries(SyncData syncData) async {
@@ -28,7 +32,7 @@ class SyncDataRetriever {
   }
 
   Future<void> _saveTimeEntries(List<TimeEntrySyncData> syncData) async {
-    DateTime? latestUpdateTime = null;
+    DateTime? latestUpdateTime = await getLatestRemoteTimeEntryTimestamp();
     for (var entry in syncData) {
       if (latestUpdateTime == null ||
           entry.changeTimestamp.isAfter(latestUpdateTime)) {
@@ -74,7 +78,7 @@ class SyncDataRetriever {
   }
 
   Future<void> _saveProjects(List<ProjectSyncData> syncData) async {
-    DateTime? latestUpdateTime = null;
+    DateTime? latestUpdateTime = await getLatestRemoteProjectTimestamp();
     for (var project in syncData) {
       if (latestUpdateTime == null ||
           project.changeTimestamp.isAfter(latestUpdateTime)) {
@@ -127,5 +131,15 @@ class SyncDataRetriever {
     var settings = await _settingsRepository.getSettings();
     settings.latestRemoteProjectTimestamp = latestUpdateTime;
     await _settingsRepository.saveSettings(settings);
+  }
+
+  Future<DateTime?> getLatestRemoteTimeEntryTimestamp() async {
+    var settings = await _settingsRepository.getSettings();
+    return settings.latestRemoteTimeEntryTimestamp;
+  }
+
+  Future<DateTime?> getLatestRemoteProjectTimestamp() async {
+    var settings = await _settingsRepository.getSettings();
+    return settings.latestRemoteProjectTimestamp;
   }
 }

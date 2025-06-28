@@ -94,16 +94,18 @@ func (repo *gormSyncRepository) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry
 }
 
 func (repo *gormSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error) {
+	startTime := sinceWhen.Add(time.Millisecond) // need to add 1ms because times are stored in microseconds
 	var updatedEntries []model.TimeEntry
-	if err := repo.db.Unscoped().Order("start_time desc").Order("end_time desc").Find(&updatedEntries, "user_id=? AND (updated_at >= ? OR created_at >= ? OR deleted_at >= ?)", userId, sinceWhen, sinceWhen, sinceWhen).Error; err != nil {
+	if err := repo.db.Unscoped().Order("start_time desc").Order("end_time desc").Find(&updatedEntries, "user_id=? AND (updated_at >= ? OR created_at >= ? OR deleted_at >= ?)", userId, startTime, startTime, startTime).Error; err != nil {
 		return nil, err
 	}
 	return updatedEntries, nil
 }
 
 func (repo *gormSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error) {
+	startTime := sinceWhen.Add(time.Millisecond) // need to add 1ms because times are stored in microseconds
 	var updatedProjects []model.Project
-	if err := repo.db.Unscoped().Order("name").Find(&updatedProjects, "user_id=? AND (updated_at >= ? OR created_at >= ? OR deleted_at >= ?)", userId, sinceWhen, sinceWhen, sinceWhen).Error; err != nil {
+	if err := repo.db.Unscoped().Order("name").Find(&updatedProjects, "user_id=? AND (updated_at >= ? OR created_at >= ? OR deleted_at >= ?)", userId, startTime, startTime, startTime).Error; err != nil {
 		return nil, err
 	}
 	return updatedProjects, nil

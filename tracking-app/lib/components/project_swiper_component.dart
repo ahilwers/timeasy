@@ -79,30 +79,23 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     super.dispose();
   }
 
-  // This method is called whenever the text changes
   void _onDescriptionChanged() {
     if (_currentState == AppState.RUNNING && _currentOpenTimeEntry != null) {
-      // Cancel the previous timer if it exists
       _debounceTimer?.cancel();
-
-      // Start a new timer
       _debounceTimer = Timer(Duration(milliseconds: 500), () {
         _saveDescription();
       });
     }
   }
 
-  // Save the description to the current open time entry
   Future<void> _saveDescription() async {
     if (_currentOpenTimeEntry != null) {
       final description = _descriptionController.text.trim();
-
-      // Only save if the description has changed
       if (_currentOpenTimeEntry!.description != description) {
         _currentOpenTimeEntry!.description = description;
         await _timeEntryRepository.updateTimeEntry(_currentOpenTimeEntry!);
 
-        EventSyncService().synchronizeOnEvent();
+        EventSyncService().sendDataToServer();
       }
     }
   }
@@ -248,11 +241,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     setState(() {
       _currentState = AppState.RUNNING;
       _buttonAnimationController.forward();
-      // Don't clear the description field anymore
-      // _descriptionController.clear();
     });
 
-    EventSyncService().synchronizeOnEvent();
+    EventSyncService().sendDataToServer();
   }
 
   void _stopTiming() async {
@@ -268,7 +259,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       _buttonAnimationController.reverse();
     });
 
-    EventSyncService().synchronizeOnEvent();
+    EventSyncService().sendDataToServer();
   }
 
   void _toggleState() {
@@ -292,9 +283,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       ),
     );
 
-    // Check if a project was returned (user clicked Save)
     if (result != null && result is Project) {
-      // Reload projects
       await _loadProjects();
 
       // Explicitly set the newly created project in the SelectedProjectBloc
@@ -313,12 +302,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
           _controller.jumpToPage(index);
         }
       }
-      
-      // Trigger synchronization after creating a new project
-      EventSyncService().synchronizeOnEvent();
-    } else {
-      // User canceled, just reload projects
-      await _loadProjects();
     }
   }
 
@@ -346,7 +329,11 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         child: BlocListener<SynchronizationBloc, SynchronizationState>(
           listener: (context, state) {
             if (state is SynchronizationSuccess) {
-              _loadProjects();
+              if (state.retrieveChangesResult.projectsChanged) {
+                _loadProjects();
+              } else if (state.retrieveChangesResult.timeEntriesChanged) {
+                _checkTimingStatus();
+              }
             }
           },
           child: Column(
@@ -356,7 +343,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                 child: PageView.builder(
                   controller: _controller,
                   itemCount: _projects.isEmpty ? 1 : _projects.length + 1,
-                  // If no projects, just show the add page
                   onPageChanged: (int page) {
                     setState(() {
                       _currentPage = page;

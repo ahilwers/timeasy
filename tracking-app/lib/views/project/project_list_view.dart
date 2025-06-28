@@ -28,8 +28,12 @@ class ProjectListView extends StatelessWidget {
                 ),
               ).then((_) {
                 // Refresh the project list when returning from edit view
-                if (context.findAncestorStateOfType<_ProjectListWidgetState>() != null) {
-                  context.findAncestorStateOfType<_ProjectListWidgetState>()!._loadProjects();
+                if (context
+                        .findAncestorStateOfType<_ProjectListWidgetState>() !=
+                    null) {
+                  context
+                      .findAncestorStateOfType<_ProjectListWidgetState>()!
+                      ._loadProjects();
                 }
               });
             },
@@ -84,7 +88,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
       itemCount: projects!.length,
       itemBuilder: (context, index) {
         final project = projects![index];
-        
+
         return Dismissible(
           key: Key(project.id ?? index.toString()),
           background: Container(
@@ -113,7 +117,8 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: Text(AppLocalizations.of(context)!.delete),
-                    content: Text(AppLocalizations.of(context)!.deleteProjectConfirmation),
+                    content: Text(AppLocalizations.of(context)!
+                        .deleteProjectConfirmation),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
@@ -145,10 +150,10 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
                 setState(() {
                   projects!.removeAt(deletedIndex);
                 });
-                
+
                 // Trigger synchronization after deleting a project
-                EventSyncService().synchronizeOnEvent();
-                
+                EventSyncService().sendDataToServer();
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(AppLocalizations.of(context)!.projectDeleted),
