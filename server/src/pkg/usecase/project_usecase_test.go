@@ -3,14 +3,12 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"github.com/gofrs/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 	"timeasy-server/pkg/domain/model"
-	"timeasy-server/pkg/test"
-
-	"github.com/gofrs/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_projectUsecase_AddProject(t *testing.T) {
@@ -33,8 +31,8 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	err = usecaseTest.ProjectUsecase.AddProject(&prj)
 	assert.Nil(t, err)
 
-	var projectFromDb model.Project
-	if err := test.DB.First(&projectFromDb, prj.ID).Error; err != nil {
+	projectFromDb, err := usecaseTest.ProjectUsecase.GetProjectById(prj.ID)
+	if err != nil {
 		t.Errorf("project could not be retrieved: %s", err)
 	}
 	assert.Equal(t, prj.Name, projectFromDb.Name)

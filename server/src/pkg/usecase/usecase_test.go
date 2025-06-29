@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 	"testing"
-	"timeasy-server/pkg/database"
+	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/test"
 
 	"github.com/gofrs/uuid"
@@ -39,17 +39,17 @@ func (u *UsecaseTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 }
 
 func (u *UsecaseTest) initUsecases() {
-	teamRepo := database.NewGormTeamRepository(test.DB)
+	teamRepo := postgresql.NewPostgreSQLTeamRepository(test.Database.DB)
 	u.TeamUsecase = NewTeamUsecase(teamRepo)
 
-	projectRepo := database.NewGormProjectRepository(test.DB, teamRepo)
+	projectRepo := postgresql.NewPostgreSQLProjectRepository(test.Database.DB, teamRepo)
 	u.ProjectUsecase = NewProjectUsecase(projectRepo, u.TeamUsecase)
 
-	timeEntryRepo := database.NewGormTimeEntryRepository(test.DB)
+	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
 	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase)
 
-	syncRepo := database.NewGormSyncRepository(test.DB)
-	u.SyncUsecase = NewSyncUsecase(syncRepo)
+	//syncRepo := database.NewGormSyncRepository(test.DB)
+	//u.SyncUsecase = NewSyncUsecase(syncRepo)
 }
 
 func GetTestUserId(t *testing.T) uuid.UUID {
