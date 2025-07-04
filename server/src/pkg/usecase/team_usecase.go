@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"fmt"
+	"errors"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -47,7 +47,7 @@ func (usecase *teamUsecase) AddTeam(team *model.Team, ownerId uuid.UUID) error {
 func (usecase *teamUsecase) GetTeamById(id uuid.UUID) (*model.Team, error) {
 	team, err := usecase.repo.GetTeamById(id)
 	if err != nil {
-		return nil, NewEntityNotFoundError(fmt.Sprintf("team with id %v not found", id))
+		return nil, usecase.getError(err)
 	}
 	return team, nil
 }
@@ -65,7 +65,22 @@ func (usecase *teamUsecase) DeleteTeam(id uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	return usecase.repo.DeleteTeam(team)
+	tx, err := usecase.repo.BeginTransaction()
+	if err != nil {
+		return err
+	}
+	err = usecase.repo.DeleteAllUserAssignmentsOfTeam(team.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = usecase.repo.DeleteTeam(team, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
 }
 
 func (usecase *teamUsecase) GetAllTeams() ([]model.Team, error) {
@@ -93,10 +108,9 @@ func (usecase *teamUsecase) AddUserToTeam(userId uuid.UUID, team *model.Team, ro
 	_, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
 	// if this throws no error the assignment already exists:
 	if err == nil {
-		return nil, NewEntityExistsError(fmt.Sprintf("an assignment between user %v and team %v already exists", userId, team.ID))
+		return nil, usecase.getError(err)
 	}
 
-	// If no roles a re given add the user role:
 	if len(roles) == 0 {
 		roles = append(roles, model.RoleUser)
 	}
@@ -118,7 +132,7 @@ func (usecase *teamUsecase) AddUserToTeam(userId uuid.UUID, team *model.Team, ro
 func (usecase *teamUsecase) DeleteUserFromTeam(userId uuid.UUID, team *model.Team) error {
 	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("assignment between user %v and team %v not found", userId, team.ID))
+		return usecase.getError(err)
 	}
 	err = usecase.repo.DeleteUserTeamAssignment(teamAssignment)
 	if err != nil {
@@ -130,7 +144,7 @@ func (usecase *teamUsecase) DeleteUserFromTeam(userId uuid.UUID, team *model.Tea
 func (usecase *teamUsecase) UpdateUserRolesInTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) error {
 	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("assignment between user %v and team %v not found", userId, team.ID))
+		return usecase.getError(err)
 	}
 	teamAssignment.Roles = roles
 	err = usecase.repo.UpdateUserTeamAssignment(teamAssignment)
@@ -155,4 +169,11 @@ func (usecase *teamUsecase) hasRole(roles model.RoleList, role string) bool {
 		}
 	}
 	return false
+}
+
+func (usecase *teamUsecase) getError(err error) error {
+	if errors.Is(err, repository.ErrEntityNotFound) {
+		return NewEntityNotFoundError(err.Error())
+	}
+	return err
 }

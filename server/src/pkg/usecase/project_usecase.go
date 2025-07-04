@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"fmt"
+	"errors"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -47,7 +47,7 @@ func (pu *projectUsecase) UpdateProject(project *model.Project) error {
 	}
 	_, err := pu.GetProjectById(project.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("project with id %v does not exist", project.ID))
+		return pu.getError(err)
 	}
 	return pu.repo.UpdateProject(project)
 }
@@ -55,7 +55,7 @@ func (pu *projectUsecase) UpdateProject(project *model.Project) error {
 func (pu *projectUsecase) DeleteProject(id uuid.UUID) error {
 	project, err := pu.GetProjectById(id)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("project with id %v does not exist", id))
+		return pu.getError(err)
 	}
 	return pu.repo.DeleteProject(project)
 }
@@ -71,13 +71,20 @@ func (pu *projectUsecase) GetAllProjectsOfUser(userId uuid.UUID) ([]model.Projec
 func (pu *projectUsecase) AssignProjectToTeam(project *model.Project, team *model.Team) error {
 	_, err := pu.GetProjectById(project.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("project with id %v does not exist", project.ID))
+		return pu.getError(err)
 	}
 	_, err = pu.teamUsecase.GetTeamById(team.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("team with id %v does not exist", team.ID))
+		return pu.getError(err)
 	}
 	project.TeamID = &team.ID
 	err = pu.UpdateProject(project)
+	return err
+}
+
+func (usecase *projectUsecase) getError(err error) error {
+	if errors.Is(err, repository.ErrEntityNotFound) {
+		return NewEntityNotFoundError(err.Error())
+	}
 	return err
 }

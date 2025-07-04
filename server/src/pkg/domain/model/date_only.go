@@ -25,6 +25,24 @@ func (d DateOnly) IsZero() bool {
 	return time.Time(d).IsZero()
 }
 
+func (d DateOnly) Equal(other DateOnly) bool {
+	return d.Year() == other.Year() &&
+		d.Month() == other.Month() &&
+		d.Day() == other.Day()
+}
+
+func (d DateOnly) Year() int {
+	return time.Time(d).Year()
+}
+
+func (d DateOnly) Month() time.Month {
+	return time.Time(d).Month()
+}
+
+func (d DateOnly) Day() int {
+	return time.Time(d).Day()
+}
+
 // MarshalJSON formats the date as "YYYY-MM-DD"
 func (d DateOnly) MarshalJSON() ([]byte, error) {
 	t := time.Time(d)

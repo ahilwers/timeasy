@@ -32,8 +32,8 @@ create table public.time_entries
   project_id  uuid
     constraint fk_time_entries_project
       references public.projects,
-  start_time  timestamp,
-  end_time    timestamp,
+  start_time  timestamptz,
+  end_time    timestamptz,
   description text
 );
 

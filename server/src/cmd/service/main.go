@@ -5,6 +5,7 @@ import (
 	"log"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
+	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
 )
@@ -31,7 +32,7 @@ func main() {
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
-	teamRepository := database.NewGormTeamRepository(databaseService.Database)
+	teamRepository := postgresql.NewPostgreSQLTeamRepository(databaseService.Database)
 	teamUsecase := usecase.NewTeamUsecase(teamRepository)
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 

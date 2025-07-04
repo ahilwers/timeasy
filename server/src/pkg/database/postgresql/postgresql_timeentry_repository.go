@@ -15,7 +15,6 @@ type postgresqlTimeEntryRepository struct {
 	db *sql.DB
 }
 
-// NewPostgreSQLTimeEntryRepository creates a new PostgreSQL implementation of TimeEntryRepository
 func NewPostgreSQLTimeEntryRepository(db *sql.DB) repository.TimeEntryRepository {
 	return &postgresqlTimeEntryRepository{
 		db: db,
@@ -280,9 +279,9 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetween
 		SELECT
 			id, user_id, project_id, start_time, end_time, description
 		FROM time_entries
-		WHERE user_id = $1 
+		WHERE user_id = $1
 		  AND project_id = $2
-		  AND start_time >= $3 
+		  AND start_time >= $3
 		  AND (end_time <= $4 OR end_time IS NULL)
 		ORDER BY start_time DESC, end_time DESC
 	`

@@ -37,7 +37,7 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	}
 	assert.Equal(t, prj.Name, projectFromDb.Name)
 	assert.Equal(t, userId, projectFromDb.UserId)
-	assert.Equal(t, prj.Deadline, projectFromDb.Deadline)
+	assert.True(t, prj.Deadline.Equal(projectFromDb.Deadline))
 	assert.Equal(t, prj.HourlyRate, projectFromDb.HourlyRate)
 	assert.Equal(t, prj.TimeBudget, projectFromDb.TimeBudget)
 	assert.Nil(t, projectFromDb.TeamID)

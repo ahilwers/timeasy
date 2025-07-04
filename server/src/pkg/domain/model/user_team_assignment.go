@@ -10,5 +10,5 @@ type UserTeamAssignment struct {
 	UserID uuid.UUID
 	TeamID uuid.UUID
 	Team   Team
-	Roles  RoleList `gorm:"type:VARCHAR(255)"` //store the team roles in a string field
+	Roles  RoleList
 }

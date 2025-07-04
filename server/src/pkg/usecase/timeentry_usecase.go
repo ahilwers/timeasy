@@ -115,6 +115,9 @@ func (tu *timeEntryUsecase) checkEntry(timeEntry *model.TimeEntry) error {
 	if err != nil {
 		return err
 	}
+	if timeEntry.StartTime.IsZero() {
+		timeEntry.StartTime = time.Now().UTC()
+	}
 	return nil
 }
 
