@@ -225,7 +225,7 @@ func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID
 		SELECT
 			id, user_id, project_id, start_time, end_time, description
 		FROM time_entries
-		WHERE user_id = $1 AND end_time IS NULL
+		WHERE user_id = $1 AND (end_time IS NULL OR end_time = '0001-01-01 00:00:00'::timestamp)
 		ORDER BY start_time DESC
 		LIMIT 1
 	`
@@ -276,17 +276,24 @@ func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUserAndProject(use
 
 func (repo *postgresqlTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error) {
 	query := `
-		SELECT
-			id, user_id, project_id, start_time, end_time, description
-		FROM time_entries
-		WHERE user_id = $1
-		  AND project_id = $2
-		  AND start_time >= $3
-		  AND (end_time <= $4 OR end_time IS NULL)
-		ORDER BY start_time DESC, end_time DESC
-	`
+        SELECT
+            id, user_id, project_id, start_time, end_time, description
+        FROM time_entries
+        WHERE user_id = $1
+          AND DATE(start_time) >= $2
+          AND (end_time IS NULL OR DATE(end_time) <= $3)
+    `
 
-	return repo.queryTimeEntries(query, userId, projectId, startDate, endDate)
+	args := []interface{}{userId, startDate, endDate}
+
+	if projectId != uuid.Nil {
+		query += ` AND project_id = $4`
+		args = append(args, projectId)
+	}
+
+	query += ` ORDER BY start_time DESC, end_time DESC`
+
+	return repo.queryTimeEntries(query, args...)
 }
 
 func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args ...interface{}) ([]model.TimeEntry, error) {

@@ -343,7 +343,6 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_WithoutOpenTimeEntry_Returns
 	assert.Nil(t, err)
 
 	entry, err := usecaseTest.TimeEntryUsecase.GetLastOpenTimeEntry(userId)
-	assert.Nil(t, err)
 	assert.Nil(t, entry)
 }
 

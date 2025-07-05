@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -105,10 +106,9 @@ func (usecase *teamUsecase) DoesUserBelongToTeam(userId uuid.UUID, teamId uuid.U
 }
 
 func (usecase *teamUsecase) AddUserToTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error) {
-	_, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
-	// if this throws no error the assignment already exists:
-	if err == nil {
-		return nil, usecase.getError(err)
+	existingAssignment, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
+	if existingAssignment != nil {
+		return nil, NewEntityExistsError(fmt.Sprintf("user %v already belongs to team %v", userId, team.ID))
 	}
 
 	if len(roles) == 0 {
@@ -131,8 +131,8 @@ func (usecase *teamUsecase) AddUserToTeam(userId uuid.UUID, team *model.Team, ro
 
 func (usecase *teamUsecase) DeleteUserFromTeam(userId uuid.UUID, team *model.Team) error {
 	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
-	if err != nil {
-		return usecase.getError(err)
+	if teamAssignment == nil {
+		return NewEntityNotFoundError(fmt.Sprintf("user %v does not belong to team %v", userId, team.ID))
 	}
 	err = usecase.repo.DeleteUserTeamAssignment(teamAssignment)
 	if err != nil {
@@ -143,8 +143,8 @@ func (usecase *teamUsecase) DeleteUserFromTeam(userId uuid.UUID, team *model.Tea
 
 func (usecase *teamUsecase) UpdateUserRolesInTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) error {
 	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, team.ID)
-	if err != nil {
-		return usecase.getError(err)
+	if teamAssignment == nil {
+		return NewEntityNotFoundError(fmt.Sprintf("user %v does not belong to team %v", userId, team.ID))
 	}
 	teamAssignment.Roles = roles
 	err = usecase.repo.UpdateUserTeamAssignment(teamAssignment)
@@ -155,8 +155,8 @@ func (usecase *teamUsecase) UpdateUserRolesInTeam(userId uuid.UUID, team *model.
 }
 
 func (usecase *teamUsecase) IsUserAdminInTeam(userId uuid.UUID, teamId uuid.UUID) bool {
-	teamAssignment, err := usecase.repo.GetUserTeamAssignment(userId, teamId)
-	if err != nil {
+	teamAssignment, _ := usecase.repo.GetUserTeamAssignment(userId, teamId)
+	if teamAssignment == nil {
 		return false
 	}
 	return usecase.hasRole(teamAssignment.Roles, model.RoleAdmin)

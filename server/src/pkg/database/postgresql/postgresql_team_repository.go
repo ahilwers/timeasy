@@ -309,7 +309,7 @@ func (repo *postgresqlTeamRepository) DeleteAllUserAssignmentsOfTeam(teamId uuid
 func (repo *postgresqlTeamRepository) UpdateUserTeamAssignment(assignment *model.UserTeamAssignment) error {
 	query := `
 		UPDATE user_team_assignments
-		SET roles = $1, updated_at = NOW()
+		SET roles = $1
 		WHERE user_id = $2 AND team_id = $3
 	`
 
