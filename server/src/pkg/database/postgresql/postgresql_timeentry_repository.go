@@ -217,6 +217,9 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntryById(id uuid.UUID) (*mode
 		return nil, err
 	}
 
+	// Ensure times have UTC location
+	repo.setupTimeLocation(&entry)
+
 	return &entry, nil
 }
 
@@ -246,6 +249,9 @@ func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID
 		}
 		return nil, err
 	}
+
+	// Ensure times have UTC location
+	repo.setupTimeLocation(&entry)
 
 	return &entry, nil
 }
@@ -296,6 +302,16 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetween
 	return repo.queryTimeEntries(query, args...)
 }
 
+// setupTimeLocation ensures that all time fields in the TimeEntry have their location set to UTC
+func (repo *postgresqlTimeEntryRepository) setupTimeLocation(entry *model.TimeEntry) {
+	if !entry.StartTime.IsZero() {
+		entry.StartTime = entry.StartTime.In(time.UTC)
+	}
+	if !entry.EndTime.IsZero() {
+		entry.EndTime = entry.EndTime.In(time.UTC)
+	}
+}
+
 func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args ...interface{}) ([]model.TimeEntry, error) {
 	rows, err := repo.db.Query(query, args...)
 	if err != nil {
@@ -317,6 +333,10 @@ func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args .
 		if err != nil {
 			return nil, err
 		}
+
+		// Ensure times have UTC location
+		repo.setupTimeLocation(&entry)
+
 		entries = append(entries, entry)
 	}
 

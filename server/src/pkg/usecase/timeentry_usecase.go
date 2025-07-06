@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"time"
 	"timeasy-server/pkg/domain/model"
@@ -55,7 +56,14 @@ func (tu *timeEntryUsecase) GetTimeEntriesOfUserAndProjectBetweenDates(userId uu
 }
 
 func (tu *timeEntryUsecase) GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error) {
-	return tu.repo.GetLastOpenTimeEntry(userId)
+	timeEntry, err := tu.repo.GetLastOpenTimeEntry(userId)
+	if err != nil {
+		if errors.Is(err, repository.ErrEntityNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return timeEntry, nil
 }
 
 func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {

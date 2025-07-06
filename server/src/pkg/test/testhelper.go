@@ -46,11 +46,6 @@ func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
 	connectionString := fmt.Sprintf("host=localhost user=dbuser password=dbpassword dbname=timeasy_test port=%v sslmode=disable", resource.GetPort("5432/tcp"))
 	// retry until db server is ready
 	err = pool.Retry(func() error {
-		/*err = connectGormDb(connectionString)
-		  if err != nil {
-		  	return err
-		  }
-		*/
 		return connectSqlDb(connectionString)
 	})
 	log.Println("=========================================================")

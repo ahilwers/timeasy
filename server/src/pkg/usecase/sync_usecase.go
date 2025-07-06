@@ -1,11 +1,9 @@
 package usecase
 
 import (
+	"github.com/gofrs/uuid"
 	"time"
 	"timeasy-server/pkg/domain/model"
-	"timeasy-server/pkg/domain/repository"
-
-	"github.com/gofrs/uuid"
 )
 
 type SyncUsecase interface {
@@ -17,31 +15,28 @@ type SyncUsecase interface {
 }
 
 type syncUsecase struct {
-	repo repository.SyncRepository
 }
 
-func NewSyncUsecase(repo repository.SyncRepository) SyncUsecase {
-	return &syncUsecase{
-		repo: repo,
-	}
+func NewSyncUsecase() SyncUsecase {
+	return &syncUsecase{}
 }
 
 func (usecase *syncUsecase) UpdateAndDeleteData(data model.SyncData) error {
-	return usecase.repo.UpdateAndDeleteData(data)
+	return nil
 }
 
 func (tu *syncUsecase) GetChangedTimeEntries(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error) {
-	return tu.repo.GetUpdatedTimeEntriesOfUser(userId, sinceWhen)
+	return nil, nil
 }
 
 func (tu *syncUsecase) GetChangedProjects(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error) {
-	return tu.repo.GetUpdatedProjectsOfUser(userId, sinceWhen)
+	return nil, nil
 }
 
 func (usecase *syncUsecase) GetProjectById(id uuid.UUID) (*model.Project, error) {
-	return usecase.repo.GetProjectById(id)
+	return nil, nil
 }
 
 func (usecase *syncUsecase) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
-	return usecase.repo.GetTimeEntryById(id)
+	return nil, nil
 }

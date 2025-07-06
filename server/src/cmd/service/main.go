@@ -32,17 +32,17 @@ func main() {
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
-	teamRepository := postgresql.NewPostgreSQLTeamRepository(databaseService.Database)
+	teamRepository := postgresql.NewPostgreSQLTeamRepository(databaseService.Database.DB)
 	teamUsecase := usecase.NewTeamUsecase(teamRepository)
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
-	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database, teamRepository), teamUsecase)
+	projectUsecase := usecase.NewProjectUsecase(postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository), teamUsecase)
 	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), projectUsecase)
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB), projectUsecase)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
 
-	syncUsecase := usecase.NewSyncUsecase(database.NewGormSyncRepository(databaseService.Database))
+	syncUsecase := usecase.NewSyncUsecase()
 	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
 
 	weeklyStatisticsUsecase := usecase.NewWeeklyStatisticsUsecase(timeEntryUsecase)
