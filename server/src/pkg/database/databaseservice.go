@@ -11,7 +11,7 @@ type DatabaseService struct {
 }
 
 func (databaseService *DatabaseService) Init(host string, databaseName string, user string, password string, port int) error {
-	connectionString := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v", host, user, password, databaseName, port)
+	connectionString := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable", host, user, password, databaseName, port)
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		return err
