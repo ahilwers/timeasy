@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/shopspring/decimal"
 	"strings"
 
 	"timeasy-server/pkg/domain/model"
@@ -293,14 +294,16 @@ func (repo *postgresqlProjectRepository) getTeamIdsOfUser(userId uuid.UUID) ([]u
 func scanProject(rows *sql.Rows) (*model.Project, error) {
 	var project model.Project
 	var teamID uuid.NullUUID
+	var color sql.NullString
+	var hourlyRate sql.NullFloat64
 
 	err := rows.Scan(
 		&project.ID,
 		&project.Name,
 		&project.UserId,
 		&teamID,
-		&project.Color,
-		&project.HourlyRate,
+		&color,
+		&hourlyRate,
 		&project.TimeBudget,
 		&project.Deadline,
 		&project.IsActive,
@@ -312,6 +315,14 @@ func scanProject(rows *sql.Rows) (*model.Project, error) {
 
 	if teamID.Valid {
 		project.TeamID = &teamID.UUID
+	}
+
+	if color.Valid {
+		project.Color = color.String
+	}
+
+	if hourlyRate.Valid {
+		project.HourlyRate = decimal.NewFromFloat(hourlyRate.Float64)
 	}
 
 	return &project, nil
