@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 	"timeasy-server/pkg/database/postgresql"
+	"timeasy-server/pkg/domain/repository"
 	"timeasy-server/pkg/test"
 
 	"github.com/gofrs/uuid"
@@ -26,6 +27,7 @@ type UsecaseTest struct {
 	TimeEntryUsecase TimeEntryUsecase
 	TeamUsecase      TeamUsecase
 	SyncUsecase      SyncUsecase
+	ChangelogRepo    repository.ChangelogRepository
 }
 
 func NewUsecaseTest() *UsecaseTest {
@@ -39,11 +41,12 @@ func (u *UsecaseTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 }
 
 func (u *UsecaseTest) initUsecases() {
+	u.ChangelogRepo = postgresql.NewPostgreSQLChangelogRepository(test.Database.DB)
 	teamRepo := postgresql.NewPostgreSQLTeamRepository(test.Database.DB)
 	u.TeamUsecase = NewTeamUsecase(teamRepo)
 
 	projectRepo := postgresql.NewPostgreSQLProjectRepository(test.Database.DB, teamRepo)
-	u.ProjectUsecase = NewProjectUsecase(projectRepo, u.TeamUsecase)
+	u.ProjectUsecase = NewProjectUsecase(projectRepo, u.TeamUsecase, u.ChangelogRepo)
 
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
 	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase)

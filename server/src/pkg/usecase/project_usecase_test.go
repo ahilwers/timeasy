@@ -375,6 +375,69 @@ func Test_projectUsecase_GetAllProjectsOfUserAlsoReturnsProjectsOfUsersTeams(t *
 	}
 }
 
+func Test_projectUsecase_AddProject_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changelogEntries))
+	changelogEntry := changelogEntries[0]
+	assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+	assert.Equal(t, project.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+}
+
+func Test_projectUsecase_UpdateProject_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+
+	usecaseTest.ProjectUsecase.UpdateProject(&project)
+	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[1].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[1].EntityID)
+	assert.Equal(t, model.OperationUpdated, changelogEntries[1].Operation)
+}
+
+func Test_projectUsecase_DeleteProject_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+
+	usecaseTest.ProjectUsecase.DeleteProject(project.ID)
+	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[1].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[1].EntityID)
+	assert.Equal(t, model.OperationDeleted, changelogEntries[1].Operation)
+}
+
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, userId uuid.UUID) []model.Project {
 	return addProjectsWithStartIndex(t, projectUsecase, 1, count, userId)
 }

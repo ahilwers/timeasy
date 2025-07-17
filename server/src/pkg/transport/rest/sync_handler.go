@@ -63,7 +63,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 	//		Description:     &desc,
 	//		StartTime:       entry.StartTime.Format(time.RFC3339),
 	//		ProjectId:       entry.ProjectId,
-	//		ChangeType:      changeType,
+	//		Operation:      changeType,
 	//		ChangeTimestamp: changeTime.Format(time.RFC3339),
 	//	}
 	//	if !entry.EndTime.IsZero() {
@@ -96,7 +96,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 	//		HourlyRate:      &hourlyRate,
 	//		TimeBudget:      &timeBudget,
 	//		IsActive:        &isActive,
-	//		ChangeType:      changeType,
+	//		Operation:      changeType,
 	//		ChangeTimestamp: changeTime.Format(time.RFC3339),
 	//	}
 	//	syncEntries.Projects = append(syncEntries.Projects, syncProject)

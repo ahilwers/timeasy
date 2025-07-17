@@ -93,13 +93,13 @@ package rest
 //	assert.Equal(t, deletedTimeEntry.StartTime, stringToTime(syncEntries.TimeEntries[0].StartTime))
 //	assert.Equal(t, deletedTimeEntry.EndTime, stringToTime(syncEntries.TimeEntries[0].EndTime))
 //	assert.Equal(t, deletedTimeEntry.ProjectId, syncEntries.TimeEntries[0].ProjectId)
-//	assert.Equal(t, DELETED, syncEntries.TimeEntries[0].ChangeType)
+//	assert.Equal(t, DELETED, syncEntries.TimeEntries[0].Operation)
 //
 //	assert.Equal(t, updatedTimeEntry.Description, *syncEntries.TimeEntries[1].Description)
 //	assert.Equal(t, updatedTimeEntry.StartTime, stringToTime(syncEntries.TimeEntries[1].StartTime))
 //	assert.Equal(t, updatedTimeEntry.EndTime, stringToTime(syncEntries.TimeEntries[1].EndTime))
 //	assert.Equal(t, updatedTimeEntry.ProjectId, syncEntries.TimeEntries[1].ProjectId)
-//	assert.Equal(t, CHANGED, syncEntries.TimeEntries[1].ChangeType)
+//	assert.Equal(t, CHANGED, syncEntries.TimeEntries[1].Operation)
 //}
 //
 //func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
@@ -136,7 +136,7 @@ package rest
 //		StartTime:   startTime.Format(time.RFC3339),
 //		EndTime:     endTime.Format(time.RFC3339),
 //		ProjectId:   project.ID,
-//		ChangeType:  NEW,
+//		Operation:  NEW,
 //	}
 //
 //	syncEntries := SyncEntries{
@@ -207,7 +207,7 @@ package rest
 //		StartTime:       startTime.Format(time.RFC3339),
 //		EndTime:         endTime.Format(time.RFC3339),
 //		ProjectId:       project.ID,
-//		ChangeType:      CHANGED,
+//		Operation:      CHANGED,
 //		ChangeTimestamp: changeTime.Format(time.RFC3339),
 //	}
 //
@@ -278,7 +278,7 @@ package rest
 //		StartTime:       startTime.Format(time.RFC3339),
 //		EndTime:         endTime.Format(time.RFC3339),
 //		ProjectId:       project.ID,
-//		ChangeType:      CHANGED,
+//		Operation:      CHANGED,
 //		ChangeTimestamp: changeTime.Format(time.RFC3339),
 //	}
 //
@@ -350,7 +350,7 @@ package rest
 //		StartTime:       startTime.Format(time.RFC3339),
 //		EndTime:         endTime.Format(time.RFC3339),
 //		ProjectId:       project.ID,
-//		ChangeType:      DELETED,
+//		Operation:      DELETED,
 //		ChangeTimestamp: changeTime.Format(time.RFC3339),
 //	}
 //
@@ -431,10 +431,10 @@ package rest
 //	assert.Equal(t, 2, len(syncEntries.Projects))
 //
 //	assert.Equal(t, deletedProject.Name, syncEntries.Projects[0].Name)
-//	assert.Equal(t, DELETED, syncEntries.Projects[0].ChangeType)
+//	assert.Equal(t, DELETED, syncEntries.Projects[0].Operation)
 //
 //	assert.Equal(t, updatedProject.Name, syncEntries.Projects[1].Name)
-//	assert.Equal(t, CHANGED, syncEntries.Projects[1].ChangeType)
+//	assert.Equal(t, CHANGED, syncEntries.Projects[1].Operation)
 //}
 //
 //func Test_syncHandler_SendUpdatedLocalProjects(t *testing.T) {
@@ -474,7 +474,7 @@ package rest
 //		HourlyRate:      &hourlyRate,
 //		TimeBudget:      &timeBudget,
 //		Color:           &color,
-//		ChangeType:      CHANGED,
+//		Operation:      CHANGED,
 //		ChangeTimestamp: changeTime.Format(time.RFC3339),
 //	}
 //
@@ -541,7 +541,7 @@ package rest
 //		Deadline:        nil,
 //		HourlyRate:      nil,
 //		TimeBudget:      nil,
-//		ChangeType:      CHANGED,
+//		Operation:      CHANGED,
 //		ChangeTimestamp: changeTime.Format(time.RFC3339),
 //	}
 //

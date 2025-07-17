@@ -26,7 +26,19 @@ func NewPostgreSQLProjectRepository(db *sql.DB, teamRepository repository.TeamRe
 	}
 }
 
-func (repo *postgresqlProjectRepository) AddProject(project *model.Project) error {
+func (repo *postgresqlProjectRepository) BeginTransaction() (model.Transaction, error) {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func (repo *postgresqlProjectRepository) AddProject(project *model.Project, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
+	}
 	if project.ID == uuid.Nil {
 		id, err := uuid.NewV4()
 		if err != nil {
@@ -58,7 +70,7 @@ func (repo *postgresqlProjectRepository) AddProject(project *model.Project) erro
 		deadline = nil
 	}
 
-	_, err := repo.db.Exec(query,
+	_, err := sqlTx.Exec(query,
 		project.ID,
 		project.Name,
 		project.UserId,
@@ -110,7 +122,11 @@ func (repo *postgresqlProjectRepository) GetProjectById(id uuid.UUID) (*model.Pr
 	return &project, nil
 }
 
-func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project) error {
+func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
+	}
 	query := `
 		UPDATE projects SET
 			name = $1,
@@ -136,7 +152,7 @@ func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project) e
 		deadline = nil
 	}
 
-	result, err := repo.db.Exec(
+	result, err := sqlTx.Exec(
 		query,
 		project.Name,
 		project.UserId,
@@ -165,9 +181,13 @@ func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project) e
 	return nil
 }
 
-func (repo *postgresqlProjectRepository) DeleteProject(project *model.Project) error {
+func (repo *postgresqlProjectRepository) DeleteProject(project *model.Project, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
+	}
 	query := `DELETE FROM projects WHERE id = $1`
-	result, err := repo.db.Exec(query, project.ID)
+	result, err := sqlTx.Exec(query, project.ID)
 	if err != nil {
 		return err
 	}

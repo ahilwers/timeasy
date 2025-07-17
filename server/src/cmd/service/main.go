@@ -32,11 +32,13 @@ func main() {
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
+	changelogRepository := postgresql.NewPostgreSQLChangelogRepository(databaseService.Database.DB)
+
 	teamRepository := postgresql.NewPostgreSQLTeamRepository(databaseService.Database.DB)
 	teamUsecase := usecase.NewTeamUsecase(teamRepository)
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
-	projectUsecase := usecase.NewProjectUsecase(postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository), teamUsecase)
+	projectUsecase := usecase.NewProjectUsecase(postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository), teamUsecase, changelogRepository)
 	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 
 	timeEntryUsecase := usecase.NewTimeEntryUsecase(postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB), projectUsecase)

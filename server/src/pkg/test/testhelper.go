@@ -100,7 +100,11 @@ func SetupTest(tb testing.TB) func(tb testing.TB) {
 }
 
 func deleteAllEntities(db *sql.DB) error {
-	_, err := db.Exec("DELETE FROM time_entries")
+	_, err := db.Exec("DELETE FROM change_log")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DELETE FROM time_entries")
 	if err != nil {
 		return err
 	}
