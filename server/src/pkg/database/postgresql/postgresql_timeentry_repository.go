@@ -21,7 +21,19 @@ func NewPostgreSQLTimeEntryRepository(db *sql.DB) repository.TimeEntryRepository
 	}
 }
 
-func (repo *postgresqlTimeEntryRepository) AddTimeEntry(entry *model.TimeEntry) error {
+func (repo *postgresqlTimeEntryRepository) BeginTransaction() (model.Transaction, error) {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func (repo *postgresqlTimeEntryRepository) AddTimeEntry(entry *model.TimeEntry, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
+	}
 	if entry.ID == uuid.Nil {
 		id, err := uuid.NewV4()
 		if err != nil {
@@ -36,7 +48,7 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntry(entry *model.TimeEntry) 
 		) VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
-	_, err := repo.db.Exec(
+	_, err := sqlTx.Exec(
 		query,
 		entry.ID,
 		entry.UserId,
@@ -49,10 +61,10 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntry(entry *model.TimeEntry) 
 	return err
 }
 
-func (repo *postgresqlTimeEntryRepository) AddTimeEntryList(entries []model.TimeEntry) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
+func (repo *postgresqlTimeEntryRepository) AddTimeEntryList(entries []model.TimeEntry, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
 	}
 
 	query := `
@@ -65,13 +77,13 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntryList(entries []model.Time
 		if entry.ID == uuid.Nil {
 			id, err := uuid.NewV4()
 			if err != nil {
-				tx.Rollback()
+				sqlTx.Rollback()
 				return err
 			}
 			entry.ID = id
 		}
 
-		_, err := tx.Exec(
+		_, err := sqlTx.Exec(
 			query,
 			entry.ID,
 			entry.UserId,
@@ -81,15 +93,18 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntryList(entries []model.Time
 			entry.Description,
 		)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 	}
 
-	return tx.Commit()
+	return nil
 }
 
-func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntry) error {
+func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntry, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
+	}
 	query := `
 		UPDATE time_entries SET
 			user_id = $1,
@@ -100,7 +115,7 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntr
 		WHERE id = $6
 	`
 
-	result, err := repo.db.Exec(
+	result, err := sqlTx.Exec(
 		query,
 		entry.UserId,
 		entry.ProjectId,
@@ -126,10 +141,10 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntr
 	return nil
 }
 
-func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.TimeEntry) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
+func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.TimeEntry, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
 	}
 
 	query := `
@@ -143,7 +158,7 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.T
 	`
 
 	for _, entry := range entries {
-		result, err := tx.Exec(
+		result, err := sqlTx.Exec(
 			query,
 			entry.UserId,
 			entry.ProjectId,
@@ -154,28 +169,29 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.T
 		)
 
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
 		if rowsAffected == 0 {
-			tx.Rollback()
 			return repository.ErrEntityNotFound
 		}
 	}
 
-	return tx.Commit()
+	return nil
 }
 
-func (repo *postgresqlTimeEntryRepository) DeleteTimeEntry(entry *model.TimeEntry) error {
+func (repo *postgresqlTimeEntryRepository) DeleteTimeEntry(entry *model.TimeEntry, tx model.Transaction) error {
+	sqlTx, ok := tx.(*sql.Tx)
+	if !ok {
+		return errors.New("invalid transaction type")
+	}
 	query := `DELETE FROM time_entries WHERE id = $1`
-	result, err := repo.db.Exec(query, entry.ID)
+	result, err := sqlTx.Exec(query, entry.ID)
 	if err != nil {
 		return err
 	}

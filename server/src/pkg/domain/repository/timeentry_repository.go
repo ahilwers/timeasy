@@ -8,11 +8,10 @@ import (
 )
 
 type TimeEntryRepository interface {
-	AddTimeEntry(project *model.TimeEntry) error
-	AddTimeEntryList(timeEntryList []model.TimeEntry) error
-	UpdateTimeEntry(timeEntry *model.TimeEntry) error
-	UpdateTimeEntryList(timeEntryList []model.TimeEntry) error
-	DeleteTimeEntry(project *model.TimeEntry) error
+	model.TransactionHandler
+	AddTimeEntry(project *model.TimeEntry, tx model.Transaction) error
+	UpdateTimeEntry(timeEntry *model.TimeEntry, tx model.Transaction) error
+	DeleteTimeEntry(project *model.TimeEntry, tx model.Transaction) error
 	GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error)
 	GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error)
 	GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error)

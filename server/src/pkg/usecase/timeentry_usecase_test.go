@@ -839,6 +839,104 @@ func Test_timeEntryUsecase_DeleteTimeEntryFailsIfItDoesNotExist(t *testing.T) {
 	assert.Equal(t, 1, len(entryList))
 }
 
+func Test_timeEntryUsecase_AddTimeEntry_AlsoAddsChangelogEntry(t *testing.T) {
+    usecaseTest := NewUsecaseTest()
+    teardownTest := usecaseTest.SetupTest(t)
+    defer teardownTest(t)
+
+    userId := GetTestUserId(t)
+    project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+    timeEntry := model.TimeEntry{
+        Description: "timeentry1",
+        StartTime:   time.Now(),
+        UserId:      userId,
+        ProjectId:   project.ID,
+    }
+    err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+    assert.Nil(t, err)
+
+    changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+    assert.Nil(t, err)
+    assert.Equal(t, 2, len(changelogEntries))
+    changelogEntry := changelogEntries[0]
+    assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+    assert.Equal(t, project.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+    changelogEntry = changelogEntries[1]
+    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+}
+
+func Test_timeEntryUsecase_UpdateTimeEntry_AlsoAddsChangelogEntry(t *testing.T) {
+    usecaseTest := NewUsecaseTest()
+    teardownTest := usecaseTest.SetupTest(t)
+    defer teardownTest(t)
+
+    userId := GetTestUserId(t)
+    project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+    timeEntry := model.TimeEntry{
+        Description: "timeentry1",
+        StartTime:   time.Now(),
+        UserId:      userId,
+        ProjectId:   project.ID,
+    }
+    err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+    assert.Nil(t, err)
+    err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry)
+    assert.Nil(t, err)
+
+    changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+    assert.Nil(t, err)
+    assert.Equal(t, 3, len(changelogEntries))
+    changelogEntry := changelogEntries[0]
+    assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+    assert.Equal(t, project.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+    changelogEntry = changelogEntries[1]
+    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+    changelogEntry = changelogEntries[2]
+    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationUpdated, changelogEntry.Operation)
+}
+
+func Test_timeEntryUsecase_DeleteTimeEntry_AlsoAddsChangelogEntry(t *testing.T) {
+    usecaseTest := NewUsecaseTest()
+    teardownTest := usecaseTest.SetupTest(t)
+    defer teardownTest(t)
+
+    userId := GetTestUserId(t)
+    project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+    timeEntry := model.TimeEntry{
+        Description: "timeentry1",
+        StartTime:   time.Now(),
+        UserId:      userId,
+        ProjectId:   project.ID,
+    }
+    err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+    assert.Nil(t, err)
+    err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID)
+    assert.Nil(t, err)
+
+    changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+    assert.Nil(t, err)
+    assert.Equal(t, 3, len(changelogEntries))
+    changelogEntry := changelogEntries[0]
+    assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+    assert.Equal(t, project.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+    changelogEntry = changelogEntries[1]
+    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+    changelogEntry = changelogEntries[2]
+    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+    assert.Equal(t, model.OperationDeleted, changelogEntry.Operation)
+}
 func assertTimesAreEqual(t *testing.T, time1 time.Time, time2 time.Time) {
 	// We cannot check the milliseconds here because they get lost in the database:
 	assert.Equal(t, time1.Hour(), time2.Hour())

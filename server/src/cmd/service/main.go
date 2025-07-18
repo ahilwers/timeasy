@@ -41,7 +41,7 @@ func main() {
 	projectUsecase := usecase.NewProjectUsecase(postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository), teamUsecase, changelogRepository)
 	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB), projectUsecase)
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB), projectUsecase, changelogRepository)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
 
 	syncUsecase := usecase.NewSyncUsecase()

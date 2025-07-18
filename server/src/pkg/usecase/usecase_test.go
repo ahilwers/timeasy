@@ -49,7 +49,7 @@ func (u *UsecaseTest) initUsecases() {
 	u.ProjectUsecase = NewProjectUsecase(projectRepo, u.TeamUsecase, u.ChangelogRepo)
 
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
-	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase)
+	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase, u.ChangelogRepo)
 
 	//syncRepo := database.NewGormSyncRepository(test.DB)
 	//u.SyncUsecase = NewSyncUsecase(syncRepo)
