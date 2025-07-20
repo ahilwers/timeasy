@@ -88,13 +88,14 @@ func (t *HandlerTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 
 func (t *HandlerTest) initUsecases() {
 	teamRepo := postgresql.NewPostgreSQLTeamRepository(test.Database.DB)
-	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo)
+	changelogRepo := postgresql.NewPostgreSQLChangelogRepository(test.Database.DB)
+	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo, changelogRepo)
 
 	projectRepo := postgresql.NewPostgreSQLProjectRepository(test.Database.DB, teamRepo)
-	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase)
+	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase, changelogRepo)
 
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
-	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase)
+	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase, changelogRepo)
 
 	//syncRepo := database.NewGormSyncRepository(test.DB)
 	//t.SyncUsecase = usecase.NewSyncUsecase(syncRepo)

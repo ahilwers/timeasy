@@ -169,21 +169,27 @@ func (repo *postgresqlTeamRepository) GetAllTeams() ([]model.Team, error) {
 }
 
 func (repo *postgresqlTeamRepository) AddUserTeamAssignment(assignment *model.UserTeamAssignment) error {
+	if assignment.ID == uuid.Nil {
+		id, err := uuid.NewV4()
+		if err != nil {
+			return err
+		}
+		assignment.ID = id
+	}
+
 	query := `
-		INSERT INTO user_team_assignments (user_id, team_id, roles)
-		VALUES ($1, $2, $3)
-		RETURNING id
+		INSERT INTO user_team_assignments (id, user_id, team_id, roles)
+		VALUES ($1, $2, $3, $4)
 	`
 
 	roles := strings.Join(assignment.Roles, ",")
 
-	err := repo.db.QueryRow(
+	_, err := repo.db.Exec(
 		query,
-		assignment.UserID,
+		assignment.ID,
+		assignment.UserID.String(),
 		assignment.TeamID,
 		roles,
-	).Scan(
-		&assignment.ID,
 	)
 
 	return err

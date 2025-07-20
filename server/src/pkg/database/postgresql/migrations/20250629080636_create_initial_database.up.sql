@@ -37,7 +37,7 @@ create table public.time_entries
 
 create table public.user_team_assignments
 (
-  id         bigserial
+  id         uuid not null
     primary key,
   user_id    text,
   team_id    uuid

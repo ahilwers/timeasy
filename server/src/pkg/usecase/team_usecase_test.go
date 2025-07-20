@@ -48,7 +48,7 @@ func Test_teamUsecase_UpdateTeam(t *testing.T) {
 	assert.Nil(t, err)
 
 	team.Name1 = "UpdatedTeam"
-	err = usecaseTest.TeamUsecase.UpdateTeam(&team)
+	err = usecaseTest.TeamUsecase.UpdateTeam(&team, userId)
 	assert.Nil(t, err)
 
 	teamsFromDb, err := usecaseTest.TeamUsecase.GetAllTeams()
@@ -62,12 +62,13 @@ func Test_teamUsecase_UpdateTeamFailsIfItDoesNotExist(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
+	userId := GetTestUserId(t)
 	team := model.Team{
 		Name1: "Testteam",
 	}
 
 	team.Name1 = "UpdatedTeam"
-	err := usecaseTest.TeamUsecase.UpdateTeam(&team)
+	err := usecaseTest.TeamUsecase.UpdateTeam(&team, userId)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
@@ -89,7 +90,7 @@ func Test_teamUsecase_DeleteTeam(t *testing.T) {
 	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
 	assert.Nil(t, err)
 
-	err = usecaseTest.TeamUsecase.DeleteTeam(team.ID)
+	err = usecaseTest.TeamUsecase.DeleteTeam(team.ID, userId)
 	assert.Nil(t, err)
 
 	teamsFromDb, err := usecaseTest.TeamUsecase.GetAllTeams()
@@ -102,9 +103,10 @@ func Test_teamUsecase_DeleteTeamFailsIfItDoesNotExist(t *testing.T) {
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
+	userId := GetTestUserId(t)
 	missingId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	err = usecaseTest.TeamUsecase.DeleteTeam(missingId)
+	err = usecaseTest.TeamUsecase.DeleteTeam(missingId, userId)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
@@ -338,6 +340,208 @@ func Test_teamUsecase_DoesUserBelongToTeam(t *testing.T) {
 	otherUserId := GetTestUserId(t)
 	otherTeam := addTeam(t, usecaseTest.TeamUsecase, "otherTeam", otherUserId)
 	assert.False(t, usecaseTest.TeamUsecase.DoesUserBelongToTeam(userId, otherTeam.ID))
+}
+
+func Test_teamUsecase_AddTeam_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	team := model.Team{
+		Name1: "Testteam",
+	}
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should have 2 entries: one for team creation and one for user assignment
+	assert.Equal(t, 2, len(changelogEntries))
+
+	// First entry is for team creation
+	teamEntry := changelogEntries[0]
+	assert.Equal(t, model.EntityTypeTeam, teamEntry.EntityType)
+	assert.Equal(t, team.ID, teamEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, teamEntry.Operation)
+	assert.Equal(t, userId, teamEntry.ChangedByUser)
+
+	// Second entry is for user-team assignment
+	assignmentEntry := changelogEntries[1]
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, assignmentEntry.EntityType)
+	assert.Equal(t, model.OperationCreated, assignmentEntry.Operation)
+	assert.Equal(t, userId, assignmentEntry.ChangedByUser)
+}
+
+func Test_teamUsecase_UpdateTeam_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	team := model.Team{
+		Name1: "Testteam",
+	}
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should have 2 entries: one for team creation and one for user assignment
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+
+	team.Name1 = "UpdatedTeam"
+	err = usecaseTest.TeamUsecase.UpdateTeam(&team, userId)
+	assert.Nil(t, err)
+
+	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should now have 3 entries: two from team creation and one from update
+	assert.Equal(t, 3, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[1].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[1].Operation)
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[2].EntityType)
+	assert.Equal(t, team.ID, changelogEntries[2].EntityID)
+	assert.Equal(t, model.OperationUpdated, changelogEntries[2].Operation)
+}
+
+func Test_teamUsecase_DeleteTeam_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	team := model.Team{
+		Name1: "Testteam",
+	}
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should have 2 entries: one for team creation and one for user assignment
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+
+	err = usecaseTest.TeamUsecase.DeleteTeam(team.ID, userId)
+	assert.Nil(t, err)
+
+	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should now have 3 entries: two from team creation and one from deletion
+	assert.Equal(t, 3, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[1].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[1].Operation)
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[2].EntityType)
+	assert.Equal(t, team.ID, changelogEntries[2].EntityID)
+	assert.Equal(t, model.OperationDeleted, changelogEntries[2].Operation)
+}
+
+func Test_teamUsecase_AddUserToTeam_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	team := model.Team{
+		Name1: "Testteam",
+	}
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	assert.Nil(t, err)
+
+	otherUserId := GetTestUserId(t)
+	assignment, err := usecaseTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should have 3 entries: team creation, owner assignment, and new user assignment
+	assert.Equal(t, 3, len(changelogEntries))
+
+	// First entry is for team creation
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+
+	// Second entry is for owner assignment to team
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[1].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[1].Operation)
+
+	// Third entry is for new user assignment
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[2].EntityType)
+	assert.Equal(t, assignment.ID, changelogEntries[2].EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntries[2].Operation)
+}
+
+func Test_teamUsecase_DeleteUserFromTeam_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	team := addTeam(t, usecaseTest.TeamUsecase, "team", userId)
+
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should have 2 entries: team creation and owner assignment
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+
+	err = usecaseTest.TeamUsecase.DeleteUserFromTeam(userId, &team)
+	assert.Nil(t, err)
+
+	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should now have 3 entries: team creation, owner assignment, and user removal
+	assert.Equal(t, 3, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[1].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[1].Operation)
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[2].EntityType)
+	assert.Equal(t, model.OperationDeleted, changelogEntries[2].Operation)
+}
+
+func Test_teamUsecase_UpdateUserRolesInTeam_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	team := addTeam(t, usecaseTest.TeamUsecase, "team", userId)
+
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should have 2 entries: team creation and owner assignment
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+
+	err = usecaseTest.TeamUsecase.UpdateUserRolesInTeam(userId, &team, model.RoleList{model.RoleUser})
+	assert.Nil(t, err)
+
+	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	// Should now have 3 entries: team creation, owner assignment, and role update
+	assert.Equal(t, 3, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeTeam, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, team.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[1].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[1].Operation)
+	assert.Equal(t, model.EntityTypeUserTeamAssignment, changelogEntries[2].EntityType)
+	assert.Equal(t, model.OperationUpdated, changelogEntries[2].Operation)
 }
 
 func addTeams(t *testing.T, teamUsecase TeamUsecase, count int, ownerId uuid.UUID) []model.Team {

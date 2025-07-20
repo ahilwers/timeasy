@@ -13,8 +13,8 @@ type TeamUsecase interface {
 	GetTeamById(id uuid.UUID) (*model.Team, error)
 	GetAllTeams() ([]model.Team, error)
 	AddTeam(team *model.Team, ownerId uuid.UUID) error
-	UpdateTeam(team *model.Team) error
-	DeleteTeam(id uuid.UUID) error
+	UpdateTeam(team *model.Team, userId uuid.UUID) error
+	DeleteTeam(id uuid.UUID, userId uuid.UUID) error
 	GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAssignment, error)
 	DoesUserBelongToTeam(userId uuid.UUID, teamId uuid.UUID) bool
 	AddUserToTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) (*model.UserTeamAssignment, error)
@@ -24,25 +24,49 @@ type TeamUsecase interface {
 }
 
 type teamUsecase struct {
-	repo repository.TeamRepository
+	repo          repository.TeamRepository
+	changelogRepo repository.ChangelogRepository
 }
 
-func NewTeamUsecase(repo repository.TeamRepository) TeamUsecase {
+func NewTeamUsecase(repo repository.TeamRepository, changelogRepo repository.ChangelogRepository) TeamUsecase {
 	return &teamUsecase{
-		repo: repo,
+		repo:          repo,
+		changelogRepo: changelogRepo,
 	}
 }
 
 func (usecase *teamUsecase) AddTeam(team *model.Team, ownerId uuid.UUID) error {
-	err := usecase.repo.AddTeam(team)
+	tx, err := usecase.repo.BeginTransaction()
 	if err != nil {
 		return err
 	}
+
+	err = usecase.repo.AddTeam(team)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Add changelog entry for team creation
+	changelogEntry := model.ChangelogEntry{
+		EntityType:    model.EntityTypeTeam,
+		EntityID:      team.ID,
+		Operation:     model.OperationCreated,
+		ChangedByUser: ownerId,
+	}
+	err = usecase.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	_, err = usecase.AddUserToTeam(ownerId, team, model.RoleList{model.RoleUser, model.RoleAdmin})
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
-	return nil
+
+	return tx.Commit()
 }
 
 func (usecase *teamUsecase) GetTeamById(id uuid.UUID) (*model.Team, error) {
@@ -53,15 +77,40 @@ func (usecase *teamUsecase) GetTeamById(id uuid.UUID) (*model.Team, error) {
 	return team, nil
 }
 
-func (usecase *teamUsecase) UpdateTeam(team *model.Team) error {
+func (usecase *teamUsecase) UpdateTeam(team *model.Team, userId uuid.UUID) error {
 	_, err := usecase.GetTeamById(team.ID)
 	if err != nil {
 		return err
 	}
-	return usecase.repo.UpdateTeam(team)
+
+	tx, err := usecase.repo.BeginTransaction()
+	if err != nil {
+		return err
+	}
+
+	err = usecase.repo.UpdateTeam(team)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Add changelog entry for team update
+	changelogEntry := model.ChangelogEntry{
+		EntityType:    model.EntityTypeTeam,
+		EntityID:      team.ID,
+		Operation:     model.OperationUpdated,
+		ChangedByUser: userId,
+	}
+	err = usecase.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
-func (usecase *teamUsecase) DeleteTeam(id uuid.UUID) error {
+func (usecase *teamUsecase) DeleteTeam(id uuid.UUID, userId uuid.UUID) error {
 	team, err := usecase.GetTeamById(id)
 	if err != nil {
 		return err
@@ -80,8 +129,21 @@ func (usecase *teamUsecase) DeleteTeam(id uuid.UUID) error {
 		tx.Rollback()
 		return err
 	}
-	tx.Commit()
-	return nil
+
+	// Add changelog entry for team deletion
+	changelogEntry := model.ChangelogEntry{
+		EntityType:    model.EntityTypeTeam,
+		EntityID:      team.ID,
+		Operation:     model.OperationDeleted,
+		ChangedByUser: userId,
+	}
+	err = usecase.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (usecase *teamUsecase) GetAllTeams() ([]model.Team, error) {
@@ -121,7 +183,31 @@ func (usecase *teamUsecase) AddUserToTeam(userId uuid.UUID, team *model.Team, ro
 		Roles:  roles,
 	}
 
+	tx, err := usecase.repo.BeginTransaction()
+	if err != nil {
+		return nil, err
+	}
+
 	err = usecase.repo.AddUserTeamAssignment(&assignment)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// Add changelog entry for user team assignment
+	changelogEntry := model.ChangelogEntry{
+		EntityType:    model.EntityTypeUserTeamAssignment,
+		EntityID:      assignment.ID,
+		Operation:     model.OperationCreated,
+		ChangedByUser: userId,
+	}
+	err = usecase.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -134,11 +220,32 @@ func (usecase *teamUsecase) DeleteUserFromTeam(userId uuid.UUID, team *model.Tea
 	if teamAssignment == nil {
 		return NewEntityNotFoundError(fmt.Sprintf("user %v does not belong to team %v", userId, team.ID))
 	}
-	err = usecase.repo.DeleteUserTeamAssignment(teamAssignment)
+
+	tx, err := usecase.repo.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	return nil
+
+	err = usecase.repo.DeleteUserTeamAssignment(teamAssignment)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Add changelog entry for user team assignment deletion
+	changelogEntry := model.ChangelogEntry{
+		EntityType:    model.EntityTypeUserTeamAssignment,
+		EntityID:      teamAssignment.ID,
+		Operation:     model.OperationDeleted,
+		ChangedByUser: userId,
+	}
+	err = usecase.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (usecase *teamUsecase) UpdateUserRolesInTeam(userId uuid.UUID, team *model.Team, roles model.RoleList) error {
@@ -146,12 +253,33 @@ func (usecase *teamUsecase) UpdateUserRolesInTeam(userId uuid.UUID, team *model.
 	if teamAssignment == nil {
 		return NewEntityNotFoundError(fmt.Sprintf("user %v does not belong to team %v", userId, team.ID))
 	}
-	teamAssignment.Roles = roles
-	err = usecase.repo.UpdateUserTeamAssignment(teamAssignment)
+
+	tx, err := usecase.repo.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	return nil
+
+	teamAssignment.Roles = roles
+	err = usecase.repo.UpdateUserTeamAssignment(teamAssignment)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Add changelog entry for user team assignment update
+	changelogEntry := model.ChangelogEntry{
+		EntityType:    model.EntityTypeUserTeamAssignment,
+		EntityID:      teamAssignment.ID,
+		Operation:     model.OperationUpdated,
+		ChangedByUser: userId,
+	}
+	err = usecase.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (usecase *teamUsecase) IsUserAdminInTeam(userId uuid.UUID, teamId uuid.UUID) bool {

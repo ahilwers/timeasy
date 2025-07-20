@@ -35,7 +35,7 @@ func main() {
 	changelogRepository := postgresql.NewPostgreSQLChangelogRepository(databaseService.Database.DB)
 
 	teamRepository := postgresql.NewPostgreSQLTeamRepository(databaseService.Database.DB)
-	teamUsecase := usecase.NewTeamUsecase(teamRepository)
+	teamUsecase := usecase.NewTeamUsecase(teamRepository, changelogRepository)
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
 	projectUsecase := usecase.NewProjectUsecase(postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository), teamUsecase, changelogRepository)

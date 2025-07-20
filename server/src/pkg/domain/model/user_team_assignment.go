@@ -2,11 +2,10 @@ package model
 
 import (
 	"github.com/gofrs/uuid"
-	"gorm.io/gorm"
 )
 
 type UserTeamAssignment struct {
-	gorm.Model
+	ID     uuid.UUID
 	UserID uuid.UUID
 	TeamID uuid.UUID
 	Team   Team

@@ -43,7 +43,7 @@ func (u *UsecaseTest) SetupTest(tb testing.TB) func(tb testing.TB) {
 func (u *UsecaseTest) initUsecases() {
 	u.ChangelogRepo = postgresql.NewPostgreSQLChangelogRepository(test.Database.DB)
 	teamRepo := postgresql.NewPostgreSQLTeamRepository(test.Database.DB)
-	u.TeamUsecase = NewTeamUsecase(teamRepo)
+	u.TeamUsecase = NewTeamUsecase(teamRepo, u.ChangelogRepo)
 
 	projectRepo := postgresql.NewPostgreSQLProjectRepository(test.Database.DB, teamRepo)
 	u.ProjectUsecase = NewProjectUsecase(projectRepo, u.TeamUsecase, u.ChangelogRepo)

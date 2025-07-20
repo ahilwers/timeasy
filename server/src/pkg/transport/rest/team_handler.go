@@ -90,9 +90,20 @@ func (handler *teamHandler) UpdateTeam(context *gin.Context) {
 		return
 	}
 
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	handler.fillTeamDataFromDto(team, teamDto)
 
-	err = handler.usecase.UpdateTeam(team)
+	err = handler.usecase.UpdateTeam(team, userId)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -169,7 +180,19 @@ func (handler *teamHandler) DeleteTeam(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("team with id %v not found", teamId)})
 		return
 	}
-	err = handler.usecase.DeleteTeam(teamId)
+	
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	err = handler.usecase.DeleteTeam(teamId, userId)
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("team %v deleted", teamId)})
 }
 
