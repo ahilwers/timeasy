@@ -16,11 +16,11 @@ type TimeEntryUsecase interface {
 	GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error)
 	GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error)
 	GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error)
-	AddTimeEntry(timeEntry *model.TimeEntry) error
-	AddTimeEntryList(timeEntryList []model.TimeEntry) error
-	UpdateTimeEntry(timeEntry *model.TimeEntry) error
-	UpdateTimeEntryList(timeEntry []model.TimeEntry) error
-	DeleteTimeEntry(id uuid.UUID) error
+	AddTimeEntry(timeEntry *model.TimeEntry, userId uuid.UUID, clientId string) error
+	AddTimeEntryList(timeEntryList []model.TimeEntry, userId uuid.UUID, clientId string) error
+	UpdateTimeEntry(timeEntry *model.TimeEntry, userId uuid.UUID, clientId string) error
+	UpdateTimeEntryList(timeEntry []model.TimeEntry, userId uuid.UUID, clientId string) error
+	DeleteTimeEntry(id uuid.UUID, userId uuid.UUID, clientId string) error
 }
 
 type timeEntryUsecase struct {
@@ -68,7 +68,7 @@ func (tu *timeEntryUsecase) GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeE
 	return timeEntry, nil
 }
 
-func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {
+func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry, userId uuid.UUID, clientId string) error {
 	err := tu.checkEntry(timeEntry)
 	if err != nil {
 		return err
@@ -79,24 +79,25 @@ func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry) error {
 	}
 	err = tu.repo.AddTimeEntry(timeEntry, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	changelogEntry := model.ChangelogEntry{
-		EntityType:    model.EntityTypeTimeEntry,
-		EntityID:      timeEntry.ID,
-		Operation:     model.OperationCreated,
-		ChangedByUser: timeEntry.UserId,
+		EntityType:      model.EntityTypeTimeEntry,
+		EntityID:        timeEntry.ID,
+		Operation:       model.OperationCreated,
+		ChangedByUser:   userId,
+		ChangedByClient: clientId,
 	}
 	err = tu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	return tx.Commit()
 }
 
-func (tu *timeEntryUsecase) AddTimeEntryList(timeEntryList []model.TimeEntry) error {
+func (tu *timeEntryUsecase) AddTimeEntryList(timeEntryList []model.TimeEntry, userId uuid.UUID, clientId string) error {
 	for _, timeEntry := range timeEntryList {
 		err := tu.checkEntry(&timeEntry)
 		if err != nil {
@@ -110,25 +111,26 @@ func (tu *timeEntryUsecase) AddTimeEntryList(timeEntryList []model.TimeEntry) er
 	for _, timeEntry := range timeEntryList {
 		err := tu.repo.AddTimeEntry(&timeEntry, tx)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return err
 		}
 		changelogEntry := model.ChangelogEntry{
-			EntityType:    model.EntityTypeTimeEntry,
-			EntityID:      timeEntry.ID,
-			Operation:     model.OperationCreated,
-			ChangedByUser: timeEntry.UserId,
+			EntityType:      model.EntityTypeTimeEntry,
+			EntityID:        timeEntry.ID,
+			Operation:       model.OperationCreated,
+			ChangedByUser:   userId,
+			ChangedByClient: clientId,
 		}
 		err = tu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return err
 		}
 	}
 	return tx.Commit()
 }
 
-func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry) error {
+func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry, userId uuid.UUID, clientId string) error {
 	_, err := tu.GetTimeEntryById(timeEntry.ID)
 	if err != nil {
 		return NewEntityNotFoundError(fmt.Sprintf("timeEntry with id %v does not exist", timeEntry.ID))
@@ -143,25 +145,26 @@ func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry) error {
 	}
 	err = tu.repo.UpdateTimeEntry(timeEntry, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	changelogEntry := model.ChangelogEntry{
-		EntityType:    model.EntityTypeTimeEntry,
-		EntityID:      timeEntry.ID,
-		Operation:     model.OperationUpdated,
-		ChangedByUser: timeEntry.UserId,
+		EntityType:      model.EntityTypeTimeEntry,
+		EntityID:        timeEntry.ID,
+		Operation:       model.OperationUpdated,
+		ChangedByUser:   userId,
+		ChangedByClient: clientId,
 	}
 	err = tu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	return tx.Commit()
 }
 
-func (tu *timeEntryUsecase) UpdateTimeEntryList(timeEntryList []model.TimeEntry) error {
-	for _, timeEntry := range timeEntryList {
+func (tu *timeEntryUsecase) UpdateTimeEntryList(timeEntry []model.TimeEntry, userId uuid.UUID, clientId string) error {
+	for _, timeEntry := range timeEntry {
 		err := tu.checkEntry(&timeEntry)
 		if err != nil {
 			return err
@@ -171,28 +174,29 @@ func (tu *timeEntryUsecase) UpdateTimeEntryList(timeEntryList []model.TimeEntry)
 	if err != nil {
 		return err
 	}
-	for _, timeEntry := range timeEntryList {
+	for _, timeEntry := range timeEntry {
 		err = tu.repo.UpdateTimeEntry(&timeEntry, tx)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return err
 		}
 		changelogEntry := model.ChangelogEntry{
-			EntityType:    model.EntityTypeTimeEntry,
-			EntityID:      timeEntry.ID,
-			Operation:     model.OperationUpdated,
-			ChangedByUser: timeEntry.UserId,
+			EntityType:      model.EntityTypeTimeEntry,
+			EntityID:        timeEntry.ID,
+			Operation:       model.OperationUpdated,
+			ChangedByUser:   userId,
+			ChangedByClient: clientId,
 		}
 		err = tu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return err
 		}
 	}
 	return tx.Commit()
 }
 
-func (tu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID) error {
+func (tu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID, userId uuid.UUID, clientId string) error {
 	timeEntry, err := tu.GetTimeEntryById(id)
 	if err != nil {
 		return NewEntityNotFoundError(fmt.Sprintf("timeEntry with id %v does not exist", id))
@@ -203,18 +207,19 @@ func (tu *timeEntryUsecase) DeleteTimeEntry(id uuid.UUID) error {
 	}
 	err = tu.repo.DeleteTimeEntry(timeEntry, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	changelogEntry := model.ChangelogEntry{
-		EntityType:    model.EntityTypeTimeEntry,
-		EntityID:      timeEntry.ID,
-		Operation:     model.OperationDeleted,
-		ChangedByUser: timeEntry.UserId,
+		EntityType:      model.EntityTypeTimeEntry,
+		EntityID:        timeEntry.ID,
+		Operation:       model.OperationDeleted,
+		ChangedByUser:   userId,
+		ChangedByClient: clientId,
 	}
 	err = tu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	return tx.Commit()

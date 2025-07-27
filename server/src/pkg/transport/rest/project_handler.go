@@ -66,6 +66,10 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// Get optional clientId from URL query parameter
+	clientId := context.Query("clientId")
+	
 	newProject := model.Project{
 		UserId: userId,
 	}
@@ -74,7 +78,7 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		log.Printf("could not set project data: %v\n", err)
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
-	err = handler.usecase.AddProject(&newProject)
+	err = handler.usecase.AddProject(&newProject, userId, clientId)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
@@ -126,6 +130,9 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 			return
 		}
 	}
+	
+	// Get optional clientId from URL query parameter
+	clientId := context.Query("clientId")
 
 	err = handler.fillProjectFromDto(project, prj)
 	if err != nil {
@@ -134,11 +141,58 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 		return
 	}
 
-	err = handler.usecase.UpdateProject(project)
+	err = handler.usecase.UpdateProject(project, userId, clientId)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 	context.JSON(http.StatusOK, prj)
+}
+
+func (handler *projectHandler) DeleteProject(context *gin.Context) {
+	projectId, err := handler.getId(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Get optional clientId from URL query parameter
+	clientId := context.Query("clientId")
+
+	project, err := handler.usecase.GetProjectById(projectId)
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
+		return
+	}
+
+	// A project belongs to a user if it directly belongs to this user or it belongs to a team the user is member of:
+	projectBelongsToUser := userId == project.UserId
+	if !projectBelongsToUser && project.TeamID != nil {
+		projectBelongsToUser = handler.teamUsecase.IsUserAdminInTeam(userId, *project.TeamID)
+	}
+
+	if !projectBelongsToUser {
+		isAdmin, err := token.HasRole(model.RoleAdmin)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !isAdmin {
+			context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
+			return
+		}
+	}
+	err = handler.usecase.DeleteProject(projectId, userId, clientId)
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("project %v deleted", projectId)})
 }
 
 func (handler *projectHandler) fillProjectFromDto(project *model.Project, dto projectInput) error {
@@ -242,50 +296,6 @@ func (handler *projectHandler) GetAllProjects(context *gin.Context) {
 	context.JSON(http.StatusOK, projects)
 }
 
-func (handler *projectHandler) DeleteProject(context *gin.Context) {
-	projectId, err := handler.getId(context)
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-
-	token, err := handler.tokenVerifier.VerifyToken(context)
-	if err != nil {
-		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	userId, err := token.GetUserId()
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	project, err := handler.usecase.GetProjectById(projectId)
-	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
-		return
-	}
-
-	// A project belongs to a user if it directly belongs to this user or it belongs to a team the user is member of:
-	projectBelongsToUser := userId == project.UserId
-	if !projectBelongsToUser && project.TeamID != nil {
-		projectBelongsToUser = handler.teamUsecase.IsUserAdminInTeam(userId, *project.TeamID)
-	}
-
-	if !projectBelongsToUser {
-		isAdmin, err := token.HasRole(model.RoleAdmin)
-		if err != nil {
-			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		if !isAdmin {
-			context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
-			return
-		}
-	}
-	err = handler.usecase.DeleteProject(projectId)
-	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("project %v deleted", projectId)})
-}
-
 func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 	var projectTeamAssignment projectTeamAssignmentInput
 	if err := context.ShouldBindJSON(&projectTeamAssignment); err != nil {
@@ -304,6 +314,9 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// Get optional clientId from URL query parameter
+	clientId := context.Query("clientId")
 
 	project, err := handler.usecase.GetProjectById(projectTeamAssignment.ProjectId)
 	if err != nil {
@@ -331,7 +344,7 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 		}
 	}
 
-	err = handler.usecase.AssignProjectToTeam(project, team)
+	err = handler.usecase.AssignProjectToTeam(project, team, userId, clientId)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

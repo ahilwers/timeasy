@@ -51,12 +51,18 @@ func (u *UsecaseTest) initUsecases() {
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
 	u.TimeEntryUsecase = NewTimeEntryUsecase(timeEntryRepo, u.ProjectUsecase, u.ChangelogRepo)
 
-	//syncRepo := database.NewGormSyncRepository(test.DB)
-	//u.SyncUsecase = NewSyncUsecase(syncRepo)
+	syncRepo := postgresql.NewPostgreSQLSyncRepository(test.Database.DB)
+	u.SyncUsecase = NewSyncUsecase(syncRepo, u.ChangelogRepo, projectRepo, timeEntryRepo)
 }
 
 func GetTestUserId(t *testing.T) uuid.UUID {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	return userId
+}
+
+func GetTestClientId(t *testing.T) string {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	return userId.String()
 }

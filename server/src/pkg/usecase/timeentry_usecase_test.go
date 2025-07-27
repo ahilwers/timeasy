@@ -25,7 +25,8 @@ func Test_timeEntryUsecase_AddTimeEntry(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
@@ -53,7 +54,8 @@ func Test_timeEntryUsecase_AddTimeEntryFailsIfProjectDoesNotExist(t *testing.T) 
 		UserId:      userId,
 		ProjectId:   projectId,
 	}
-	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.NotNil(t, err)
 	var projectNotFoundError *ProjectNotFoundError
 	assert.True(t, errors.As(err, &projectNotFoundError))
@@ -85,7 +87,8 @@ func Test_timeEntryUsecase_AddTimeEntryList(t *testing.T) {
 		timeEntry2,
 	}
 
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries, userId, clientId)
 	assert.Nil(t, err)
 
 	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
@@ -125,7 +128,8 @@ func Test_timeEntryUsecase_AddTimeEntryListFailsIfProjectIdIsMissing(t *testing.
 		timeEntry2,
 	}
 
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries, userId, clientId)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
@@ -161,7 +165,8 @@ func Test_timeEntryUsecase_AddTimeEntryListFailsIfUserIdIsMissing(t *testing.T) 
 		timeEntry2,
 	}
 
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries, userId, clientId)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
@@ -199,7 +204,8 @@ func Test_timeEntryUsecase_AddTimeEntryListFailsIfProjectIsMissing(t *testing.T)
 		timeEntry2,
 	}
 
-	err = usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries)
+	clientId := GetTestClientId(t)
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntryList(addedTimeEntries, userId, clientId)
 	assert.NotNil(t, err)
 	var projectNotFoundError *ProjectNotFoundError
 	assert.True(t, errors.As(err, &projectNotFoundError))
@@ -224,7 +230,8 @@ func Test_timeEntryUsecase_GetTimeEntryById(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	entry, err := usecaseTest.TimeEntryUsecase.GetTimeEntryById(timeEntry.ID)
@@ -250,7 +257,8 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_ReturnsTheLastOpenTimeEntry(
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1, userId, clientId)
 	assert.Nil(t, err)
 	timeEntry2 := model.TimeEntry{
 		Description: "timeentry2",
@@ -258,7 +266,7 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_ReturnsTheLastOpenTimeEntry(
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2, userId, clientId)
 	assert.Nil(t, err)
 	timeEntry3 := model.TimeEntry{
 		Description: "timeentry3",
@@ -267,7 +275,7 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_ReturnsTheLastOpenTimeEntry(
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry3)
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry3, userId, clientId)
 	assert.Nil(t, err)
 
 	entry, err := usecaseTest.TimeEntryUsecase.GetLastOpenTimeEntry(userId)
@@ -295,7 +303,8 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_WithMultipleUsers_ReturnsThe
 		UserId:      otherUserId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1, otherUserId, clientId)
 	assert.Nil(t, err)
 	timeEntry2 := model.TimeEntry{
 		Description: "timeentry2",
@@ -303,7 +312,7 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_WithMultipleUsers_ReturnsThe
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2, userId, clientId)
 	assert.Nil(t, err)
 	timeEntry3 := model.TimeEntry{
 		Description: "timeentry3",
@@ -311,7 +320,7 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_WithMultipleUsers_ReturnsThe
 		UserId:      otherUserId,
 		ProjectId:   project.ID,
 	}
-	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry3)
+	err = usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry3, otherUserId, clientId)
 	assert.Nil(t, err)
 
 	entry, err := usecaseTest.TimeEntryUsecase.GetLastOpenTimeEntry(userId)
@@ -339,7 +348,8 @@ func Test_timeEntryUsecase_GetTimeLastOpenTimeEntry_WithoutOpenTimeEntry_Returns
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1, userId, clientId)
 	assert.Nil(t, err)
 
 	entry, err := usecaseTest.TimeEntryUsecase.GetLastOpenTimeEntry(userId)
@@ -425,11 +435,12 @@ func Test_timeEntryUsecase_UpdateTimeEntry(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
@@ -461,7 +472,8 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfItDoesNotExist(t *testing.T) {
 	}
 
 	timeEntry.Description = "updatedTimeentry"
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
 	assert.NotNil(t, err)
 	var notFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -485,12 +497,13 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfUserIdIsEmpty(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
 	timeEntry.UserId = uuid.Nil
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
@@ -519,12 +532,13 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfProjectIdIsEmpty(t *testing.T) 
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
 	timeEntry.ProjectId = uuid.Nil
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
@@ -553,14 +567,15 @@ func Test_timeEntryUsecase_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	timeEntry.Description = "updatedTimeentry"
 	projectId, err := uuid.NewV4()
 	assert.Nil(t, err)
 	timeEntry.ProjectId = projectId
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
 	assert.NotNil(t, err)
 	var projectNotFoundError *ProjectNotFoundError
 	assert.True(t, errors.As(err, &projectNotFoundError))
@@ -599,7 +614,8 @@ func Test_timeEntryUsecase_UpdateTimeEntryList(t *testing.T) {
 		timeEntry1,
 		timeEntry2,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries, userId, clientId)
 	assert.Nil(t, err)
 
 	// fetch the time entries from the db again to get their proper ids:
@@ -607,7 +623,7 @@ func Test_timeEntryUsecase_UpdateTimeEntryList(t *testing.T) {
 	assert.Nil(t, err)
 	timeEntries[0].Description = "updatedTimeentry1"
 	timeEntries[1].Description = "updatedTimeentry2"
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries, userId, clientId)
 	assert.Nil(t, err)
 
 	entriesFromDb, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
@@ -646,7 +662,8 @@ func Test_timeEntryUsecase_UpdateTimeEntryListFailsIfUserIdIsMissing(t *testing.
 		timeEntry1,
 		timeEntry2,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries, userId, clientId)
 	assert.Nil(t, err)
 
 	// fetch the time entries from the db again to get their proper ids:
@@ -655,7 +672,7 @@ func Test_timeEntryUsecase_UpdateTimeEntryListFailsIfUserIdIsMissing(t *testing.
 	timeEntries[0].Description = "updatedTimeentry1"
 	timeEntries[1].Description = "updatedTimeentry2"
 	timeEntries[1].UserId = uuid.Nil
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries, userId, clientId)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
@@ -699,7 +716,8 @@ func Test_timeEntryUsecase_UpdateTimeEntryListFailsIfProjectIdIsMissing(t *testi
 		timeEntry1,
 		timeEntry2,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries, userId, clientId)
 	assert.Nil(t, err)
 
 	// fetch the time entries from the db again to get their proper ids:
@@ -708,7 +726,7 @@ func Test_timeEntryUsecase_UpdateTimeEntryListFailsIfProjectIdIsMissing(t *testi
 	timeEntries[0].Description = "updatedTimeentry1"
 	timeEntries[1].Description = "updatedTimeentry2"
 	timeEntries[1].ProjectId = uuid.Nil
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries, userId, clientId)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
@@ -752,7 +770,8 @@ func Test_timeEntryUsecase_UpdateTimeEntryListFailsIfProjectIsMissing(t *testing
 		timeEntry1,
 		timeEntry2,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntryList(timeEntries, userId, clientId)
 	assert.Nil(t, err)
 
 	// fetch the time entries from the db again to get their proper ids:
@@ -762,7 +781,7 @@ func Test_timeEntryUsecase_UpdateTimeEntryListFailsIfProjectIsMissing(t *testing
 	timeEntries[1].Description = "updatedTimeentry2"
 	missingProjectId, err := uuid.NewV4()
 	timeEntries[1].ProjectId = missingProjectId
-	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntryList(timeEntries, userId, clientId)
 	assert.NotNil(t, err)
 	var projectNotFoundError *ProjectNotFoundError
 	assert.True(t, errors.As(err, &projectNotFoundError))
@@ -796,10 +815,11 @@ func Test_timeEntryUsecase_DeleteTimeEntry(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
-	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID)
+	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID, userId, clientId)
 	assert.Nil(t, err)
 
 	entryList, err := usecaseTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
@@ -824,12 +844,13 @@ func Test_timeEntryUsecase_DeleteTimeEntryFailsIfItDoesNotExist(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	notExistingId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(notExistingId)
+	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(notExistingId, userId, clientId)
 	assert.NotNil(t, err)
 	var notFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &notFoundError))
@@ -840,102 +861,115 @@ func Test_timeEntryUsecase_DeleteTimeEntryFailsIfItDoesNotExist(t *testing.T) {
 }
 
 func Test_timeEntryUsecase_AddTimeEntry_AlsoAddsChangelogEntry(t *testing.T) {
-    usecaseTest := NewUsecaseTest()
-    teardownTest := usecaseTest.SetupTest(t)
-    defer teardownTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
 
-    userId := GetTestUserId(t)
-    project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
-    timeEntry := model.TimeEntry{
-        Description: "timeentry1",
-        StartTime:   time.Now(),
-        UserId:      userId,
-        ProjectId:   project.ID,
-    }
-    err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
-    assert.Nil(t, err)
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+	timeEntry := model.TimeEntry{
+		Description: "timeentry1",
+		StartTime:   time.Now(),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
 
-    changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
-    assert.Nil(t, err)
-    assert.Equal(t, 2, len(changelogEntries))
-    changelogEntry := changelogEntries[0]
-    assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
-    assert.Equal(t, project.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
-    changelogEntry = changelogEntries[1]
-    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
-    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(changelogEntries))
+	changelogEntry := changelogEntries[0]
+	assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+	assert.Equal(t, project.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+	changelogEntry = changelogEntries[1]
+	assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+	assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+	assert.Equal(t, userId, changelogEntries[1].ChangedByUser)
+	assert.Equal(t, clientId, changelogEntries[1].ChangedByClient)
 }
 
 func Test_timeEntryUsecase_UpdateTimeEntry_AlsoAddsChangelogEntry(t *testing.T) {
-    usecaseTest := NewUsecaseTest()
-    teardownTest := usecaseTest.SetupTest(t)
-    defer teardownTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
 
-    userId := GetTestUserId(t)
-    project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
-    timeEntry := model.TimeEntry{
-        Description: "timeentry1",
-        StartTime:   time.Now(),
-        UserId:      userId,
-        ProjectId:   project.ID,
-    }
-    err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
-    assert.Nil(t, err)
-    err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry)
-    assert.Nil(t, err)
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+	timeEntry := model.TimeEntry{
+		Description: "timeentry1",
+		StartTime:   time.Now(),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
 
-    changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
-    assert.Nil(t, err)
-    assert.Equal(t, 3, len(changelogEntries))
-    changelogEntry := changelogEntries[0]
-    assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
-    assert.Equal(t, project.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
-    changelogEntry = changelogEntries[1]
-    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
-    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
-    changelogEntry = changelogEntries[2]
-    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
-    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationUpdated, changelogEntry.Operation)
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(changelogEntries))
+	changelogEntry := changelogEntries[0]
+	assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+	assert.Equal(t, project.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+	changelogEntry = changelogEntries[1]
+	assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+	assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+	assert.Equal(t, userId, changelogEntry.ChangedByUser)
+	assert.Equal(t, clientId, changelogEntry.ChangedByClient)
+	changelogEntry = changelogEntries[2]
+	assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+	assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationUpdated, changelogEntry.Operation)
+	assert.Equal(t, userId, changelogEntry.ChangedByUser)
+	assert.Equal(t, clientId, changelogEntry.ChangedByClient)
 }
 
 func Test_timeEntryUsecase_DeleteTimeEntry_AlsoAddsChangelogEntry(t *testing.T) {
-    usecaseTest := NewUsecaseTest()
-    teardownTest := usecaseTest.SetupTest(t)
-    defer teardownTest(t)
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
 
-    userId := GetTestUserId(t)
-    project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
-    timeEntry := model.TimeEntry{
-        Description: "timeentry1",
-        StartTime:   time.Now(),
-        UserId:      userId,
-        ProjectId:   project.ID,
-    }
-    err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
-    assert.Nil(t, err)
-    err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID)
-    assert.Nil(t, err)
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", GetTestUserId(t))
+	timeEntry := model.TimeEntry{
+		Description: "timeentry1",
+		StartTime:   time.Now(),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID, userId, clientId)
+	assert.Nil(t, err)
 
-    changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
-    assert.Nil(t, err)
-    assert.Equal(t, 3, len(changelogEntries))
-    changelogEntry := changelogEntries[0]
-    assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
-    assert.Equal(t, project.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
-    changelogEntry = changelogEntries[1]
-    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
-    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
-    changelogEntry = changelogEntries[2]
-    assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
-    assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
-    assert.Equal(t, model.OperationDeleted, changelogEntry.Operation)
+	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(changelogEntries))
+	changelogEntry := changelogEntries[0]
+	assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+	assert.Equal(t, project.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+	changelogEntry = changelogEntries[1]
+	assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+	assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntry.Operation)
+	assert.Equal(t, userId, changelogEntry.ChangedByUser)
+	assert.Equal(t, clientId, changelogEntry.ChangedByClient)
+	changelogEntry = changelogEntries[2]
+	assert.Equal(t, model.EntityTypeTimeEntry, changelogEntry.EntityType)
+	assert.Equal(t, timeEntry.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationDeleted, changelogEntry.Operation)
+	assert.Equal(t, userId, changelogEntry.ChangedByUser)
+	assert.Equal(t, clientId, changelogEntry.ChangedByClient)
 }
 func assertTimesAreEqual(t *testing.T, time1 time.Time, time2 time.Time) {
 	// We cannot check the milliseconds here because they get lost in the database:
@@ -949,6 +983,7 @@ func addTimeEntries(t *testing.T, timeEntryUsecase TimeEntryUsecase, count int, 
 }
 
 func addTimeEntriesWithStartIndex(t *testing.T, timeEntryUsecase TimeEntryUsecase, startIndex int, count int, ownerId uuid.UUID, project model.Project) []model.TimeEntry {
+	clientId := GetTestClientId(t)
 	var entries []model.TimeEntry
 	startTime := time.Now()
 	oneHour := 1000 * 1000 * 60 * 60 // duration is in nanoseconds
@@ -960,7 +995,7 @@ func addTimeEntriesWithStartIndex(t *testing.T, timeEntryUsecase TimeEntryUsecas
 			ProjectId:   project.ID,
 		}
 		entries = append(entries, entry)
-		err := timeEntryUsecase.AddTimeEntry(&entry)
+		err := timeEntryUsecase.AddTimeEntry(&entry, ownerId, clientId)
 		assert.Nil(t, err)
 	}
 	return entries

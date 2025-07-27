@@ -63,9 +63,13 @@ func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// Get optional clientId from URL query parameter
+	clientId := context.Query("clientId")
+	
 	newEntry := handler.createEntryFromDto(entryDto, userId)
 
-	err = handler.usecase.AddTimeEntry(&newEntry)
+	err = handler.usecase.AddTimeEntry(&newEntry, userId, clientId)
 	if err != nil {
 		errorCode := http.StatusInternalServerError
 		var userNotFoundError *usecase.UserNotFoundError
@@ -122,10 +126,13 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 			return
 		}
 	}
+	
+	// Get optional clientId from URL query parameter
+	clientId := context.Query("clientId")
 
 	handler.fillEntryFromDto(timeEntry, entryDto)
 
-	err = handler.usecase.UpdateTimeEntry(timeEntry)
+	err = handler.usecase.UpdateTimeEntry(timeEntry, userId, clientId)
 	if err != nil {
 		errorCode := http.StatusInternalServerError
 		var userNotFoundError *usecase.UserNotFoundError
@@ -161,6 +168,9 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// Get optional clientId from URL query parameter
+	clientId := context.Query("clientId")
 
 	timeEntry, err := handler.usecase.GetTimeEntryById(entryId)
 	if err != nil {
@@ -178,7 +188,7 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 			return
 		}
 	}
-	err = handler.usecase.DeleteTimeEntry(entryId)
+	err = handler.usecase.DeleteTimeEntry(entryId, userId, clientId)
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("entry %v deleted", entryId)})
 }
 

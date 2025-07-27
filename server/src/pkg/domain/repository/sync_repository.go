@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"time"
 	"timeasy-server/pkg/domain/model"
 
 	"github.com/gofrs/uuid"
@@ -9,8 +8,9 @@ import (
 
 type SyncRepository interface {
 	UpdateAndDeleteData(data model.SyncData) error
-	GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.TimeEntry, error)
-	GetUpdatedProjectsOfUser(userId uuid.UUID, sinceWhen time.Time) ([]model.Project, error)
+	GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.TimeEntry, error)
+
+	GetUpdatedProjectsOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.Project, error)
 	GetProjectById(id uuid.UUID) (*model.Project, error)
 	GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error)
 }

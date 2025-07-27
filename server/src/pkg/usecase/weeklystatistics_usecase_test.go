@@ -188,7 +188,8 @@ func AddTimeEntry(t *testing.T, usecaseTest *UsecaseTest, userId uuid.UUID, proj
 		UserId:      userId,
 		ProjectId:   projectId,
 	}
-	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 	return &timeEntry
 }
