@@ -89,7 +89,7 @@ func (repo *postgresqlTeamRepository) DeleteTeam(team *model.Team, tx model.Tran
 	if !ok {
 		return errors.New("invalid transaction type")
 	}
-	query := `DELETE FROM teams WHERE id = $1`
+	query := `UPDATE teams SET deleted = true WHERE id = $1`
 
 	result, err := sqlTx.Exec(query, team.ID)
 	if err != nil {
@@ -105,6 +105,7 @@ func (repo *postgresqlTeamRepository) DeleteTeam(team *model.Team, tx model.Tran
 		return repository.ErrEntityNotFound
 	}
 
+	team.Deleted = true
 	return nil
 }
 
@@ -112,7 +113,7 @@ func (repo *postgresqlTeamRepository) GetTeamById(id uuid.UUID) (*model.Team, er
 	query := `
 		SELECT id, name1, name2, name3
 		FROM teams
-		WHERE id = $1
+		WHERE id = $1 AND deleted = false
 	`
 
 	var team model.Team
@@ -137,6 +138,7 @@ func (repo *postgresqlTeamRepository) GetAllTeams() ([]model.Team, error) {
 	query := `
 		SELECT id, name1, name2, name3
 		FROM teams
+		WHERE deleted = false
 		ORDER BY name1, name2, name3
 	`
 
@@ -201,7 +203,7 @@ func (repo *postgresqlTeamRepository) GetTeamsOfUser(userID uuid.UUID) ([]model.
 		       t.name1, t.name2, t.name3
 		FROM user_team_assignments uta
 		JOIN teams t ON uta.team_id = t.id
-		WHERE uta.user_id = $1
+		WHERE uta.user_id = $1 AND t.deleted = false
 		ORDER BY t.name1, t.name2, t.name3
 	`
 
@@ -246,7 +248,7 @@ func (repo *postgresqlTeamRepository) GetUserTeamAssignment(userID, teamID uuid.
 		       t.name1, t.name2, t.name3
 		FROM user_team_assignments uta
 		JOIN teams t ON uta.team_id = t.id
-		WHERE uta.user_id = $1 AND uta.team_id = $2
+		WHERE uta.user_id = $1 AND uta.team_id = $2 AND t.deleted = false
 	`
 
 	var assignment model.UserTeamAssignment
@@ -295,6 +297,7 @@ func (repo *postgresqlTeamRepository) DeleteUserTeamAssignment(assignment *model
 
 	return nil
 }
+
 func (repo *postgresqlTeamRepository) DeleteAllUserAssignmentsOfTeam(teamId uuid.UUID, tx model.Transaction) error {
 	sqlTx, ok := tx.(*sql.Tx)
 	if !ok {

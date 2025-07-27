@@ -104,6 +104,11 @@ func deleteAllEntities(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+	// Reset the sequence for change_log table
+	_, err = db.Exec("ALTER SEQUENCE change_log_id_seq RESTART WITH 1")
+	if err != nil {
+		return err
+	}
 	_, err = db.Exec("DELETE FROM time_entries")
 	if err != nil {
 		return err

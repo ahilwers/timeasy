@@ -16,4 +16,5 @@ type Project struct {
 	HourlyRate decimal.Decimal `json:"hourlyRate,omitempty"`
 	TimeBudget int             `json:"timeBudget,omitempty"`
 	IsActive   bool            `json:"isActive,omitempty"`
+	Deleted    bool            `json:"deleted,omitempty"`
 }

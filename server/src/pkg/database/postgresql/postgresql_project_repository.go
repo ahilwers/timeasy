@@ -88,9 +88,9 @@ func (repo *postgresqlProjectRepository) AddProject(project *model.Project, tx m
 func (repo *postgresqlProjectRepository) GetProjectById(id uuid.UUID) (*model.Project, error) {
 	query := `
 		SELECT
-			id, name, user_id, team_id, color, hourly_rate, time_budget, deadline::date, is_active
+			id, name, user_id, team_id, color, hourly_rate, time_budget, deadline::date, is_active, deleted
 		FROM projects
-		WHERE id = $1
+		WHERE id = $1 AND deleted = false
 	`
 
 	var project model.Project
@@ -106,6 +106,7 @@ func (repo *postgresqlProjectRepository) GetProjectById(id uuid.UUID) (*model.Pr
 		&project.TimeBudget,
 		&project.Deadline,
 		&project.IsActive,
+		&project.Deleted,
 	)
 
 	if err != nil {
@@ -137,7 +138,7 @@ func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project, t
 			time_budget = $6,
 			deadline = $7,
 			is_active = $8
-		WHERE id = $9
+		WHERE id = $9 AND deleted = false
 	`
 
 	var teamID *uuid.UUID
@@ -186,7 +187,7 @@ func (repo *postgresqlProjectRepository) DeleteProject(project *model.Project, t
 	if !ok {
 		return errors.New("invalid transaction type")
 	}
-	query := `DELETE FROM projects WHERE id = $1`
+	query := `UPDATE projects SET deleted = true WHERE id = $1`
 	result, err := sqlTx.Exec(query, project.ID)
 	if err != nil {
 		return err
@@ -201,14 +202,16 @@ func (repo *postgresqlProjectRepository) DeleteProject(project *model.Project, t
 		return repository.ErrEntityNotFound
 	}
 
+	project.Deleted = true
 	return nil
 }
 
 func (repo *postgresqlProjectRepository) GetAllProjects() ([]model.Project, error) {
 	query := `
 		SELECT
-			id, name, user_id, team_id, color, hourly_rate, time_budget, deadline::date, is_active
+			id, name, user_id, team_id, color, hourly_rate, time_budget, deadline::date, is_active, deleted
 		FROM projects
+		WHERE deleted = false
 		ORDER BY name
 	`
 
@@ -257,9 +260,10 @@ func (repo *postgresqlProjectRepository) GetAllProjectsOfUser(userId uuid.UUID) 
 
 		query = fmt.Sprintf(`
             SELECT
-                id, name, user_id, team_id, color, hourly_rate, time_budget, deadline, is_active
+                id, name, user_id, team_id, color, hourly_rate, time_budget, deadline, is_active, deleted
             FROM projects
             WHERE user_id = $1 OR team_id = ANY(ARRAY[%s]::uuid[])
+            AND deleted = false
             ORDER BY name
         `, strings.Join(placeholders, ","))
 
@@ -267,9 +271,9 @@ func (repo *postgresqlProjectRepository) GetAllProjectsOfUser(userId uuid.UUID) 
 	} else {
 		query = `
 			SELECT
-				id, name, user_id, team_id, color, hourly_rate, time_budget, deadline::date, is_active
+				id, name, user_id, team_id, color, hourly_rate, time_budget, deadline::date, is_active, deleted
 			FROM projects
-			WHERE user_id = $1
+			WHERE user_id = $1 AND deleted = false
 			ORDER BY name
 		`
 		args = []interface{}{userId}
@@ -327,6 +331,7 @@ func scanProject(rows *sql.Rows) (*model.Project, error) {
 		&project.TimeBudget,
 		&project.Deadline,
 		&project.IsActive,
+		&project.Deleted,
 	)
 
 	if err != nil {

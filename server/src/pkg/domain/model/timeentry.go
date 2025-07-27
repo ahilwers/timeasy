@@ -14,6 +14,7 @@ type TimeEntry struct {
 	StartTime   time.Time
 	EndTime     time.Time
 	Description string
+	Deleted     bool
 }
 
 func (timeEntry *TimeEntry) GetSeconds() int {

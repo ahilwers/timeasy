@@ -190,7 +190,7 @@ func (repo *postgresqlTimeEntryRepository) DeleteTimeEntry(entry *model.TimeEntr
 	if !ok {
 		return errors.New("invalid transaction type")
 	}
-	query := `DELETE FROM time_entries WHERE id = $1`
+	query := `UPDATE time_entries SET deleted = true WHERE id = $1`
 	result, err := sqlTx.Exec(query, entry.ID)
 	if err != nil {
 		return err
@@ -205,6 +205,7 @@ func (repo *postgresqlTimeEntryRepository) DeleteTimeEntry(entry *model.TimeEntr
 		return repository.ErrEntityNotFound
 	}
 
+	entry.Deleted = true
 	return nil
 }
 
@@ -213,7 +214,7 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntryById(id uuid.UUID) (*mode
 		SELECT
 			id, user_id, project_id, start_time, end_time, description
 		FROM time_entries
-		WHERE id = $1
+		WHERE id = $1 AND deleted = false
 	`
 
 	var entry model.TimeEntry
@@ -244,7 +245,7 @@ func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID
 		SELECT
 			id, user_id, project_id, start_time, end_time, description
 		FROM time_entries
-		WHERE user_id = $1 AND (end_time IS NULL OR end_time = '0001-01-01 00:00:00'::timestamp)
+		WHERE user_id = $1 AND (end_time IS NULL OR end_time = '0001-01-01 00:00:00'::timestamp) AND deleted = false
 		ORDER BY start_time DESC
 		LIMIT 1
 	`
@@ -277,7 +278,7 @@ func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUser(userId uuid.U
 		SELECT
 			id, user_id, project_id, start_time, end_time, description
 		FROM time_entries
-		WHERE user_id = $1
+		WHERE user_id = $1 AND deleted = false
 		ORDER BY start_time DESC, end_time DESC
 	`
 
@@ -289,7 +290,7 @@ func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUserAndProject(use
 		SELECT
 			id, user_id, project_id, start_time, end_time, description
 		FROM time_entries
-		WHERE user_id = $1 AND project_id = $2
+		WHERE user_id = $1 AND project_id = $2 AND deleted = false
 		ORDER BY start_time DESC, end_time DESC
 	`
 
@@ -304,6 +305,7 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetween
         WHERE user_id = $1
           AND DATE(start_time) >= $2
           AND (end_time IS NULL OR DATE(end_time) <= $3)
+          AND deleted = false
     `
 
 	args := []interface{}{userId, startDate, endDate}

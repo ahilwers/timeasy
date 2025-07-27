@@ -5,8 +5,9 @@ import (
 )
 
 type Team struct {
-	ID    uuid.UUID
-	Name1 string
-	Name2 string
-	Name3 string
+	ID      uuid.UUID
+	Name1   string
+	Name2   string
+	Name3   string
+	Deleted bool
 }

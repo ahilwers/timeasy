@@ -88,18 +88,18 @@ func (repo *postgresqlSyncRepository) UpdateAndDeleteData(data model.SyncData) e
 // GetUpdatedTimeEntriesOfUser retrieves time entries that have been updated since a specific changelog entry ID
 func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.TimeEntry, error) {
 	query := `
-		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description,
-			   p.id as project_id, p.name as project_name, p.user_id as project_user_id, 
+		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description, te.deleted,
+			   p.id as project_id, p.name as project_name, p.user_id as project_user_id,
 			   p.team_id as project_team_id, p.color as project_color, p.deadline::date as project_deadline,
-			   p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget, 
-			   p.is_active as project_is_active,
-			   cl.operation
+			   p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget,
+			   p.is_active as project_is_active, p.deleted as project_deleted,
+			   cl.operation, cl.id
 		FROM change_log cl
-		JOIN time_entries te ON cl.entity_id = te.id
+		LEFT JOIN time_entries te ON cl.entity_id = te.id
 		LEFT JOIN projects p ON te.project_id = p.id
 		WHERE cl.id > $1
 		AND cl.entity_type = 'TimeEntry'
-		AND te.user_id = $2
+		AND (te.user_id = $2 OR te.id IS NULL)
 		AND (cl.changed_by_client != $3 OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')
 		ORDER BY cl.id ASC
 	`
@@ -125,12 +125,14 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 		var timeBudget sql.NullInt64
 		var isActive sql.NullBool
 		var color sql.NullString
+		var projectDeleted sql.NullBool
+		var changelogID int64
 
 		err := rows.Scan(
-			&entry.ID, &entry.UserId, &entry.ProjectId, &entry.StartTime, &entry.EndTime, &entry.Description,
+			&entry.ID, &entry.UserId, &entry.ProjectId, &entry.StartTime, &entry.EndTime, &entry.Description, &entry.Deleted,
 			&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
-			&hourlyRate, &timeBudget, &isActive,
-			&operation,
+			&hourlyRate, &timeBudget, &isActive, &projectDeleted,
+			&operation, &changelogID,
 		)
 		if err != nil {
 			return nil, err
@@ -181,6 +183,8 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 			// Add to deleted if not in created or updated
 			if _, existsInCreated := createdEntries[entry.ID]; !existsInCreated {
 				if _, existsInUpdated := updatedEntries[entry.ID]; !existsInUpdated {
+					// For soft delete, we need to ensure the entry is marked as deleted
+					entry.Deleted = true
 					deletedEntries[entry.ID] = entry
 				}
 			}
@@ -211,14 +215,14 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 // GetUpdatedProjectsOfUser retrieves projects that have been updated since a specific changelog entry ID
 func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.Project, error) {
 	query := `
-		SELECT p.id, p.name, p.user_id, p.team_id, p.color, p.deadline::date, 
-			   p.hourly_rate, p.time_budget, p.is_active,
-			   cl.operation
+		SELECT p.id, p.name, p.user_id, p.team_id, p.color, p.deadline::date,
+			   p.hourly_rate, p.time_budget, p.is_active, p.deleted,
+			   cl.operation, cl.id
 		FROM change_log cl
-		JOIN projects p ON cl.entity_id = p.id
+		LEFT JOIN projects p ON cl.entity_id = p.id
 		WHERE cl.id > $1
 		AND cl.entity_type = 'Project'
-		AND p.user_id = $2
+		AND (p.user_id = $2 OR p.id IS NULL)
 		AND (cl.changed_by_client != $3 OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')
 		ORDER BY cl.id ASC
 	`
@@ -243,10 +247,11 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 		var timeBudget sql.NullInt64
 		var isActive sql.NullBool
 		var color sql.NullString
+		var changelogID int64
 
 		err := rows.Scan(
 			&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
-			&hourlyRate, &timeBudget, &isActive, &operation,
+			&hourlyRate, &timeBudget, &isActive, &project.Deleted, &operation, &changelogID,
 		)
 		if err != nil {
 			return nil, err
@@ -295,6 +300,8 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 			// Add to deleted if not in created or updated
 			if _, existsInCreated := createdProjects[project.ID]; !existsInCreated {
 				if _, existsInUpdated := updatedProjects[project.ID]; !existsInUpdated {
+					// For soft delete, we need to ensure the project is marked as deleted
+					project.Deleted = true
 					deletedProjects[project.ID] = project
 				}
 			}
@@ -381,9 +388,9 @@ func (repo *postgresqlSyncRepository) GetProjectById(id uuid.UUID) (*model.Proje
 func (repo *postgresqlSyncRepository) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
 	query := `
 		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description,
-			   p.id as project_id, p.name as project_name, p.user_id as project_user_id, 
+			   p.id as project_id, p.name as project_name, p.user_id as project_user_id,
 			   p.team_id as project_team_id, p.color as project_color, p.deadline::date as project_deadline,
-			   p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget, 
+			   p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget,
 			   p.is_active as project_is_active
 		FROM time_entries te
 		LEFT JOIN projects p ON te.project_id = p.id
@@ -445,49 +452,54 @@ func (repo *postgresqlSyncRepository) GetTimeEntryById(id uuid.UUID) (*model.Tim
 
 func (repo *postgresqlSyncRepository) createTimeEntry(tx *sql.Tx, entry *model.TimeEntry) error {
 	query := `
-		INSERT INTO time_entries (id, user_id, project_id, start_time, end_time, description)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO time_entries (id, user_id, project_id, start_time, end_time, description, deleted)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
-	_, err := tx.Exec(query, entry.ID, entry.UserId, entry.ProjectId, entry.StartTime, entry.EndTime, entry.Description)
+	_, err := tx.Exec(query, entry.ID, entry.UserId, entry.ProjectId, entry.StartTime, entry.EndTime, entry.Description, entry.Deleted)
 	return err
 }
 
 func (repo *postgresqlSyncRepository) updateTimeEntry(tx *sql.Tx, entry *model.TimeEntry) error {
 	query := `
 		UPDATE time_entries
-		SET user_id = $2, project_id = $3, start_time = $4, end_time = $5, description = $6
+		SET user_id = $2, project_id = $3, start_time = $4, end_time = $5, description = $6, deleted = $7
 		WHERE id = $1
 	`
-	_, err := tx.Exec(query, entry.ID, entry.UserId, entry.ProjectId, entry.StartTime, entry.EndTime, entry.Description)
+	_, err := tx.Exec(query, entry.ID, entry.UserId, entry.ProjectId, entry.StartTime, entry.EndTime, entry.Description, entry.Deleted)
 	return err
 }
 
 func (repo *postgresqlSyncRepository) deleteTimeEntry(tx *sql.Tx, entry *model.TimeEntry) error {
 	query := `
-		DELETE FROM time_entries
+		UPDATE time_entries
+		SET deleted = true
 		WHERE id = $1
 	`
 	_, err := tx.Exec(query, entry.ID)
+
+	if err == nil {
+		entry.Deleted = true
+	}
 	return err
 }
 
 func (repo *postgresqlSyncRepository) createProject(tx *sql.Tx, project *model.Project) error {
 	query := `
-		INSERT INTO projects (id, name, user_id, team_id, color, deadline, hourly_rate, time_budget, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO projects (id, name, user_id, team_id, color, deadline, hourly_rate, time_budget, is_active, deleted)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
-	
+
 	var deadline interface{}
 	if !project.Deadline.IsZero() {
 		deadline = project.Deadline.ToTime()
 	} else {
 		deadline = nil
 	}
-	
+
 	_, err := tx.Exec(
 		query,
 		project.ID, project.Name, project.UserId, project.TeamID, project.Color,
-		deadline, project.HourlyRate, project.TimeBudget, project.IsActive,
+		deadline, project.HourlyRate, project.TimeBudget, project.IsActive, project.Deleted,
 	)
 	return err
 }
@@ -495,31 +507,36 @@ func (repo *postgresqlSyncRepository) createProject(tx *sql.Tx, project *model.P
 func (repo *postgresqlSyncRepository) updateProject(tx *sql.Tx, project *model.Project) error {
 	query := `
 		UPDATE projects
-		SET name = $2, user_id = $3, team_id = $4, color = $5, deadline = $6, 
-		    hourly_rate = $7, time_budget = $8, is_active = $9
+		SET name = $2, user_id = $3, team_id = $4, color = $5, deadline = $6,
+		    hourly_rate = $7, time_budget = $8, is_active = $9, deleted = $10
 		WHERE id = $1
 	`
-	
+
 	var deadline interface{}
 	if !project.Deadline.IsZero() {
 		deadline = project.Deadline.ToTime()
 	} else {
 		deadline = nil
 	}
-	
+
 	_, err := tx.Exec(
 		query,
 		project.ID, project.Name, project.UserId, project.TeamID, project.Color,
-		deadline, project.HourlyRate, project.TimeBudget, project.IsActive,
+		deadline, project.HourlyRate, project.TimeBudget, project.IsActive, project.Deleted,
 	)
 	return err
 }
 
 func (repo *postgresqlSyncRepository) deleteProject(tx *sql.Tx, project *model.Project) error {
 	query := `
-		DELETE FROM projects
+		UPDATE projects
+		SET deleted = true
 		WHERE id = $1
 	`
 	_, err := tx.Exec(query, project.ID)
+
+	if err == nil {
+		project.Deleted = true
+	}
 	return err
 }
