@@ -86,7 +86,7 @@ func (repo *postgresqlSyncRepository) UpdateAndDeleteData(data model.SyncData) e
 }
 
 // GetUpdatedTimeEntriesOfUser retrieves time entries that have been updated since a specific changelog entry ID
-func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.TimeEntry, error) {
+func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.TimeEntrySyncResult, error) {
 	query := `
 		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description, te.deleted,
 			   p.id as project_id, p.name as project_name, p.user_id as project_user_id,
@@ -106,7 +106,7 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 
 	rows, err := repo.db.Query(query, sinceTimeLogEntry, userId, excludeClientId)
 	if err != nil {
-		return nil, err
+		return model.TimeEntrySyncResult{}, err
 	}
 	defer rows.Close()
 
@@ -135,7 +135,7 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 			&operation, &changelogID,
 		)
 		if err != nil {
-			return nil, err
+			return model.TimeEntrySyncResult{}, err
 		}
 
 		// Set project fields
@@ -192,28 +192,28 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 	}
 
 	// Prepare the result
-	var result []model.TimeEntry
+	result := model.TimeEntrySyncResult{}
 
 	// Add created entries
 	for _, entry := range createdEntries {
-		result = append(result, entry)
+		result.Created = append(result.Created, entry)
 	}
 
 	// Add updated entries
 	for _, entry := range updatedEntries {
-		result = append(result, entry)
+		result.Updated = append(result.Updated, entry)
 	}
 
 	// Add deleted entries
 	for _, entry := range deletedEntries {
-		result = append(result, entry)
+		result.Deleted = append(result.Deleted, entry)
 	}
 
 	return result, nil
 }
 
 // GetUpdatedProjectsOfUser retrieves projects that have been updated since a specific changelog entry ID
-func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.Project, error) {
+func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.ProjectSyncResult, error) {
 	query := `
 		SELECT p.id, p.name, p.user_id, p.team_id, p.color, p.deadline::date,
 			   p.hourly_rate, p.time_budget, p.is_active, p.deleted,
@@ -229,7 +229,7 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 
 	rows, err := repo.db.Query(query, sinceTimeLogEntry, userId, excludeClientId)
 	if err != nil {
-		return nil, err
+		return model.ProjectSyncResult{}, err
 	}
 	defer rows.Close()
 
@@ -254,7 +254,7 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 			&hourlyRate, &timeBudget, &isActive, &project.Deleted, &operation, &changelogID,
 		)
 		if err != nil {
-			return nil, err
+			return model.ProjectSyncResult{}, err
 		}
 
 		// Set project fields
@@ -309,21 +309,21 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 	}
 
 	// Prepare the result
-	var result []model.Project
+	result := model.ProjectSyncResult{}
 
 	// Add created projects
 	for _, project := range createdProjects {
-		result = append(result, project)
+		result.Created = append(result.Created, project)
 	}
 
 	// Add updated projects
 	for _, project := range updatedProjects {
-		result = append(result, project)
+		result.Updated = append(result.Updated, project)
 	}
 
 	// Add deleted projects
 	for _, project := range deletedProjects {
-		result = append(result, project)
+		result.Deleted = append(result.Deleted, project)
 	}
 
 	return result, nil

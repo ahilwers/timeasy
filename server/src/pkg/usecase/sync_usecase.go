@@ -9,8 +9,8 @@ import (
 
 type SyncUsecase interface {
 	UpdateAndDeleteData(data model.SyncData, userId uuid.UUID, clientId string) error
-	GetChangedTimeEntries(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.TimeEntry, error)
-	GetChangedProjects(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.Project, error)
+	GetChangedTimeEntries(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.TimeEntrySyncResult, error)
+	GetChangedProjects(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.ProjectSyncResult, error)
 	GetProjectById(id uuid.UUID) (*model.Project, error)
 	GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error)
 }
@@ -284,12 +284,12 @@ func (usecase *syncUsecase) processTimeEntryDeletions(timeEntries []model.TimeEn
 }
 
 // GetChangedTimeEntries retrieves time entries that have changed since a specific time
-func (usecase *syncUsecase) GetChangedTimeEntries(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.TimeEntry, error) {
+func (usecase *syncUsecase) GetChangedTimeEntries(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.TimeEntrySyncResult, error) {
 	return usecase.syncRepository.GetUpdatedTimeEntriesOfUser(userId, sinceTimeLogEntry, excludeClientId)
 }
 
 // GetChangedProjects retrieves projects that have changed since a specific time
-func (usecase *syncUsecase) GetChangedProjects(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) ([]model.Project, error) {
+func (usecase *syncUsecase) GetChangedProjects(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.ProjectSyncResult, error) {
 	return usecase.syncRepository.GetUpdatedProjectsOfUser(userId, sinceTimeLogEntry, excludeClientId)
 }
 
