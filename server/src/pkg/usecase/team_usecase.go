@@ -297,8 +297,8 @@ func (usecase *teamUsecase) IsUserAdminInTeam(userId uuid.UUID, teamId uuid.UUID
 }
 
 func (usecase *teamUsecase) hasRole(roles model.RoleList, role string) bool {
-	for _, role := range roles {
-		if role == model.RoleAdmin {
+	for _, roleFromList := range roles {
+		if roleFromList == role {
 			return true
 		}
 	}

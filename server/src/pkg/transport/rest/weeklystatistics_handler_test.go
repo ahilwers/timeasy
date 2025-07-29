@@ -3,14 +3,15 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gofrs/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 	"timeasy-server/pkg/domain/model"
+
+	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type weeklyStatisticsTestDto struct {
@@ -41,13 +42,14 @@ func Test_WeeklyStatisticsHandler_GetWeeklyStatisticsReturnsAllDataFromProject(t
 		Name:   "project1",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project1, userId, clientId)
 	assert.Nil(t, err)
 	project2 := model.Project{
 		Name:   "project2",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	err = handlerTest.ProjectUsecase.AddProject(&project2, userId, clientId)
 	assert.Nil(t, err)
 
 	// Monday
@@ -114,13 +116,14 @@ func Test_WeeklyStatisticsHandler_GetWeeklyStatisticsWithoutProjectIdReturnsAllD
 		Name:   "project1",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project1, userId, clientId)
 	assert.Nil(t, err)
 	project2 := model.Project{
 		Name:   "project2",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	err = handlerTest.ProjectUsecase.AddProject(&project2, userId, clientId)
 	assert.Nil(t, err)
 
 	// Monday
@@ -176,7 +179,8 @@ func AddTimeEntry(t *testing.T, handlerTest *HandlerTest, userId uuid.UUID, proj
 		UserId:      userId,
 		ProjectId:   projectId,
 	}
-	err := handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	clientId := "1"
+	err := handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 	return &timeEntry
 }

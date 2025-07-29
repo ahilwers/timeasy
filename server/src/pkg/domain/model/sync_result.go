@@ -1,13 +1,13 @@
 package model
 
-// TimeEntrySyncResult contains separate lists for created, updated, and deleted time entries
+// TimeEntrySyncResult contains the time entries that have been created, updated, or deleted
 type TimeEntrySyncResult struct {
 	Created []TimeEntry
 	Updated []TimeEntry
 	Deleted []TimeEntry
 }
 
-// ProjectSyncResult contains separate lists for created, updated, and deleted projects
+// ProjectSyncResult contains the projects that have been created, updated, or deleted
 type ProjectSyncResult struct {
 	Created []Project
 	Updated []Project

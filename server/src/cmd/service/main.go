@@ -38,13 +38,15 @@ func main() {
 	teamUsecase := usecase.NewTeamUsecase(teamRepository, changelogRepository)
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
-	projectUsecase := usecase.NewProjectUsecase(postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository), teamUsecase, changelogRepository)
+	projectRepository := postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository)
+	projectUsecase := usecase.NewProjectUsecase(projectRepository, teamUsecase, changelogRepository)
 	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB), projectUsecase, changelogRepository)
+	timeEntryRepository := postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB)
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(timeEntryRepository, projectUsecase, changelogRepository)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
 
-	syncUsecase := usecase.NewSyncUsecase()
+	syncUsecase := usecase.NewSyncUsecase(postgresql.NewPostgreSQLSyncRepository(databaseService.Database.DB), changelogRepository, projectRepository, timeEntryRepository)
 	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
 
 	weeklyStatisticsUsecase := usecase.NewWeeklyStatisticsUsecase(timeEntryUsecase)

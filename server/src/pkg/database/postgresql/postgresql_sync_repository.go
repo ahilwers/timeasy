@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"database/sql"
+	"fmt"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -86,25 +87,41 @@ func (repo *postgresqlSyncRepository) UpdateAndDeleteData(data model.SyncData) e
 }
 
 // GetUpdatedTimeEntriesOfUser retrieves time entries that have been updated since a specific changelog entry ID
-func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.TimeEntrySyncResult, error) {
+func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceTimeLogEntry int64, untilTimeLogEntry int64, excludeClientId string) (model.TimeEntrySyncResult, error) {
 	query := `
 		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description, te.deleted,
 			   p.id as project_id, p.name as project_name, p.user_id as project_user_id,
 			   p.team_id as project_team_id, p.color as project_color, p.deadline::date as project_deadline,
 			   p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget,
 			   p.is_active as project_is_active, p.deleted as project_deleted,
-			   cl.operation, cl.id
+			   cl.operation
 		FROM change_log cl
 		LEFT JOIN time_entries te ON cl.entity_id = te.id
 		LEFT JOIN projects p ON te.project_id = p.id
 		WHERE cl.id > $1
-		AND cl.entity_type = 'TimeEntry'
-		AND (te.user_id = $2 OR te.id IS NULL)
-		AND (cl.changed_by_client != $3 OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')
-		ORDER BY cl.id ASC
 	`
+	
+	args := []interface{}{sinceTimeLogEntry}
+	paramIndex := 2
+	
+	// Add untilTimeLogEntry condition if provided
+	if untilTimeLogEntry > 0 {
+		query += fmt.Sprintf(" AND cl.id <= $%d", paramIndex)
+		args = append(args, untilTimeLogEntry)
+		paramIndex++
+	}
+	
+	// Add remaining conditions
+	query += fmt.Sprintf(" AND cl.entity_type = 'TimeEntry' AND (te.user_id = $%d OR te.id IS NULL)", paramIndex)
+	args = append(args, userId)
+	paramIndex++
+	
+	query += fmt.Sprintf(" AND (cl.changed_by_client != $%d OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')", paramIndex)
+	args = append(args, excludeClientId)
+	
+	query += " ORDER BY cl.id ASC"
 
-	rows, err := repo.db.Query(query, sinceTimeLogEntry, userId, excludeClientId)
+	rows, err := repo.db.Query(query, args...)
 	if err != nil {
 		return model.TimeEntrySyncResult{}, err
 	}
@@ -126,13 +143,12 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 		var isActive sql.NullBool
 		var color sql.NullString
 		var projectDeleted sql.NullBool
-		var changelogID int64
 
 		err := rows.Scan(
 			&entry.ID, &entry.UserId, &entry.ProjectId, &entry.StartTime, &entry.EndTime, &entry.Description, &entry.Deleted,
 			&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
 			&hourlyRate, &timeBudget, &isActive, &projectDeleted,
-			&operation, &changelogID,
+			&operation,
 		)
 		if err != nil {
 			return model.TimeEntrySyncResult{}, err
@@ -213,21 +229,37 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 }
 
 // GetUpdatedProjectsOfUser retrieves projects that have been updated since a specific changelog entry ID
-func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceTimeLogEntry int64, excludeClientId string) (model.ProjectSyncResult, error) {
+func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceTimeLogEntry int64, untilTimeLogEntry int64, excludeClientId string) (model.ProjectSyncResult, error) {
 	query := `
 		SELECT p.id, p.name, p.user_id, p.team_id, p.color, p.deadline::date,
 			   p.hourly_rate, p.time_budget, p.is_active, p.deleted,
-			   cl.operation, cl.id
+			   cl.operation
 		FROM change_log cl
 		LEFT JOIN projects p ON cl.entity_id = p.id
 		WHERE cl.id > $1
-		AND cl.entity_type = 'Project'
-		AND (p.user_id = $2 OR p.id IS NULL)
-		AND (cl.changed_by_client != $3 OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')
-		ORDER BY cl.id ASC
 	`
+	
+	args := []interface{}{sinceTimeLogEntry}
+	paramIndex := 2
+	
+	// Add untilTimeLogEntry condition if provided
+	if untilTimeLogEntry > 0 {
+		query += fmt.Sprintf(" AND cl.id <= $%d", paramIndex)
+		args = append(args, untilTimeLogEntry)
+		paramIndex++
+	}
+	
+	// Add remaining conditions
+	query += fmt.Sprintf(" AND cl.entity_type = 'Project' AND (p.user_id = $%d OR p.id IS NULL)", paramIndex)
+	args = append(args, userId)
+	paramIndex++
+	
+	query += fmt.Sprintf(" AND (cl.changed_by_client != $%d OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')", paramIndex)
+	args = append(args, excludeClientId)
+	
+	query += " ORDER BY cl.id ASC"
 
-	rows, err := repo.db.Query(query, sinceTimeLogEntry, userId, excludeClientId)
+	rows, err := repo.db.Query(query, args...)
 	if err != nil {
 		return model.ProjectSyncResult{}, err
 	}
@@ -247,11 +279,10 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 		var timeBudget sql.NullInt64
 		var isActive sql.NullBool
 		var color sql.NullString
-		var changelogID int64
 
 		err := rows.Scan(
 			&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
-			&hourlyRate, &timeBudget, &isActive, &project.Deleted, &operation, &changelogID,
+			&hourlyRate, &timeBudget, &isActive, &project.Deleted, &operation,
 		)
 		if err != nil {
 			return model.ProjectSyncResult{}, err

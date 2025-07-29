@@ -34,4 +34,5 @@ type ChangelogFilter struct {
 type ChangelogRepository interface {
 	AddChangelogEntry(entry *model.ChangelogEntry, tx model.Transaction) error
 	GetChangelogEntries(filter *ChangelogFilter) ([]*model.ChangelogEntry, error)
+	GetLatestChangelogEntryId() (int64, error)
 }

@@ -141,3 +141,16 @@ func (r *postgresqlChangelogRepository) GetChangelogEntries(filter *repository.C
 
 	return entries, nil
 }
+
+// GetLatestChangelogEntryId retrieves the ID of the latest changelog entry
+func (r *postgresqlChangelogRepository) GetLatestChangelogEntryId() (int64, error) {
+	query := `SELECT COALESCE(MAX(id), 0) FROM change_log`
+	
+	var latestId int64
+	err := r.db.QueryRow(query).Scan(&latestId)
+	if err != nil {
+		return 0, err
+	}
+	
+	return latestId, nil
+}
