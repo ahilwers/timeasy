@@ -2,6 +2,8 @@ package rest
 
 import (
 	"log"
+	"net/http"
+	"strconv"
 	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/usecase"
@@ -28,110 +30,119 @@ func NewSyncHandler(tokenVerifier TokenVerifier, syncUsecase usecase.SyncUsecase
 }
 
 func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
-	//token, err := handler.tokenVerifier.VerifyToken(context)
-	//if err != nil {
-	//	context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-	//	return
-	//}
-	//userId, err := token.GetUserId()
-	//if err != nil {
-	//	context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	//	return
-	//}
-	//timeParam := context.Param("timestamp")
-	//unixTime, err := strconv.ParseInt(timeParam, 10, 64)
-	//if err != nil {
-	//	context.JSON(http.StatusBadRequest, gin.H{"error": "please provide a valid unix timestamp"})
-	//	return
-	//}
-	//
-	//var syncEntries SyncEntries
-	//entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, time.Unix(unixTime, 0))
-	//for _, entry := range entries {
-	//	changeType := CHANGED
-	//	changeTime := entry.UpdatedAt
-	//	if !entry.DeletedAt.Time.IsZero() {
-	//		changeType = DELETED
-	//		changeTime = entry.DeletedAt.Time
-	//	} else if entry.CreatedAt == entry.UpdatedAt {
-	//		changeType = NEW
-	//		changeTime = entry.CreatedAt
-	//	}
-	//	desc := entry.Description
-	//	syncTimeEntry := ChangedTimeEntryDto{
-	//		Id:              entry.ID,
-	//		Description:     &desc,
-	//		StartTime:       entry.StartTime.Format(time.RFC3339),
-	//		ProjectId:       entry.ProjectId,
-	//		Operation:      changeType,
-	//		ChangeTimestamp: changeTime.Format(time.RFC3339),
-	//	}
-	//	if !entry.EndTime.IsZero() {
-	//		syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
-	//	}
-	//	syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
-	//}
-	//
-	//projects, err := handler.syncUsecase.GetChangedProjects(userId, time.Unix(unixTime, 0))
-	//for _, project := range projects {
-	//	changeType := CHANGED
-	//	changeTime := project.UpdatedAt
-	//	if !project.DeletedAt.Time.IsZero() {
-	//		changeType = DELETED
-	//		changeTime = project.DeletedAt.Time
-	//	} else if project.CreatedAt == project.UpdatedAt {
-	//		changeType = NEW
-	//		changeTime = project.CreatedAt
-	//	}
-	//	deadline := project.Deadline
-	//	hourlyRate := project.HourlyRate
-	//	timeBudget := project.TimeBudget
-	//	isActive := project.IsActive
-	//	color := project.Color
-	//	syncProject := ChangedProjectDto{
-	//		Id:              project.ID,
-	//		Name:            project.Name,
-	//		Color:           &color,
-	//		Deadline:        &deadline,
-	//		HourlyRate:      &hourlyRate,
-	//		TimeBudget:      &timeBudget,
-	//		IsActive:        &isActive,
-	//		Operation:      changeType,
-	//		ChangeTimestamp: changeTime.Format(time.RFC3339),
-	//	}
-	//	syncEntries.Projects = append(syncEntries.Projects, syncProject)
-	//}
-	//
-	//context.JSON(http.StatusOK, syncEntries)
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	changeLogEntryParam := context.Param("sinceChangeLogEntry")
+	sinceChangeLogEntry, err := strconv.ParseInt(changeLogEntryParam, 10, 64)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "please provide a valid id for a changelog entry"})
+		return
+	}
+	clientId := context.Query("clientId")
+
+	var syncEntries SyncEntries
+	latestChangeLogEntry, err := handler.syncUsecase.GetLatestChangelogEntryId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	syncEntries.LatestChangeLogId = latestChangeLogEntry
+
+	entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, sinceChangeLogEntry, latestChangeLogEntry, clientId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	handler.appendChangedTimeEntries(entries.Created, syncEntries, NEW)
+	handler.appendChangedTimeEntries(entries.Updated, syncEntries, CHANGED)
+	handler.appendChangedTimeEntries(entries.Deleted, syncEntries, DELETED)
+
+	projects, err := handler.syncUsecase.GetChangedProjects(userId, sinceChangeLogEntry, latestChangeLogEntry, clientId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	handler.appendChangedProjects(projects.Created, syncEntries, NEW)
+	handler.appendChangedProjects(projects.Updated, syncEntries, CHANGED)
+	handler.appendChangedProjects(projects.Deleted, syncEntries, DELETED)
+
+	context.JSON(http.StatusOK, syncEntries)
+}
+
+func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEntry, syncEntries SyncEntries, changeType ChangeType) {
+	for _, entry := range timeEntries {
+		desc := entry.Description
+		syncTimeEntry := ChangedTimeEntryDto{
+			Id:          entry.ID,
+			Description: &desc,
+			StartTime:   entry.StartTime.Format(time.RFC3339),
+			ProjectId:   entry.ProjectId,
+			ChangeType:  changeType,
+		}
+		if !entry.EndTime.IsZero() {
+			syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
+		}
+		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
+	}
+}
+
+func (handler *syncHandler) appendChangedProjects(projects []model.Project, syncEntries SyncEntries, changeType ChangeType) {
+	for _, project := range projects {
+		deadline := project.Deadline
+		hourlyRate := project.HourlyRate
+		timeBudget := project.TimeBudget
+		isActive := project.IsActive
+		color := project.Color
+		syncProject := ChangedProjectDto{
+			Id:         project.ID,
+			Name:       project.Name,
+			Color:      &color,
+			Deadline:   &deadline,
+			HourlyRate: &hourlyRate,
+			TimeBudget: &timeBudget,
+			IsActive:   &isActive,
+			ChangeType: changeType,
+		}
+		syncEntries.Projects = append(syncEntries.Projects, syncProject)
+	}
 }
 
 func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
-	//var syncDtos SyncEntries
-	//if err := context.ShouldBindJSON(&syncDtos); err != nil {
-	//	context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	//	return
-	//}
-	//token, err := handler.tokenVerifier.VerifyToken(context)
-	//if err != nil {
-	//	context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-	//	return
-	//}
-	//userId, err := token.GetUserId()
-	//if err != nil {
-	//	context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	//	return
-	//}
-	//
-	//var syncData model.SyncData
-	//handler.fillInClientSideChangedProjects(&syncData, syncDtos.Projects, userId)
-	//handler.fillInClientSideChangedTimeEntries(&syncData, syncDtos.TimeEntries, userId)
-	//
-	//err = handler.syncUsecase.UpdateAndDeleteData(syncData)
-	//if err != nil {
-	//	context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	//	return
-	//}
-	//context.JSON(http.StatusOK, nil)
+	var syncDtos SyncEntries
+	if err := context.ShouldBindJSON(&syncDtos); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	token, err := handler.tokenVerifier.VerifyToken(context)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := token.GetUserId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	clientId := context.Query("clientId")
+
+	var syncData model.SyncData
+	handler.fillInClientSideChangedProjects(&syncData, syncDtos.Projects, userId)
+	handler.fillInClientSideChangedTimeEntries(&syncData, syncDtos.TimeEntries, userId)
+
+	err = handler.syncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	context.JSON(http.StatusOK, nil)
 }
 
 func (handler *syncHandler) fillInClientSideChangedProjects(syncData *model.SyncData, changedProjects []ChangedProjectDto, userId uuid.UUID) {

@@ -108,7 +108,7 @@ func (t *HandlerTest) initHandlers() {
 	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase)
 	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
-	//t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
+	t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
 	t.WeeklyStatisticsHandler = NewWeeklyStatisticsHandler(t.tokenVerifier, t.WeeklyStatisticsUsecase, t.ProjectUsecase)
 	t.TimeEntryExportHandler = NewTimeEntryExportHandler(t.tokenVerifier, t.TimeEntryUsecase)
 

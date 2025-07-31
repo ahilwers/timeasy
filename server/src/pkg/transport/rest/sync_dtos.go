@@ -3,10 +3,11 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gofrs/uuid"
-	"github.com/shopspring/decimal"
 	"strings"
 	"timeasy-server/pkg/domain/model"
+
+	"github.com/gofrs/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type ChangeType uint8
@@ -60,8 +61,9 @@ func (c *ChangeType) parse(sType string) (ChangeType, error) {
 }
 
 type SyncEntries struct {
-	TimeEntries []ChangedTimeEntryDto
-	Projects    []ChangedProjectDto
+	TimeEntries       []ChangedTimeEntryDto
+	Projects          []ChangedProjectDto
+	LatestChangeLogId int64
 }
 
 type ChangedTimeEntryDto struct {
