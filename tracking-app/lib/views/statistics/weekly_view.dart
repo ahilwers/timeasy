@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
+import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/tools/date_tools.dart';
 import 'package:timeasy/views/statistics/weekly_statistics_widget.dart';
@@ -12,7 +17,18 @@ class WeeklyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: WeeklyViewWidget(_project),
+      appBar: ProjectHeader(),
+      body: BlocBuilder<SelectedProjectBloc, SelectedProjectState>(
+        builder: (context, state) {
+          Project projectToUse = _project;
+
+          if (state is SelectedProjectSet && state.project != null) {
+            projectToUse = state.project!;
+          }
+
+          return WeeklyViewWidget(projectToUse);
+        },
+      ),
     );
   }
 }
@@ -50,31 +66,55 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
   }
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitle()),
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-      body: PageView.builder(
-        controller: _pageController,
-        itemBuilder: (context, position) {
-          if (position > _lastPosition) {
-            _calendarWeek++;
-            if (_calendarWeek > _dateTools.getNumberOfWeeks(_year)) {
-              _calendarWeek = 1;
-              _year++;
-            }
-          } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
-            _calendarWeek--;
-            if (_calendarWeek < 1) {
-              _year--;
-              _calendarWeek = _dateTools.getNumberOfWeeks(_year);
-            }
-          }
-          _lastPosition = position;
-          return new WeeklyStatisticsWidget(_project, _calendarWeek, _year);
-        },
+      body: Column(
+        children: [
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemBuilder: (context, position) {
+                if (position > _lastPosition) {
+                  _calendarWeek++;
+                  if (_calendarWeek > _dateTools.getNumberOfWeeks(_year)) {
+                    _calendarWeek = 1;
+                    _year++;
+                  }
+                } else if ((position < _lastPosition) && (_calendarWeek > 0)) {
+                  _calendarWeek--;
+                  if (_calendarWeek < 1) {
+                    _year--;
+                    _calendarWeek = _dateTools.getNumberOfWeeks(_year);
+                  }
+                }
+                _lastPosition = position;
+                return new WeeklyStatisticsWidget(_project, _calendarWeek, _year);
+              },
+            ),
+          ),
+          // SmoothPageIndicator that responds to swiping
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: SmoothPageIndicator(
+              controller: _pageController,
+              count: 5,
+              effect: WormEffect(
+                dotWidth: 10,
+                dotHeight: 8,
+                activeDotColor: Theme.of(context).colorScheme.primary,
+                dotColor: Colors.grey.withOpacity(0.5),
+                spacing: 8,
+                radius: 4,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

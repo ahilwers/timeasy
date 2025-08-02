@@ -7,7 +7,7 @@ class SynchronizationApiService extends ApiService {
 
   Future<SyncData> getChangedData(DateTime? changedAfter) async {
     var changedAfterStr = changedAfter != null
-        ? (changedAfter.millisecondsSinceEpoch ~/ 1000).toString()
+        ? (changedAfter.millisecondsSinceEpoch).toString()
         : '0';
     var url = '/sync/changed/${changedAfterStr}';
 

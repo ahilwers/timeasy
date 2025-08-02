@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
+import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/services/synchronization_service.dart';
 
 class BackgroundSyncService {
-  bool _isSyncing = false;
   Timer? _timer;
   late SynchronizationService _syncService;
   late SynchronizationBloc _synchronizationBloc;
@@ -22,7 +22,8 @@ class BackgroundSyncService {
   void startSync() {
     synchronize();
     _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
-      if (!_isSyncing) {
+      // Only synchronize if not already in progress
+      if (!isSyncing()) {
         await synchronize();
       }
     });
@@ -32,17 +33,24 @@ class BackgroundSyncService {
     _timer?.cancel();
   }
 
+  /// Checks if synchronization is currently in progress
+  bool isSyncing() {
+    return _synchronizationBloc.state is SynchronizationInProgress;
+  }
+
   Future<void> synchronize() async {
+    // Check if synchronization is already in progress
+    if (isSyncing()) {
+      return;
+    }
+
     _synchronizationBloc.add(SynchonizationStartEvent());
-    if (_isSyncing) return;
-    _isSyncing = true;
+
     try {
-      await _syncService.synchronize();
-      _synchronizationBloc.add(SynchronizationSuccessEvent());
+      var retrieveResult = await _syncService.synchronize();
+      _synchronizationBloc.add(SynchronizationSuccessEvent(retrieveResult));
     } catch (e) {
       _synchronizationBloc.add(SynchronizationErrorEvent(e.toString()));
-    } finally {
-      _isSyncing = false;
     }
   }
 }

@@ -1,1 +1,2 @@
-server/.DS_Store
+*.afphoto~lock~
+.DS_Store
