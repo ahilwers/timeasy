@@ -60,6 +60,11 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
     var endDate = formatter.format(dateTools.getLastDayOfWeek(_calendarWeek, _year));
 
     return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(0),
+      ),
       child: ListView(children: <Widget>[
         ListTile(
           title: Text(AppLocalizations.of(context)!.weekTitle(_calendarWeek), style: TextStyle(fontWeight: FontWeight.w500)),

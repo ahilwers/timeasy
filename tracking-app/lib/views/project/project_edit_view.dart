@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/models/project.dart';
+import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 
 enum ConfirmAction { CANCEL, ACCEPT }
 
@@ -33,20 +32,21 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
   String? _projectId;
   Project? _project;
   final ProjectRepository _projectRepository = new ProjectRepository();
+  final EventSyncService _eventSyncService = new EventSyncService();
   final _formEditProjectKey = GlobalKey<FormState>();
-  
+
   // Color options for the project
   final List<Map<String, String>> colors = [
-    { 'name': 'colorBlue', 'hex': '#1E90FF' },
-    { 'name': 'colorGreen', 'hex': '#2ECC71' },
-    { 'name': 'colorRed', 'hex': '#E74C3C' },
-    { 'name': 'colorOrange', 'hex': '#E67E22' },
-    { 'name': 'colorPurple', 'hex': '#9B59B6' },
-    { 'name': 'colorCyan', 'hex': '#1ABC9C' },
-    { 'name': 'colorYellow', 'hex': '#F1C40F' },
-    { 'name': 'colorPink', 'hex': '#E91E63' },
-    { 'name': 'colorGray', 'hex': '#95A5A6' },
-    { 'name': 'colorBrown', 'hex': '#A0522D' },
+    {'name': 'colorBlue', 'hex': '#1E90FF'},
+    {'name': 'colorGreen', 'hex': '#2ECC71'},
+    {'name': 'colorRed', 'hex': '#E74C3C'},
+    {'name': 'colorOrange', 'hex': '#E67E22'},
+    {'name': 'colorPurple', 'hex': '#9B59B6'},
+    {'name': 'colorCyan', 'hex': '#1ABC9C'},
+    {'name': 'colorYellow', 'hex': '#F1C40F'},
+    {'name': 'colorPink', 'hex': '#E91E63'},
+    {'name': 'colorGray', 'hex': '#95A5A6'},
+    {'name': 'colorBrown', 'hex': '#A0522D'},
   ];
 
   _ProjectEditWidgetState([String? projectId]) {
@@ -128,33 +128,29 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     } else {
       return Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
           title: Text(_getTitle()),
-          backgroundColor: Theme.of(context).primaryColor,
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 final form = _formEditProjectKey.currentState;
                 if (form!.validate()) {
                   _saveProject(form);
-                  Navigator.pop(context);
+                  Navigator.pop(
+                      context, _project); // Return the project to the caller
                 }
               },
               child: Text(
                 AppLocalizations.of(context)!.save,
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).primaryColor,
+                ),
               ),
             ),
-            _projectId != null
-                ? TextButton(
-                    onPressed: () {
-                      deleteProjectWithRequest(context);
-                    },
-                    child: Text(
-                      AppLocalizations.of(context)!.delete,
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
-                    ),
-                  )
-                : Container(),
           ],
         ),
         body: Container(
@@ -164,10 +160,30 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: <Widget>[
+                      Text('${AppLocalizations.of(context)!.projectName}:',
+                          style: TextStyle(fontWeight: FontWeight.bold))
+                    ]),
+                SizedBox(height: 8),
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.projectName,
                     border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).inputDecorationTheme.border
+                                is OutlineInputBorder
+                            ? (Theme.of(context).inputDecorationTheme.border
+                                    as OutlineInputBorder)
+                                .borderSide
+                                .color
+                            : Theme.of(context).dividerColor,
+                      ),
+                    ),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
                   keyboardType: TextInputType.text,
                   initialValue: _project!.name,
@@ -175,16 +191,33 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                     return _validateProjectName(value!);
                   },
                   onSaved: (value) => _project!.name = value!,
+                  maxLines: 1,
                 ),
-                SizedBox(height: 16),
-                Text(
-                  AppLocalizations.of(context)!.projectColor,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                SizedBox(height: 24),
+                Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: <Widget>[
+                      Text('${AppLocalizations.of(context)!.projectColor}:',
+                          style: TextStyle(fontWeight: FontWeight.bold))
+                    ]),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).inputDecorationTheme.border
+                                is OutlineInputBorder
+                            ? (Theme.of(context).inputDecorationTheme.border
+                                    as OutlineInputBorder)
+                                .borderSide
+                                .color
+                            : Theme.of(context).dividerColor,
+                      ),
+                    ),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
                   value: _getColorKeyFromHex(_project!.color),
                   items: colors.map((color) {
@@ -209,14 +242,16 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
-                        final selectedColor = colors.firstWhere((color) => color['name'] == value);
+                        final selectedColor = colors
+                            .firstWhere((color) => color['name'] == value);
                         _project!.color = selectedColor['hex']!;
                       });
                     }
                   },
                   onSaved: (value) {
                     if (value != null) {
-                      final selectedColor = colors.firstWhere((color) => color['name'] == value);
+                      final selectedColor =
+                          colors.firstWhere((color) => color['name'] == value);
                       _project!.color = selectedColor['hex']!;
                     }
                   },
@@ -252,40 +287,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
     } else {
       _projectRepository.addProject(_project!);
     }
-  }
 
-  Future<ConfirmAction?> deleteProjectWithRequest(BuildContext context) async {
-    return showDialog<ConfirmAction>(
-      context: context,
-      barrierDismissible: false, // user must tap button for close dialog!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.delete),
-          content: Text(AppLocalizations.of(context)!.deleteProjectRequest),
-          actions: <Widget>[
-            TextButton(
-              child: Text(AppLocalizations.of(context)!.no),
-              onPressed: () {
-                Navigator.of(context).pop(ConfirmAction.CANCEL);
-              },
-            ),
-            TextButton(
-              child: Text(AppLocalizations.of(context)!.yes),
-              onPressed: () {
-                deleteProject();
-                Navigator.of(context).pop(ConfirmAction.ACCEPT);
-                Navigator.pop(context);
-              },
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  void deleteProject() {
-    if (_projectId != null) {
-      _projectRepository.deleteProject(_project!);
-    }
+    EventSyncService().sendDataToServer();
   }
 }

@@ -7,8 +7,8 @@ class SynchronizationBloc
   SynchronizationBloc() : super(SynchronizationInitial()) {
     on<SynchonizationStartEvent>(
         (event, emit) => emit(SynchronizationInProgress()));
-    on<SynchronizationSuccessEvent>(
-        (event, emit) => emit(SynchronizationSuccess()));
+    on<SynchronizationSuccessEvent>((event, emit) =>
+        emit(SynchronizationSuccess(event.retrieveChangesResult)));
     on<SynchronizationErrorEvent>(
         (event, emit) => emit(SynchronizationError(event.message)));
   }

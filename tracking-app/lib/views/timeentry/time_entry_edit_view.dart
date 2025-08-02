@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
+import 'package:timeasy/components/custom_datetime_picker.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 
 enum ConfirmAction { CANCEL, ACCEPT }
 
@@ -62,8 +64,26 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
   Widget build(BuildContext context) {
     if (_timeEntry == null) {
       return Scaffold(
-        appBar: new AppBar(
-          title: new Text(AppLocalizations.of(context)!.loadingTimeEntry),
+        appBar: AppBar(
+          title: Text(
+            AppLocalizations.of(context)!.loadingTimeEntry,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.black
+              : Colors.white,
+          elevation: 0,
+          iconTheme: IconThemeData(
+            color: Theme.of(context).primaryColor,
+          ),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
       );
     } else {
@@ -72,10 +92,36 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       var timeFormatter = new DateFormat.Hm(locale.toString());
       return Scaffold(
           appBar: AppBar(
-            title: Text(_getTitle()),
-            backgroundColor: Theme.of(context).primaryColor,
-            actions: <Widget>[
+            title: Text(
+              _getTitle(),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white,
+            elevation: 0,
+            iconTheme: IconThemeData(
+              color: Theme.of(context).primaryColor,
+            ),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+            centerTitle: true,
+            actions: [
+              // Save button with text
               TextButton(
+                child: Text(
+                  AppLocalizations.of(context)!.save,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
                 onPressed: () {
                   final form = _formEditTimeEntryKey.currentState;
                   if (form!.validate()) {
@@ -97,33 +143,12 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                       ScaffoldMessenger.of(context)
                           .showSnackBar(SnackBar(content: Text(errorMessage)));
                     } else {
-                      _saveProject(form);
+                      _saveTimeEntry(form);
                       Navigator.pop(context);
                     }
                   }
                 },
-                child: Text(
-                  AppLocalizations.of(context)!.save,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium!
-                      .copyWith(color: Colors.white),
-                ),
               ),
-              _timeEntryId != null
-                  ? TextButton(
-                      onPressed: () {
-                        deleteTimeEntryWithRequest(context);
-                      },
-                      child: Text(
-                        AppLocalizations.of(context)!.delete,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium!
-                            .copyWith(color: Colors.white),
-                      ),
-                    )
-                  : Container(),
             ],
           ),
           body: Container(
@@ -140,65 +165,19 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                           Text('${AppLocalizations.of(context)!.start}:',
                               style: TextStyle(fontWeight: FontWeight.bold))
                         ]),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        TextButton(
-                          onPressed: () {
-                            _selectDate(context, _timeEntry!.startTime)
-                                .then((DateTime? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localStartTime =
-                                      _timeEntry!.startTime.toLocal();
-                                  _timeEntry!.startTime = new DateTime(
-                                          picked.year,
-                                          picked.month,
-                                          picked.day,
-                                          localStartTime.hour,
-                                          localStartTime.minute)
-                                      .toUtc();
-                                  // Also set the end time automatically if it's not already set:
-                                  if (_needToSetEndTime()) {
-                                    _timeEntry!.endTime = _timeEntry!.startTime;
-                                  }
-                                });
-                              }
-                            });
-                          },
-                          child: Text(dateFormatter
-                              .format(_timeEntry!.startTime.toLocal())),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            var startTime = TimeOfDay.fromDateTime(
-                                _timeEntry!.startTime.toLocal());
-                            _selectTime(context, startTime)
-                                .then((TimeOfDay? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localStartTime =
-                                      _timeEntry!.startTime.toLocal();
-                                  _timeEntry!.startTime = new DateTime(
-                                          localStartTime.year,
-                                          localStartTime.month,
-                                          localStartTime.day,
-                                          picked.hour,
-                                          picked.minute)
-                                      .toUtc();
-                                  // Also set the end time automatically if it's not already set:
-                                  if (_needToSetEndTime()) {
-                                    _timeEntry!.endTime = _timeEntry!.startTime;
-                                  }
-                                });
-                              }
-                            });
-                          },
-                          child: Text(timeFormatter
-                              .format(_timeEntry!.startTime.toLocal())),
-                        ),
-                      ],
+                    CustomDateTimePicker(
+                      dateTime: _timeEntry!.startTime.toLocal(),
+                      onDateTimeChanged: (DateTime newDateTime) {
+                        setState(() {
+                          _timeEntry!.startTime = newDateTime.toUtc();
+                          // Also set the end time automatically if it's not already set:
+                          if (_needToSetEndTime()) {
+                            _timeEntry!.endTime = _timeEntry!.startTime;
+                          }
+                        });
+                      },
                     ),
+                    SizedBox(height: 16),
                     Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -206,68 +185,52 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                           Text('${AppLocalizations.of(context)!.end}:',
                               style: TextStyle(fontWeight: FontWeight.bold))
                         ]),
+                    CustomDateTimePicker(
+                      dateTime: _timeEntry!.endTime?.toLocal(),
+                      dateHint: AppLocalizations.of(context)!.endDate,
+                      timeHint: AppLocalizations.of(context)!.endTime,
+                      onDateTimeChanged: (DateTime newDateTime) {
+                        setState(() {
+                          _timeEntry!.endTime = newDateTime.toUtc();
+                        });
+                      },
+                    ),
+                    SizedBox(height: 24),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        TextButton(
-                          onPressed: () {
-                            var endTime = _timeEntry!.endTime != null
-                                ? _timeEntry!.endTime
-                                : DateTime.now().toUtc();
-                            _selectDate(context, endTime!)
-                                .then((DateTime? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localEndTime = _timeEntry!.endTime != null
-                                      ? _timeEntry!.endTime?.toLocal()
-                                      : DateTime.now();
-                                  _timeEntry!.endTime = new DateTime(
-                                          picked.year,
-                                          picked.month,
-                                          picked.day,
-                                          localEndTime!.hour,
-                                          localEndTime.minute)
-                                      .toUtc();
-                                });
-                              }
-                            });
-                          },
-                          child: Text(_timeEntry!.endTime != null
-                              ? dateFormatter
-                                  .format(_timeEntry!.endTime!.toLocal())
-                              : AppLocalizations.of(context)!.endDate),
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                              '${AppLocalizations.of(context)!.entryDescription}:',
+                              style: TextStyle(fontWeight: FontWeight.bold))
+                        ]),
+                    SizedBox(height: 8),
+                    TextFormField(
+                      initialValue: _timeEntry!.description ?? '',
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.whatDidYouDo,
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Theme.of(context).inputDecorationTheme.border
+                                    is OutlineInputBorder
+                                ? (Theme.of(context).inputDecorationTheme.border
+                                        as OutlineInputBorder)
+                                    .borderSide
+                                    .color
+                                : Theme.of(context).dividerColor,
+                          ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            var endTime = TimeOfDay.fromDateTime(
-                                _timeEntry!.endTime != null
-                                    ? _timeEntry!.endTime!.toLocal()
-                                    : DateTime.now());
-                            _selectTime(context, endTime)
-                                .then((TimeOfDay? picked) {
-                              if (picked != null) {
-                                setState(() {
-                                  var localEndTime = _timeEntry!.endTime != null
-                                      ? _timeEntry!.endTime!.toLocal()
-                                      : DateTime.now();
-                                  _timeEntry!.endTime = new DateTime(
-                                          localEndTime.year,
-                                          localEndTime.month,
-                                          localEndTime.day,
-                                          picked.hour,
-                                          picked.minute)
-                                      .toUtc();
-                                });
-                              }
-                            });
-                          },
-                          child: Text(_timeEntry!.endTime != null
-                              ? timeFormatter
-                                  .format(_timeEntry!.endTime!.toLocal())
-                              : AppLocalizations.of(context)!.endTime),
-                        ),
-                      ],
-                    )
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      ),
+                      maxLines: 3,
+                      onChanged: (value) {
+                        setState(() {
+                          _timeEntry!.description = value;
+                        });
+                      },
+                    ),
                   ],
                 )),
           ));
@@ -278,26 +241,6 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     return (!_endTimeWasEmpty) && (_timeEntry!.endTime == null);
   }
 
-  Future<DateTime?> _selectDate(
-      BuildContext context, DateTime initialDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2010),
-      lastDate: DateTime(2201),
-    );
-    return picked;
-  }
-
-  Future<TimeOfDay?> _selectTime(
-      BuildContext context, TimeOfDay initialSelectedTime) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: initialSelectedTime,
-    );
-    return picked;
-  }
-
   String _getTitle() {
     if (_timeEntryId == null) {
       return AppLocalizations.of(context)!.addTimeEntry;
@@ -306,48 +249,15 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     }
   }
 
-  void _saveProject(FormState form) {
+  void _saveTimeEntry(FormState form) {
     form.save();
     if (_timeEntryId != null) {
       _timeEntryRepository.updateTimeEntry(_timeEntry!);
     } else {
       _timeEntryRepository.addTimeEntry(_timeEntry!);
     }
-  }
 
-  Future<ConfirmAction?> deleteTimeEntryWithRequest(
-      BuildContext context) async {
-    return showDialog<ConfirmAction>(
-      context: context,
-      barrierDismissible: false, // user must tap button for close dialog!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.delete),
-          content: Text(AppLocalizations.of(context)!.deleteTimeEntryRequest),
-          actions: <Widget>[
-            TextButton(
-              child: Text(AppLocalizations.of(context)!.no),
-              onPressed: () {
-                Navigator.of(context).pop(ConfirmAction.CANCEL);
-              },
-            ),
-            TextButton(
-              child: Text(AppLocalizations.of(context)!.yes),
-              onPressed: () {
-                deleteTimeEntry();
-                Navigator.of(context).pop(ConfirmAction.ACCEPT);
-                Navigator.pop(context);
-              },
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  void deleteTimeEntry() {
-    if (_timeEntryId != null) {
-      _timeEntryRepository.deleteTimeEntry(_timeEntry!);
-    }
+    // Trigger synchronization after saving a time entry
+    EventSyncService().sendDataToServer();
   }
 }

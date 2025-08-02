@@ -10,16 +10,17 @@ import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_bloc.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_event.dart';
 import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
+import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
-import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
+import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
-import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
-import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
+import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/services/internet_connection_service.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
-import 'package:timeasy/views/settings/settings_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/views/theme.dart';
 import 'package:timeasy/views/timeentry/time_entry_list_view.dart';
@@ -31,6 +32,7 @@ void main() {
         BlocProvider(create: (context) => AuthenticationBloc()),
         BlocProvider(create: (context) => InternetConnectionBloc()),
         BlocProvider(create: (context) => SynchronizationBloc()),
+        BlocProvider(create: (context) => SelectedProjectBloc()),
         RepositoryProvider<BackgroundSyncService>(
           create: (context) {
             final syncBloc =
@@ -45,60 +47,64 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  // Global navigator key for accessing context anywhere
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'timeasy',
       debugShowCheckedModeBanner: false,
-      localizationsDelegates: [
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [
+      supportedLocales: const [
         Locale('en', ''),
         Locale('de', ''),
       ],
-      theme: FlexColorScheme.light(colors: timeasyTheme.light).toTheme,
-      darkTheme: FlexColorScheme.dark(colors: timeasyTheme.dark).toTheme,
-      // Use dark or light theme based on system setting.
+      theme: getLightTheme(),
+      darkTheme: getDarkTheme(),
       themeMode: ThemeMode.system,
-      home: MainPage(title: 'timeasy'),
+      home: MainPage(),
     );
   }
 }
 
 class MainPage extends StatefulWidget {
-  final String? title;
-
-  MainPage({Key? key, this.title}) : super(key: key);
-
   @override
-  _MainPageState createState() {
-    return new _MainPageState();
-  }
+  State<MainPage> createState() => _MainPageState();
 }
 
-enum AppState { RUNNING, STOPPED }
-
-class _MainPageState extends State<MainPage>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  AppState _currentState = AppState.STOPPED;
-  late Project _currentProject;
-  List<Project>? _projects;
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   int _currentPageIndex = 0;
-
-  final ProjectRepository _projectRepository = new ProjectRepository();
-  final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
-  late AnimationController buttonAnimationController;
+  final ProjectRepository _projectRepository = ProjectRepository();
   late InternetConnectionService _internetConnectionService;
+  List<Project>? _projects;
+  Project? _currentProject;
+  bool _hasProjects = false;
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting();
     WidgetsBinding.instance.addObserver(this);
+    
+    // Initialize the EventSyncService with the available blocs
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        EventSyncService().initialize(
+          authBloc: context.read<AuthenticationBloc>(),
+          internetBloc: context.read<InternetConnectionBloc>(),
+          syncBloc: context.read<SynchronizationBloc>(),
+          initialToken: "",
+        );
+      }
+    });
+    
     _internetConnectionService = InternetConnectionService(
       onConnectionChanged: (bool hasInternet) {
         _setConnectionState(hasInternet);
@@ -107,19 +113,54 @@ class _MainPageState extends State<MainPage>
         }
       },
     );
-    buttonAnimationController = new AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 1000),
-    );
-    var projectRepository = new ProjectRepository();
-    projectRepository
-        .getLastUsedProjectOrDefault("Project 1")
-        .then((Project project) {
-      setState(() {
-        _setCurrentProject(project);
-      });
+
+    // Initialize the selected project
+    _projectRepository.getLastUsedProjectOrDefault().then((Project? project) {
+      if (project != null) {
+        setState(() {
+          _setCurrentProject(project);
+          _hasProjects = true;
+        });
+
+        // Set the selected project in the SelectedProjectBloc
+        context.read<SelectedProjectBloc>().add(
+              SetSelectedProjectEvent(project),
+            );
+      } else {
+        // No projects exist
+        setState(() {
+          _hasProjects = false;
+          _currentPageIndex = 0; // Force to Home tab
+        });
+
+        // Clear the selected project in the SelectedProjectBloc
+        context.read<SelectedProjectBloc>().add(
+              ClearSelectedProjectEvent(),
+            );
+      }
+
       _loadProjects();
-      _updateAppState();
+    });
+
+    // Monitor changes to the selected project
+    Future.delayed(Duration.zero, () {
+      context.read<SelectedProjectBloc>().stream.listen((state) {
+        if (state is SelectedProjectSet &&
+            state.project != null) {
+          setState(() {
+            _setCurrentProject(state.project!);
+            _hasProjects = true;
+            
+            // Reload projects to ensure we have the latest data
+            _loadProjects();
+          });
+        } else if (state is SelectedProjectCleared) {
+          setState(() {
+            _hasProjects = false;
+            _currentPageIndex = 0; // Force to Home tab
+          });
+        }
+      });
     });
   }
 
@@ -141,57 +182,17 @@ class _MainPageState extends State<MainPage>
     super.didChangeAppLifecycleState(state);
   }
 
-  void _setAppState(AppState state) {
-    switch (state) {
-      case AppState.RUNNING:
-        if (_currentState == AppState.STOPPED) {
-          buttonAnimationController.forward();
-        }
-        break;
-      case AppState.STOPPED:
-        if (_currentState == AppState.RUNNING) {
-          buttonAnimationController.reverse();
-        }
-        break;
-    }
-    setState(() {
-      _currentState = state;
-    });
-  }
-
-  void _toggleState() {
-    switch (_currentState) {
-      case AppState.STOPPED:
-        _startTiming();
-        break;
-      case AppState.RUNNING:
-        _stopTiming();
-        break;
-    }
-  }
-
-  void _startTiming() async {
-    var repository = new TimeEntryRepository();
-    await repository.closeLatestTimeEntry(_currentProject.id);
-    await repository.getLatestOpenTimeEntryOrCreateNew(_currentProject.id);
-    _setAppState(AppState.RUNNING);
-  }
-
-  void _stopTiming() async {
-    var repository = new TimeEntryRepository();
-    await repository.closeLatestTimeEntry(_currentProject.id);
-    _setAppState(AppState.STOPPED);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocListener<AuthenticationBloc, AuthenticationState>(
         listener: (context, state) {
           final backgroundSyncService = context.read<BackgroundSyncService>();
+          final eventSyncService = EventSyncService();
           if (state is AuthenticationAuthenticated) {
             backgroundSyncService.updateToken(state.credentials.accessToken!);
             backgroundSyncService.startSync();
+            eventSyncService.updateToken(state.credentials.accessToken!);
           } else if (state is AuthenticationError) {
             backgroundSyncService.stopSync();
           }
@@ -205,48 +206,70 @@ class _MainPageState extends State<MainPage>
   }
 
   Widget _getNavigationBar() {
-    return NavigationBar(
-      selectedIndex: _currentPageIndex,
-      onDestinationSelected: (int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final localizations = AppLocalizations.of(context)!;
+
+    return BottomNavigationBar(
+      currentIndex: _currentPageIndex,
+      backgroundColor: isDark ? Colors.black : Colors.white,
+      selectedItemColor: isDark ? Colors.white : Colors.black,
+      unselectedItemColor: Colors.grey,
+      onTap: (index) {
+        // Only allow navigation to Home and Projects tabs if no projects exist
+        if (!_hasProjects && index != 0 && index != 3) {
+          return;
+        }
+
         _loadProjects();
         setState(() {
           _currentPageIndex = index;
         });
       },
-      backgroundColor: Colors.transparent,
-      destinations: const <Widget>[
-        NavigationDestination(
-          selectedIcon: Icon(Icons.home),
+      items: [
+        BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: 'Home',
+          label: localizations.navHome,
         ),
-        NavigationDestination(
-          selectedIcon: Icon(Icons.date_range),
-          icon: Icon(Icons.date_range),
-          label: 'Week',
+        BottomNavigationBarItem(
+          icon: Icon(
+            Icons.calendar_today,
+            color: _hasProjects ? null : Colors.grey.shade300,
+          ),
+          label: localizations.navWeek,
         ),
-        NavigationDestination(
-          selectedIcon: Icon(Icons.pending_actions),
-          icon: Icon(Icons.pending_actions),
-          label: 'Time Entries',
+        BottomNavigationBarItem(
+          icon: Icon(
+            Icons.access_time,
+            color: _hasProjects ? null : Colors.grey.shade300,
+          ),
+          label: localizations.navTime,
         ),
-        NavigationDestination(
-          selectedIcon: Icon(Icons.format_list_bulleted),
-          icon: Icon(Icons.format_list_bulleted),
-          label: 'Projects',
+        BottomNavigationBarItem(
+          icon: Icon(Icons.list),
+          label: localizations.navProjects,
         ),
       ],
     );
   }
 
   Widget _getCurrentView() {
+    // If no projects exist and we're not on the Home or Projects tab,
+    // force to the Home tab
+    if (!_hasProjects && _currentPageIndex != 0 && _currentPageIndex != 3) {
+      setState(() {
+        _currentPageIndex = 0;
+      });
+    }
+
     switch (_currentPageIndex) {
       case 0:
         return _playButtonView();
       case 1:
-        return WeeklyView(_currentProject);
+        return _hasProjects ? WeeklyView(_currentProject!) : _playButtonView();
       case 2:
-        return TimeEntryListView(_currentProject);
+        return _hasProjects
+            ? TimeEntryListView(_currentProject!)
+            : _playButtonView();
       case 3:
         return ProjectListView();
       default:
@@ -255,84 +278,24 @@ class _MainPageState extends State<MainPage>
   }
 
   Widget _playButtonView() {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('timeasy'),
-        backgroundColor: Theme.of(context).primaryColor,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.manage_accounts),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsView()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.center,
-            child: new RawMaterialButton(
-              onPressed: _toggleState,
-              child: new AnimatedIcon(
-                icon: AnimatedIcons.play_pause,
-                color: Colors.white,
-                size: 128.0,
-                progress: buttonAnimationController,
-              ),
-              shape: new CircleBorder(),
-              elevation: 2.0,
-              fillColor: Theme.of(context).primaryColor,
-              padding: const EdgeInsets.all(15.0),
-            ),
-          ),
-          _projects == null
-              ? Text(AppLocalizations.of(context)!.loadingProject)
-              : BlocListener<SynchronizationBloc, SynchronizationState>(
-                  listener: (context, state) {
-                    if (state is SynchronizationSuccess) {
-                      _loadProjects();
-                      _updateAppState();
-                    }
-                  },
-                  child: new DropdownButton<String>(
-                    value: _currentProject.id,
-                    items: _projects!.map(
-                      (Project value) {
-                        return new DropdownMenuItem<String>(
-                          value: value.id,
-                          child: new Text(value.name),
-                        );
-                      },
-                    ).toList(),
-                    onChanged: (String? value) {
-                      _projectRepository.getProjectById(value!).then(
-                        (Project? projectFromDb) {
-                          setState(
-                            () {
-                              _setCurrentProject(projectFromDb!);
-                            },
-                          );
-                          _updateAppState();
-                        },
-                      );
-                    },
-                  ),
-                ),
-        ],
-      ),
-    );
+    return ProjectSwiper();
   }
 
   _loadProjects() {
     _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
       setState(() {
         _projects = projectsFromDb;
+        _hasProjects = projectsFromDb.isNotEmpty;
+        
+        // If we have projects but no current project is set, set the first one
+        if (_hasProjects && _currentProject == null && projectsFromDb.isNotEmpty) {
+          _setCurrentProject(projectsFromDb[0]);
+          
+          // Update the selected project in the bloc
+          context.read<SelectedProjectBloc>().add(
+                SetSelectedProjectEvent(projectsFromDb[0]),
+              );
+        }
       });
     });
   }
@@ -342,20 +305,7 @@ class _MainPageState extends State<MainPage>
     _projectRepository.saveLastUsedProject(project);
   }
 
-  _updateAppState() {
-    // Set the current state if there's a timing already running:
-    _timeEntryRepository
-        .getLatestOpenTimeEntry(_currentProject.id)
-        .then((TimeEntry? entry) {
-      if (entry != null) {
-        _setAppState(AppState.RUNNING);
-      } else {
-        _setAppState(AppState.STOPPED);
-      }
-    });
-  }
-
-  void _setConnectionState(bool hasInternet) {
+  _setConnectionState(bool hasInternet) {
     if (hasInternet) {
       context
           .read<InternetConnectionBloc>()

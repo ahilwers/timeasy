@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -87,6 +88,7 @@ func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEnt
 			ProjectId:   entry.ProjectId,
 			ChangeType:  changeType,
 		}
+		fmt.Printf("ChangeTimestamp: %v\n", syncTimeEntry.ChangeTimestamp)
 		if !entry.EndTime.IsZero() {
 			syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
 		}
@@ -113,6 +115,13 @@ func (handler *syncHandler) appendChangedProjects(projects []model.Project, sync
 		}
 		syncEntries.Projects = append(syncEntries.Projects, syncProject)
 	}
+}
+
+func (handler *syncHandler) parseTimestamp(timestamp int64) time.Time {
+	if timestamp > 1e12 {
+		return time.UnixMilli(timestamp)
+	}
+	return time.Unix(timestamp, 0)
 }
 
 func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {

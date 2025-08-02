@@ -5,7 +5,8 @@ class SynchronizationApiService extends ApiService {
   SynchronizationApiService({required String baseUrl, String? token})
       : super(baseUrl: baseUrl, token: token) {}
 
-  Future<SyncData> getChangedData(int? sinceChangelogId, String? clientId) async {
+  Future<SyncData> getChangedData(
+      int? sinceChangelogId, String? clientId) async {
     var sinceChangelogIdStr = sinceChangelogId?.toString() ?? '0';
     var url = '/sync/changed/${sinceChangelogIdStr}';
     if (clientId != null) {

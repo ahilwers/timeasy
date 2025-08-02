@@ -1,7 +1,7 @@
 import 'package:timeasy/dataaccess/database.dart';
-import 'package:timeasy/models/time_entry.dart';
-import 'package:timeasy/models/changelog_entry.dart';
 import 'package:timeasy/models/change_type.dart';
+import 'package:timeasy/models/changelog_entry.dart';
+import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/changelog_repository.dart';
 
 class TimeEntryRepository {
@@ -11,12 +11,14 @@ class TimeEntryRepository {
     final db = await DBProvider.dbProvider.database;
     await db.transaction((txn) async {
       await txn.insert(TimeEntry.tableName, timeEntry.toMap());
-      await _changelogRepository.insert(ChangelogEntry(
-        entityType: 'TimeEntry',
-        entityId: timeEntry.id,
-        changeType: ChangeType.NEW,
-        timestamp: DateTime.now().toUtc(),
-      ), txn);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.NEW,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
     });
     return timeEntry;
   }
@@ -27,12 +29,14 @@ class TimeEntryRepository {
     await db.transaction((txn) async {
       await txn.update(TimeEntry.tableName, timeEntry.toMap(),
           where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
-      await _changelogRepository.insert(ChangelogEntry(
-        entityType: 'TimeEntry',
-        entityId: timeEntry.id,
-        changeType: ChangeType.CHANGED,
-        timestamp: DateTime.now().toUtc(),
-      ), txn);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.CHANGED,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
     });
     return timeEntry;
   }
@@ -43,14 +47,24 @@ class TimeEntryRepository {
     await db.transaction((txn) async {
       await txn.update(TimeEntry.tableName, timeEntry.toMap(),
           where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
-      await _changelogRepository.insert(ChangelogEntry(
-        entityType: 'TimeEntry',
-        entityId: timeEntry.id,
-        changeType: ChangeType.DELETED,
-        timestamp: DateTime.now().toUtc(),
-      ), txn);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.DELETED,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
     });
     return timeEntry;
+  }
+
+  // Delete a time entry by ID
+  Future<void> deleteTimeEntryById(String id) async {
+    final timeEntry = await getTimeEntryById(id);
+    if (timeEntry != null) {
+      await deleteTimeEntry(timeEntry);
+    }
   }
 
   closeLatestTimeEntry(String projectId) async {
@@ -110,7 +124,8 @@ class TimeEntryRepository {
         where:
             "${TimeEntry.projectIdColumn} = ? AND ${TimeEntry.startTimeColumn} >= ? AND ${TimeEntry.endTimeColumn} < ? AND DELETED=0",
         whereArgs: [projectId, startMillis, endMillis],
-        orderBy: TimeEntry.startTimeColumn);
+        orderBy:
+            "${TimeEntry.startTimeColumn} desc, ${TimeEntry.endTimeColumn} desc");
     return queryResult.isNotEmpty
         ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList()
         : [];
@@ -131,5 +146,26 @@ class TimeEntryRepository {
 
   DateTime getDateWithoutTime(DateTime date) {
     return new DateTime(date.year, date.month, date.day);
+  }
+
+  // Get the last 100 unique descriptions for a project
+  Future<List<String>> getLastUniqueDescriptions(String projectId,
+      {int limit = 100}) async {
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.rawQuery('''
+      SELECT DISTINCT ${TimeEntry.descriptionColumn} 
+      FROM ${TimeEntry.tableName} 
+      WHERE ${TimeEntry.projectIdColumn} = ? 
+      AND ${TimeEntry.descriptionColumn} IS NOT NULL 
+      AND ${TimeEntry.descriptionColumn} != '' 
+      AND DELETED = 0
+      ORDER BY ${TimeEntry.startTimeColumn} DESC
+      LIMIT ?
+    ''', [projectId, limit]);
+
+    return queryResult
+        .map((entry) => entry[TimeEntry.descriptionColumn] as String)
+        .where((description) => description.isNotEmpty)
+        .toList();
   }
 }

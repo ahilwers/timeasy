@@ -8,6 +8,7 @@ import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
+import 'package:timeasy/tools/retrieve_changes_result.dart';
 
 class SyncDataRetriever {
   final SynchronizationApiService _apiService;
@@ -17,9 +18,12 @@ class SyncDataRetriever {
 
   SyncDataRetriever(this._apiService) {}
 
-  Future<void> retrieveNewestEntries(int? sinceChangelogId, String? clientId) async {
+  Future<RetrieveChangesResult> retrieveNewestEntries(
+      int? sinceChangelogId, String? clientId) async {
     var syncData = await _apiService.getChangedData(sinceChangelogId, clientId);
     await _saveEntries(syncData);
+    return new RetrieveChangesResult(
+        syncData.projects.isNotEmpty, syncData.timeEntries.isNotEmpty);
   }
 
   Future<void> _saveEntries(SyncData syncData) async {
@@ -112,4 +116,5 @@ class SyncDataRetriever {
     settings.latestRemoteChangelogId = latestChangelogId;
     await _settingsRepository.saveSettings(settings);
   }
+
 }

@@ -3,6 +3,7 @@ import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/sync_data_retriever.dart';
 import 'package:timeasy/services/sync_data_sender.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
+import 'package:timeasy/tools/retrieve_changes_result.dart';
 
 class SynchronizationService {
   late SynchronizationApiService _apiService;
@@ -15,22 +16,30 @@ class SynchronizationService {
 
   Future<void> synchronize() async {
     var settings = await _settingsRepository.getSettings();
-    
+
     // First send local changes
     var dataSender = new SyncDataSender(_apiService);
     await dataSender.sendNewestEntries(settings.clientId);
-    
+
     // Then retrieve remote changes
     var dataRetriever = new SyncDataRetriever(_apiService);
-    await dataRetriever.retrieveNewestEntries(settings.latestRemoteChangelogId, settings.clientId);
-    
+    await dataRetriever.retrieveNewestEntries(
+        settings.latestRemoteChangelogId, settings.clientId);
+
     await _updateLastSyncTimeSettings();
+  }
+
+  Future<RetrieveChangesResult> retrieveChangesFromServer() async {
+    var settings = await _settingsRepository.getSettings();
+    var dataRetriever = new SyncDataRetriever(_apiService);
+    var result = await dataRetriever.retrieveNewestEntries(settings.latestRemoteChangelogId, settings.clientId);
+    await _updateLastSyncTimeSettings();
+    return result;
   }
 
   void updateToken(String token) {
     _apiService.updateToken(token);
   }
-
 
   Future<void> _updateLastSyncTimeSettings() async {
     var settings = await _settingsRepository.getSettings();
