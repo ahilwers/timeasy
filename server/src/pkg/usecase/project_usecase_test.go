@@ -3,12 +3,13 @@ package usecase
 import (
 	"errors"
 	"fmt"
-	"github.com/gofrs/uuid"
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 	"timeasy-server/pkg/domain/model"
+
+	"github.com/gofrs/uuid"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_projectUsecase_AddProject(t *testing.T) {

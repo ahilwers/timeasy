@@ -61,23 +61,23 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	handler.appendChangedTimeEntries(entries.Created, syncEntries, NEW)
-	handler.appendChangedTimeEntries(entries.Updated, syncEntries, CHANGED)
-	handler.appendChangedTimeEntries(entries.Deleted, syncEntries, DELETED)
+	handler.appendChangedTimeEntries(entries.Created, &syncEntries, NEW)
+	handler.appendChangedTimeEntries(entries.Updated, &syncEntries, CHANGED)
+	handler.appendChangedTimeEntries(entries.Deleted, &syncEntries, DELETED)
 
 	projects, err := handler.syncUsecase.GetChangedProjects(userId, sinceChangeLogEntry, latestChangeLogEntry, clientId)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	handler.appendChangedProjects(projects.Created, syncEntries, NEW)
-	handler.appendChangedProjects(projects.Updated, syncEntries, CHANGED)
-	handler.appendChangedProjects(projects.Deleted, syncEntries, DELETED)
+	handler.appendChangedProjects(projects.Created, &syncEntries, NEW)
+	handler.appendChangedProjects(projects.Updated, &syncEntries, CHANGED)
+	handler.appendChangedProjects(projects.Deleted, &syncEntries, DELETED)
 
 	context.JSON(http.StatusOK, syncEntries)
 }
 
-func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEntry, syncEntries SyncEntries, changeType ChangeType) {
+func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEntry, syncEntries *SyncEntries, changeType ChangeType) {
 	for _, entry := range timeEntries {
 		desc := entry.Description
 		syncTimeEntry := ChangedTimeEntryDto{
@@ -94,7 +94,7 @@ func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEnt
 	}
 }
 
-func (handler *syncHandler) appendChangedProjects(projects []model.Project, syncEntries SyncEntries, changeType ChangeType) {
+func (handler *syncHandler) appendChangedProjects(projects []model.Project, syncEntries *SyncEntries, changeType ChangeType) {
 	for _, project := range projects {
 		deadline := project.Deadline
 		hourlyRate := project.HourlyRate
@@ -149,7 +149,9 @@ func (handler *syncHandler) fillInClientSideChangedProjects(syncData *model.Sync
 	for _, changedProject := range changedProjects {
 		project := handler.createProjectFromDto(changedProject, userId)
 		switch changedProject.ChangeType {
-		case NEW, CHANGED:
+		case NEW:
+			syncData.ProjectsToBeCreated = append(syncData.ProjectsToBeCreated, project)
+		case CHANGED:
 			syncData.ProjectsToBeUpdated = append(syncData.ProjectsToBeUpdated, project)
 		case DELETED:
 			syncData.ProjectsToBeDeleted = append(syncData.ProjectsToBeDeleted, project)
@@ -200,7 +202,9 @@ func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.S
 		timeEntry, err := handler.createTimeEntryFromDto(changedTimeEntry, userId)
 		if err == nil {
 			switch changedTimeEntry.ChangeType {
-			case NEW, CHANGED:
+			case NEW:
+				syncData.TimeEntriesToBeCreated = append(syncData.TimeEntriesToBeCreated, timeEntry)
+			case CHANGED:
 				syncData.TimeEntriesToBeUpdated = append(syncData.TimeEntriesToBeUpdated, timeEntry)
 			case DELETED:
 				syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)

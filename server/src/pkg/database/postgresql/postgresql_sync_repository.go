@@ -100,25 +100,25 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 		LEFT JOIN projects p ON te.project_id = p.id
 		WHERE cl.id > $1
 	`
-	
+
 	args := []interface{}{sinceTimeLogEntry}
 	paramIndex := 2
-	
+
 	// Add untilTimeLogEntry condition if provided
 	if untilTimeLogEntry > 0 {
 		query += fmt.Sprintf(" AND cl.id <= $%d", paramIndex)
 		args = append(args, untilTimeLogEntry)
 		paramIndex++
 	}
-	
+
 	// Add remaining conditions
 	query += fmt.Sprintf(" AND cl.entity_type = 'TimeEntry' AND (te.user_id = $%d OR te.id IS NULL)", paramIndex)
 	args = append(args, userId)
 	paramIndex++
-	
+
 	query += fmt.Sprintf(" AND (cl.changed_by_client != $%d OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')", paramIndex)
 	args = append(args, excludeClientId)
-	
+
 	query += " ORDER BY cl.id ASC"
 
 	rows, err := repo.db.Query(query, args...)
@@ -196,14 +196,11 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 				delete(deletedEntries, entry.ID)
 			}
 		case string(model.OperationDeleted):
-			// Add to deleted if not in created or updated
-			if _, existsInCreated := createdEntries[entry.ID]; !existsInCreated {
-				if _, existsInUpdated := updatedEntries[entry.ID]; !existsInUpdated {
-					// For soft delete, we need to ensure the entry is marked as deleted
-					entry.Deleted = true
-					deletedEntries[entry.ID] = entry
-				}
-			}
+			entry.Deleted = true
+			deletedEntries[entry.ID] = entry
+			// Remove from other maps if exists (in case of multiple operations)
+			delete(createdEntries, entry.ID)
+			delete(updatedEntries, entry.ID)
 		}
 	}
 
@@ -238,25 +235,25 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 		LEFT JOIN projects p ON cl.entity_id = p.id
 		WHERE cl.id > $1
 	`
-	
+
 	args := []interface{}{sinceTimeLogEntry}
 	paramIndex := 2
-	
+
 	// Add untilTimeLogEntry condition if provided
 	if untilTimeLogEntry > 0 {
 		query += fmt.Sprintf(" AND cl.id <= $%d", paramIndex)
 		args = append(args, untilTimeLogEntry)
 		paramIndex++
 	}
-	
+
 	// Add remaining conditions
 	query += fmt.Sprintf(" AND cl.entity_type = 'Project' AND (p.user_id = $%d OR p.id IS NULL)", paramIndex)
 	args = append(args, userId)
 	paramIndex++
-	
+
 	query += fmt.Sprintf(" AND (cl.changed_by_client != $%d OR cl.changed_by_client IS NULL OR cl.changed_by_client = '')", paramIndex)
 	args = append(args, excludeClientId)
-	
+
 	query += " ORDER BY cl.id ASC"
 
 	rows, err := repo.db.Query(query, args...)
@@ -328,14 +325,11 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 				delete(deletedProjects, project.ID)
 			}
 		case string(model.OperationDeleted):
-			// Add to deleted if not in created or updated
-			if _, existsInCreated := createdProjects[project.ID]; !existsInCreated {
-				if _, existsInUpdated := updatedProjects[project.ID]; !existsInUpdated {
-					// For soft delete, we need to ensure the project is marked as deleted
-					project.Deleted = true
-					deletedProjects[project.ID] = project
-				}
-			}
+			project.Deleted = true
+			deletedProjects[project.ID] = project
+			// Remove from other maps if exists (in case of multiple operations)
+			delete(createdProjects, project.ID)
+			delete(updatedProjects, project.ID)
 		}
 	}
 

@@ -97,8 +97,8 @@ func (t *HandlerTest) initUsecases() {
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
 	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase, changelogRepo)
 
-	//syncRepo := database.NewGormSyncRepository(test.DB)
-	//t.SyncUsecase = usecase.NewSyncUsecase(syncRepo)
+	syncRepo := postgresql.NewPostgreSQLSyncRepository(test.Database.DB)
+	t.SyncUsecase = usecase.NewSyncUsecase(syncRepo, changelogRepo, projectRepo, timeEntryRepo)
 
 	t.WeeklyStatisticsUsecase = usecase.NewWeeklyStatisticsUsecase(t.TimeEntryUsecase)
 }
