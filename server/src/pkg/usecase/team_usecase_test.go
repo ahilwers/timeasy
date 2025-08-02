@@ -364,7 +364,7 @@ func Test_teamUsecase_AddTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	err := usecaseTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should have 2 entries: one for team creation and one for user assignment
 	assert.Equal(t, 2, len(changelogEntries))
@@ -398,7 +398,7 @@ func Test_teamUsecase_UpdateTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	err := usecaseTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should have 2 entries: one for team creation and one for user assignment
 	assert.Equal(t, 2, len(changelogEntries))
@@ -409,7 +409,7 @@ func Test_teamUsecase_UpdateTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	err = usecaseTest.TeamUsecase.UpdateTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should now have 3 entries: two from team creation and one from update
 	assert.Equal(t, 3, len(changelogEntries))
@@ -438,7 +438,7 @@ func Test_teamUsecase_DeleteTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	err := usecaseTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should have 2 entries: one for team creation and one for user assignment
 	assert.Equal(t, 2, len(changelogEntries))
@@ -448,7 +448,7 @@ func Test_teamUsecase_DeleteTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	err = usecaseTest.TeamUsecase.DeleteTeam(team.ID, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should now have 3 entries: two from team creation and one from deletion
 	assert.Equal(t, 3, len(changelogEntries))
@@ -481,7 +481,7 @@ func Test_teamUsecase_AddUserToTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	assignment, err := usecaseTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should have 3 entries: team creation, owner assignment, and new user assignment
 	assert.Equal(t, 3, len(changelogEntries))
@@ -515,7 +515,7 @@ func Test_teamUsecase_DeleteUserFromTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	userId := GetTestUserId(t)
 	team := addTeam(t, usecaseTest.TeamUsecase, "team", userId)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should have 2 entries: team creation and owner assignment
 	assert.Equal(t, 2, len(changelogEntries))
@@ -526,7 +526,7 @@ func Test_teamUsecase_DeleteUserFromTeam_AlsoAddsChangelogEntry(t *testing.T) {
 	err = usecaseTest.TeamUsecase.DeleteUserFromTeam(userId, &team, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should now have 3 entries: team creation, owner assignment, and user removal
 	assert.Equal(t, 3, len(changelogEntries))
@@ -549,7 +549,7 @@ func Test_teamUsecase_UpdateUserRolesInTeam_AlsoAddsChangelogEntry(t *testing.T)
 	userId := GetTestUserId(t)
 	team := addTeam(t, usecaseTest.TeamUsecase, "team", userId)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should have 2 entries: team creation and owner assignment
 	assert.Equal(t, 2, len(changelogEntries))
@@ -560,7 +560,7 @@ func Test_teamUsecase_UpdateUserRolesInTeam_AlsoAddsChangelogEntry(t *testing.T)
 	err = usecaseTest.TeamUsecase.UpdateUserRolesInTeam(userId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	// Should now have 3 entries: team creation, owner assignment, and role update
 	assert.Equal(t, 3, len(changelogEntries))

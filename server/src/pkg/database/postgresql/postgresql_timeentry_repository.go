@@ -273,6 +273,18 @@ func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID
 	return &entry, nil
 }
 
+func (repo *postgresqlTimeEntryRepository) GetAllTimeEntries() ([]model.TimeEntry, error) {
+	query := `
+		SELECT
+			id, user_id, project_id, start_time, end_time, description
+		FROM time_entries
+		WHERE deleted = false
+		ORDER BY start_time DESC, end_time DESC
+	`
+
+	return repo.queryTimeEntries(query)
+}
+
 func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error) {
 	query := `
 		SELECT

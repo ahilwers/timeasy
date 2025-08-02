@@ -9,7 +9,6 @@ class TimeEntrySyncData {
   final DateTime? endTime;
   final String projectId;
   final ChangeType changeType;
-  final DateTime changeTimestamp;
 
   TimeEntrySyncData({
     required this.id,
@@ -18,7 +17,6 @@ class TimeEntrySyncData {
     this.endTime,
     required this.projectId,
     required this.changeType,
-    required this.changeTimestamp,
   });
 
   factory TimeEntrySyncData.fromJson(Map<String, dynamic> json) {
@@ -39,8 +37,6 @@ class TimeEntrySyncData {
       projectId: json['projectId'] as String,
       changeType:
           ChangeTypeHelper.convertFromString(json['changeType'] as String),
-      changeTimestamp:
-          DateTime.parse(json['changeTimestamp'] as String).toUtc(),
     );
   }
 
@@ -52,7 +48,6 @@ class TimeEntrySyncData {
       'endTime': endTime != null ? endTime!.toUtc().toIso8601String() : '',
       'projectId': projectId,
       'changeType': ChangeTypeHelper.convertToString(changeType),
-      'changeTimestamp': changeTimestamp.toUtc().toIso8601String(),
     };
   }
 

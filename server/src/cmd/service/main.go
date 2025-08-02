@@ -8,6 +8,8 @@ import (
 	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
+	
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 var databaseService database.DatabaseService
@@ -48,6 +50,13 @@ func main() {
 
 	syncUsecase := usecase.NewSyncUsecase(postgresql.NewPostgreSQLSyncRepository(databaseService.Database.DB), changelogRepository, projectRepository, timeEntryRepository)
 	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
+
+	// Initialize changelog for existing databases
+	changelogInitUsecase := usecase.NewChangelogInitializationUsecase(changelogRepository, projectRepository, timeEntryRepository, teamRepository)
+	if err := changelogInitUsecase.InitializeChangelog(); err != nil {
+		log.Printf("Failed to initialize changelog: %v", err)
+		panic(err)
+	}
 
 	weeklyStatisticsUsecase := usecase.NewWeeklyStatisticsUsecase(timeEntryUsecase)
 	weeklyStatisticsHandler := rest.NewWeeklyStatisticsHandler(tokenVerifier, weeklyStatisticsUsecase, projectUsecase)

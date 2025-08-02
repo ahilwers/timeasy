@@ -40,42 +40,27 @@ func NewSyncUsecase(
 // UpdateAndDeleteData processes the sync data by creating, updating, and deleting entries
 // and adds appropriate changelog entries for each operation
 func (usecase *syncUsecase) UpdateAndDeleteData(data model.SyncData, userId uuid.UUID, clientId string) error {
-	projectTx, err := usecase.projectRepository.BeginTransaction()
+	tx, err := usecase.timeEntryRepository.BeginTransaction()
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			projectTx.Rollback()
+			tx.Rollback()
 		}
 	}()
 
-	timeEntryTx, err := usecase.timeEntryRepository.BeginTransaction()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			timeEntryTx.Rollback()
-		}
-	}()
-
-	err = usecase.processProjects(data, userId, clientId, projectTx)
+	err = usecase.processProjects(data, userId, clientId, tx)
 	if err != nil {
 		return err
 	}
 
-	err = usecase.processTimeEntries(data, userId, clientId, timeEntryTx)
+	err = usecase.processTimeEntries(data, userId, clientId, tx)
 	if err != nil {
 		return err
 	}
 
-	err = projectTx.Commit()
-	if err != nil {
-		return err
-	}
-
-	err = timeEntryTx.Commit()
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}

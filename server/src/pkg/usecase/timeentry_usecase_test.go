@@ -877,7 +877,7 @@ func Test_timeEntryUsecase_AddTimeEntry_AlsoAddsChangelogEntry(t *testing.T) {
 	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(changelogEntries))
 	changelogEntry := changelogEntries[0]
@@ -911,7 +911,7 @@ func Test_timeEntryUsecase_UpdateTimeEntry_AlsoAddsChangelogEntry(t *testing.T) 
 	err = usecaseTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(changelogEntries))
 	changelogEntry := changelogEntries[0]
@@ -951,7 +951,7 @@ func Test_timeEntryUsecase_DeleteTimeEntry_AlsoAddsChangelogEntry(t *testing.T) 
 	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID, userId, clientId)
 	assert.Nil(t, err)
 
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(changelogEntries))
 	changelogEntry := changelogEntries[0]

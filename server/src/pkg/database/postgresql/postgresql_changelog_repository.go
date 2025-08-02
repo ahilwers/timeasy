@@ -21,6 +21,14 @@ func NewPostgreSQLChangelogRepository(db *sql.DB) repository.ChangelogRepository
 	}
 }
 
+func (r *postgresqlChangelogRepository) BeginTransaction() (model.Transaction, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
 func (r *postgresqlChangelogRepository) AddChangelogEntry(entry *model.ChangelogEntry, tx model.Transaction) error {
 	sqlTx, ok := tx.(*sql.Tx)
 	if !ok {
@@ -153,4 +161,17 @@ func (r *postgresqlChangelogRepository) GetLatestChangelogEntryId() (int64, erro
 	}
 	
 	return latestId, nil
+}
+
+// HasAnyEntries checks if there are any entries in the changelog
+func (r *postgresqlChangelogRepository) HasAnyEntries() (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM change_log LIMIT 1)`
+	
+	var exists bool
+	err := r.db.QueryRow(query).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	
+	return exists, nil
 }

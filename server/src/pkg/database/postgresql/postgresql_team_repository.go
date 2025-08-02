@@ -242,6 +242,51 @@ func (repo *postgresqlTeamRepository) GetTeamsOfUser(userID uuid.UUID) ([]model.
 	return assignments, nil
 }
 
+func (repo *postgresqlTeamRepository) GetAllUserTeamAssignments() ([]model.UserTeamAssignment, error) {
+	query := `
+		SELECT uta.id, uta.user_id, uta.team_id, uta.roles,
+		       t.name1, t.name2, t.name3
+		FROM user_team_assignments uta
+		JOIN teams t ON uta.team_id = t.id
+		WHERE t.deleted = false
+		ORDER BY t.name1, t.name2, t.name3
+	`
+
+	rows, err := repo.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var assignments []model.UserTeamAssignment
+	for rows.Next() {
+		var assignment model.UserTeamAssignment
+		var rolesStr string
+
+		err := rows.Scan(
+			&assignment.ID,
+			&assignment.UserID,
+			&assignment.TeamID,
+			&rolesStr,
+			&assignment.Team.Name1,
+			&assignment.Team.Name2,
+			&assignment.Team.Name3,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		assignment.Roles = strings.Split(rolesStr, ",")
+		assignments = append(assignments, assignment)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return assignments, nil
+}
+
 func (repo *postgresqlTeamRepository) GetUserTeamAssignment(userID, teamID uuid.UUID) (*model.UserTeamAssignment, error) {
 	query := `
 		SELECT uta.id, uta.user_id, uta.team_id, uta.roles,

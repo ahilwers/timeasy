@@ -398,7 +398,7 @@ func Test_projectUsecase_AddProject_AlsoAddsChangelogEntry(t *testing.T) {
 
 	userId := GetTestUserId(t)
 	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(changelogEntries))
 	changelogEntry := changelogEntries[0]
@@ -415,7 +415,7 @@ func Test_projectUsecase_UpdateProject_AlsoAddsChangelogEntry(t *testing.T) {
 
 	userId := GetTestUserId(t)
 	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(changelogEntries))
 	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
@@ -423,7 +423,7 @@ func Test_projectUsecase_UpdateProject_AlsoAddsChangelogEntry(t *testing.T) {
 
 	clientId := GetTestClientId(t)
 	usecaseTest.ProjectUsecase.UpdateProject(&project, userId, clientId)
-	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(changelogEntries))
 	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
@@ -443,7 +443,7 @@ func Test_projectUsecase_DeleteProject_AlsoAddsChangelogEntry(t *testing.T) {
 
 	userId := GetTestUserId(t)
 	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
-	changelogEntries, err := usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(changelogEntries))
 	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
@@ -451,7 +451,7 @@ func Test_projectUsecase_DeleteProject_AlsoAddsChangelogEntry(t *testing.T) {
 
 	clientId := GetTestClientId(t)
 	usecaseTest.ProjectUsecase.DeleteProject(project.ID, userId, clientId)
-	changelogEntries, err = usecaseTest.ChangelogRepo.GetChangelogEntries(nil)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(changelogEntries))
 	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)

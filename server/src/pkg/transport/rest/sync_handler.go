@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -88,7 +87,6 @@ func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEnt
 			ProjectId:   entry.ProjectId,
 			ChangeType:  changeType,
 		}
-		fmt.Printf("ChangeTimestamp: %v\n", syncTimeEntry.ChangeTimestamp)
 		if !entry.EndTime.IsZero() {
 			syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
 		}
