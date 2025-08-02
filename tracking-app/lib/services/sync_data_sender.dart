@@ -1,10 +1,12 @@
 import 'package:timeasy/models/change_type.dart';
+import 'package:timeasy/models/changelog_entry.dart';
 import 'package:timeasy/models/project_sync_data.dart';
 import 'package:timeasy/models/sync_data.dart';
 import 'package:timeasy/models/time_entry_sync_data.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/repositories/changelog_repository.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
 
 class SyncDataSender {
@@ -12,89 +14,81 @@ class SyncDataSender {
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final ProjectRepository _projectRepository = new ProjectRepository();
   final SettingsRepository _settingsRepository = new SettingsRepository();
-
-  DateTime? _latestProjectUpdateTime;
-  DateTime? _latestTimeEntryUpdateTime;
+  final ChangelogRepository _changelogRepository = new ChangelogRepository();
 
   SyncDataSender(this._apiService) {}
 
-  Future<void> sendNewestEntries() async {
+  Future<void> sendNewestEntries(String? clientId) async {
     var syncData = await createSyncData();
-    await _apiService.sendSyncData(syncData);
-    await _saveUpdateTimestamps();
+    await _apiService.sendSyncData(syncData, clientId);
+    await _saveLatestLocalChangelogId();
   }
 
   Future<SyncData> createSyncData() async {
     var settings = await _settingsRepository.getSettings();
-    var projects =
-        await getProjectsToSend(settings.latestLocalProjectTimestamp);
-    var timeEntries =
-        await getTimeEntriesToSend(settings.latestLocalTimeEntryTimestamp);
+    var changelogEntries = await _changelogRepository.getUnsentChanges(settings.latestLocalChangelogId);
+    
+    var projects = <ProjectSyncData>[];
+    var timeEntries = <TimeEntrySyncData>[];
+    
+    for (var changelogEntry in changelogEntries) {
+      if (changelogEntry.entityType == 'Project') {
+        var projectSyncData = await _createProjectSyncDataFromChangelog(changelogEntry);
+        if (projectSyncData != null) {
+          projects.add(projectSyncData);
+        }
+      } else if (changelogEntry.entityType == 'TimeEntry') {
+        var timeEntrySyncData = await _createTimeEntrySyncDataFromChangelog(changelogEntry);
+        if (timeEntrySyncData != null) {
+          timeEntries.add(timeEntrySyncData);
+        }
+      }
+    }
+    
     return new SyncData(timeEntries: timeEntries, projects: projects);
   }
 
-  Future<List<ProjectSyncData>> getProjectsToSend(
-      DateTime? changedAfter) async {
-    var projects =
-        await _projectRepository.getProjectsChangedAfter(changedAfter);
-    var projectSyncDataList = <ProjectSyncData>[];
-    for (var project in projects) {
-      var changeType = ChangeType.CHANGED;
-      if (project.deleted) {
-        changeType = ChangeType.DELETED;
-      } else if (project.created == project.updated) {
-        changeType = ChangeType.NEW;
-      }
-      var projectSyncData = new ProjectSyncData(
-        id: project.id,
-        name: project.name,
-        color: project.color,
-        changeType: changeType,
-        changeTimestamp: project.updated,
+  Future<ProjectSyncData?> _createProjectSyncDataFromChangelog(ChangelogEntry changelogEntry) async {
+    var project = await _projectRepository.getProjectById(changelogEntry.entityId);
+    if (project != null || changelogEntry.changeType == ChangeType.DELETED) {
+      return ProjectSyncData(
+        id: changelogEntry.entityId,
+        name: project?.name ?? '',
+        color: project?.color ?? '#1E90FF',
+        changeType: changelogEntry.changeType,
+        changeTimestamp: changelogEntry.timestamp,
       );
-      projectSyncDataList.add(projectSyncData);
-      if (_latestProjectUpdateTime == null ||
-          project.updated.isAfter(_latestProjectUpdateTime!)) {
-        _latestProjectUpdateTime = project.updated;
-      }
     }
-    return projectSyncDataList;
+    return null;
   }
 
-  Future<List<TimeEntrySyncData>> getTimeEntriesToSend(
-      DateTime? changedAfter) async {
-    var timeEntries =
-        await _timeEntryRepository.getTimeEntriesChangedAfter(changedAfter);
-    var timeEntrySyncDataList = <TimeEntrySyncData>[];
-    for (var timeEntry in timeEntries) {
-      var changeType = ChangeType.CHANGED;
-      if (timeEntry.deleted) {
-        changeType = ChangeType.DELETED;
-      } else if (timeEntry.created == timeEntry.updated) {
-        changeType = ChangeType.NEW;
-      }
-      var timeEntrieSyncData = new TimeEntrySyncData(
-        projectId: timeEntry.projectId,
-        id: timeEntry.id,
-        description: timeEntry.description ?? "",
-        startTime: timeEntry.startTime,
-        endTime: timeEntry.endTime,
-        changeType: changeType,
-        changeTimestamp: timeEntry.updated,
+  Future<TimeEntrySyncData?> _createTimeEntrySyncDataFromChangelog(ChangelogEntry changelogEntry) async {
+    var timeEntry = await _timeEntryRepository.getTimeEntryById(changelogEntry.entityId);
+    if (timeEntry != null || changelogEntry.changeType == ChangeType.DELETED) {
+      return TimeEntrySyncData(
+        id: changelogEntry.entityId,
+        projectId: timeEntry?.projectId ?? '',
+        description: timeEntry?.description ?? '',
+        startTime: timeEntry?.startTime ?? DateTime.now(),
+        endTime: timeEntry?.endTime,
+        changeType: changelogEntry.changeType,
+        changeTimestamp: changelogEntry.timestamp,
       );
-      timeEntrySyncDataList.add(timeEntrieSyncData);
-      if (_latestTimeEntryUpdateTime == null ||
-          timeEntry.updated.isAfter(_latestTimeEntryUpdateTime!)) {
-        _latestTimeEntryUpdateTime = timeEntry.updated;
-      }
     }
-    return timeEntrySyncDataList;
+    return null;
   }
 
-  Future<void> _saveUpdateTimestamps() async {
+  Future<void> _saveLatestLocalChangelogId() async {
     var settings = await _settingsRepository.getSettings();
-    settings.latestLocalTimeEntryTimestamp = _latestTimeEntryUpdateTime;
-    settings.latestLocalProjectTimestamp = _latestProjectUpdateTime;
-    await _settingsRepository.saveSettings(settings);
+    var changelogEntries = await _changelogRepository.getUnsentChanges(settings.latestLocalChangelogId);
+    
+    if (changelogEntries.isNotEmpty) {
+      var latestChangelogId = changelogEntries.map((e) => e.changelogId!).reduce((a, b) => a > b ? a : b);
+      settings.latestLocalChangelogId = latestChangelogId;
+      await _settingsRepository.saveSettings(settings);
+      
+      // Clean up sent changelog entries
+      await _changelogRepository.deleteSentChanges(latestChangelogId);
+    }
   }
 }

@@ -75,6 +75,27 @@ class DBProvider {
     ''',
     '''
       ALTER TABLE Projects ADD COLUMN color TEXT DEFAULT '#1E90FF';
+    ''',
+    '''
+      ALTER TABLE Settings DROP COLUMN latestRemoteTimeEntryTimestamp;
+    ''',
+    '''
+      ALTER TABLE Settings DROP COLUMN latestRemoteProjectTimestamp;
+    ''',
+    '''
+      ALTER TABLE Settings DROP COLUMN latestLocalTimeEntryTimestamp;
+    ''',
+    '''
+      ALTER TABLE Settings DROP COLUMN latestLocalProjectTimestamp;
+    ''',
+    '''
+      ALTER TABLE Settings ADD COLUMN latestRemoteChangelogId INTEGER DEFAULT 0;
+    ''',
+    '''
+      ALTER TABLE Settings ADD COLUMN latestLocalChangelogId INTEGER DEFAULT 0;
+    ''',
+    '''
+      ALTER TABLE Settings ADD COLUMN clientId TEXT;
     '''
   ];
 

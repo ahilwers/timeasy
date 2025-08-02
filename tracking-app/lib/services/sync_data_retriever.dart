@@ -17,26 +17,23 @@ class SyncDataRetriever {
 
   SyncDataRetriever(this._apiService) {}
 
-  Future<void> retrieveNewestEntries(DateTime? changedAfter) async {
-    var syncData = await _apiService.getChangedData(changedAfter);
+  Future<void> retrieveNewestEntries(int? sinceChangelogId, String? clientId) async {
+    var syncData = await _apiService.getChangedData(sinceChangelogId, clientId);
     await _saveEntries(syncData);
   }
 
   Future<void> _saveEntries(SyncData syncData) async {
     await _saveTimeEntries(syncData.timeEntries);
     await _saveProjects(syncData.projects);
+    if (syncData.latestChangelogId != null) {
+      await _updateRemoteChangelogIdSettings(syncData.latestChangelogId!);
+    }
   }
 
   Future<void> _saveTimeEntries(List<TimeEntrySyncData> syncData) async {
-    DateTime? latestUpdateTime = null;
     for (var entry in syncData) {
-      if (latestUpdateTime == null ||
-          entry.changeTimestamp.isAfter(latestUpdateTime)) {
-        latestUpdateTime = entry.changeTimestamp;
-      }
       await _saveTimeEntry(entry);
     }
-    _updateRemoteTimeEntrySettings(latestUpdateTime);
   }
 
   Future<void> _saveTimeEntry(TimeEntrySyncData syncData) async {
@@ -74,15 +71,9 @@ class SyncDataRetriever {
   }
 
   Future<void> _saveProjects(List<ProjectSyncData> syncData) async {
-    DateTime? latestUpdateTime = null;
     for (var project in syncData) {
-      if (latestUpdateTime == null ||
-          project.changeTimestamp.isAfter(latestUpdateTime)) {
-        latestUpdateTime = project.changeTimestamp;
-      }
       await _saveProject(project);
     }
-    await _updateRemoteProjectSettings(latestUpdateTime);
   }
 
   Future<void> _saveProject(ProjectSyncData syncData) async {
@@ -116,16 +107,9 @@ class SyncDataRetriever {
     return project;
   }
 
-  Future<void> _updateRemoteTimeEntrySettings(
-      DateTime? latestUpdateTime) async {
+  Future<void> _updateRemoteChangelogIdSettings(int latestChangelogId) async {
     var settings = await _settingsRepository.getSettings();
-    settings.latestRemoteTimeEntryTimestamp = latestUpdateTime;
-    await _settingsRepository.saveSettings(settings);
-  }
-
-  Future<void> _updateRemoteProjectSettings(DateTime? latestUpdateTime) async {
-    var settings = await _settingsRepository.getSettings();
-    settings.latestRemoteProjectTimestamp = latestUpdateTime;
+    settings.latestRemoteChangelogId = latestChangelogId;
     await _settingsRepository.saveSettings(settings);
   }
 }
