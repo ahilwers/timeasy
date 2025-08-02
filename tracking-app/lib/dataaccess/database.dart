@@ -32,6 +32,15 @@ class DBProvider {
         projectId TEXT, 
         FOREIGN KEY(projectId) REFERENCES Projects(id) 
       );
+    ''',
+    '''
+      CREATE TABLE Changelog (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entityType TEXT,
+        entityId TEXT,
+        changeType TEXT,
+        timestamp INTEGER
+      );
     '''
   ];
 

@@ -1,22 +1,56 @@
 import 'package:timeasy/dataaccess/database.dart';
 import 'package:timeasy/models/time_entry.dart';
+import 'package:timeasy/models/changelog_entry.dart';
+import 'package:timeasy/models/change_type.dart';
+import 'package:timeasy/repositories/changelog_repository.dart';
 
 class TimeEntryRepository {
-  addTimeEntry(TimeEntry timeEntry) async {
+  final ChangelogRepository _changelogRepository = ChangelogRepository();
+
+  Future<TimeEntry> addTimeEntry(TimeEntry timeEntry) async {
     final db = await DBProvider.dbProvider.database;
-    return await db.insert(TimeEntry.tableName, timeEntry.toMap());
+    await db.transaction((txn) async {
+      await txn.insert(TimeEntry.tableName, timeEntry.toMap());
+      await _changelogRepository.insert(ChangelogEntry(
+        entityType: 'TimeEntry',
+        entityId: timeEntry.id,
+        changeType: ChangeType.NEW,
+        timestamp: DateTime.now().toUtc(),
+      ), txn);
+    });
+    return timeEntry;
   }
 
-  updateTimeEntry(TimeEntry timeEntry) async {
+  Future<TimeEntry> updateTimeEntry(TimeEntry timeEntry) async {
     timeEntry.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
-    return await db.update(TimeEntry.tableName, timeEntry.toMap(),
-        where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(ChangelogEntry(
+        entityType: 'TimeEntry',
+        entityId: timeEntry.id,
+        changeType: ChangeType.CHANGED,
+        timestamp: DateTime.now().toUtc(),
+      ), txn);
+    });
+    return timeEntry;
   }
 
-  deleteTimeEntry(TimeEntry timeEntry) async {
+  Future<TimeEntry> deleteTimeEntry(TimeEntry timeEntry) async {
     timeEntry.deleted = true;
-    await updateTimeEntry(timeEntry);
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(ChangelogEntry(
+        entityType: 'TimeEntry',
+        entityId: timeEntry.id,
+        changeType: ChangeType.DELETED,
+        timestamp: DateTime.now().toUtc(),
+      ), txn);
+    });
+    return timeEntry;
   }
 
   closeLatestTimeEntry(String projectId) async {
