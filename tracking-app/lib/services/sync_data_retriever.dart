@@ -49,14 +49,12 @@ class SyncDataRetriever {
       case ChangeType.CHANGED:
         if (existingTimeEntry == null) {
           await _timeEntryRepository.addTimeEntry(timeEntry);
-        } else if (syncData.changeTimestamp
-            .isAfter(existingTimeEntry.updated)) {
+        } else {
           await _timeEntryRepository.updateTimeEntry(timeEntry);
         }
         break;
       case ChangeType.DELETED:
-        if (existingTimeEntry != null &&
-            syncData.changeTimestamp.isAfter(existingTimeEntry.updated)) {
+        if (existingTimeEntry != null) {
           await _timeEntryRepository.deleteTimeEntry(timeEntry);
         }
         break;
@@ -69,7 +67,6 @@ class SyncDataRetriever {
     timeEntry.description = entry.description;
     timeEntry.startTime = entry.startTime;
     timeEntry.endTime = entry.endTime;
-    timeEntry.updated = entry.changeTimestamp;
     timeEntry.created = DateTime.now();
     return timeEntry;
   }
@@ -116,5 +113,4 @@ class SyncDataRetriever {
     settings.latestRemoteChangelogId = latestChangelogId;
     await _settingsRepository.saveSettings(settings);
   }
-
 }

@@ -91,11 +91,11 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 
 	for _, entry := range syncEntries.TimeEntries {
 		if entry.ChangeType == DELETED {
-			assert.Equal(t, deletedTimeEntry.Description, *entry.Description)
+			assert.Equal(t, deletedTimeEntry.Description, entry.Description)
 			assert.Equal(t, deletedTimeEntry.ProjectId, syncEntries.TimeEntries[0].ProjectId)
 			foundDeleted = true
 		} else if entry.ChangeType == CHANGED {
-			assert.Equal(t, updatedTimeEntry.Description, *entry.Description)
+			assert.Equal(t, updatedTimeEntry.Description, entry.Description)
 			assert.Equal(t, updatedTimeEntry.ProjectId, syncEntries.TimeEntries[1].ProjectId)
 			foundUpdated = true
 		}
@@ -140,7 +140,7 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	description := "timeEntry1"
 	timeEntry1 := ChangedTimeEntryDto{
 		Id:          id,
-		Description: &description,
+		Description: description,
 		StartTime:   startTime.Format(time.RFC3339),
 		EndTime:     endTime.Format(time.RFC3339),
 		ProjectId:   project.ID,
@@ -213,7 +213,7 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
 	description := "updatedTimeEntry"
 	updatedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
-		Description:     &description,
+		Description:     description,
 		StartTime:       startTime.Format(time.RFC3339),
 		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
@@ -286,7 +286,7 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries_ShouldNotUpdateMissingFields(t
 	changeTime := time.Now().Add(time.Hour).UTC()
 	updatedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
-		Description:     nil,
+		Description:     "",
 		StartTime:       startTime.Format(time.RFC3339),
 		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
@@ -360,7 +360,7 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 	description := "deletedTimeEntry"
 	deletedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
-		Description:     &description,
+		Description:     description,
 		StartTime:       startTime.Format(time.RFC3339),
 		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
@@ -485,7 +485,7 @@ func Test_syncHandler_SendUpdatedLocalProjects(t *testing.T) {
 	changeTime := time.Now().Add(time.Hour).UTC()
 	description := "updatedProject"
 	deadline := model.NewDateOnly(time.Date(2025, 8, 1, 0, 0, 0, 0, time.UTC))
-	hourlyRate := decimal.NewFromInt(20)
+	hourlyRate := 20.0
 	timeBudget := 10
 	color := "#00ff00"
 	updatedProject := ChangedProjectDto{

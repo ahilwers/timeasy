@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type SyncHandler interface {
@@ -79,17 +80,26 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 
 func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEntry, syncEntries *SyncEntries, changeType ChangeType) {
 	for _, entry := range timeEntries {
-		desc := entry.Description
+		// Skip entries with invalid start times
+		if entry.StartTime.IsZero() || entry.StartTime.Year() < 1900 {
+			log.Printf("Warning: Skipping time entry %s with invalid start time: %v", entry.ID, entry.StartTime)
+			continue
+		}
+		
 		syncTimeEntry := ChangedTimeEntryDto{
-			Id:          entry.ID,
-			Description: &desc,
-			StartTime:   entry.StartTime.Format(time.RFC3339),
-			ProjectId:   entry.ProjectId,
-			ChangeType:  changeType,
+			Id:              entry.ID,
+			Description:     entry.Description,
+			StartTime:       entry.StartTime.UTC().Truncate(time.Second).Format(time.RFC3339),
+			ProjectId:       entry.ProjectId,
+			ChangeType:      changeType,
+			ChangeTimestamp: time.Now().UTC().Format(time.RFC3339),
 		}
-		if !entry.EndTime.IsZero() {
-			syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
+		
+		// Only include EndTime if it's valid
+		if !entry.EndTime.IsZero() && entry.EndTime.Year() >= 1900 {
+			syncTimeEntry.EndTime = entry.EndTime.UTC().Truncate(time.Second).Format(time.RFC3339)
 		}
+		
 		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
 }
@@ -97,20 +107,27 @@ func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEnt
 func (handler *syncHandler) appendChangedProjects(projects []model.Project, syncEntries *SyncEntries, changeType ChangeType) {
 	for _, project := range projects {
 		deadline := project.Deadline
-		hourlyRate := project.HourlyRate
+		hourlyRateFloat, _ := project.HourlyRate.Float64()
 		timeBudget := project.TimeBudget
 		isActive := project.IsActive
 		color := project.Color
+		
 		syncProject := ChangedProjectDto{
-			Id:         project.ID,
-			Name:       project.Name,
-			Color:      &color,
-			Deadline:   &deadline,
-			HourlyRate: &hourlyRate,
-			TimeBudget: &timeBudget,
-			IsActive:   &isActive,
-			ChangeType: changeType,
+			Id:              project.ID,
+			Name:            project.Name,
+			Color:           &color,
+			HourlyRate:      &hourlyRateFloat,
+			TimeBudget:      &timeBudget,
+			IsActive:        &isActive,
+			ChangeType:      changeType,
+			ChangeTimestamp: time.Now().UTC().Format(time.RFC3339),
 		}
+		
+		// Only set deadline if it's not zero/null
+		if !deadline.IsZero() {
+			syncProject.Deadline = &deadline
+		}
+		
 		syncEntries.Projects = append(syncEntries.Projects, syncProject)
 	}
 }
@@ -187,7 +204,7 @@ func (handler *syncHandler) createProjectFromDto(projectDto ChangedProjectDto, u
 	}
 
 	if projectDto.HourlyRate != nil {
-		project.HourlyRate = *projectDto.HourlyRate
+		project.HourlyRate = decimal.NewFromFloat(*projectDto.HourlyRate)
 	}
 
 	if projectDto.Deadline != nil {
@@ -240,8 +257,8 @@ func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntry
 	}
 	timeEntry.StartTime = startTime
 
-	if timeEntryDto.Description != nil {
-		timeEntry.Description = *timeEntryDto.Description
+	if timeEntryDto.Description != "" {
+		timeEntry.Description = timeEntryDto.Description
 	}
 	if timeEntryDto.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, timeEntryDto.EndTime)

@@ -7,7 +7,6 @@ import (
 	"timeasy-server/pkg/domain/model"
 
 	"github.com/gofrs/uuid"
-	"github.com/shopspring/decimal"
 )
 
 type ChangeType uint8
@@ -68,12 +67,12 @@ type SyncEntries struct {
 
 type ChangedTimeEntryDto struct {
 	Id              uuid.UUID  `json:"id" binding:"required"`
-	Description     *string    `json:"description" binding:"required"`
+	Description     string     `json:"description"`
 	StartTime       string     `json:"startTime" binding:"required"`
 	EndTime         string     `json:"endTime,omitempty"`
 	ProjectId       uuid.UUID  `json:"projectId" binding:"required"`
 	ChangeType      ChangeType `json:"changeType" binding:"required"`
-	ChangeTimestamp string     `json:"changeTimestamp" binding:"required"`
+	ChangeTimestamp string     `json:"changeTimestamp"`
 }
 
 type ChangedProjectDto struct {
@@ -81,9 +80,9 @@ type ChangedProjectDto struct {
 	Name            string           `json:"name" binding:"required"`
 	Color           *string          `json:"color"`
 	Deadline        *model.DateOnly  `json:"deadline,omitempty"`
-	HourlyRate      *decimal.Decimal `json:"hourlyRate,omitempty"`
+	HourlyRate      *float64         `json:"hourlyRate,omitempty"`
 	TimeBudget      *int             `json:"timeBudget,omitempty"`
 	IsActive        *bool            `json:"isActive,omitempty"`
 	ChangeType      ChangeType       `json:"changeType" binding:"required"`
-	ChangeTimestamp string           `json:"changeTimestamp" binding:"required"`
+	ChangeTimestamp string           `json:"changeTimestamp"`
 }
