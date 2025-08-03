@@ -20,15 +20,26 @@ class ChangelogRepository {
       entityId: entry.entityId,
       changeType: entry.changeType,
       timestamp: entry.timestamp,
+      isFromServer: entry.isFromServer,
     );
   }
 
   Future<List<ChangelogEntry>> getUnsentChanges(int? lastChangelogId) async {
     final db = await _db;
+
+    // Filter out server-originated changes - only send truly local changes
+    String whereClause = 'isFromServer = 0';
+    List<dynamic> whereArgs = [];
+
+    if (lastChangelogId != null) {
+      whereClause += ' AND $idColumn > ?';
+      whereArgs.add(lastChangelogId);
+    }
+
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
-      where: lastChangelogId != null ? '$idColumn > ?' : null,
-      whereArgs: lastChangelogId != null ? [lastChangelogId] : null,
+      where: whereClause,
+      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
       orderBy: '$idColumn ASC',
     );
 

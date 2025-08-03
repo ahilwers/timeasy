@@ -6,6 +6,7 @@ class ChangelogEntry {
   final ChangeType changeType;
   final DateTime timestamp;
   final int? changelogId; // This will be set by the server or local DB
+  final bool isFromServer; // True if this change came from server sync
 
   ChangelogEntry({
     required this.entityType,
@@ -13,6 +14,7 @@ class ChangelogEntry {
     required this.changeType,
     required this.timestamp,
     this.changelogId,
+    this.isFromServer = false, // Default to local change
   });
 
   factory ChangelogEntry.fromMap(Map<String, dynamic> map) {
@@ -22,6 +24,7 @@ class ChangelogEntry {
       entityId: map['entityId'],
       changeType: ChangeTypeHelper.convertFromString(map['changeType']),
       timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']),
+      isFromServer: map['isFromServer'] == 1, // SQLite stores as 0/1
     );
   }
 
@@ -31,6 +34,7 @@ class ChangelogEntry {
       'entityId': entityId,
       'changeType': ChangeTypeHelper.convertToString(changeType),
       'timestamp': timestamp.millisecondsSinceEpoch,
+      'isFromServer': isFromServer ? 1 : 0, // Convert to 0/1 for SQLite
     };
   }
 }

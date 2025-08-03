@@ -96,6 +96,9 @@ class DBProvider {
     ''',
     '''
       ALTER TABLE Settings ADD COLUMN clientId TEXT;
+    ''',
+    '''
+      ALTER TABLE Changelog ADD COLUMN isFromServer INTEGER DEFAULT 0;
     '''
   ];
 

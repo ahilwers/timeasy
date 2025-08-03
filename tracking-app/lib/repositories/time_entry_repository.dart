@@ -23,6 +23,24 @@ class TimeEntryRepository {
     return timeEntry;
   }
 
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<TimeEntry> addTimeEntryFromSync(TimeEntry timeEntry) async {
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.insert(TimeEntry.tableName, timeEntry.toMap());
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.NEW,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return timeEntry;
+  }
+
   Future<TimeEntry> updateTimeEntry(TimeEntry timeEntry) async {
     timeEntry.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
@@ -41,6 +59,26 @@ class TimeEntryRepository {
     return timeEntry;
   }
 
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<TimeEntry> updateTimeEntryFromSync(TimeEntry timeEntry) async {
+    timeEntry.updated = DateTime.now().toUtc();
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.CHANGED,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return timeEntry;
+  }
+
   Future<TimeEntry> deleteTimeEntry(TimeEntry timeEntry) async {
     timeEntry.deleted = true;
     final db = await DBProvider.dbProvider.database;
@@ -53,6 +91,26 @@ class TimeEntryRepository {
             entityId: timeEntry.id,
             changeType: ChangeType.DELETED,
             timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
+    });
+    return timeEntry;
+  }
+
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<TimeEntry> deleteTimeEntryFromSync(TimeEntry timeEntry) async {
+    timeEntry.deleted = true;
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.DELETED,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
           ),
           txn);
     });

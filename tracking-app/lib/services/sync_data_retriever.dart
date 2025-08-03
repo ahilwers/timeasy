@@ -48,14 +48,14 @@ class SyncDataRetriever {
       case ChangeType.NEW:
       case ChangeType.CHANGED:
         if (existingTimeEntry == null) {
-          await _timeEntryRepository.addTimeEntry(timeEntry);
+          await _timeEntryRepository.addTimeEntryFromSync(timeEntry);
         } else {
-          await _timeEntryRepository.updateTimeEntry(timeEntry);
+          await _timeEntryRepository.updateTimeEntryFromSync(timeEntry);
         }
         break;
       case ChangeType.DELETED:
         if (existingTimeEntry != null) {
-          await _timeEntryRepository.deleteTimeEntry(timeEntry);
+          await _timeEntryRepository.deleteTimeEntryFromSync(timeEntry);
         }
         break;
     }
@@ -84,15 +84,15 @@ class SyncDataRetriever {
       case ChangeType.NEW:
       case ChangeType.CHANGED:
         if (existingProject == null) {
-          _projectRepository.addProject(project);
+          _projectRepository.addProjectFromSync(project);
         } else if (syncData.changeTimestamp.isAfter(existingProject.updated)) {
-          _projectRepository.updateProject(project);
+          _projectRepository.updateProjectFromSync(project);
         }
         break;
       case ChangeType.DELETED:
         if (existingProject != null &&
             syncData.changeTimestamp.isAfter(existingProject.updated)) {
-          _projectRepository.deleteProject(project);
+          _projectRepository.deleteProjectFromSync(project);
         }
         break;
     }
