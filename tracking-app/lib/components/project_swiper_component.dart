@@ -62,8 +62,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       duration: Duration(milliseconds: 1000),
     );
     _descriptionController.addListener(_onDescriptionChanged);
+
     _loadProjects();
-    // Trigger synchronization when the component is opened
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       EventSyncService().synchronizeOnEvent();
     });
@@ -94,7 +95,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       if (_currentOpenTimeEntry!.description != description) {
         _currentOpenTimeEntry!.description = description;
         await _timeEntryRepository.updateTimeEntry(_currentOpenTimeEntry!);
-
         EventSyncService().sendDataToServer();
       }
     }
@@ -259,7 +259,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       _buttonAnimationController.reverse();
     });
 
-    EventSyncService().sendDataToServer();
+    // Try to sync in background - don't block local functionality
+    if (EventSyncService().isInitialized() && EventSyncService().canSync()) {
+      EventSyncService().sendDataToServer();
+    }
   }
 
   void _toggleState() {
@@ -319,10 +322,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         ? _projects[_currentPage]
         : null;
 
-    // Get project color for UI elements
-    final projectColor =
-        project != null ? hexToColor(project.color) : Colors.grey;
-
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
       body: SafeArea(
@@ -353,11 +352,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                       context.read<SelectedProjectBloc>().add(
                             SetSelectedProjectEvent(_projects[page]),
                           );
-
-                      // Load suggestions for the new project
                       _loadSuggestions(_projects[page].id);
-
-                      // Check timing status for the new project
                       _checkTimingStatus();
                     }
                   },

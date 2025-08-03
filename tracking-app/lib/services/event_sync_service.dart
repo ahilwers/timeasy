@@ -73,10 +73,10 @@ class EventSyncService {
     if (!canSync()) {
       return;
     }
+
     _syncBloc!.add(SynchonizationStartEvent());
     try {
-      await _syncService!.synchronize();
-      var retrieveResult = await _syncService!.retrieveChangesFromServer();
+      var retrieveResult = await _syncService!.synchronize();
       _syncBloc!.add(SynchronizationSuccessEvent(retrieveResult));
     } catch (e) {
       _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
