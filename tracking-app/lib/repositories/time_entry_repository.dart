@@ -151,6 +151,18 @@ class TimeEntryRepository {
     return queryResult.isNotEmpty ? TimeEntry.fromMap(queryResult.first) : null;
   }
 
+  Future<List<TimeEntry>> getOpenTimeEntriesForProject(String projectId) async {
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.query(TimeEntry.tableName,
+        where:
+            "${TimeEntry.endTimeColumn} = ? AND ${TimeEntry.projectIdColumn} = ? AND DELETED = 0",
+        whereArgs: [0, projectId],
+        orderBy: "${TimeEntry.startTimeColumn} ASC");
+    return queryResult.isNotEmpty
+        ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList()
+        : [];
+  }
+
   Future<TimeEntry?> getTimeEntryById(String id) async {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.query(TimeEntry.tableName,

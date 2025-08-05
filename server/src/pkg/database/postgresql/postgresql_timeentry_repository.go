@@ -332,6 +332,61 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetween
 	return repo.queryTimeEntries(query, args...)
 }
 
+func (repo *postgresqlTimeEntryRepository) GetOpenTimeEntriesForProject(userId uuid.UUID, projectId uuid.UUID, tx model.Transaction) ([]model.TimeEntry, error) {
+	query := `
+		SELECT
+			id, user_id, project_id, start_time, end_time, description
+		FROM time_entries
+		WHERE user_id = $1 AND project_id = $2 AND (end_time IS NULL OR end_time = '0001-01-01 00:00:00'::timestamp) AND deleted = false
+		ORDER BY start_time ASC
+	`
+
+	var rows *sql.Rows
+	var err error
+	
+	if tx != nil {
+		sqlTx, ok := tx.(*sql.Tx)
+		if !ok {
+			return nil, errors.New("invalid transaction type")
+		}
+		rows, err = sqlTx.Query(query, userId, projectId)
+	} else {
+		rows, err = repo.db.Query(query, userId, projectId)
+	}
+	
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []model.TimeEntry
+	for rows.Next() {
+		var entry model.TimeEntry
+		err := rows.Scan(
+			&entry.ID,
+			&entry.UserId,
+			&entry.ProjectId,
+			&entry.StartTime,
+			&entry.EndTime,
+			&entry.Description,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Ensure times have UTC location
+		repo.setupTimeLocation(&entry)
+
+		entries = append(entries, entry)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return entries, nil
+}
+
 // setupTimeLocation ensures that all time fields in the TimeEntry have their location set to UTC
 func (repo *postgresqlTimeEntryRepository) setupTimeLocation(entry *model.TimeEntry) {
 	if !entry.StartTime.IsZero() {

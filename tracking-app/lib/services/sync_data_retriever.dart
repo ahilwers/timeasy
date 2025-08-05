@@ -48,7 +48,12 @@ class SyncDataRetriever {
       case ChangeType.NEW:
       case ChangeType.CHANGED:
         if (existingTimeEntry == null) {
-          await _timeEntryRepository.addTimeEntryFromSync(timeEntry);
+          // Check if this is an open time entry that needs merging
+          if (timeEntry.endTime == null) {
+            await _mergeOpenTimeEntriesIfNeeded(timeEntry);
+          } else {
+            await _timeEntryRepository.addTimeEntryFromSync(timeEntry);
+          }
         } else {
           await _timeEntryRepository.updateTimeEntryFromSync(timeEntry);
         }
@@ -112,5 +117,55 @@ class SyncDataRetriever {
     var settings = await _settingsRepository.getSettings();
     settings.latestRemoteChangelogId = latestChangelogId;
     await _settingsRepository.saveSettings(settings);
+  }
+
+  // Merges open time entries if there are duplicates for the same project
+  // Uses the earliest start time and the ID from the incoming entry
+  Future<void> _mergeOpenTimeEntriesIfNeeded(TimeEntry newTimeEntry) async {
+    var existingOpenEntries = await _timeEntryRepository
+        .getOpenTimeEntriesForProject(newTimeEntry.projectId);
+
+    if (existingOpenEntries.isEmpty) {
+      // No existing open entries, just add the new one
+      await _timeEntryRepository.addTimeEntryFromSync(newTimeEntry);
+      return;
+    }
+
+    // Find the earliest start time
+    DateTime earliestStartTime = newTimeEntry.startTime;
+    for (var existingEntry in existingOpenEntries) {
+      if (existingEntry.startTime.isBefore(earliestStartTime)) {
+        earliestStartTime = existingEntry.startTime;
+      }
+    }
+
+    // Update the new entry with the earliest start time
+    newTimeEntry.startTime = earliestStartTime;
+
+    // Combine descriptions if they exist and are different
+    List<String> descriptions = [];
+    if (newTimeEntry.description != null && newTimeEntry.description!.isNotEmpty) {
+      descriptions.add(newTimeEntry.description!);
+    }
+    for (var existingEntry in existingOpenEntries) {
+      if (existingEntry.description != null && 
+          existingEntry.description!.isNotEmpty && 
+          existingEntry.description != newTimeEntry.description) {
+        descriptions.add(existingEntry.description!);
+      }
+    }
+    if (descriptions.length > 1) {
+      newTimeEntry.description = descriptions.join('; ');
+    } else if (descriptions.length == 1) {
+      newTimeEntry.description = descriptions.first;
+    }
+
+    // Delete the existing open entries
+    for (var entryToDelete in existingOpenEntries) {
+      await _timeEntryRepository.deleteTimeEntryFromSync(entryToDelete);
+    }
+
+    // Add the merged entry
+    await _timeEntryRepository.addTimeEntryFromSync(newTimeEntry);
   }
 }
