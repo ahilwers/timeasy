@@ -5,8 +5,11 @@ import (
 	"log"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
+	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
+	
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 var databaseService database.DatabaseService
@@ -31,18 +34,29 @@ func main() {
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
-	teamRepository := database.NewGormTeamRepository(databaseService.Database)
-	teamUsecase := usecase.NewTeamUsecase(teamRepository)
+	changelogRepository := postgresql.NewPostgreSQLChangelogRepository(databaseService.Database.DB)
+
+	teamRepository := postgresql.NewPostgreSQLTeamRepository(databaseService.Database.DB)
+	teamUsecase := usecase.NewTeamUsecase(teamRepository, changelogRepository)
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
-	projectUsecase := usecase.NewProjectUsecase(database.NewGormProjectRepository(databaseService.Database, teamRepository), teamUsecase)
+	projectRepository := postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository)
+	projectUsecase := usecase.NewProjectUsecase(projectRepository, teamUsecase, changelogRepository)
 	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
 
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(database.NewGormTimeEntryRepository(databaseService.Database), projectUsecase)
+	timeEntryRepository := postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB)
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(timeEntryRepository, projectUsecase, changelogRepository)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
 
-	syncUsecase := usecase.NewSyncUsecase(database.NewGormSyncRepository(databaseService.Database))
+	syncUsecase := usecase.NewSyncUsecase(postgresql.NewPostgreSQLSyncRepository(databaseService.Database.DB), changelogRepository, projectRepository, timeEntryRepository)
 	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
+
+	// Initialize changelog for existing databases
+	changelogInitUsecase := usecase.NewChangelogInitializationUsecase(changelogRepository, projectRepository, timeEntryRepository, teamRepository)
+	if err := changelogInitUsecase.InitializeChangelog(); err != nil {
+		log.Printf("Failed to initialize changelog: %v", err)
+		panic(err)
+	}
 
 	weeklyStatisticsUsecase := usecase.NewWeeklyStatisticsUsecase(timeEntryUsecase)
 	weeklyStatisticsHandler := rest.NewWeeklyStatisticsHandler(tokenVerifier, weeklyStatisticsUsecase, projectUsecase)

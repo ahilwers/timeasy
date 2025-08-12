@@ -15,3 +15,7 @@ In the directory "service-testing" you'll find a script named "login.sh" that he
 ```
 http localhost:8080/api/v1/projects "Authorization:Bearer $TOKEN" < project.json
 ```
+
+## Database-Migration
+
+The project ist using golang-migrate (https://github.com/golang-migrate) for migrations. To install the CLI tool to create migrations follow these instructions: https://github.com/golang-migrate/migrate/tree/master/cmd/migrate

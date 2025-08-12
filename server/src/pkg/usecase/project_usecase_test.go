@@ -3,13 +3,12 @@ package usecase
 import (
 	"errors"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"testing"
 	"time"
 	"timeasy-server/pkg/domain/model"
-	"timeasy-server/pkg/test"
 
 	"github.com/gofrs/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,6 +18,7 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 	defer teardownTest(t)
 
 	userId := GetTestUserId(t)
+	clientId := GetTestClientId(t)
 
 	hourlyRate, err := decimal.NewFromString("10.23")
 	assert.Nil(t, err)
@@ -30,16 +30,16 @@ func Test_projectUsecase_AddProject(t *testing.T) {
 		HourlyRate: hourlyRate,
 		TimeBudget: 50,
 	}
-	err = usecaseTest.ProjectUsecase.AddProject(&prj)
+	err = usecaseTest.ProjectUsecase.AddProject(&prj, userId, clientId)
 	assert.Nil(t, err)
 
-	var projectFromDb model.Project
-	if err := test.DB.First(&projectFromDb, prj.ID).Error; err != nil {
+	projectFromDb, err := usecaseTest.ProjectUsecase.GetProjectById(prj.ID)
+	if err != nil {
 		t.Errorf("project could not be retrieved: %s", err)
 	}
 	assert.Equal(t, prj.Name, projectFromDb.Name)
 	assert.Equal(t, userId, projectFromDb.UserId)
-	assert.Equal(t, prj.Deadline, projectFromDb.Deadline)
+	assert.True(t, prj.Deadline.Equal(projectFromDb.Deadline))
 	assert.Equal(t, prj.HourlyRate, projectFromDb.HourlyRate)
 	assert.Equal(t, prj.TimeBudget, projectFromDb.TimeBudget)
 	assert.Nil(t, projectFromDb.TeamID)
@@ -49,11 +49,13 @@ func Test_projectUsecase_AddProjectFailsWithoutUserId(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
+	userId := GetTestUserId(t)
+	clientId := GetTestClientId(t)
 
 	prj := model.Project{
 		Name: "Testproject",
 	}
-	err := usecaseTest.ProjectUsecase.AddProject(&prj)
+	err := usecaseTest.ProjectUsecase.AddProject(&prj, userId, clientId)
 	assert.NotNil(t, err)
 }
 
@@ -68,7 +70,9 @@ func Test_projectUsecase_GetProjectById(t *testing.T) {
 		Name:   "Testproject",
 		UserId: userId,
 	}
-	err := usecaseTest.ProjectUsecase.AddProject(&prj)
+	userId = GetTestUserId(t)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.ProjectUsecase.AddProject(&prj, userId, clientId)
 	assert.Nil(t, err)
 
 	projectFromDb, err := usecaseTest.ProjectUsecase.GetProjectById(prj.ID)
@@ -142,7 +146,8 @@ func Test_projectUsecase_UpdateProject(t *testing.T) {
 	userId := GetTestUserId(t)
 	project := addProject(t, usecaseTest.ProjectUsecase, "project1", userId)
 	project.Name = "updatedProject"
-	err := usecaseTest.ProjectUsecase.UpdateProject(&project)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.ProjectUsecase.UpdateProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
@@ -166,9 +171,10 @@ func Test_projectUsecase_UpdateProjectFailsIfProjectDoesNotExist(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
+	clientId := GetTestClientId(t)
 
 	project.Name = "updatedProject"
-	err = usecaseTest.ProjectUsecase.UpdateProject(&project)
+	err = usecaseTest.ProjectUsecase.UpdateProject(&project, userId, clientId)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
@@ -187,7 +193,8 @@ func Test_projectUsecase_UpdateProjectFailsIfItHasNoUserId(t *testing.T) {
 	project := addProject(t, usecaseTest.ProjectUsecase, "project1", userId)
 	project.Name = "updatedProject"
 	project.UserId = uuid.Nil
-	err := usecaseTest.ProjectUsecase.UpdateProject(&project)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.ProjectUsecase.UpdateProject(&project, userId, clientId)
 	assert.NotNil(t, err)
 	var entityIncompleteError *EntityIncompleteError
 	assert.True(t, errors.As(err, &entityIncompleteError))
@@ -209,7 +216,8 @@ func Test_projectUsecase_DeleteProject(t *testing.T) {
 	userId := GetTestUserId(t)
 	projects := addProjects(t, usecaseTest.ProjectUsecase, 3, userId)
 
-	err := usecaseTest.ProjectUsecase.DeleteProject(projects[1].ID)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.ProjectUsecase.DeleteProject(projects[1].ID, userId, clientId)
 	assert.Nil(t, err)
 	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjects()
 	assert.Nil(t, err)
@@ -225,7 +233,9 @@ func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 
 	notExistingId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	err = usecaseTest.ProjectUsecase.DeleteProject(notExistingId)
+	userId := GetTestUserId(t)
+	clientId := GetTestClientId(t)
+	err = usecaseTest.ProjectUsecase.DeleteProject(notExistingId, userId, clientId)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
@@ -245,10 +255,11 @@ func Test_projectUsecase_CanProjectBeAssignedToATeam(t *testing.T) {
 		Name1: "Testteam",
 	}
 
-	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	err = usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	err = usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.Nil(t, err)
 
 	projectFromDb, err := usecaseTest.ProjectUsecase.GetProjectById(project.ID)
@@ -271,10 +282,11 @@ func Test_projectUsecase_AssignProjectToTeamFailsIfProjectDoesNotExist(t *testin
 		Name1: "Testteam",
 	}
 
-	err := usecaseTest.TeamUsecase.AddTeam(&team, userId)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	err = usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	err = usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
@@ -294,7 +306,8 @@ func Test_projectUsecase_AssignProjectToTeamFilesIfTeamDoesNotExist(t *testing.T
 		Name1: "Testteam",
 	}
 
-	err := usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.NotNil(t, err)
 	var entityNotFoundError *EntityNotFoundError
 	assert.True(t, errors.As(err, &entityNotFoundError))
@@ -310,7 +323,8 @@ func Test_projectUsecase_GetAllProjectsOfUserAlsoReturnsProjectsOfUsersTeams(t *
 	teamOfUser := model.Team{
 		Name1: "Team1OfUser",
 	}
-	err := usecaseTest.TeamUsecase.AddTeam(&teamOfUser, userId)
+	clientId := GetTestClientId(t)
+	err := usecaseTest.TeamUsecase.AddTeam(&teamOfUser, userId, clientId)
 	assert.Nil(t, err)
 
 	// Create another user and a team for it
@@ -318,18 +332,18 @@ func Test_projectUsecase_GetAllProjectsOfUserAlsoReturnsProjectsOfUsersTeams(t *
 	teamOfOtherUser := model.Team{
 		Name1: "Team1OfOtherUser",
 	}
-	err = usecaseTest.TeamUsecase.AddTeam(&teamOfOtherUser, otherUserId)
+	err = usecaseTest.TeamUsecase.AddTeam(&teamOfOtherUser, otherUserId, clientId)
 	assert.Nil(t, err)
 
 	// Assign the user to the team of the other user:
-	_, err = usecaseTest.TeamUsecase.AddUserToTeam(userId, &teamOfOtherUser, model.RoleList{model.RoleUser})
+	_, err = usecaseTest.TeamUsecase.AddUserToTeam(userId, &teamOfOtherUser, model.RoleList{model.RoleUser}, otherUserId, clientId)
 
 	// Create a project that belongs to the first user:
 	projectOfUser := model.Project{
 		UserId: userId,
 		Name:   "ProjectOfUser",
 	}
-	err = usecaseTest.ProjectUsecase.AddProject(&projectOfUser)
+	err = usecaseTest.ProjectUsecase.AddProject(&projectOfUser, userId, clientId)
 	assert.Nil(t, err)
 
 	// Create a project that belongs to the other user:
@@ -337,7 +351,7 @@ func Test_projectUsecase_GetAllProjectsOfUserAlsoReturnsProjectsOfUsersTeams(t *
 		UserId: otherUserId,
 		Name:   "ProjectOfOtherUser",
 	}
-	err = usecaseTest.ProjectUsecase.AddProject(&projectOfOtherUser)
+	err = usecaseTest.ProjectUsecase.AddProject(&projectOfOtherUser, otherUserId, clientId)
 	assert.Nil(t, err)
 
 	// Create a project that belongs to the team of other user and the first user:
@@ -346,7 +360,7 @@ func Test_projectUsecase_GetAllProjectsOfUserAlsoReturnsProjectsOfUsersTeams(t *
 		TeamID: &teamOfOtherUser.ID,
 		Name:   "ProjectOfOtherUsersTeam",
 	}
-	err = usecaseTest.ProjectUsecase.AddProject(&projectOfOtherUsersTeam)
+	err = usecaseTest.ProjectUsecase.AddProject(&projectOfOtherUsersTeam, otherUserId, clientId)
 	assert.Nil(t, err)
 
 	projectsFromDb, err := usecaseTest.ProjectUsecase.GetAllProjectsOfUser(userId)
@@ -377,6 +391,79 @@ func Test_projectUsecase_GetAllProjectsOfUserAlsoReturnsProjectsOfUsersTeams(t *
 	}
 }
 
+func Test_projectUsecase_AddProject_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changelogEntries))
+	changelogEntry := changelogEntries[0]
+	assert.Equal(t, model.EntityTypeProject, changelogEntry.EntityType)
+	assert.Equal(t, project.ID, changelogEntry.EntityID)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, userId, changelogEntries[0].ChangedByUser)
+}
+
+func Test_projectUsecase_UpdateProject_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+
+	clientId := GetTestClientId(t)
+	usecaseTest.ProjectUsecase.UpdateProject(&project, userId, clientId)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[1].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[1].EntityID)
+	assert.Equal(t, model.OperationUpdated, changelogEntries[1].Operation)
+	assert.Equal(t, userId, changelogEntries[1].ChangedByUser)
+	assert.Equal(t, clientId, changelogEntries[1].ChangedByClient)
+}
+
+func Test_projectUsecase_DeleteProject_AlsoAddsChangelogEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
+	changelogEntries, err := usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+
+	clientId := GetTestClientId(t)
+	usecaseTest.ProjectUsecase.DeleteProject(project.ID, userId, clientId)
+	changelogEntries, err = usecaseTest.ChangelogRepository.GetChangelogEntries(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(changelogEntries))
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[0].EntityType)
+	assert.Equal(t, model.OperationCreated, changelogEntries[0].Operation)
+	assert.Equal(t, project.ID, changelogEntries[0].EntityID)
+	assert.Equal(t, model.EntityTypeProject, changelogEntries[1].EntityType)
+	assert.Equal(t, project.ID, changelogEntries[1].EntityID)
+	assert.Equal(t, model.OperationDeleted, changelogEntries[1].Operation)
+	assert.Equal(t, userId, changelogEntries[1].ChangedByUser)
+	assert.Equal(t, clientId, changelogEntries[1].ChangedByClient)
+}
+
 func addProjects(t *testing.T, projectUsecase ProjectUsecase, count int, userId uuid.UUID) []model.Project {
 	return addProjectsWithStartIndex(t, projectUsecase, 1, count, userId)
 }
@@ -395,7 +482,8 @@ func addProject(t *testing.T, projectUsecase ProjectUsecase, name string, userId
 		Name:   name,
 		UserId: userId,
 	}
-	err := projectUsecase.AddProject(&prj)
+	clientId := GetTestClientId(t)
+	err := projectUsecase.AddProject(&prj, userId, clientId)
 	assert.Nil(t, err)
 	return prj
 }

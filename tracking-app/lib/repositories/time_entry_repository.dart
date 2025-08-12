@@ -1,22 +1,120 @@
 import 'package:timeasy/dataaccess/database.dart';
+import 'package:timeasy/models/change_type.dart';
+import 'package:timeasy/models/changelog_entry.dart';
 import 'package:timeasy/models/time_entry.dart';
+import 'package:timeasy/repositories/changelog_repository.dart';
 
 class TimeEntryRepository {
-  addTimeEntry(TimeEntry timeEntry) async {
+  final ChangelogRepository _changelogRepository = ChangelogRepository();
+
+  Future<TimeEntry> addTimeEntry(TimeEntry timeEntry) async {
     final db = await DBProvider.dbProvider.database;
-    return await db.insert(TimeEntry.tableName, timeEntry.toMap());
+    await db.transaction((txn) async {
+      await txn.insert(TimeEntry.tableName, timeEntry.toMap());
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.NEW,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
+    });
+    return timeEntry;
   }
 
-  updateTimeEntry(TimeEntry timeEntry) async {
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<TimeEntry> addTimeEntryFromSync(TimeEntry timeEntry) async {
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.insert(TimeEntry.tableName, timeEntry.toMap());
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.NEW,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return timeEntry;
+  }
+
+  Future<TimeEntry> updateTimeEntry(TimeEntry timeEntry) async {
     timeEntry.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
-    return await db.update(TimeEntry.tableName, timeEntry.toMap(),
-        where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.CHANGED,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
+    });
+    return timeEntry;
   }
 
-  deleteTimeEntry(TimeEntry timeEntry) async {
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<TimeEntry> updateTimeEntryFromSync(TimeEntry timeEntry) async {
+    timeEntry.updated = DateTime.now().toUtc();
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.CHANGED,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return timeEntry;
+  }
+
+  Future<TimeEntry> deleteTimeEntry(TimeEntry timeEntry) async {
     timeEntry.deleted = true;
-    await updateTimeEntry(timeEntry);
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.DELETED,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
+    });
+    return timeEntry;
+  }
+
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<TimeEntry> deleteTimeEntryFromSync(TimeEntry timeEntry) async {
+    timeEntry.deleted = true;
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(TimeEntry.tableName, timeEntry.toMap(),
+          where: "${TimeEntry.idColumn} = ?", whereArgs: [timeEntry.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'TimeEntry',
+            entityId: timeEntry.id,
+            changeType: ChangeType.DELETED,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return timeEntry;
   }
 
   // Delete a time entry by ID
@@ -51,6 +149,18 @@ class TimeEntryRepository {
             "${TimeEntry.endTimeColumn} = ? AND ${TimeEntry.projectIdColumn} = ? AND DELETED = 0",
         whereArgs: [0, projectId]);
     return queryResult.isNotEmpty ? TimeEntry.fromMap(queryResult.first) : null;
+  }
+
+  Future<List<TimeEntry>> getOpenTimeEntriesForProject(String projectId) async {
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.query(TimeEntry.tableName,
+        where:
+            "${TimeEntry.endTimeColumn} = ? AND ${TimeEntry.projectIdColumn} = ? AND DELETED = 0",
+        whereArgs: [0, projectId],
+        orderBy: "${TimeEntry.startTimeColumn} ASC");
+    return queryResult.isNotEmpty
+        ? queryResult.map((entry) => TimeEntry.fromMap(entry)).toList()
+        : [];
   }
 
   Future<TimeEntry?> getTimeEntryById(String id) async {
@@ -109,7 +219,8 @@ class TimeEntryRepository {
   }
 
   // Get the last 100 unique descriptions for a project
-  Future<List<String>> getLastUniqueDescriptions(String projectId, {int limit = 100}) async {
+  Future<List<String>> getLastUniqueDescriptions(String projectId,
+      {int limit = 100}) async {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.rawQuery('''
       SELECT DISTINCT ${TimeEntry.descriptionColumn} 
@@ -121,7 +232,7 @@ class TimeEntryRepository {
       ORDER BY ${TimeEntry.startTimeColumn} DESC
       LIMIT ?
     ''', [projectId, limit]);
-    
+
     return queryResult
         .map((entry) => entry[TimeEntry.descriptionColumn] as String)
         .where((description) => description.isNotEmpty)

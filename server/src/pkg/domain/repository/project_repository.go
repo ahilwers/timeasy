@@ -7,9 +7,10 @@ import (
 )
 
 type ProjectRepository interface {
-	AddProject(project *model.Project) error
-	UpdateProject(project *model.Project) error
-	DeleteProject(project *model.Project) error
+	model.TransactionHandler
+	AddProject(project *model.Project, tx model.Transaction) error
+	UpdateProject(project *model.Project, tx model.Transaction) error
+	DeleteProject(project *model.Project, tx model.Transaction) error
 	GetProjectById(id uuid.UUID) (*model.Project, error)
 	GetAllProjects() ([]model.Project, error)
 	GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error)

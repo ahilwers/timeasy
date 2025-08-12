@@ -387,7 +387,8 @@ func Test_teamHandler_AddUserToTeamFailsIfUserIsNotAdminOfTeam(t *testing.T) {
 	team := addTeam(t, handlerTest, "team", teamAdminUserId)
 
 	// Add the logged in user to the team
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser})
+	clientId := "1"
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 
 	userToBeAddedId, err := uuid.NewV4()
@@ -427,7 +428,8 @@ func Test_teamHandler_DeleteUserFromTeam(t *testing.T) {
 
 	otherUserId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser})
+	clientId := "1"
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 	teamsOfOtherUser, err := handlerTest.TeamUsecase.GetTeamsOfUser(otherUserId)
 	assert.Nil(t, err)
@@ -467,7 +469,8 @@ func Test_teamHandler_DeleteUserFromTeamFailsIfUserIsNotTeamAdmin(t *testing.T) 
 
 	otherUserId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser})
+	clientId := "1"
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 	teamsOfOtherUser, err := handlerTest.TeamUsecase.GetTeamsOfUser(otherUserId)
 	assert.Nil(t, err)
@@ -536,7 +539,8 @@ func Test_teamHandler_UpdateUserRolesInTeam(t *testing.T) {
 
 	otherUserId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser})
+	clientId := "1"
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 	teamsOfOtherUser, err := handlerTest.TeamUsecase.GetTeamsOfUser(otherUserId)
 	assert.Nil(t, err)
@@ -576,12 +580,13 @@ func Test_teamHandler_UpdateUserRolesInTeamFailsIfUserIsNotTeamAdmin(t *testing.
 	assert.Nil(t, err)
 	team := addTeam(t, handlerTest, "team", teamAdminId)
 
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser})
+	clientId := "1"
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 
 	otherUserId, err := uuid.NewV4()
 	assert.Nil(t, err)
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser})
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(otherUserId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 	teamsOfOtherUser, err := handlerTest.TeamUsecase.GetTeamsOfUser(otherUserId)
 	assert.Nil(t, err)
@@ -656,7 +661,8 @@ func addTeam(t *testing.T, handlerTest *HandlerTest, name string, ownerId uuid.U
 	team := model.Team{
 		Name1: name,
 	}
-	err := handlerTest.TeamUsecase.AddTeam(&team, ownerId)
+	clientId := "1"
+	err := handlerTest.TeamUsecase.AddTeam(&team, ownerId, clientId)
 	assert.Nil(t, err)
 	return team
 }

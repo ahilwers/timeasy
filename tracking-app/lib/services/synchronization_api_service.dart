@@ -5,11 +5,13 @@ class SynchronizationApiService extends ApiService {
   SynchronizationApiService({required String baseUrl, String? token})
       : super(baseUrl: baseUrl, token: token) {}
 
-  Future<SyncData> getChangedData(DateTime? changedAfter) async {
-    var changedAfterStr = changedAfter != null
-        ? (changedAfter.millisecondsSinceEpoch).toString()
-        : '0';
-    var url = '/sync/changed/${changedAfterStr}';
+  Future<SyncData> getChangedData(
+      int? sinceChangelogId, String? clientId) async {
+    var sinceChangelogIdStr = sinceChangelogId?.toString() ?? '0';
+    var url = '/sync/changed/${sinceChangelogIdStr}';
+    if (clientId != null) {
+      url += '?clientId=${clientId}';
+    }
 
     var response = await get(url);
     if (isSuccessStatusCode(response.statusCode)) {
@@ -19,8 +21,11 @@ class SynchronizationApiService extends ApiService {
         'Failed to get changed data, status code: ${response.statusCode}');
   }
 
-  Future<void> sendSyncData(SyncData syncData) async {
+  Future<void> sendSyncData(SyncData syncData, String? clientId) async {
     var url = "/sync/changed";
+    if (clientId != null) {
+      url += '?clientId=${clientId}';
+    }
     var response = await post(url, data: syncData.toJson());
     if (!isSuccessStatusCode(response.statusCode)) {
       throw Exception(

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +11,7 @@ import (
 	"timeasy-server/pkg/domain/model"
 
 	"github.com/gofrs/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -31,11 +31,13 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
 
+	clientId := "test_client_id"
+
 	project := model.Project{
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -46,9 +48,7 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	unchangedTimeEntry.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	unchangedTimeEntry.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&unchangedTimeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&unchangedTimeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	updatedTimeEntry := model.TimeEntry{
@@ -57,12 +57,10 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	updatedTimeEntry.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	updatedTimeEntry.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&updatedTimeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&updatedTimeEntry, userId, clientId)
 	assert.Nil(t, err)
 	updatedTimeEntry.Description = "updated_timeetry"
-	err = handlerTest.TimeEntryUsecase.UpdateTimeEntry(&updatedTimeEntry)
+	err = handlerTest.TimeEntryUsecase.UpdateTimeEntry(&updatedTimeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	deletedTimeEntry := model.TimeEntry{
@@ -71,16 +69,15 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	deletedTimeEntry.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	deletedTimeEntry.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&deletedTimeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&deletedTimeEntry, userId, clientId)
 	assert.Nil(t, err)
-	err = handlerTest.TimeEntryUsecase.DeleteTimeEntry(deletedTimeEntry.ID)
+	err = handlerTest.TimeEntryUsecase.DeleteTimeEntry(deletedTimeEntry.ID, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", time.Now().UTC().Unix()), nil)
+	sinceChangeLogEntry := 3 // 1 is the project, 2 is the unchanged time entry and 3 is the added antry but we want the updated one.
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", sinceChangeLogEntry), nil)
 	handlerTest.Router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
@@ -89,17 +86,26 @@ func Test_syncHandler_GetChangedTimeEntries(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(syncEntries.TimeEntries))
 
-	assert.Equal(t, deletedTimeEntry.Description, *syncEntries.TimeEntries[0].Description)
-	assert.Equal(t, deletedTimeEntry.StartTime, stringToTime(syncEntries.TimeEntries[0].StartTime))
-	assert.Equal(t, deletedTimeEntry.EndTime, stringToTime(syncEntries.TimeEntries[0].EndTime))
-	assert.Equal(t, deletedTimeEntry.ProjectId, syncEntries.TimeEntries[0].ProjectId)
-	assert.Equal(t, DELETED, syncEntries.TimeEntries[0].ChangeType)
+	foundDeleted := false
+	foundUpdated := false
 
-	assert.Equal(t, updatedTimeEntry.Description, *syncEntries.TimeEntries[1].Description)
-	assert.Equal(t, updatedTimeEntry.StartTime, stringToTime(syncEntries.TimeEntries[1].StartTime))
-	assert.Equal(t, updatedTimeEntry.EndTime, stringToTime(syncEntries.TimeEntries[1].EndTime))
-	assert.Equal(t, updatedTimeEntry.ProjectId, syncEntries.TimeEntries[1].ProjectId)
-	assert.Equal(t, CHANGED, syncEntries.TimeEntries[1].ChangeType)
+	for _, entry := range syncEntries.TimeEntries {
+		if entry.ChangeType == DELETED {
+			assert.Equal(t, deletedTimeEntry.Description, entry.Description)
+			assert.Equal(t, deletedTimeEntry.ProjectId, syncEntries.TimeEntries[0].ProjectId)
+			foundDeleted = true
+		} else if entry.ChangeType == CHANGED {
+			assert.Equal(t, updatedTimeEntry.Description, entry.Description)
+			assert.Equal(t, updatedTimeEntry.ProjectId, syncEntries.TimeEntries[1].ProjectId)
+			foundUpdated = true
+		}
+	}
+
+	assert.True(t, foundDeleted, "Deleted time entry not found in response")
+	assert.True(t, foundUpdated, "Updated time entry not found in response")
+
+	// The new entry is correct because if we fetch from this entry on only the new entry is interesting
+	// But for the deleted one only the deleted entry should be returned, not the new one
 }
 
 func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
@@ -117,11 +123,13 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
 
+	clientId := "test_client_id"
+
 	project := model.Project{
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -132,7 +140,7 @@ func Test_syncHandler_SendNewLocalTimeEntries(t *testing.T) {
 	description := "timeEntry1"
 	timeEntry1 := ChangedTimeEntryDto{
 		Id:          id,
-		Description: &description,
+		Description: description,
 		StartTime:   startTime.Format(time.RFC3339),
 		EndTime:     endTime.Format(time.RFC3339),
 		ProjectId:   project.ID,
@@ -177,11 +185,13 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
 
+	clientId := "test_client_id"
+
 	project := model.Project{
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -195,7 +205,7 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	// Now let's update the time entry:
@@ -203,7 +213,7 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries(t *testing.T) {
 	description := "updatedTimeEntry"
 	updatedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
-		Description:     &description,
+		Description:     description,
 		StartTime:       startTime.Format(time.RFC3339),
 		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
@@ -249,11 +259,13 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries_ShouldNotUpdateMissingFields(t
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
 
+	clientId := "test_client_id"
+
 	project := model.Project{
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -267,14 +279,14 @@ func Test_syncHandler_SendUpdatedLocalTimeEntries_ShouldNotUpdateMissingFields(t
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	// Now let's update the time entry:
 	changeTime := time.Now().Add(time.Hour).UTC()
 	updatedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
-		Description:     nil,
+		Description:     "",
 		StartTime:       startTime.Format(time.RFC3339),
 		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
@@ -320,11 +332,13 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
 
+	clientId := "test_client_id"
+
 	project := model.Project{
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -338,7 +352,7 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	// Now let's delete the time entry:
@@ -346,7 +360,7 @@ func Test_syncHandler_SendDeletedLocalTimeEntries(t *testing.T) {
 	description := "deletedTimeEntry"
 	deletedTimeEntry := ChangedTimeEntryDto{
 		Id:              timeEntry.ID,
-		Description:     &description,
+		Description:     description,
 		StartTime:       startTime.Format(time.RFC3339),
 		EndTime:         endTime.Format(time.RFC3339),
 		ProjectId:       project.ID,
@@ -387,41 +401,37 @@ func Test_syncHandler_GetChangedProjects(t *testing.T) {
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
 
+	clientId := "test_client_id"
+
 	unchangedProject := model.Project{
 		Name:   "unchanged_project",
 		UserId: userId,
 	}
-	unchangedProject.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	unchangedProject.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	err = handlerTest.ProjectUsecase.AddProject(&unchangedProject)
+	err = handlerTest.ProjectUsecase.AddProject(&unchangedProject, userId, clientId)
 	assert.Nil(t, err)
 
 	updatedProject := model.Project{
 		Name:   "original_project",
 		UserId: userId,
 	}
-	updatedProject.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	updatedProject.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	err = handlerTest.ProjectUsecase.AddProject(&updatedProject)
+	err = handlerTest.ProjectUsecase.AddProject(&updatedProject, userId, clientId)
 	assert.Nil(t, err)
 	updatedProject.Name = "updated_timeetry"
-	err = handlerTest.ProjectUsecase.UpdateProject(&updatedProject)
+	err = handlerTest.ProjectUsecase.UpdateProject(&updatedProject, userId, clientId)
 	assert.Nil(t, err)
 
 	deletedProject := model.Project{
 		Name:   "deleted_project",
 		UserId: userId,
 	}
-	deletedProject.UpdatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	deletedProject.CreatedAt = time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
-	err = handlerTest.ProjectUsecase.AddProject(&deletedProject)
+	err = handlerTest.ProjectUsecase.AddProject(&deletedProject, userId, clientId)
 	assert.Nil(t, err)
-	err = handlerTest.ProjectUsecase.DeleteProject(deletedProject.ID)
+	err = handlerTest.ProjectUsecase.DeleteProject(deletedProject.ID, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", time.Now().UTC().Unix()), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/sync/changed/%v", 2), nil)
 	handlerTest.Router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 
@@ -430,11 +440,21 @@ func Test_syncHandler_GetChangedProjects(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(syncEntries.Projects))
 
-	assert.Equal(t, deletedProject.Name, syncEntries.Projects[0].Name)
-	assert.Equal(t, DELETED, syncEntries.Projects[0].ChangeType)
+	foundDeleted := false
+	foundUpdated := false
 
-	assert.Equal(t, updatedProject.Name, syncEntries.Projects[1].Name)
-	assert.Equal(t, CHANGED, syncEntries.Projects[1].ChangeType)
+	for _, poroject := range syncEntries.Projects {
+		if poroject.ChangeType == DELETED {
+			assert.Equal(t, deletedProject.Name, poroject.Name)
+			foundDeleted = true
+		} else if poroject.ChangeType == CHANGED {
+			assert.Equal(t, updatedProject.Name, poroject.Name)
+			foundUpdated = true
+		}
+	}
+
+	assert.True(t, foundDeleted, "Deleted project not found in response")
+	assert.True(t, foundUpdated, "Updated project not found in response")
 }
 
 func Test_syncHandler_SendUpdatedLocalProjects(t *testing.T) {
@@ -451,20 +471,21 @@ func Test_syncHandler_SendUpdatedLocalProjects(t *testing.T) {
 	handlerTest := NewHandlerTest(&verifier)
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
+	clientId := "test_client_id"
 
 	project := model.Project{
 		Name:   "project",
 		UserId: userId,
 		Color:  "#ff0000",
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	// Now let's update the project
 	changeTime := time.Now().Add(time.Hour).UTC()
 	description := "updatedProject"
 	deadline := model.NewDateOnly(time.Date(2025, 8, 1, 0, 0, 0, 0, time.UTC))
-	hourlyRate := decimal.NewFromInt(20)
+	hourlyRate := 20.0
 	timeBudget := 10
 	color := "#00ff00"
 	updatedProject := ChangedProjectDto{
@@ -497,7 +518,7 @@ func Test_syncHandler_SendUpdatedLocalProjects(t *testing.T) {
 	assert.Equal(t, project.ID, projects[0].ID)
 	assert.Equal(t, "updatedProject", projects[0].Name)
 	assert.True(t, projects[0].HourlyRate.Equal(decimal.NewFromInt(20)))
-	assert.Equal(t, deadline.ToTime(), projects[0].Deadline.ToTime())
+	assert.True(t, deadline.Equal(projects[0].Deadline))
 	assert.Equal(t, 10, projects[0].TimeBudget)
 	assert.Equal(t, "#00ff00", projects[0].Color)
 }
@@ -517,6 +538,8 @@ func Test_syncHandler_SendUpdatedLocalProjects_ShouldNotUpdateMissingFields(t *t
 	teardownTest := handlerTest.SetupTest(t)
 	defer teardownTest(t)
 
+	clientId := "test_client_id"
+
 	deadline := model.NewDateOnly(time.Date(2025, 8, 1, 0, 0, 0, 0, time.UTC))
 	hourlyRate := decimal.NewFromInt(20)
 	timeBudget := 10
@@ -528,7 +551,7 @@ func Test_syncHandler_SendUpdatedLocalProjects_ShouldNotUpdateMissingFields(t *t
 		HourlyRate: hourlyRate,
 		TimeBudget: timeBudget,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	// Now let's update the project
@@ -564,7 +587,7 @@ func Test_syncHandler_SendUpdatedLocalProjects_ShouldNotUpdateMissingFields(t *t
 	assert.Equal(t, project.ID, projects[0].ID)
 	assert.Equal(t, "updatedProject", projects[0].Name)
 	assert.True(t, projects[0].HourlyRate.Equal(decimal.NewFromInt(20)))
-	assert.Equal(t, deadline.ToTime(), projects[0].Deadline.ToTime())
+	assert.True(t, deadline.Equal(projects[0].Deadline))
 	assert.Equal(t, 10, projects[0].TimeBudget)
 	assert.Equal(t, "#ff0000", projects[0].Color)
 }

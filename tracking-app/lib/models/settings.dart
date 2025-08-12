@@ -4,27 +4,28 @@ class Settings {
   static final String tableName = "Settings";
   static final String idColumn = "id";
   static final String lastSyncTimeColumn = "lastSyncTime";
-  static final String latestRemoteTimeEntryTimestampColumn = "latestRemoteTimeEntryTimestamp";
-  static final String latestRemoteProjectTimestampColumn = "latestRemoteProjectTimestamp";
-  static final String latestLocalTimeEntryTimestampColumn = "latestLocalTimeEntryTimestamp";
-  static final String latestLocalProjectTimestampColumn = "latestLocalProjectTimestamp";
+  static final String latestRemoteChangelogIdColumn = "latestRemoteChangelogId";
+  static final String latestLocalChangelogIdColumn = "latestLocalChangelogId";
+  static final String clientIdColumn = "clientId";
 
   late String id;
   DateTime? lastSyncTime;
-  DateTime? latestRemoteTimeEntryTimestamp;
-  DateTime? latestRemoteProjectTimestamp;
-  DateTime? latestLocalTimeEntryTimestamp;
-  DateTime? latestLocalProjectTimestamp;
+  int? latestRemoteChangelogId;
+  int? latestLocalChangelogId;
+  String? clientId;
 
   Settings() {
     var uuid = new Uuid();
     id = uuid.v4();
+    if (clientId == null) {
+      clientId = uuid.v4();
+    }
   }
 
   void clear() {
     lastSyncTime = null;
-    latestRemoteTimeEntryTimestamp = null;
-    latestRemoteProjectTimestamp = null;
+    latestRemoteChangelogId = null;
+    latestLocalChangelogId = null;
   }
 
   Settings.fromMap(Map<String, dynamic> map) {
@@ -33,21 +34,12 @@ class Settings {
     if (syncTimeMillis > 0) {
       lastSyncTime = new DateTime.fromMillisecondsSinceEpoch(syncTimeMillis, isUtc: true);
     }
-    syncTimeMillis = map[latestRemoteTimeEntryTimestampColumn];
-    if (syncTimeMillis > 0) {
-      latestRemoteTimeEntryTimestamp = new DateTime.fromMillisecondsSinceEpoch(syncTimeMillis, isUtc: true);
-    }
-    syncTimeMillis = map[latestRemoteProjectTimestampColumn];
-    if (syncTimeMillis > 0) {
-      latestRemoteProjectTimestamp = new DateTime.fromMillisecondsSinceEpoch(syncTimeMillis, isUtc: true);
-    }
-    syncTimeMillis = map[latestLocalTimeEntryTimestampColumn];
-    if (syncTimeMillis > 0) {
-      latestLocalTimeEntryTimestamp = new DateTime.fromMillisecondsSinceEpoch(syncTimeMillis, isUtc: true);
-    }
-    syncTimeMillis = map[latestLocalProjectTimestampColumn];
-    if (syncTimeMillis > 0) {
-      latestLocalProjectTimestamp = new DateTime.fromMillisecondsSinceEpoch(syncTimeMillis, isUtc: true);
+    latestRemoteChangelogId = map[latestRemoteChangelogIdColumn];
+    latestLocalChangelogId = map[latestLocalChangelogIdColumn];
+    clientId = map[clientIdColumn];
+    if (clientId == null) {
+      var uuid = new Uuid();
+      clientId = uuid.v4();
     }
   }
 
@@ -55,10 +47,9 @@ class Settings {
     var map = <String, dynamic>{
       idColumn: id,
       lastSyncTimeColumn: lastSyncTime?.millisecondsSinceEpoch ?? 0,
-      latestRemoteTimeEntryTimestampColumn: latestRemoteTimeEntryTimestamp?.millisecondsSinceEpoch ?? 0,
-      latestRemoteProjectTimestampColumn: latestRemoteProjectTimestamp?.millisecondsSinceEpoch ?? 0,
-      latestLocalTimeEntryTimestampColumn: latestLocalTimeEntryTimestamp?.millisecondsSinceEpoch ?? 0,
-      latestLocalProjectTimestampColumn: latestLocalProjectTimestamp?.millisecondsSinceEpoch ?? 0
+      latestRemoteChangelogIdColumn: latestRemoteChangelogId ?? 0,
+      latestLocalChangelogIdColumn: latestLocalChangelogId ?? 0,
+      clientIdColumn: clientId
     };
     return map;
   }

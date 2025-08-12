@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"fmt"
+	"errors"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -12,52 +12,118 @@ type ProjectUsecase interface {
 	GetProjectById(id uuid.UUID) (*model.Project, error)
 	GetAllProjects() ([]model.Project, error)
 	GetAllProjectsOfUser(userId uuid.UUID) ([]model.Project, error)
-	AddProject(project *model.Project) error
-	UpdateProject(project *model.Project) error
-	DeleteProject(id uuid.UUID) error
-	AssignProjectToTeam(project *model.Project, team *model.Team) error
+	AddProject(project *model.Project, userId uuid.UUID, clientId string) error
+	UpdateProject(project *model.Project, userId uuid.UUID, clientId string) error
+	DeleteProject(id uuid.UUID, userId uuid.UUID, clientId string) error
+	AssignProjectToTeam(project *model.Project, team *model.Team, userId uuid.UUID, clientId string) error
 }
 
 type projectUsecase struct {
-	repo        repository.ProjectRepository
-	teamUsecase TeamUsecase
+	repo          repository.ProjectRepository
+	changelogRepo repository.ChangelogRepository
+	teamUsecase   TeamUsecase
 }
 
-func NewProjectUsecase(repo repository.ProjectRepository, teamUsecase TeamUsecase) ProjectUsecase {
+func NewProjectUsecase(repo repository.ProjectRepository, teamUsecase TeamUsecase, changelogRepo repository.ChangelogRepository) ProjectUsecase {
 	return &projectUsecase{
-		repo:        repo,
-		teamUsecase: teamUsecase,
+		repo:          repo,
+		changelogRepo: changelogRepo,
+		teamUsecase:   teamUsecase,
 	}
 }
 
-func (pu *projectUsecase) AddProject(project *model.Project) error {
+func (pu *projectUsecase) AddProject(project *model.Project, userId uuid.UUID, clientId string) error {
 	if project.UserId == uuid.Nil {
 		return NewEntityIncompleteError("the user id must not be empty")
 	}
-	return pu.repo.AddProject(project)
+	tx, err := pu.repo.BeginTransaction()
+	if err != nil {
+		return err
+	}
+
+	err = pu.repo.AddProject(project, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	changelogEntry := model.ChangelogEntry{
+		EntityType:      model.EntityTypeProject,
+		EntityID:        project.ID,
+		Operation:       model.OperationCreated,
+		ChangedByUser:   userId,
+		ChangedByClient: clientId,
+	}
+	err = pu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func (pu *projectUsecase) GetProjectById(id uuid.UUID) (*model.Project, error) {
 	return pu.repo.GetProjectById(id)
 }
 
-func (pu *projectUsecase) UpdateProject(project *model.Project) error {
+func (pu *projectUsecase) UpdateProject(project *model.Project, userId uuid.UUID, clientId string) error {
 	if project.UserId == uuid.Nil {
 		return NewEntityIncompleteError("the user id must not be empty")
 	}
 	_, err := pu.GetProjectById(project.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("project with id %v does not exist", project.ID))
+		return pu.getError(err)
 	}
-	return pu.repo.UpdateProject(project)
+	tx, err := pu.repo.BeginTransaction()
+	if err != nil {
+		return err
+	}
+	err = pu.repo.UpdateProject(project, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	changelogEntry := model.ChangelogEntry{
+		EntityType:      model.EntityTypeProject,
+		EntityID:        project.ID,
+		Operation:       model.OperationUpdated,
+		ChangedByUser:   userId,
+		ChangedByClient: clientId,
+	}
+	err = pu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
-func (pu *projectUsecase) DeleteProject(id uuid.UUID) error {
+func (pu *projectUsecase) DeleteProject(id uuid.UUID, userId uuid.UUID, clientId string) error {
 	project, err := pu.GetProjectById(id)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("project with id %v does not exist", id))
+		return pu.getError(err)
 	}
-	return pu.repo.DeleteProject(project)
+	tx, err := pu.repo.BeginTransaction()
+	if err != nil {
+		return err
+	}
+	err = pu.repo.DeleteProject(project, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	changelogEntry := model.ChangelogEntry{
+		EntityType:      model.EntityTypeProject,
+		EntityID:        project.ID,
+		Operation:       model.OperationDeleted,
+		ChangedByUser:   userId,
+		ChangedByClient: clientId,
+	}
+	err = pu.changelogRepo.AddChangelogEntry(&changelogEntry, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func (pu *projectUsecase) GetAllProjects() ([]model.Project, error) {
@@ -68,16 +134,23 @@ func (pu *projectUsecase) GetAllProjectsOfUser(userId uuid.UUID) ([]model.Projec
 	return pu.repo.GetAllProjectsOfUser(userId)
 }
 
-func (pu *projectUsecase) AssignProjectToTeam(project *model.Project, team *model.Team) error {
+func (pu *projectUsecase) AssignProjectToTeam(project *model.Project, team *model.Team, userId uuid.UUID, clientId string) error {
 	_, err := pu.GetProjectById(project.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("project with id %v does not exist", project.ID))
+		return pu.getError(err)
 	}
 	_, err = pu.teamUsecase.GetTeamById(team.ID)
 	if err != nil {
-		return NewEntityNotFoundError(fmt.Sprintf("team with id %v does not exist", team.ID))
+		return pu.getError(err)
 	}
 	project.TeamID = &team.ID
-	err = pu.UpdateProject(project)
+	err = pu.UpdateProject(project, userId, clientId)
+	return err
+}
+
+func (usecase *projectUsecase) getError(err error) error {
+	if errors.Is(err, repository.ErrEntityNotFound) {
+		return NewEntityNotFoundError(err.Error())
+	}
 	return err
 }

@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type SyncHandler interface {
@@ -41,73 +41,95 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	timeParam := context.Param("timestamp")
-	unixTime, err := strconv.ParseInt(timeParam, 10, 64)
+	changeLogEntryParam := context.Param("sinceChangeLogEntry")
+	sinceChangeLogEntry, err := strconv.ParseInt(changeLogEntryParam, 10, 64)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "please provide a valid unix timestamp"})
+		context.JSON(http.StatusBadRequest, gin.H{"error": "please provide a valid id for a changelog entry"})
 		return
 	}
+	clientId := context.Query("clientId")
 
 	var syncEntries SyncEntries
-	entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, handler.parseTimestamp(unixTime))
-	for _, entry := range entries {
-		changeType := CHANGED
-		changeTime := entry.UpdatedAt
-		fmt.Printf("updatedAt: %v\n", entry.UpdatedAt)
-		if !entry.DeletedAt.Time.IsZero() {
-			changeType = DELETED
-			changeTime = entry.DeletedAt.Time
-		} else if entry.CreatedAt == entry.UpdatedAt {
-			changeType = NEW
-			changeTime = entry.CreatedAt
+	latestChangeLogEntry, err := handler.syncUsecase.GetLatestChangelogEntryId()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	syncEntries.LatestChangeLogId = latestChangeLogEntry
+
+	entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, sinceChangeLogEntry, latestChangeLogEntry, clientId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	handler.appendChangedTimeEntries(entries.Created, &syncEntries, NEW)
+	handler.appendChangedTimeEntries(entries.Updated, &syncEntries, CHANGED)
+	handler.appendChangedTimeEntries(entries.Deleted, &syncEntries, DELETED)
+
+	projects, err := handler.syncUsecase.GetChangedProjects(userId, sinceChangeLogEntry, latestChangeLogEntry, clientId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	handler.appendChangedProjects(projects.Created, &syncEntries, NEW)
+	handler.appendChangedProjects(projects.Updated, &syncEntries, CHANGED)
+	handler.appendChangedProjects(projects.Deleted, &syncEntries, DELETED)
+
+	context.JSON(http.StatusOK, syncEntries)
+}
+
+func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEntry, syncEntries *SyncEntries, changeType ChangeType) {
+	for _, entry := range timeEntries {
+		// Skip entries with invalid start times
+		if entry.StartTime.IsZero() || entry.StartTime.Year() < 1900 {
+			log.Printf("Warning: Skipping time entry %s with invalid start time: %v", entry.ID, entry.StartTime)
+			continue
 		}
-		desc := entry.Description
+		
 		syncTimeEntry := ChangedTimeEntryDto{
 			Id:              entry.ID,
-			Description:     &desc,
-			StartTime:       entry.StartTime.Format(time.RFC3339),
+			Description:     entry.Description,
+			StartTime:       entry.StartTime.UTC().Truncate(time.Second).Format(time.RFC3339),
 			ProjectId:       entry.ProjectId,
 			ChangeType:      changeType,
-			ChangeTimestamp: changeTime.Format(time.RFC3339Nano),
+			ChangeTimestamp: time.Now().UTC().Format(time.RFC3339),
 		}
-		fmt.Printf("ChangeTimestamp: %v\n", syncTimeEntry.ChangeTimestamp)
-		if !entry.EndTime.IsZero() {
-			syncTimeEntry.EndTime = entry.EndTime.Format(time.RFC3339)
+		
+		// Only include EndTime if it's valid
+		if !entry.EndTime.IsZero() && entry.EndTime.Year() >= 1900 {
+			syncTimeEntry.EndTime = entry.EndTime.UTC().Truncate(time.Second).Format(time.RFC3339)
 		}
+		
 		syncEntries.TimeEntries = append(syncEntries.TimeEntries, syncTimeEntry)
 	}
+}
 
-	projects, err := handler.syncUsecase.GetChangedProjects(userId, handler.parseTimestamp(unixTime))
+func (handler *syncHandler) appendChangedProjects(projects []model.Project, syncEntries *SyncEntries, changeType ChangeType) {
 	for _, project := range projects {
-		changeType := CHANGED
-		changeTime := project.UpdatedAt
-		if !project.DeletedAt.Time.IsZero() {
-			changeType = DELETED
-			changeTime = project.DeletedAt.Time
-		} else if project.CreatedAt == project.UpdatedAt {
-			changeType = NEW
-			changeTime = project.CreatedAt
-		}
 		deadline := project.Deadline
-		hourlyRate := project.HourlyRate
+		hourlyRateFloat, _ := project.HourlyRate.Float64()
 		timeBudget := project.TimeBudget
 		isActive := project.IsActive
 		color := project.Color
+		
 		syncProject := ChangedProjectDto{
 			Id:              project.ID,
 			Name:            project.Name,
 			Color:           &color,
-			Deadline:        &deadline,
-			HourlyRate:      &hourlyRate,
+			HourlyRate:      &hourlyRateFloat,
 			TimeBudget:      &timeBudget,
 			IsActive:        &isActive,
 			ChangeType:      changeType,
-			ChangeTimestamp: changeTime.Format(time.RFC3339Nano),
+			ChangeTimestamp: time.Now().UTC().Format(time.RFC3339),
 		}
+		
+		// Only set deadline if it's not zero/null
+		if !deadline.IsZero() {
+			syncProject.Deadline = &deadline
+		}
+		
 		syncEntries.Projects = append(syncEntries.Projects, syncProject)
 	}
-
-	context.JSON(http.StatusOK, syncEntries)
 }
 
 func (handler *syncHandler) parseTimestamp(timestamp int64) time.Time {
@@ -133,12 +155,13 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	clientId := context.Query("clientId")
 
 	var syncData model.SyncData
 	handler.fillInClientSideChangedProjects(&syncData, syncDtos.Projects, userId)
 	handler.fillInClientSideChangedTimeEntries(&syncData, syncDtos.TimeEntries, userId)
 
-	err = handler.syncUsecase.UpdateAndDeleteData(syncData)
+	err = handler.syncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -150,7 +173,9 @@ func (handler *syncHandler) fillInClientSideChangedProjects(syncData *model.Sync
 	for _, changedProject := range changedProjects {
 		project := handler.createProjectFromDto(changedProject, userId)
 		switch changedProject.ChangeType {
-		case NEW, CHANGED:
+		case NEW:
+			syncData.ProjectsToBeCreated = append(syncData.ProjectsToBeCreated, project)
+		case CHANGED:
 			syncData.ProjectsToBeUpdated = append(syncData.ProjectsToBeUpdated, project)
 		case DELETED:
 			syncData.ProjectsToBeDeleted = append(syncData.ProjectsToBeDeleted, project)
@@ -179,7 +204,7 @@ func (handler *syncHandler) createProjectFromDto(projectDto ChangedProjectDto, u
 	}
 
 	if projectDto.HourlyRate != nil {
-		project.HourlyRate = *projectDto.HourlyRate
+		project.HourlyRate = decimal.NewFromFloat(*projectDto.HourlyRate)
 	}
 
 	if projectDto.Deadline != nil {
@@ -201,7 +226,9 @@ func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.S
 		timeEntry, err := handler.createTimeEntryFromDto(changedTimeEntry, userId)
 		if err == nil {
 			switch changedTimeEntry.ChangeType {
-			case NEW, CHANGED:
+			case NEW:
+				syncData.TimeEntriesToBeCreated = append(syncData.TimeEntriesToBeCreated, timeEntry)
+			case CHANGED:
 				syncData.TimeEntriesToBeUpdated = append(syncData.TimeEntriesToBeUpdated, timeEntry)
 			case DELETED:
 				syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)
@@ -230,8 +257,8 @@ func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntry
 	}
 	timeEntry.StartTime = startTime
 
-	if timeEntryDto.Description != nil {
-		timeEntry.Description = *timeEntryDto.Description
+	if timeEntryDto.Description != "" {
+		timeEntry.Description = timeEntryDto.Description
 	}
 	if timeEntryDto.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, timeEntryDto.EndTime)

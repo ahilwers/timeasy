@@ -2,13 +2,12 @@ package model
 
 import (
 	"github.com/gofrs/uuid"
-	"gorm.io/gorm"
 )
 
 type UserTeamAssignment struct {
-	gorm.Model
+	ID     uuid.UUID
 	UserID uuid.UUID
 	TeamID uuid.UUID
 	Team   Team
-	Roles  RoleList `gorm:"type:VARCHAR(255)"` //store the team roles in a string field
+	Roles  RoleList
 }

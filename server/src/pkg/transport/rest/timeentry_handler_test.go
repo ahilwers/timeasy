@@ -34,7 +34,8 @@ func Test_timeEntryHandler_AddTimeEntry(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -76,7 +77,8 @@ func Test_timeEntryHandler_AddTimeEntryFailsIfProjectIdMissing(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -146,7 +148,8 @@ func Test_timeEntryHandler_UpdateTimeEntry(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -157,7 +160,7 @@ func Test_timeEntryHandler_UpdateTimeEntry(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -197,7 +200,8 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfItDoesNotExist(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -237,7 +241,8 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -248,7 +253,7 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfProjectDoesNotExist(t *testing.
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -292,7 +297,8 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfItDoesNotBelongToTheUser(t *tes
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -306,7 +312,7 @@ func Test_timeEntryHandler_UpdateTimeEntryFailsIfItDoesNotBelongToTheUser(t *tes
 		ProjectId:   project.ID,
 		UserId:      ownerId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -347,7 +353,8 @@ func Test_timeEntryHandler_UpdateTimeEntrySucceedsIfItDoesNotBelongToTheUserButT
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -361,7 +368,7 @@ func Test_timeEntryHandler_UpdateTimeEntrySucceedsIfItDoesNotBelongToTheUserButT
 		ProjectId:   project.ID,
 		UserId:      ownerId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -401,7 +408,8 @@ func Test_timeEntryHandler_DeleteTimeEntry(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -412,7 +420,7 @@ func Test_timeEntryHandler_DeleteTimeEntry(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -445,7 +453,8 @@ func Test_timeEntryHandler_DeleteTimeEntryFailsIfitDoesNotExist(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	missingId, err := uuid.NewV4()
@@ -478,7 +487,8 @@ func Test_timeEntryHandler_DeleteTimeEntryFailsIfItDoesNotBelongToTheUser(t *tes
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -491,7 +501,7 @@ func Test_timeEntryHandler_DeleteTimeEntryFailsIfItDoesNotBelongToTheUser(t *tes
 		ProjectId:   project.ID,
 		UserId:      ownerId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -525,7 +535,8 @@ func Test_timeEntryHandler_DeleteTimeEntrySucceedsIfItDoesNotBelongToTheUserButU
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -538,7 +549,7 @@ func Test_timeEntryHandler_DeleteTimeEntrySucceedsIfItDoesNotBelongToTheUserButU
 		ProjectId:   project.ID,
 		UserId:      ownerId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -579,7 +590,8 @@ func Test_timeEntryHandler_GetTimeEntryById(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -590,7 +602,7 @@ func Test_timeEntryHandler_GetTimeEntryById(t *testing.T) {
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -653,7 +665,8 @@ func Test_timeEntryHandler_GetTimeEntryByIdFailsIfItDoesNotBelongToTheUser(t *te
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	ownerId, err := uuid.NewV4()
@@ -665,7 +678,7 @@ func Test_timeEntryHandler_GetTimeEntryByIdFailsIfItDoesNotBelongToTheUser(t *te
 		ProjectId:   project.ID,
 		UserId:      ownerId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -694,7 +707,8 @@ func Test_timeEntryHandler_GetTimeEntryByIdSucceedsIfItDoesNotBelongToTheUserBut
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	ownerId, err := uuid.NewV4()
@@ -706,7 +720,7 @@ func Test_timeEntryHandler_GetTimeEntryByIdSucceedsIfItDoesNotBelongToTheUserBut
 		ProjectId:   project.ID,
 		UserId:      ownerId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -743,7 +757,8 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_ReturnsLastOpenTimeEntry(t *test
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -754,7 +769,7 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_ReturnsLastOpenTimeEntry(t *test
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1, userId, clientId)
 	assert.Nil(t, err)
 	timeEntry2 := model.TimeEntry{
 		Description: "timeentry2",
@@ -762,7 +777,7 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_ReturnsLastOpenTimeEntry(t *test
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -802,7 +817,8 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_WithMultipleUsers_ReturnsLastOpe
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -813,7 +829,7 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_WithMultipleUsers_ReturnsLastOpe
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1, userId, clientId)
 	assert.Nil(t, err)
 	timeEntry2 := model.TimeEntry{
 		Description: "timeentry2",
@@ -821,7 +837,7 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_WithMultipleUsers_ReturnsLastOpe
 		ProjectId:   project.ID,
 		UserId:      otherUserId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry2, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -858,7 +874,8 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_WithoutOpenTimeEntry_ReturnsErro
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
@@ -870,7 +887,7 @@ func Test_timeEntryHandler_GetLastOpenTimeEntry_WithoutOpenTimeEntry_ReturnsErro
 		ProjectId:   project.ID,
 		UserId:      userId,
 	}
-	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1)
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry1, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -898,7 +915,8 @@ func Test_timeEntryHandler_GetAllTimeEntries(t *testing.T) {
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	addTimeEntries(t, handlerTest, 3, userId, project)
@@ -936,7 +954,8 @@ func Test_timeEntryHandler_GetAllTimeEntriesOnlyReturnsEntriesOfUser(t *testing.
 		Name:   "project",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	addTimeEntries(t, handlerTest, 3, userId, project)
@@ -978,13 +997,14 @@ func Test_timeEntryHandler_GetAllTimeEntries_WithProjectId_ReturnsTimeEntriesOfP
 		Name:   "project1",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project1, userId, clientId)
 	assert.Nil(t, err)
 	project2 := model.Project{
 		Name:   "project2",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	err = handlerTest.ProjectUsecase.AddProject(&project2, userId, clientId)
 	assert.Nil(t, err)
 
 	addTimeEntries(t, handlerTest, 3, userId, project1)
@@ -1023,13 +1043,14 @@ func Test_timeEntryHandler_GetAllTimeEntries_WithDateRangeAndProjectId_ReturnsTi
 		Name:   "project1",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project1, userId, clientId)
 	assert.Nil(t, err)
 	project2 := model.Project{
 		Name:   "project2",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	err = handlerTest.ProjectUsecase.AddProject(&project2, userId, clientId)
 	assert.Nil(t, err)
 
 	var startTime1 = time.Date(2025, 3, 10, 11, 0, 0, 0, time.UTC)
@@ -1074,13 +1095,14 @@ func Test_timeEntryHandler_GetAllTimeEntries_WithDateRange_ReturnsTimeEntriesOfA
 		Name:   "project1",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project1)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project1, userId, clientId)
 	assert.Nil(t, err)
 	project2 := model.Project{
 		Name:   "project2",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project2)
+	err = handlerTest.ProjectUsecase.AddProject(&project2, userId, clientId)
 	assert.Nil(t, err)
 
 	var startTime1 = time.Date(2025, 3, 10, 11, 0, 0, 0, time.UTC)
@@ -1111,6 +1133,7 @@ func addTimeEntriesWithStartIndexAndStartTime(t *testing.T, handlerTest *Handler
 	var entries []model.TimeEntry
 	oneHour := 1000 * 1000 * 60 * 60 // duration is in nanoseconds
 	oneHourAndThirtyMinutes := oneHour + 1000*1000*30*60
+	clientId := "1"
 	for i := 0; i < count; i++ {
 		entry := model.TimeEntry{
 			Description: fmt.Sprintf("entry %v", startIndex+i),
@@ -1120,7 +1143,7 @@ func addTimeEntriesWithStartIndexAndStartTime(t *testing.T, handlerTest *Handler
 			ProjectId:   project.ID,
 		}
 		entries = append(entries, entry)
-		err := handlerTest.TimeEntryUsecase.AddTimeEntry(&entry)
+		err := handlerTest.TimeEntryUsecase.AddTimeEntry(&entry, ownerId, clientId)
 		assert.Nil(t, err)
 	}
 	return entries

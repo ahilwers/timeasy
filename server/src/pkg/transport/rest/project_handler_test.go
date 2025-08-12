@@ -3,13 +3,14 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 	"timeasy-server/pkg/domain/model"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,7 @@ import (
 func Test_projectHandler_GetProjectById(t *testing.T) {
 	userId, err := uuid.NewV4()
 	assert.Nil(t, err)
+	clientId := "1"
 	token := authTokenMock{}
 	token.On("GetUserId").Return(userId, nil)
 	token.On("HasRole", model.RoleUser).Return(true, nil)
@@ -35,7 +37,7 @@ func Test_projectHandler_GetProjectById(t *testing.T) {
 		Name:   "testproject",
 		UserId: userId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, string(clientId))
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -97,7 +99,8 @@ func Test_projectHandler_GetProjectByIdFailsIfItDoesNotBelongToUser(t *testing.T
 		Name:   "testproject",
 		UserId: projectOwnerId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -129,16 +132,18 @@ func Test_projectHandler_GetProjectByIdSucceedsIfItBelongsToUsersTeam(t *testing
 		Name:   "testproject",
 		UserId: otherUserId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	team := model.Team{
 		Name1: "Team",
 	}
-	err = handlerTest.TeamUsecase.AddTeam(&team, userId)
+	err = handlerTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -174,7 +179,8 @@ func Test_projectHandler_GetProjectByIdPassesIfBelongsToOtherUserAndUserIsAdmin(
 		Name:   "testproject",
 		UserId: projectOwnerId,
 	}
-	err = handlerTest.ProjectUsecase.AddProject(&project)
+	clientId := "1"
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -332,7 +338,7 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	project := addProject(t, handlerTest, "project", userId)
 
 	w := httptest.NewRecorder()
-	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\", \"deadline\": \"%v\", \"hourlyRate\": %v, \"timeBudget\": %v}", "updatedProject", "#ff0000", "2020-01-01", 23.10, 20))
+	reader := strings.NewReader(fmt.Sprintf("{\"name\": \"%v\", \"color\": \"%v\", \"deadline\": \"%v\", \"hourlyRate\": %v, \"timeBudget\": %v}", "updatedProject", "#ff0000", "2020-01-01", 23.19, 20))
 	req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%v", project.ID), reader)
 	assert.Nil(t, err)
 	handlerTest.Router.ServeHTTP(w, req)
@@ -344,8 +350,8 @@ func Test_projectHandler_UpdateProject(t *testing.T) {
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
 	newDeadline := model.NewDateOnly(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))
-	assert.Equal(t, newDeadline, projectsFromDb[0].Deadline)
-	expectedHourlyRate, err := decimal.NewFromString("23.10")
+	assert.True(t, newDeadline.Equal(projectsFromDb[0].Deadline))
+	expectedHourlyRate, err := decimal.NewFromString("23.19")
 	assert.Nil(t, err)
 	assert.Equal(t, expectedHourlyRate, projectsFromDb[0].HourlyRate)
 	assert.Equal(t, 20, projectsFromDb[0].TimeBudget)
@@ -379,7 +385,7 @@ func Test_projectHandler_UpdateProject_ShouldNotUpdateFieldsThatAreNotProvided(t
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(projectsFromDb))
 	assert.Equal(t, "updatedProject", projectsFromDb[0].Name)
-	assert.Equal(t, project.Deadline, projectsFromDb[0].Deadline)
+	assert.True(t, project.Deadline.Equal(projectsFromDb[0].Deadline))
 	assert.True(t, project.HourlyRate.Equal(projectsFromDb[0].HourlyRate))
 	assert.Equal(t, project.TimeBudget, projectsFromDb[0].TimeBudget)
 	assert.Equal(t, userId, projectsFromDb[0].UserId)
@@ -441,10 +447,11 @@ func Test_projectHandler_UpdateProjectAsTeamLead(t *testing.T) {
 	team := model.Team{
 		Name1: "Team",
 	}
-	err = handlerTest.TeamUsecase.AddTeam(&team, userId)
+	clientId := "1"
+	err = handlerTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -483,13 +490,14 @@ func Test_projectHandler_UpdateProjectIfUserIsNotTeamLead(t *testing.T) {
 	team := model.Team{
 		Name1: "Team",
 	}
-	err = handlerTest.TeamUsecase.AddTeam(&team, otherUserId)
+	clientId := "1"
+	err = handlerTest.TeamUsecase.AddTeam(&team, otherUserId, clientId)
 	assert.Nil(t, err)
 
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser})
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 
-	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -653,10 +661,11 @@ func Test_projectHandler_DeleteProjectAsTeamLead(t *testing.T) {
 	team := model.Team{
 		Name1: "Team",
 	}
-	err = handlerTest.TeamUsecase.AddTeam(&team, userId)
+	clientId := "1"
+	err = handlerTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
-	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -693,13 +702,14 @@ func Test_projectHandler_DeleteProjectFailsIfUserIsNotTeamLead(t *testing.T) {
 	team := model.Team{
 		Name1: "Team",
 	}
-	err = handlerTest.TeamUsecase.AddTeam(&team, otherUserId)
+	clientId := "1"
+	err = handlerTest.TeamUsecase.AddTeam(&team, otherUserId, clientId)
 	assert.Nil(t, err)
 
-	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser})
+	_, err = handlerTest.TeamUsecase.AddUserToTeam(userId, &team, model.RoleList{model.RoleUser}, userId, clientId)
 	assert.Nil(t, err)
 
-	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team)
+	err = handlerTest.ProjectUsecase.AssignProjectToTeam(&project, &team, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -818,7 +828,8 @@ func Test_projectHandler_AssignProjectToTeam(t *testing.T) {
 	team := model.Team{
 		Name1: "Team",
 	}
-	err = handlerTest.TeamUsecase.AddTeam(&team, userId)
+	clientId := "1"
+	err = handlerTest.TeamUsecase.AddTeam(&team, userId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -858,7 +869,8 @@ func Test_projectHandler_AssignProjectToTeamFailsIfUserIsNotTeamAdmin(t *testing
 	team := model.Team{
 		Name1: "Team",
 	}
-	err = handlerTest.TeamUsecase.AddTeam(&team, teamAdminId)
+	clientId := "1"
+	err = handlerTest.TeamUsecase.AddTeam(&team, teamAdminId, clientId)
 	assert.Nil(t, err)
 
 	w := httptest.NewRecorder()
@@ -897,7 +909,8 @@ func addProject(t *testing.T, handlerTest *HandlerTest, name string, userId uuid
 		TimeBudget: 10,
 		Deadline:   model.NewDateOnly(time.Date(2025, time.January, 5, 0, 0, 0, 0, time.UTC)),
 	}
-	err := handlerTest.ProjectUsecase.AddProject(&prj)
+	clientId := "1"
+	err := handlerTest.ProjectUsecase.AddProject(&prj, userId, clientId)
 	assert.Nil(t, err)
 	return prj
 }

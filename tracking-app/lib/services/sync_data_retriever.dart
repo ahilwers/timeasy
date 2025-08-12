@@ -19,8 +19,8 @@ class SyncDataRetriever {
   SyncDataRetriever(this._apiService) {}
 
   Future<RetrieveChangesResult> retrieveNewestEntries(
-      DateTime? changedAfter) async {
-    var syncData = await _apiService.getChangedData(changedAfter);
+      int? sinceChangelogId, String? clientId) async {
+    var syncData = await _apiService.getChangedData(sinceChangelogId, clientId);
     await _saveEntries(syncData);
     return new RetrieveChangesResult(
         syncData.projects.isNotEmpty, syncData.timeEntries.isNotEmpty);
@@ -29,18 +29,15 @@ class SyncDataRetriever {
   Future<void> _saveEntries(SyncData syncData) async {
     await _saveTimeEntries(syncData.timeEntries);
     await _saveProjects(syncData.projects);
+    if (syncData.latestChangelogId != null) {
+      await _updateRemoteChangelogIdSettings(syncData.latestChangelogId!);
+    }
   }
 
   Future<void> _saveTimeEntries(List<TimeEntrySyncData> syncData) async {
-    DateTime? latestUpdateTime = await getLatestRemoteTimeEntryTimestamp();
     for (var entry in syncData) {
-      if (latestUpdateTime == null ||
-          entry.changeTimestamp.isAfter(latestUpdateTime)) {
-        latestUpdateTime = entry.changeTimestamp;
-      }
       await _saveTimeEntry(entry);
     }
-    _updateRemoteTimeEntrySettings(latestUpdateTime);
   }
 
   Future<void> _saveTimeEntry(TimeEntrySyncData syncData) async {
@@ -51,16 +48,19 @@ class SyncDataRetriever {
       case ChangeType.NEW:
       case ChangeType.CHANGED:
         if (existingTimeEntry == null) {
-          await _timeEntryRepository.addTimeEntry(timeEntry);
-        } else if (syncData.changeTimestamp
-            .isAfter(existingTimeEntry.updated)) {
-          await _timeEntryRepository.updateTimeEntry(timeEntry);
+          // Check if this is an open time entry that needs merging
+          if (timeEntry.endTime == null) {
+            await _mergeOpenTimeEntriesIfNeeded(timeEntry);
+          } else {
+            await _timeEntryRepository.addTimeEntryFromSync(timeEntry);
+          }
+        } else {
+          await _timeEntryRepository.updateTimeEntryFromSync(timeEntry);
         }
         break;
       case ChangeType.DELETED:
-        if (existingTimeEntry != null &&
-            syncData.changeTimestamp.isAfter(existingTimeEntry.updated)) {
-          await _timeEntryRepository.deleteTimeEntry(timeEntry);
+        if (existingTimeEntry != null) {
+          await _timeEntryRepository.deleteTimeEntryFromSync(timeEntry);
         }
         break;
     }
@@ -72,21 +72,14 @@ class SyncDataRetriever {
     timeEntry.description = entry.description;
     timeEntry.startTime = entry.startTime;
     timeEntry.endTime = entry.endTime;
-    timeEntry.updated = entry.changeTimestamp;
     timeEntry.created = DateTime.now();
     return timeEntry;
   }
 
   Future<void> _saveProjects(List<ProjectSyncData> syncData) async {
-    DateTime? latestUpdateTime = await getLatestRemoteProjectTimestamp();
     for (var project in syncData) {
-      if (latestUpdateTime == null ||
-          project.changeTimestamp.isAfter(latestUpdateTime)) {
-        latestUpdateTime = project.changeTimestamp;
-      }
       await _saveProject(project);
     }
-    await _updateRemoteProjectSettings(latestUpdateTime);
   }
 
   Future<void> _saveProject(ProjectSyncData syncData) async {
@@ -96,15 +89,15 @@ class SyncDataRetriever {
       case ChangeType.NEW:
       case ChangeType.CHANGED:
         if (existingProject == null) {
-          _projectRepository.addProject(project);
+          _projectRepository.addProjectFromSync(project);
         } else if (syncData.changeTimestamp.isAfter(existingProject.updated)) {
-          _projectRepository.updateProject(project);
+          _projectRepository.updateProjectFromSync(project);
         }
         break;
       case ChangeType.DELETED:
         if (existingProject != null &&
             syncData.changeTimestamp.isAfter(existingProject.updated)) {
-          _projectRepository.deleteProject(project);
+          _projectRepository.deleteProjectFromSync(project);
         }
         break;
     }
@@ -120,26 +113,59 @@ class SyncDataRetriever {
     return project;
   }
 
-  Future<void> _updateRemoteTimeEntrySettings(
-      DateTime? latestUpdateTime) async {
+  Future<void> _updateRemoteChangelogIdSettings(int latestChangelogId) async {
     var settings = await _settingsRepository.getSettings();
-    settings.latestRemoteTimeEntryTimestamp = latestUpdateTime;
+    settings.latestRemoteChangelogId = latestChangelogId;
     await _settingsRepository.saveSettings(settings);
   }
 
-  Future<void> _updateRemoteProjectSettings(DateTime? latestUpdateTime) async {
-    var settings = await _settingsRepository.getSettings();
-    settings.latestRemoteProjectTimestamp = latestUpdateTime;
-    await _settingsRepository.saveSettings(settings);
-  }
+  // Merges open time entries if there are duplicates for the same project
+  // Uses the earliest start time and the ID from the incoming entry
+  Future<void> _mergeOpenTimeEntriesIfNeeded(TimeEntry newTimeEntry) async {
+    var existingOpenEntries = await _timeEntryRepository
+        .getOpenTimeEntriesForProject(newTimeEntry.projectId);
 
-  Future<DateTime?> getLatestRemoteTimeEntryTimestamp() async {
-    var settings = await _settingsRepository.getSettings();
-    return settings.latestRemoteTimeEntryTimestamp;
-  }
+    if (existingOpenEntries.isEmpty) {
+      // No existing open entries, just add the new one
+      await _timeEntryRepository.addTimeEntryFromSync(newTimeEntry);
+      return;
+    }
 
-  Future<DateTime?> getLatestRemoteProjectTimestamp() async {
-    var settings = await _settingsRepository.getSettings();
-    return settings.latestRemoteProjectTimestamp;
+    // Find the earliest start time
+    DateTime earliestStartTime = newTimeEntry.startTime;
+    for (var existingEntry in existingOpenEntries) {
+      if (existingEntry.startTime.isBefore(earliestStartTime)) {
+        earliestStartTime = existingEntry.startTime;
+      }
+    }
+
+    // Update the new entry with the earliest start time
+    newTimeEntry.startTime = earliestStartTime;
+
+    // Combine descriptions if they exist and are different
+    List<String> descriptions = [];
+    if (newTimeEntry.description != null && newTimeEntry.description!.isNotEmpty) {
+      descriptions.add(newTimeEntry.description!);
+    }
+    for (var existingEntry in existingOpenEntries) {
+      if (existingEntry.description != null && 
+          existingEntry.description!.isNotEmpty && 
+          existingEntry.description != newTimeEntry.description) {
+        descriptions.add(existingEntry.description!);
+      }
+    }
+    if (descriptions.length > 1) {
+      newTimeEntry.description = descriptions.join('; ');
+    } else if (descriptions.length == 1) {
+      newTimeEntry.description = descriptions.first;
+    }
+
+    // Delete the existing open entries
+    for (var entryToDelete in existingOpenEntries) {
+      await _timeEntryRepository.deleteTimeEntryFromSync(entryToDelete);
+    }
+
+    // Add the merged entry
+    await _timeEntryRepository.addTimeEntryFromSync(newTimeEntry);
   }
 }

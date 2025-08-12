@@ -15,24 +15,28 @@ class SynchronizationService {
   }
 
   Future<RetrieveChangesResult> synchronize() async {
-    var retrieveResult = await retrieveChangesFromServer();
-    await sendChangesToServer();
-    return retrieveResult;
-  }
+    var settings = await _settingsRepository.getSettings();
 
-  Future<void> sendChangesToServer() async {
+    // First send local changes
     var dataSender = new SyncDataSender(_apiService);
-    await dataSender.sendNewestEntries();
-    _updateLastSyncTimeSettings();
+    await dataSender.sendNewestEntries(settings.clientId);
+
+    // Then retrieve remote changes
+    var dataRetriever = new SyncDataRetriever(_apiService);
+    var result = await dataRetriever.retrieveNewestEntries(
+        settings.latestRemoteChangelogId, settings.clientId);
+
+    await _updateLastSyncTimeSettings();
+    return result;
   }
 
   Future<RetrieveChangesResult> retrieveChangesFromServer() async {
     var settings = await _settingsRepository.getSettings();
     var dataRetriever = new SyncDataRetriever(_apiService);
-    var retrieveResult = await dataRetriever
-        .retrieveNewestEntries(settings.latestRemoteTimeEntryTimestamp);
-    _updateLastSyncTimeSettings();
-    return retrieveResult;
+    var result = await dataRetriever.retrieveNewestEntries(
+        settings.latestRemoteChangelogId, settings.clientId);
+    await _updateLastSyncTimeSettings();
+    return result;
   }
 
   void updateToken(String token) {

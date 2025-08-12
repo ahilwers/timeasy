@@ -7,14 +7,17 @@ import (
 )
 
 type TeamRepository interface {
+	model.TransactionHandler
 	AddTeam(team *model.Team) error
 	UpdateTeam(team *model.Team) error
-	DeleteTeam(team *model.Team) error
+	DeleteTeam(team *model.Team, tx model.Transaction) error
 	GetTeamById(id uuid.UUID) (*model.Team, error)
 	GetAllTeams() ([]model.Team, error)
 	AddUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error
 	GetTeamsOfUser(userId uuid.UUID) ([]model.UserTeamAssignment, error)
+	GetAllUserTeamAssignments() ([]model.UserTeamAssignment, error)
 	GetUserTeamAssignment(userId uuid.UUID, teamId uuid.UUID) (*model.UserTeamAssignment, error)
 	DeleteUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error
+	DeleteAllUserAssignmentsOfTeam(teamId uuid.UUID, tx model.Transaction) error
 	UpdateUserTeamAssignment(teamAssignment *model.UserTeamAssignment) error
 }

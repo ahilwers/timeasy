@@ -62,8 +62,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       duration: Duration(milliseconds: 1000),
     );
     _descriptionController.addListener(_onDescriptionChanged);
+
     _loadProjects();
-    // Trigger synchronization when the component is opened
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       EventSyncService().synchronizeOnEvent();
     });
@@ -94,7 +95,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       if (_currentOpenTimeEntry!.description != description) {
         _currentOpenTimeEntry!.description = description;
         await _timeEntryRepository.updateTimeEntry(_currentOpenTimeEntry!);
-
         EventSyncService().sendDataToServer();
       }
     }
@@ -146,30 +146,66 @@ class _ProjectSwiperState extends State<ProjectSwiper>
           }
         });
       } else {
-        // Find the index of the current project
-        final currentProject =
-            context.read<SelectedProjectBloc>().state.project;
-        if (currentProject != null) {
-          final index = _projects.indexWhere((p) => p.id == currentProject.id);
-          if (index != -1) {
-            _currentPage = index;
-            // We need to use a small delay to ensure the PageView is built
-            Future.delayed(Duration(milliseconds: 100), () {
-              if (_controller.hasClients) {
-                _controller.jumpToPage(index);
+        // First try to get the last used project from SharedPreferences
+        _projectRepository.getLastUsedProjectOrDefault().then((lastUsedProject) {
+          if (mounted) {
+            if (lastUsedProject != null) {
+              final index = _projects.indexWhere((p) => p.id == lastUsedProject.id);
+              if (index != -1) {
+                setState(() {
+                  _currentPage = index;
+                });
+                // Set the selected project in the bloc
+                context.read<SelectedProjectBloc>().add(
+                      SetSelectedProjectEvent(lastUsedProject),
+                    );
+                // We need to use a small delay to ensure the PageView is built
+                Future.delayed(Duration(milliseconds: 100), () {
+                  if (_controller.hasClients && mounted) {
+                    _controller.jumpToPage(index);
+                  }
+                });
+                // Load suggestions and check timing for the selected project
+                _loadSuggestions(lastUsedProject.id);
+                _checkTimingStatus();
+                return;
               }
-            });
+            }
+            
+            // Fallback: check if there's already a selected project in the bloc
+            final currentProject =
+                context.read<SelectedProjectBloc>().state.project;
+            if (currentProject != null) {
+              final index = _projects.indexWhere((p) => p.id == currentProject.id);
+              if (index != -1) {
+                setState(() {
+                  _currentPage = index;
+                });
+                // We need to use a small delay to ensure the PageView is built
+                Future.delayed(Duration(milliseconds: 100), () {
+                  if (_controller.hasClients && mounted) {
+                    _controller.jumpToPage(index);
+                  }
+                });
+                // Load suggestions and check timing for the selected project
+                _loadSuggestions(currentProject.id);
+                _checkTimingStatus();
+              }
+            }
           }
-        }
+        });
       }
     });
 
-    // Load suggestions for the current project if available
-    if (_projects.isNotEmpty && _currentPage < _projects.length) {
-      _loadSuggestions(_projects[_currentPage].id);
-    }
-
-    _checkTimingStatus();
+    // Load suggestions and check timing status will be handled after the async
+    // project selection is complete, but we need to handle the case where 
+    // there's no last used project initially
+    Future.delayed(Duration(milliseconds: 200), () {
+      if (mounted && _projects.isNotEmpty && _currentPage < _projects.length) {
+        _loadSuggestions(_projects[_currentPage].id);
+        _checkTimingStatus();
+      }
+    });
   }
 
   void _loadSuggestions(String projectId) async {
@@ -259,7 +295,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       _buttonAnimationController.reverse();
     });
 
-    EventSyncService().sendDataToServer();
+    // Try to sync in background - don't block local functionality
+    if (EventSyncService().isInitialized() && EventSyncService().canSync()) {
+      EventSyncService().sendDataToServer();
+    }
   }
 
   void _toggleState() {
@@ -314,15 +353,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       return Center(child: CircularProgressIndicator());
     }
 
-    // Get the current project if available
-    final project = _projects.isNotEmpty && _currentPage < _projects.length
-        ? _projects[_currentPage]
-        : null;
-
-    // Get project color for UI elements
-    final projectColor =
-        project != null ? hexToColor(project.color) : Colors.grey;
-
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
       body: SafeArea(
@@ -350,14 +380,13 @@ class _ProjectSwiperState extends State<ProjectSwiper>
 
                     // Update the selected project in the bloc only if we're on a valid project
                     if (_projects.isNotEmpty && page < _projects.length) {
+                      final selectedProject = _projects[page];
                       context.read<SelectedProjectBloc>().add(
-                            SetSelectedProjectEvent(_projects[page]),
+                            SetSelectedProjectEvent(selectedProject),
                           );
-
-                      // Load suggestions for the new project
-                      _loadSuggestions(_projects[page].id);
-
-                      // Check timing status for the new project
+                      // Save the last used project to SharedPreferences
+                      _projectRepository.saveLastUsedProject(selectedProject);
+                      _loadSuggestions(selectedProject.id);
                       _checkTimingStatus();
                     }
                   },

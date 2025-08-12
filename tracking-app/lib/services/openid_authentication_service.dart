@@ -20,10 +20,6 @@ class OpenIdAuthenticationService {
     var c = await authenticator.authorize();
     _closeWebView();
 
-    if (c == null) {
-      return null;
-    }
-
     var token = await c.getTokenResponse();
     var userInformation = await c.getUserInfo();
 

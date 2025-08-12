@@ -1,23 +1,121 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeasy/dataaccess/database.dart';
+import 'package:timeasy/models/change_type.dart';
+import 'package:timeasy/models/changelog_entry.dart';
 import 'package:timeasy/models/project.dart';
+import 'package:timeasy/repositories/changelog_repository.dart';
 
 class ProjectRepository {
-  addProject(Project project) async {
+  final ChangelogRepository _changelogRepository = ChangelogRepository();
+
+  Future<Project> addProject(Project project) async {
     final db = await DBProvider.dbProvider.database;
-    return await db.insert(Project.tableName, project.toMap());
+    await db.transaction((txn) async {
+      await txn.insert(Project.tableName, project.toMap());
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'Project',
+            entityId: project.id,
+            changeType: ChangeType.NEW,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
+    });
+    return project;
   }
 
-  updateProject(Project project) async {
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<Project> addProjectFromSync(Project project) async {
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.insert(Project.tableName, project.toMap());
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'Project',
+            entityId: project.id,
+            changeType: ChangeType.NEW,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return project;
+  }
+
+  Future<Project> updateProject(Project project) async {
     project.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
-    return await db.update(Project.tableName, project.toMap(),
-        where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+    await db.transaction((txn) async {
+      await txn.update(Project.tableName, project.toMap(),
+          where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'Project',
+            entityId: project.id,
+            changeType: ChangeType.CHANGED,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
+    });
+    return project;
   }
 
-  deleteProject(Project project) async {
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<Project> updateProjectFromSync(Project project) async {
+    project.updated = DateTime.now().toUtc();
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(Project.tableName, project.toMap(),
+          where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'Project',
+            entityId: project.id,
+            changeType: ChangeType.CHANGED,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return project;
+  }
+
+  Future<Project> deleteProject(Project project) async {
     project.deleted = true;
-    return await updateProject(project);
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(Project.tableName, project.toMap(),
+          where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'Project',
+            entityId: project.id,
+            changeType: ChangeType.DELETED,
+            timestamp: DateTime.now().toUtc(),
+          ),
+          txn);
+    });
+    return project;
+  }
+
+  // Method for syncing from server - creates changelog entries marked as server-side
+  Future<Project> deleteProjectFromSync(Project project) async {
+    project.deleted = true;
+    final db = await DBProvider.dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(Project.tableName, project.toMap(),
+          where: "${Project.idColumn} = ?", whereArgs: [project.id]);
+      await _changelogRepository.insert(
+          ChangelogEntry(
+            entityType: 'Project',
+            entityId: project.id,
+            changeType: ChangeType.DELETED,
+            timestamp: DateTime.now().toUtc(),
+            isFromServer: true, // Mark as server-originated
+          ),
+          txn);
+    });
+    return project;
   }
 
   Future<Project?> getProjectById(String id) async {
@@ -53,7 +151,7 @@ class ProjectRepository {
     if (projects.isEmpty) {
       var newProject = new Project();
       newProject.name = defaultProjectName;
-      addProject(newProject);
+      await addProject(newProject);
       return newProject;
     } else {
       return projects[0];
