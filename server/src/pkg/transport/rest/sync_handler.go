@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -33,11 +33,13 @@ func NewSyncHandler(tokenVerifier TokenVerifier, syncUsecase usecase.SyncUsecase
 func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("GetChangedEntries", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("GetChangedEntries", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -52,6 +54,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 	var syncEntries SyncEntries
 	latestChangeLogEntry, err := handler.syncUsecase.GetLatestChangelogEntryId()
 	if err != nil {
+		LogHandlerError("GetChangedEntries", err, "failed to get latest changelog entry ID")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -59,6 +62,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 
 	entries, err := handler.syncUsecase.GetChangedTimeEntries(userId, sinceChangeLogEntry, latestChangeLogEntry, clientId)
 	if err != nil {
+		LogHandlerError("GetChangedEntries", err, "failed to get changed time entries")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -68,6 +72,7 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 
 	projects, err := handler.syncUsecase.GetChangedProjects(userId, sinceChangeLogEntry, latestChangeLogEntry, clientId)
 	if err != nil {
+		LogHandlerError("GetChangedEntries", err, "failed to get changed projects")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -82,7 +87,7 @@ func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEnt
 	for _, entry := range timeEntries {
 		// Skip entries with invalid start times
 		if entry.StartTime.IsZero() || entry.StartTime.Year() < 1900 {
-			log.Printf("Warning: Skipping time entry %s with invalid start time: %v", entry.ID, entry.StartTime)
+			LogHandlerError("appendChangedTimeEntries", nil, fmt.Sprintf("skipping time entry %s with invalid start time: %v", entry.ID, entry.StartTime))
 			continue
 		}
 		
@@ -142,16 +147,19 @@ func (handler *syncHandler) parseTimestamp(timestamp int64) time.Time {
 func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 	var syncDtos SyncEntries
 	if err := context.ShouldBindJSON(&syncDtos); err != nil {
+		LogHandlerError("SendLocallyChangedEntries", err, "could not bind sync entries data")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("SendLocallyChangedEntries", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("SendLocallyChangedEntries", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -163,6 +171,7 @@ func (handler *syncHandler) SendLocallyChangedEntries(context *gin.Context) {
 
 	err = handler.syncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
 	if err != nil {
+		LogHandlerError("SendLocallyChangedEntries", err, "failed to update and delete sync data")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -234,7 +243,7 @@ func (handler *syncHandler) fillInClientSideChangedTimeEntries(syncData *model.S
 				syncData.TimeEntriesToBeDeleted = append(syncData.TimeEntriesToBeDeleted, timeEntry)
 			}
 		} else {
-			log.Printf("Could not create time entry from dto: %v\n", err)
+			LogHandlerError("fillInClientSideChangedTimeEntries", err, "could not create time entry from DTO")
 		}
 	}
 }

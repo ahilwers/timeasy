@@ -2,9 +2,11 @@ package rest
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
-	"strconv"
+	"github.com/golang/glog"
 )
 
 func GetMandatoryIdParamValue(context *gin.Context, paramName string) (uuid.UUID, error) {
@@ -53,4 +55,12 @@ func convertToInt(context *gin.Context, paramValue string, optional bool) (int, 
 		return 0, err
 	}
 	return value, nil
+}
+
+func LogHandlerError(method string, err error, additionalContext ...string) {
+	context := ""
+	if len(additionalContext) > 0 {
+		context = fmt.Sprintf(" - %s", additionalContext[0])
+	}
+	glog.Errorf("Handler error in %s: %v%s", method, err, context)
 }

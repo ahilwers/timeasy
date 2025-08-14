@@ -3,7 +3,6 @@ package rest
 import (
 	"fmt"
 	"github.com/shopspring/decimal"
-	"log"
 	"net/http"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/usecase"
@@ -52,17 +51,19 @@ type projectTeamAssignmentInput struct {
 func (handler *projectHandler) AddProject(context *gin.Context) {
 	var prj projectInput
 	if err := context.ShouldBindJSON(&prj); err != nil {
-		log.Printf("could not set project data: %v\n", err)
+		LogHandlerError("AddProject", err, "could not bind project data")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("AddProject", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("AddProject", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -75,12 +76,15 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 	}
 	err = handler.fillProjectFromDto(&newProject, prj)
 	if err != nil {
-		log.Printf("could not set project data: %v\n", err)
+		LogHandlerError("AddProject", err, "failed to fill project from DTO")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	err = handler.usecase.AddProject(&newProject, userId, clientId)
 	if err != nil {
+		LogHandlerError("AddProject", err, "failed to add project")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	context.JSON(http.StatusOK, prj)
 }
@@ -88,27 +92,32 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 func (handler *projectHandler) UpdateProject(context *gin.Context) {
 	projectId, err := handler.getId(context)
 	if err != nil {
+		LogHandlerError("UpdateProject", err, "failed to get project ID")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	project, err := handler.usecase.GetProjectById(projectId)
 	if err != nil {
+		LogHandlerError("UpdateProject", err, fmt.Sprintf("failed to get project by ID: %v", projectId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
 		return
 	}
 
 	var prj projectInput
 	if err := context.ShouldBindJSON(&prj); err != nil {
+		LogHandlerError("UpdateProject", err, "could not bind project data")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		log.Printf("could not bind json of project: %v\n", err)
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("UpdateProject", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("UpdateProject", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -122,6 +131,7 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 	if !projectBelongsToUser {
 		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
+			LogHandlerError("UpdateProject", err, "failed to check admin role")
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -136,14 +146,16 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 
 	err = handler.fillProjectFromDto(project, prj)
 	if err != nil {
+		LogHandlerError("UpdateProject", err, "failed to fill project from DTO")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		log.Printf("could not set project data: %v\n", err)
 		return
 	}
 
 	err = handler.usecase.UpdateProject(project, userId, clientId)
 	if err != nil {
+		LogHandlerError("UpdateProject", err, "failed to update project")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	context.JSON(http.StatusOK, prj)
 }
@@ -151,16 +163,20 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 func (handler *projectHandler) DeleteProject(context *gin.Context) {
 	projectId, err := handler.getId(context)
 	if err != nil {
+		LogHandlerError("DeleteProject", err, "failed to get project ID")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("DeleteProject", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("DeleteProject", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -170,6 +186,7 @@ func (handler *projectHandler) DeleteProject(context *gin.Context) {
 
 	project, err := handler.usecase.GetProjectById(projectId)
 	if err != nil {
+		LogHandlerError("DeleteProject", err, fmt.Sprintf("failed to get project by ID: %v", projectId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
 		return
 	}
@@ -183,6 +200,7 @@ func (handler *projectHandler) DeleteProject(context *gin.Context) {
 	if !projectBelongsToUser {
 		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
+			LogHandlerError("DeleteProject", err, "failed to check admin role")
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -192,6 +210,11 @@ func (handler *projectHandler) DeleteProject(context *gin.Context) {
 		}
 	}
 	err = handler.usecase.DeleteProject(projectId, userId, clientId)
+	if err != nil {
+		LogHandlerError("DeleteProject", err, "failed to delete project")
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("project %v deleted", projectId)})
 }
 
@@ -224,20 +247,25 @@ func (handler *projectHandler) fillProjectFromDto(project *model.Project, dto pr
 func (handler *projectHandler) GetProjectById(context *gin.Context) {
 	projectId, err := handler.getId(context)
 	if err != nil {
+		LogHandlerError("GetProjectById", err, "failed to get project ID")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	project, err := handler.usecase.GetProjectById(projectId)
 	if err != nil {
+		LogHandlerError("GetProjectById", err, fmt.Sprintf("failed to get project by ID: %v", projectId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found", projectId)})
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("GetProjectById", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	authUserId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("GetProjectById", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -253,6 +281,7 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 	if !projectBelongsToUser {
 		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
+			LogHandlerError("GetProjectById", err, "failed to check admin role")
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -269,16 +298,19 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 func (handler *projectHandler) GetAllProjects(context *gin.Context) {
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("GetAllProjects", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	hasAdminRole, err := token.HasRole(model.RoleAdmin)
 	if err != nil {
+		LogHandlerError("GetAllProjects", err, "failed to check admin role")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("GetAllProjects", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -290,6 +322,7 @@ func (handler *projectHandler) GetAllProjects(context *gin.Context) {
 		projects, err = handler.usecase.GetAllProjectsOfUser(userId)
 	}
 	if err != nil {
+		LogHandlerError("GetAllProjects", err, "failed to get projects")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all project"})
 		return
 	}
@@ -299,18 +332,21 @@ func (handler *projectHandler) GetAllProjects(context *gin.Context) {
 func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 	var projectTeamAssignment projectTeamAssignmentInput
 	if err := context.ShouldBindJSON(&projectTeamAssignment); err != nil {
+		LogHandlerError("AssignProjectToTeam", err, "could not bind project team assignment data")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("AssignProjectToTeam", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("AssignProjectToTeam", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -320,6 +356,7 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 
 	project, err := handler.usecase.GetProjectById(projectTeamAssignment.ProjectId)
 	if err != nil {
+		LogHandlerError("AssignProjectToTeam", err, fmt.Sprintf("failed to get project by ID: %v", projectTeamAssignment.ProjectId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project with id %v not found",
 			projectTeamAssignment.ProjectId)})
 		return
@@ -327,6 +364,7 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 
 	team, err := handler.teamUsecase.GetTeamById(projectTeamAssignment.TeamId)
 	if err != nil {
+		LogHandlerError("AssignProjectToTeam", err, fmt.Sprintf("failed to get team by ID: %v", projectTeamAssignment.TeamId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("team with id %v not found",
 			projectTeamAssignment.TeamId)})
 		return
@@ -335,6 +373,7 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 	if !handler.teamUsecase.IsUserAdminInTeam(userId, team.ID) {
 		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
+			LogHandlerError("AssignProjectToTeam", err, "failed to check admin role")
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -346,6 +385,7 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 
 	err = handler.usecase.AssignProjectToTeam(project, team, userId, clientId)
 	if err != nil {
+		LogHandlerError("AssignProjectToTeam", err, "failed to assign project to team")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -3,7 +3,6 @@ package rest
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 	"timeasy-server/pkg/domain/model"
@@ -49,17 +48,19 @@ type timeEntryDto struct {
 func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 	var entryDto timeEntryUpdateDto
 	if err := context.ShouldBindJSON(&entryDto); err != nil {
-		log.Printf("Could not bind json: %v\n", err)
+		LogHandlerError("AddTimeEntry", err, "could not bind time entry data")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("AddTimeEntry", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("AddTimeEntry", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -83,6 +84,7 @@ func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 		default:
 			errorCode = http.StatusInternalServerError
 		}
+		LogHandlerError("AddTimeEntry", err, "failed to add time entry")
 		context.JSON(errorCode, gin.H{"error": err.Error()})
 		return
 	}
@@ -92,25 +94,31 @@ func (handler *timeEntryHandler) AddTimeEntry(context *gin.Context) {
 func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 	entryId, err := handler.getId(context)
 	if err != nil {
+		LogHandlerError("UpdateTimeEntry", err, "failed to get time entry ID")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	timeEntry, err := handler.usecase.GetTimeEntryById(entryId)
 	if err != nil {
+		LogHandlerError("UpdateTimeEntry", err, fmt.Sprintf("failed to get time entry by ID: %v", entryId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
 		return
 	}
 	var entryDto timeEntryUpdateDto
 	if err := context.ShouldBindJSON(&entryDto); err != nil {
+		LogHandlerError("UpdateTimeEntry", err, "could not bind time entry data")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("UpdateTimeEntry", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("UpdateTimeEntry", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -118,6 +126,7 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 	if timeEntry.UserId != userId {
 		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
+			LogHandlerError("UpdateTimeEntry", err, "failed to check admin role")
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -146,6 +155,7 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 		default:
 			errorCode = http.StatusInternalServerError
 		}
+		LogHandlerError("UpdateTimeEntry", err, "failed to update time entry")
 		context.JSON(errorCode, gin.H{"error": err.Error()})
 		return
 	}
@@ -155,16 +165,20 @@ func (handler *timeEntryHandler) UpdateTimeEntry(context *gin.Context) {
 func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 	entryId, err := handler.getId(context)
 	if err != nil {
+		LogHandlerError("DeleteTimeEntry", err, "failed to get time entry ID")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("DeleteTimeEntry", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("DeleteTimeEntry", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -174,12 +188,14 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 
 	timeEntry, err := handler.usecase.GetTimeEntryById(entryId)
 	if err != nil {
+		LogHandlerError("DeleteTimeEntry", err, fmt.Sprintf("failed to get time entry by ID: %v", entryId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
 		return
 	}
 	if timeEntry.UserId != userId {
 		isAdmin, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
+			LogHandlerError("DeleteTimeEntry", err, "failed to check admin role")
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -189,26 +205,36 @@ func (handler *timeEntryHandler) DeleteTimeEntry(context *gin.Context) {
 		}
 	}
 	err = handler.usecase.DeleteTimeEntry(entryId, userId, clientId)
+	if err != nil {
+		LogHandlerError("DeleteTimeEntry", err, "failed to delete time entry")
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("entry %v deleted", entryId)})
 }
 
 func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 	entryId, err := handler.getId(context)
 	if err != nil {
+		LogHandlerError("GetTimeEntryById", err, "failed to get time entry ID")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	timeEntry, err := handler.usecase.GetTimeEntryById(entryId)
 	if err != nil {
+		LogHandlerError("GetTimeEntryById", err, fmt.Sprintf("failed to get time entry by ID: %v", entryId))
 		context.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("entry with id %v not found", entryId)})
 		return
 	}
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("GetTimeEntryById", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	authUserId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("GetTimeEntryById", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -217,6 +243,7 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 	if authUserId != timeEntry.UserId {
 		hasAdminRole, err := token.HasRole(model.RoleAdmin)
 		if err != nil {
+			LogHandlerError("GetTimeEntryById", err, "failed to check admin role")
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -233,16 +260,19 @@ func (handler *timeEntryHandler) GetTimeEntryById(context *gin.Context) {
 func (handler *timeEntryHandler) GetLastOpenTimeEntry(context *gin.Context) {
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("GetLastOpenTimeEntry", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	authUserId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("GetLastOpenTimeEntry", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	timeEntry, err := handler.usecase.GetLastOpenTimeEntry(authUserId)
 	if err != nil {
+		LogHandlerError("GetLastOpenTimeEntry", err, "failed to get last open time entry")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -256,11 +286,13 @@ func (handler *timeEntryHandler) GetLastOpenTimeEntry(context *gin.Context) {
 func (handler *timeEntryHandler) GetAllTimeEntries(context *gin.Context) {
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("GetAllTimeEntries", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("GetAllTimeEntries", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -307,6 +339,7 @@ func (handler *timeEntryHandler) GetAllTimeEntries(context *gin.Context) {
 		timeEntries, err = handler.usecase.GetTimeEntriesOfUserAndProjectBetweenDates(userId, projectId, startDate, endDate)
 	}
 	if err != nil {
+		LogHandlerError("GetAllTimeEntries", err, "failed to get time entries")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all entries"})
 		return
 	}
