@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"strings"
+
+	"github.com/shopspring/decimal"
 
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
@@ -13,6 +14,10 @@ import (
 	"github.com/gofrs/uuid"
 	_ "github.com/lib/pq"
 )
+
+type scanner interface {
+	Scan(dest ...interface{}) error
+}
 
 type postgresqlProjectRepository struct {
 	db             *sql.DB
@@ -93,34 +98,15 @@ func (repo *postgresqlProjectRepository) GetProjectById(id uuid.UUID) (*model.Pr
 		WHERE id = $1 AND deleted = false
 	`
 
-	var project model.Project
-	var teamID uuid.NullUUID
-
-	err := repo.db.QueryRow(query, id).Scan(
-		&project.ID,
-		&project.Name,
-		&project.UserId,
-		&teamID,
-		&project.Color,
-		&project.HourlyRate,
-		&project.TimeBudget,
-		&project.Deadline,
-		&project.IsActive,
-		&project.Deleted,
-	)
-
+	row := repo.db.QueryRow(query, id)
+	project, err := scanProject(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, repository.ErrEntityNotFound
 		}
 		return nil, err
 	}
-
-	if teamID.Valid {
-		project.TeamID = &teamID.UUID
-	}
-
-	return &project, nil
+	return project, nil
 }
 
 func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project, tx model.Transaction) error {
@@ -315,13 +301,13 @@ func (repo *postgresqlProjectRepository) getTeamIdsOfUser(userId uuid.UUID) ([]u
 	return teamIds, nil
 }
 
-func scanProject(rows *sql.Rows) (*model.Project, error) {
+func scanProject(s scanner) (*model.Project, error) {
 	var project model.Project
 	var teamID uuid.NullUUID
 	var color sql.NullString
 	var hourlyRate sql.NullFloat64
 
-	err := rows.Scan(
+	err := s.Scan(
 		&project.ID,
 		&project.Name,
 		&project.UserId,
@@ -352,3 +338,4 @@ func scanProject(rows *sql.Rows) (*model.Project, error) {
 
 	return &project, nil
 }
+
