@@ -53,11 +53,13 @@ func (t timeEntryExportHandler) ExportTimeEntriesToXlsOneLinePerDay(context *gin
 func (t timeEntryExportHandler) exportTimeEntries(context *gin.Context, format ExportFormat) {
 	token, err := t.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("exportTimeEntries", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("exportTimeEntries", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -104,27 +106,32 @@ func (t timeEntryExportHandler) exportTimeEntries(context *gin.Context, format E
 		timeEntries, err = t.timeEntryUsecase.GetTimeEntriesOfUserAndProjectBetweenDates(userId, projectId, startDate, endDate)
 	}
 	if err != nil {
+		LogHandlerError("exportTimeEntries", err, "failed to get time entries")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "error getting all entries"})
 		return
 	}
 
 	exportUsecase, err := t.createExportUsecase(format)
 	if err != nil {
+		LogHandlerError("exportTimeEntries", err, "failed to create export usecase")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	buffer, err := exportUsecase.ExportTimeEntries(timeEntries)
 	if err != nil {
+		LogHandlerError("exportTimeEntries", err, "failed to export time entries")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "error creating export"})
 		return
 	}
 	contentType, err := t.getContentType(format)
 	if err != nil {
+		LogHandlerError("exportTimeEntries", err, "failed to get content type")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	fileName, err := t.getFileName(format)
 	if err != nil {
+		LogHandlerError("exportTimeEntries", err, "failed to get file name")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

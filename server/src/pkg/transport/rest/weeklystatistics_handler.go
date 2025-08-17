@@ -54,11 +54,13 @@ type timePerProjectDto struct {
 func (handler *weeklyStatisticsHandler) GetWeeklyStatistics(context *gin.Context) {
 	token, err := handler.tokenVerifier.VerifyToken(context)
 	if err != nil {
+		LogHandlerError("GetWeeklyStatistics", err, "token verification failed")
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 	userId, err := token.GetUserId()
 	if err != nil {
+		LogHandlerError("GetWeeklyStatistics", err, "failed to get user ID from token")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -71,24 +73,28 @@ func (handler *weeklyStatisticsHandler) GetWeeklyStatistics(context *gin.Context
 
 	year, err := GetMandatoryIntParamValue(context, "year")
 	if err != nil {
+		LogHandlerError("GetWeeklyStatistics", err, "failed to get year parameter")
 		context.JSON(http.StatusBadRequest, gin.H{"error": "please specify a valid year"})
 		return
 	}
 
 	projectId, err := GetOptionalIdParamValue(context, "project")
 	if err != nil {
+		LogHandlerError("GetWeeklyStatistics", err, "failed to get project ID parameter")
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	weeklyStatistics, err := handler.usecase.Build(userId, projectId, weekNumber, year)
 	if err != nil {
+		LogHandlerError("GetWeeklyStatistics", err, "failed to build weekly statistics")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	dto, err := handler.createWeeklyStatisticsDto(*weeklyStatistics, weekNumber, year, projectId)
 	if err != nil {
+		LogHandlerError("GetWeeklyStatistics", err, "failed to create weekly statistics DTO")
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
