@@ -8,6 +8,7 @@ class Project {
   static final String updatedColumn = "updated";
   static final String deletedColumn = "deleted";
   static final String colorColumn = "color";
+  static final String isActiveColumn = "isActive";
 
   late String id;
   String name = "";
@@ -15,6 +16,7 @@ class Project {
   DateTime created = DateTime.now().toUtc();
   DateTime updated = DateTime.now().toUtc();
   bool deleted = false;
+  bool isActive = true;
 
   Project() {
     var uuid = new Uuid();
@@ -33,6 +35,8 @@ class Project {
         new DateTime.fromMillisecondsSinceEpoch(updatedMillis, isUtc: true);
     int deletedInt = map[deletedColumn];
     deletedInt == 0 ? deleted = false : deleted = true;
+    int isActiveInt = map[isActiveColumn] ?? 1;
+    isActiveInt == 0 ? isActive = false : isActive = true;
   }
 
   Map<String, dynamic> toMap() {
@@ -43,6 +47,7 @@ class Project {
       createdColumn: created.millisecondsSinceEpoch,
       updatedColumn: updated.millisecondsSinceEpoch,
       deletedColumn: deleted ? 1 : 0,
+      isActiveColumn: isActive ? 1 : 0,
     };
   }
 }

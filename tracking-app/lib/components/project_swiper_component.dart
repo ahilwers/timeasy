@@ -130,7 +130,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       _isLoading = true;
     });
 
-    var projects = await _projectRepository.getAllProjects();
+    var allProjects = await _projectRepository.getAllProjects();
+    var projects = allProjects.where((project) => project.isActive).toList();
 
     setState(() {
       _projects = projects;

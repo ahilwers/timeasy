@@ -209,5 +209,9 @@
     "settings": "Settings",
     "@settings": {
         "description": "Title for the settings screen"
+    },
+    "projectActive": "Active",
+    "@projectActive": {
+        "description": "Label for the project active status toggle"
     }
 }

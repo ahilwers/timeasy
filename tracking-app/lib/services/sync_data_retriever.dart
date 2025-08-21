@@ -108,6 +108,7 @@ class SyncDataRetriever {
     project.id = syncData.id;
     project.name = syncData.name;
     project.color = syncData.color;
+    project.isActive = syncData.isActive;
     project.updated = syncData.changeTimestamp;
     project.created = DateTime.now();
     return project;

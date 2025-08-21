@@ -19,6 +19,7 @@ export class ProjectService {
   private readonly http = inject(HttpClient);
 
   projects = computed(() => this.state.projects);
+  activeProjects = computed(() => this.state.projects().filter(project => project.isActive));
   project = computed(() => this.state.project);
   deleted = computed(() => this.state.projectDeleted);
   error = computed(() => this.state.error);

@@ -60,6 +60,7 @@ class SyncDataSender {
         id: changelogEntry.entityId,
         name: project?.name ?? '',
         color: project?.color ?? '#1E90FF',
+        isActive: project?.isActive ?? true,
         changeType: changelogEntry.changeType,
         changeTimestamp: changelogEntry.timestamp,
       );
