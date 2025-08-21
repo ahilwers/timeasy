@@ -84,5 +84,6 @@
     "signInPromo": "Melde dich an und entdecke das volle Potenzial von timeasy!",
     "alreadyHaveAccount": "Du hast schon einen Account?",
     "signInHere": "Dann melde dich hier an",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "projectActive": "Aktiv"
 }

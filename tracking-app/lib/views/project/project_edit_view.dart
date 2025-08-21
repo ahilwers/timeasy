@@ -256,6 +256,22 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                     }
                   },
                 ),
+                SizedBox(height: 24),
+                Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text('${AppLocalizations.of(context)!.projectActive}:',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Switch(
+                        value: _project!.isActive,
+                        onChanged: (value) {
+                          setState(() {
+                            _project!.isActive = value;
+                          });
+                        },
+                      ),
+                    ]),
               ],
             ),
           ),

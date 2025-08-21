@@ -99,6 +99,9 @@ class DBProvider {
     ''',
     '''
       ALTER TABLE Changelog ADD COLUMN isFromServer INTEGER DEFAULT 0;
+    ''',
+    '''
+      ALTER TABLE Projects ADD COLUMN isActive INTEGER DEFAULT 1;
     '''
   ];
 
