@@ -36,235 +36,8 @@ import { ConfirmationService } from 'primeng/api';
     ProgressSpinner
   ],
   providers: [MessageService, ConfirmationService],
-  template: `
-    <div class="external-accounts-container">
-      <p-card>
-        <ng-template pTemplate="header">
-          <div class="card-header">
-            <h2>{{ 'user.externalAccounts.title' | translate }}</h2>
-            <p-button
-              [label]="'user.externalAccounts.addAccount' | translate"
-              icon="pi pi-plus"
-              (onClick)="openCreateDialog()"
-              styleClass="p-button-success">
-            </p-button>
-          </div>
-        </ng-template>
-
-        <ng-template pTemplate="content">
-          @if (isLoading()) {
-            <div class="loading-container">
-              <p-progressSpinner></p-progressSpinner>
-              <span>{{ 'user.externalAccounts.loading' | translate }}</span>
-            </div>
-          } @else if (accounts().length === 0) {
-            <div class="no-accounts">
-              <i class="pi pi-info-circle"></i>
-              <h3>{{ 'user.externalAccounts.noAccounts' | translate }}</h3>
-              <p>{{ 'user.externalAccounts.noAccountsDescription' | translate }}</p>
-            </div>
-          } @else {
-            <p-table [value]="accounts()" [responsiveLayout]="'scroll'">
-              <ng-template pTemplate="header">
-                <tr>
-                  <th>{{ 'user.externalAccounts.provider' | translate }}</th>
-                  <th>{{ 'user.externalAccounts.accountName' | translate }}</th>
-                  <th>{{ 'user.externalAccounts.baseUrl' | translate }}</th>
-                  <th>{{ 'user.externalAccounts.actions' | translate }}</th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-account>
-                <tr>
-                  <td>
-                    <div class="provider-cell">
-                      <i [class]="getProviderIcon(account.provider)"></i>
-                      <span>{{ getProviderDisplayName(account.provider) }}</span>
-                    </div>
-                  </td>
-                  <td>{{ account.accountName }}</td>
-                  <td>{{ account.baseURL || '-' }}</td>
-                  <td>
-                    <div class="action-buttons">
-                      <p-button
-                        icon="pi pi-check-circle"
-                        styleClass="p-button-rounded p-button-text p-button-success"
-                        (onClick)="testAccount(account.id)"
-                        [loading]="testingAccounts().has(account.id)">
-                      </p-button>
-                      <p-button
-                        icon="pi pi-pencil"
-                        styleClass="p-button-rounded p-button-text"
-                        (onClick)="openEditDialog(account)">
-                      </p-button>
-                      <p-button
-                        icon="pi pi-trash"
-                        styleClass="p-button-rounded p-button-text p-button-danger"
-                        (onClick)="confirmDelete(account)">
-                      </p-button>
-                    </div>
-                  </td>
-                </tr>
-              </ng-template>
-            </p-table>
-          }
-        </ng-template>
-      </p-card>
-
-      <!-- Create/Edit Dialog -->
-      <p-dialog
-        [(visible)]="showDialog"
-        [header]="dialogTitle()"
-        [modal]="true"
-        [style]="{ width: '500px' }"
-        [closable]="true">
-        
-        <form [formGroup]="accountForm" (ngSubmit)="saveAccount()">
-          <div class="form-grid">
-            <div class="form-field">
-              <label for="provider">{{ 'user.externalAccounts.provider' | translate }}</label>
-              <p-dropdown
-                id="provider"
-                formControlName="provider"
-                [options]="providerOptions"
-                optionLabel="label"
-                optionValue="value"
-                [placeholder]="'user.externalAccounts.selectProvider' | translate"
-                styleClass="w-full">
-              </p-dropdown>
-            </div>
-
-            <div class="form-field">
-              <label for="accountName">{{ 'user.externalAccounts.accountName' | translate }}</label>
-              <input
-                pInputText
-                id="accountName"
-                formControlName="accountName"
-                [placeholder]="'user.externalAccounts.accountNamePlaceholder' | translate"
-                class="w-full">
-            </div>
-
-            <div class="form-field">
-              <label for="oauthToken">{{ 'user.externalAccounts.oauthToken' | translate }}</label>
-              <input
-                pInputText
-                id="oauthToken"
-                type="password"
-                formControlName="oauthToken"
-                [placeholder]="'user.externalAccounts.tokenPlaceholder' | translate"
-                class="w-full">
-              <small class="form-help">{{ 'user.externalAccounts.tokenHelp' | translate }}</small>
-            </div>
-
-            @if (shouldShowBaseUrl()) {
-              <div class="form-field">
-                <label for="baseURL">{{ 'user.externalAccounts.baseUrl' | translate }}</label>
-                <input
-                  pInputText
-                  id="baseURL"
-                  formControlName="baseURL"
-                  [placeholder]="getBaseUrlPlaceholder()"
-                  class="w-full">
-                <small class="form-help">{{ getBaseUrlHelp() }}</small>
-              </div>
-            }
-          </div>
-
-          <div class="form-actions">
-            <p-button
-              type="button"
-              [label]="'globals.cancel' | translate"
-              icon="pi pi-times"
-              styleClass="p-button-outlined"
-              (onClick)="closeDialog()">
-            </p-button>
-            <p-button
-              type="submit"
-              [label]="'globals.save' | translate"
-              icon="pi pi-check"
-              [disabled]="!accountForm.valid"
-              [loading]="isSaving()">
-            </p-button>
-          </div>
-        </form>
-      </p-dialog>
-
-      <p-confirmDialog></p-confirmDialog>
-      <p-toast position="top-right"></p-toast>
-    </div>
-  `,
-  styles: [`
-    .external-accounts-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-    }
-
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      padding: 2rem;
-    }
-
-    .no-accounts {
-      text-align: center;
-      padding: 2rem;
-      color: #6b7280;
-    }
-
-    .no-accounts i {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    .provider-cell {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .form-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .form-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .form-field label {
-      font-weight: 600;
-      font-size: 0.875rem;
-    }
-
-    .form-help {
-      color: #6b7280;
-      font-size: 0.75rem;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
-      margin-top: 1.5rem;
-    }
-  `]
+  templateUrl: './external-accounts.component.html',
+  styleUrl: './external-accounts.component.css'
 })
 export class ExternalAccountsComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
@@ -304,29 +77,19 @@ export class ExternalAccountsComponent implements OnInit {
 
   private loadAccounts() {
     this.isLoading.set(true);
-    console.log('Loading external accounts...');
     
     this.accountService.getAccounts().subscribe({
       next: (response) => {
-        console.log('External accounts response:', response);
-        console.log('Accounts array:', response.accounts);
-        console.log('Accounts length:', response.accounts?.length);
-        
         this.accounts.set(response.accounts || []);
         this.isLoading.set(false);
-        
-        console.log('Loading state set to false');
-        console.log('Current isLoading signal:', this.isLoading());
       },
       error: (error) => {
-        console.error('Error loading accounts:', error);
         this.messageService.add({
           severity: 'error',
           summary: this.translateService.instant('globals.error'),
           detail: this.translateService.instant('user.externalAccounts.loadError')
         });
         this.isLoading.set(false);
-        console.log('Error - Loading state set to false');
       }
     });
   }

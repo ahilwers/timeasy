@@ -24,104 +24,8 @@ import { ProgressSpinner } from 'primeng/progressspinner';
     Chip,
     ProgressSpinner
   ],
-  template: `
-    <div class="description-input-container">
-      <div class="input-wrapper">
-        <p-autoComplete
-          [formControl]="control"
-          [suggestions]="suggestions()"
-          (completeMethod)="search($event)"
-          (onInput)="onInputChange($event)"
-          [placeholder]="placeholder"
-          [disabled]="disabled"
-          styleClass="w-full"
-          field="value"
-          [dropdown]="false"
-          [multiple]="false">
-        </p-autoComplete>
-        
-        @if (isResolving()) {
-          <div class="resolving-indicator">
-            <p-progressSpinner 
-              [style]="{ width: '16px', height: '16px' }"
-              strokeWidth="4">
-            </p-progressSpinner>
-            <span class="resolving-text">{{ 'timeEntry.form.resolvingIssue' | translate }}</span>
-          </div>
-        }
-      </div>
-      
-      @if (resolvedIssue()) {
-        <div class="resolved-issue">
-          <p-chip 
-            [label]="getIssueChipLabel()"
-            icon="pi pi-external-link"
-            styleClass="issue-chip"
-            [removable]="true"
-            (onRemove)="clearResolvedIssue()">
-          </p-chip>
-        </div>
-      }
-      
-      @if (pendingIssue()) {
-        <div class="pending-issue">
-          <p-chip 
-            [label]="getPendingIssueLabel()"
-            icon="pi pi-clock"
-            severity="warning"
-            styleClass="pending-chip">
-          </p-chip>
-        </div>
-      }
-    </div>
-  `,
-  styles: [`
-    .description-input-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    
-    .input-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .resolving-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-    
-    .resolved-issue,
-    .pending-issue {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    
-    :host ::ng-deep .issue-chip {
-      background-color: #10b981;
-      color: white;
-    }
-    
-    :host ::ng-deep .pending-chip {
-      background-color: #f59e0b;
-      color: white;
-    }
-    
-    :host ::ng-deep .issue-chip .p-chip-text {
-      cursor: pointer;
-    }
-    
-    .resolving-text {
-      font-size: 0.75rem;
-    }
-  `]
+  templateUrl: './description-input.component.html',
+  styleUrl: './description-input.component.css'
 })
 export class DescriptionInputComponent implements OnInit, OnDestroy {
   @Input() control!: FormControl;
@@ -170,7 +74,6 @@ export class DescriptionInputComponent implements OnInit, OnDestroy {
         this.suggestions.set(response.suggestions);
       },
       error: (error) => {
-        console.error('Error fetching suggestions:', error);
         this.suggestions.set([]);
       }
     });
@@ -212,7 +115,6 @@ export class DescriptionInputComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.error('Error resolving issue:', error);
         this.isResolving.set(false);
         this.clearAllIssues();
       }

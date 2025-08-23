@@ -160,34 +160,24 @@ export class TimeEntryFormComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const query = input.value;
     
-    console.log('DEBUG: onDescriptionInput called with query:', query);
-    
     if (query.length < 2) {
-      console.log('DEBUG: Query too short, clearing suggestions');
       this.filteredSuggestions = [];
       return;
     }
 
     const selectedProject = this.timeEntryForm.get('project')?.value;
-    console.log('DEBUG: Selected project:', selectedProject);
     
     if (!selectedProject || !selectedProject.id) {
-      console.log('DEBUG: No project selected, clearing suggestions');
       this.filteredSuggestions = [];
       return;
     }
 
-    console.log('DEBUG: Making API call for suggestions...');
     // Get suggestions from external integration service
     this.externalService.getDescriptionSuggestions(selectedProject.id, query, 10).subscribe({
       next: (response) => {
-        console.log('DEBUG: API response received:', response);
         this.filteredSuggestions = response.suggestions || [];
-        console.log('DEBUG: filteredSuggestions set to:', this.filteredSuggestions);
-        console.log('DEBUG: filteredSuggestions.length:', this.filteredSuggestions.length);
       },
       error: (error) => {
-        console.error('DEBUG: API error:', error);
         this.filteredSuggestions = [];
       }
     });

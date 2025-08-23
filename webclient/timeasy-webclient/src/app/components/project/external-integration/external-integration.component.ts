@@ -36,143 +36,8 @@ import { ProgressSpinner } from 'primeng/progressspinner';
     ProgressSpinner
   ],
   providers: [MessageService],
-  template: `
-    <p-card [header]="'project.external.title' | translate">
-      <div class="external-integration-form">
-        @if (isConnected()) {
-          <!-- Connected state -->
-          <p-message severity="success" [text]="getConnectionMessage()"></p-message>
-          <div class="connection-actions">
-            <p-button 
-              [label]="'project.external.sync' | translate"
-              icon="pi pi-refresh"
-              (onClick)="syncIssues()"
-              [loading]="isSyncing()"
-              styleClass="p-button-outlined">
-            </p-button>
-            <p-button 
-              [label]="'project.external.disconnect' | translate"
-              icon="pi pi-unlink"
-              (onClick)="disconnect()"
-              [loading]="isProcessing()"
-              severity="danger"
-              styleClass="p-button-outlined">
-            </p-button>
-          </div>
-        } @else {
-          <!-- Connection form -->
-          @if (isLoadingAccounts()) {
-            <div class="loading-container">
-              <p-progressSpinner></p-progressSpinner>
-              <span>{{ 'user.externalAccounts.loading' | translate }}</span>
-            </div>
-          } @else if (userAccounts().length === 0) {
-            <p-message 
-              severity="info" 
-              [text]="'project.external.noAccounts' | translate">
-            </p-message>
-            <p-button 
-              [label]="'project.external.manageAccounts' | translate"
-              icon="pi pi-external-link"
-              routerLink="/user/external-accounts"
-              styleClass="p-button-outlined">
-            </p-button>
-          } @else {
-            <form [formGroup]="connectionForm" (ngSubmit)="connect()">
-              <div class="form-field">
-                <label for="userAccountId">{{ 'project.external.account' | translate }}</label>
-                <p-dropdown
-                  id="userAccountId"
-                  formControlName="userAccountId"
-                  [options]="getAccountOptions()"
-                  optionLabel="label"
-                  optionValue="value"
-                  [placeholder]="'project.external.selectAccount' | translate"
-                  styleClass="w-full">
-                  <ng-template let-account pTemplate="item">
-                    <div class="account-option">
-                      <i [class]="getProviderIcon(account.provider)"></i>
-                      <span>{{ account.accountName }} ({{ getProviderDisplayName(account.provider) }})</span>
-                    </div>
-                  </ng-template>
-                </p-dropdown>
-              </div>
-              
-              <div class="form-field">
-                <label for="projectRef">{{ 'project.external.projectRef' | translate }}</label>
-                <input
-                  pInputText
-                  id="projectRef"
-                  formControlName="projectRef"
-                  [placeholder]="getProjectRefPlaceholder()"
-                  class="w-full">
-                <small class="form-help">{{ getProjectRefHelp() }}</small>
-              </div>
-              
-              <div class="form-actions">
-                <p-button
-                  type="submit"
-                  [label]="'project.external.connect' | translate"
-                  icon="pi pi-link"
-                  [disabled]="!connectionForm.valid"
-                  [loading]="isProcessing()">
-                </p-button>
-              </div>
-            </form>
-          }
-        }
-      </div>
-    </p-card>
-  `,
-  styles: [`
-    .external-integration-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    
-    .form-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    
-    .form-field label {
-      font-weight: 600;
-      font-size: 0.875rem;
-    }
-    
-    .form-help {
-      color: #6b7280;
-      font-size: 0.75rem;
-    }
-    
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 1rem;
-    }
-    
-    .connection-actions {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      padding: 2rem;
-    }
-
-    .account-option {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-  `]
+  templateUrl: './external-integration.component.html',
+  styleUrl: './external-integration.component.css'
 })
 export class ExternalIntegrationComponent implements OnInit {
   @Input() projectId!: string;
@@ -221,7 +86,6 @@ export class ExternalIntegrationComponent implements OnInit {
         this.updateConnectionStatus(project);
       },
       error: (error) => {
-        console.warn('Could not load project details for external connection check:', error);
         this.isConnected.set(false);
       }
     });
