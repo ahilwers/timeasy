@@ -30,7 +30,11 @@
     "timeEntries.errorDeletingTimeEntry": "Failed to delete time entry.",
     "timeEntries.errorUpdatingTimeEntry": "Failed to update time entry.",
     "timeEntries.errorAddingTimeEntry": "Failed to add time entry.",
-    "dateRange": "Date Range"
+    "dateRange": "Date Range",
+    "form": {
+      "resolvingIssue": "Resolving issue...",
+      "pending": "pending"
+    }
   },
   "projects": {
     "headline": "Projects",
@@ -52,7 +56,34 @@
     "hourlyRate": "Hourly Rate",
     "timeBudget": "Time Budget",
     "hours": "h",
-    "isActive": "Active"
+    "isActive": "Active",
+    "external": {
+      "title": "External Integration",
+      "provider": "Provider",
+      "selectProvider": "Select a provider",
+      "account": "External Account",
+      "selectAccount": "Select an external account",
+      "noAccounts": "No external accounts configured. Please set up an external account first.",
+      "manageAccounts": "Manage External Accounts",
+      "projectRef": "Project Reference",
+      "projectRefPlaceholder": "Enter project reference",
+      "oauthToken": "OAuth Token",
+      "tokenPlaceholder": "Enter your OAuth token",
+      "tokenHelp": "Generate a personal access token from your provider's settings",
+      "githubHelp": "Format: owner/repository-name (e.g. microsoft/vscode)",
+      "gitlabHelp": "Format: owner/repository-name (e.g. gitlab-org/gitlab)",
+      "jiraHelp": "Format: PROJECT-KEY (e.g. PROJ)",
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "sync": "Sync Issues",
+      "connectedTo": "Connected to {{provider}}: {{projectRef}}",
+      "connectSuccess": "External integration connected successfully",
+      "connectError": "Failed to connect external integration",
+      "disconnectSuccess": "External integration disconnected successfully",
+      "disconnectError": "Failed to disconnect external integration",
+      "syncSuccess": "Issues sync initiated successfully",
+      "syncError": "Failed to sync issues"
+    }
   },
   "weeklyOverview": {
     "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",
@@ -66,10 +97,48 @@
     "in": "in",
     "project": "Project"
   },
+  "user": {
+    "menu": {
+      "externalAccounts": "External Accounts"
+    },
+    "externalAccounts": {
+      "title": "External Accounts",
+      "addAccount": "Add Account",
+      "editAccount": "Edit Account", 
+      "provider": "Provider",
+      "selectProvider": "Select Provider",
+      "accountName": "Account Name",
+      "accountNamePlaceholder": "Enter account name",
+      "oauthToken": "OAuth Token",
+      "tokenPlaceholder": "Enter your OAuth token",
+      "tokenHelp": "Generate a personal access token from your provider's settings",
+      "baseUrl": "Base URL",
+      "gitlabUrlHelp": "Enter your GitLab instance URL",
+      "jiraUrlHelp": "Enter your Jira instance URL",
+      "actions": "Actions",
+      "test": "Test Connection",
+      "edit": "Edit",
+      "delete": "Delete",
+      "loading": "Loading accounts...",
+      "noAccounts": "No External Accounts",
+      "noAccountsDescription": "You haven't configured any external accounts yet. Add an account to get started.",
+      "loadError": "Failed to load external accounts",
+      "saveError": "Failed to save external account",
+      "createSuccess": "External account created successfully",
+      "updateSuccess": "External account updated successfully",
+      "deleteSuccess": "External account deleted successfully",
+      "deleteError": "Failed to delete external account",
+      "testSuccess": "Connection test successful",
+      "testError": "Connection test failed",
+      "deleteConfirmTitle": "Delete External Account",
+      "deleteConfirmMessage": "Are you sure you want to delete the account '{{name}}'?"
+    }
+  },
   "globals": {
     "ok": "OK",
     "cancel": "Cancel",
     "error": "Error",
+    "success": "Success",
     "yes": "Yes",
     "no": "No",
     "confirmation": "Confirmation",

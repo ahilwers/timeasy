@@ -17,6 +17,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/szuecs/gin-glog v1.1.1
 	github.com/xuri/excelize/v2 v2.9.0
+	golang.org/x/oauth2 v0.24.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.4
 )

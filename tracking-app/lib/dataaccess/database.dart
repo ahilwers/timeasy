@@ -102,6 +102,12 @@ class DBProvider {
     ''',
     '''
       ALTER TABLE Projects ADD COLUMN isActive INTEGER DEFAULT 1;
+    ''',
+    '''
+      ALTER TABLE TimeEntries ADD COLUMN externalIssueId TEXT;
+    ''',
+    '''
+      ALTER TABLE TimeEntries ADD COLUMN pendingExternalRef TEXT;
     '''
   ];
 

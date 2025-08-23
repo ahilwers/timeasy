@@ -13,6 +13,7 @@ import {DatePicker} from 'primeng/datepicker';
 import {DateOnly} from '../../../models/date_only';
 import {InputNumber} from 'primeng/inputnumber';
 import {ToggleSwitch} from 'primeng/toggleswitch';
+import {ExternalIntegrationComponent} from '../external-integration/external-integration.component';
 
 @Component({
   selector: 'app-project-form',
@@ -26,7 +27,8 @@ import {ToggleSwitch} from 'primeng/toggleswitch';
     DropdownModule,
     DatePicker,
     InputNumber,
-    ToggleSwitch
+    ToggleSwitch,
+    ExternalIntegrationComponent
   ],
   providers: [MessageService],
   templateUrl: './project-form.component.html',

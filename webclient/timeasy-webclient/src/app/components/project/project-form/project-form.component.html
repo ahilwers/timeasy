@@ -71,3 +71,8 @@
     <p-button type="button" label="{{ 'globals.cancel' | translate }}" severity="secondary" (click)="navigateToProjectList()"></p-button>
   </div>
 </form>
+
+<!-- External Integration Section - Only show for existing projects -->
+@if (!isNew() && projectId) {
+  <app-external-integration [projectId]="projectId"></app-external-integration>
+}

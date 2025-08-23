@@ -8,7 +8,7 @@ import (
 	ginglog "github.com/szuecs/gin-glog"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(ginglog.Logger(3 * time.Second))
@@ -44,6 +44,22 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.POST("/sync/changed", syncHandler.SendLocallyChangedEntries)
 	protectedGroup.GET("/weeklystatistics/:week/:year", weeklyStatisticsHandler.GetWeeklyStatistics)
 	protectedGroup.GET("/currentweeknumber", weeklyStatisticsHandler.GetCurrentWeekNumber)
+
+	// User external accounts endpoints
+	protectedGroup.POST("/user/external-accounts", userExternalAccountHandler.CreateAccount)
+	protectedGroup.GET("/user/external-accounts", userExternalAccountHandler.GetAccounts)
+	protectedGroup.GET("/user/external-accounts/provider/:provider", userExternalAccountHandler.GetAccountsByProvider)
+	protectedGroup.PUT("/user/external-accounts/:accountId", userExternalAccountHandler.UpdateAccount)
+	protectedGroup.DELETE("/user/external-accounts/:accountId", userExternalAccountHandler.DeleteAccount)
+	protectedGroup.POST("/user/external-accounts/:accountId/test", userExternalAccountHandler.TestAccount)
+
+	// External integration endpoints
+	protectedGroup.POST("/projects/:id/external/connect", externalIntegrationHandler.ConnectProjectToAccount)
+	protectedGroup.DELETE("/projects/:id/external/disconnect", externalIntegrationHandler.DisconnectProject)
+	protectedGroup.GET("/projects/:id/descriptions/suggest", externalIntegrationHandler.GetDescriptionSuggestions)
+	protectedGroup.GET("/projects/:id/issues/resolve", externalIntegrationHandler.ResolveIssue)
+	protectedGroup.POST("/projects/:id/external/sync", externalIntegrationHandler.SyncProjectIssues)
+	protectedGroup.POST("/external/resolve-pending", externalIntegrationHandler.ResolvePendingReferences)
 
 	return router
 }

@@ -42,6 +42,15 @@
                   <span>{{ userProfile.username }}</span>
                   <span>{{ userProfile.firstName }} {{ userProfile.lastName }}</span>
                 </div>
+                <div class="user-menu-actions">
+                  <p-button 
+                    icon="pi pi-link" 
+                    [text]="true" 
+                    label="{{ 'user.menu.externalAccounts' | translate }}"
+                    routerLink="/user/external-accounts"
+                    styleClass="p-button-sm"
+                    (click)="op.hide()"/>
+                </div>
               }
           <div>
             @if (!authenticated) {

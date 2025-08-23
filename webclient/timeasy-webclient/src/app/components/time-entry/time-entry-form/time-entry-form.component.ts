@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TimeEntry } from '../../../models/timeentry.model';
 import { TimeEntryService } from '../../../services/time-entry.service';
+import { ExternalIntegrationService } from '../../../services/external-integration.service';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Toast } from 'primeng/toast';
@@ -36,6 +37,7 @@ export class TimeEntryFormComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly timeEntryService = inject(TimeEntryService);
   private readonly projectService = inject(ProjectService);
+  private readonly externalService = inject(ExternalIntegrationService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
 
@@ -50,6 +52,10 @@ export class TimeEntryFormComponent implements OnInit {
   project = this.projectService.project();
   selectedProject = this.projectService.selectedProject();
   currentProjectData: Project | null = null;
+  
+  // Autocomplete for descriptions
+  descriptionSuggestions: string[] = [];
+  filteredSuggestions: string[] = [];
 
   constructor() {
     this.timeEntryService.resetState();
@@ -147,6 +153,49 @@ export class TimeEntryFormComponent implements OnInit {
       time.getSeconds(),
       time.getMilliseconds()
     )
+  }
+
+  // Manual autocomplete for description field
+  onDescriptionInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const query = input.value;
+    
+    console.log('DEBUG: onDescriptionInput called with query:', query);
+    
+    if (query.length < 2) {
+      console.log('DEBUG: Query too short, clearing suggestions');
+      this.filteredSuggestions = [];
+      return;
+    }
+
+    const selectedProject = this.timeEntryForm.get('project')?.value;
+    console.log('DEBUG: Selected project:', selectedProject);
+    
+    if (!selectedProject || !selectedProject.id) {
+      console.log('DEBUG: No project selected, clearing suggestions');
+      this.filteredSuggestions = [];
+      return;
+    }
+
+    console.log('DEBUG: Making API call for suggestions...');
+    // Get suggestions from external integration service
+    this.externalService.getDescriptionSuggestions(selectedProject.id, query, 10).subscribe({
+      next: (response) => {
+        console.log('DEBUG: API response received:', response);
+        this.filteredSuggestions = response.suggestions || [];
+        console.log('DEBUG: filteredSuggestions set to:', this.filteredSuggestions);
+        console.log('DEBUG: filteredSuggestions.length:', this.filteredSuggestions.length);
+      },
+      error: (error) => {
+        console.error('DEBUG: API error:', error);
+        this.filteredSuggestions = [];
+      }
+    });
+  }
+
+  selectSuggestion(suggestion: string) {
+    this.timeEntryForm.get('description')?.setValue(suggestion);
+    this.filteredSuggestions = [];
   }
 
   navigateToTimeEntryList() {

@@ -10,6 +10,8 @@ class TimeEntry {
   static final String createdColumn = "created";
   static final String updatedColumn = "updated";
   static final String deletedColumn = "deleted";
+  static final String externalIssueIdColumn = "externalIssueId";
+  static final String pendingExternalRefColumn = "pendingExternalRef";
 
   late String id;
   DateTime startTime = DateTime.now().toUtc();
@@ -19,6 +21,8 @@ class TimeEntry {
   DateTime created = DateTime.now().toUtc();
   DateTime updated = DateTime.now().toUtc();
   bool deleted = false;
+  String? externalIssueId;
+  String? pendingExternalRef;
 
   TimeEntry(String forProjectId) {
     var uuid = new Uuid();
@@ -47,6 +51,8 @@ class TimeEntry {
         new DateTime.fromMillisecondsSinceEpoch(updatedMillis, isUtc: true);
     int deletedInt = map[deletedColumn];
     deletedInt == 0 ? deleted = false : deleted = true;
+    externalIssueId = map[externalIssueIdColumn];
+    pendingExternalRef = map[pendingExternalRefColumn];
   }
 
   Map<String, dynamic> toMap() {
@@ -59,6 +65,8 @@ class TimeEntry {
       createdColumn: created.millisecondsSinceEpoch,
       updatedColumn: updated.millisecondsSinceEpoch,
       deletedColumn: deleted ? 1 : 0,
+      externalIssueIdColumn: externalIssueId,
+      pendingExternalRefColumn: pendingExternalRef,
     };
     if (endTime != null) {
       map[endTimeColumn] = endTime?.millisecondsSinceEpoch;

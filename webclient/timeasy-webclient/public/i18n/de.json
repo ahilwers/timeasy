@@ -30,7 +30,11 @@
     "timeEntries.errorDeletingTimeEntry": "Der Zeiteintrag konnte nicht gelöscht werden.",
     "timeEntries.errorUpdatingTimeEntry": "Der Zeiteintrag konnte nicht gespeichert werden.",
     "timeEntries.errorAddingTimeEntry": "Der Zeiteintrag konnte nicht erstellt werden.",
-    "dateRange": "Zeitraum"
+    "dateRange": "Zeitraum",
+    "form": {
+      "resolvingIssue": "Issue wird aufgelöst...",
+      "pending": "ausstehend"
+    }
   },
   "projects": {
     "headline": "Projekte",
@@ -52,7 +56,34 @@
     "hourlyRate": "Stundensatz",
     "timeBudget": "Zeitbudget",
     "hours": "Std",
-    "isActive": "Aktiv"
+    "isActive": "Aktiv",
+    "external": {
+      "title": "Externe Integration",
+      "provider": "Anbieter",
+      "selectProvider": "Anbieter auswählen",
+      "account": "Externes Konto",
+      "selectAccount": "Externes Konto auswählen",
+      "noAccounts": "Keine externen Konten konfiguriert. Bitte richte zuerst ein externes Konto ein.",
+      "manageAccounts": "Externe Konten verwalten",
+      "projectRef": "Projekt-Referenz",
+      "projectRefPlaceholder": "Projekt-Referenz eingeben",
+      "oauthToken": "OAuth Token",
+      "tokenPlaceholder": "OAuth Token eingeben",
+      "tokenHelp": "Erstelle ein Personal Access Token in deinen Anbieter-Einstellungen",
+      "githubHelp": "Format: owner/repository-name (z.B. microsoft/vscode)",
+      "gitlabHelp": "Format: owner/repository-name (z.B. gitlab-org/gitlab)",
+      "jiraHelp": "Format: PROJEKT-SCHLÜSSEL (z.B. PROJ)",
+      "connect": "Verbinden",
+      "disconnect": "Trennen",
+      "sync": "Issues synchronisieren",
+      "connectedTo": "Verbunden mit {{provider}}: {{projectRef}}",
+      "connectSuccess": "Externe Integration erfolgreich verbunden",
+      "connectError": "Externe Integration konnte nicht verbunden werden",
+      "disconnectSuccess": "Externe Integration erfolgreich getrennt",
+      "disconnectError": "Externe Integration konnte nicht getrennt werden",
+      "syncSuccess": "Issue-Synchronisation erfolgreich gestartet",
+      "syncError": "Issue-Synchronisation fehlgeschlagen"
+    }
   },
   "weeklyOverview": {
     "errorLoadingWeeklyStatistics": "Die Wochenuebersicht konnte nicht geladen werden.",
@@ -66,10 +97,48 @@
     "in": "in",
     "project": "Projekt"
   },
+  "user": {
+    "menu": {
+      "externalAccounts": "Externe Konten"
+    },
+    "externalAccounts": {
+      "title": "Externe Konten",
+      "addAccount": "Konto hinzufügen",
+      "editAccount": "Konto bearbeiten",
+      "provider": "Anbieter",
+      "selectProvider": "Anbieter auswählen",
+      "accountName": "Kontoname",
+      "accountNamePlaceholder": "Kontoname eingeben",
+      "oauthToken": "OAuth Token",
+      "tokenPlaceholder": "OAuth Token eingeben",
+      "tokenHelp": "Erstelle ein Personal Access Token in deinen Anbieter-Einstellungen",
+      "baseUrl": "Basis-URL",
+      "gitlabUrlHelp": "GitLab Instanz URL eingeben",
+      "jiraUrlHelp": "Jira Instanz URL eingeben",
+      "actions": "Aktionen",
+      "test": "Verbindung testen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "loading": "Konten werden geladen...",
+      "noAccounts": "Keine externen Konten",
+      "noAccountsDescription": "Du hast noch keine externen Konten konfiguriert. Füge ein Konto hinzu, um zu beginnen.",
+      "loadError": "Externe Konten konnten nicht geladen werden",
+      "saveError": "Externes Konto konnte nicht gespeichert werden",
+      "createSuccess": "Externes Konto erfolgreich erstellt",
+      "updateSuccess": "Externes Konto erfolgreich aktualisiert",
+      "deleteSuccess": "Externes Konto erfolgreich gelöscht",
+      "deleteError": "Externes Konto konnte nicht gelöscht werden",
+      "testSuccess": "Verbindungstest erfolgreich",
+      "testError": "Verbindungstest fehlgeschlagen",
+      "deleteConfirmTitle": "Externes Konto löschen",
+      "deleteConfirmMessage": "Möchtest du das Konto '{{name}}' wirklich löschen?"
+    }
+  },
   "globals": {
     "ok": "OK",
     "cancel": "Abbrechen",
     "error": "Fehler",
+    "success": "Erfolg",
     "yes": "Ja",
     "no": "Nein",
     "confirmation": "Bestätigung",

@@ -3,15 +3,18 @@ import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/sync_data_retriever.dart';
 import 'package:timeasy/services/sync_data_sender.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
+import 'package:timeasy/services/external_integration_service.dart';
 import 'package:timeasy/tools/retrieve_changes_result.dart';
 
 class SynchronizationService {
   late SynchronizationApiService _apiService;
   final SettingsRepository _settingsRepository = new SettingsRepository();
+  final ExternalIntegrationService _externalService = ExternalIntegrationService();
 
   SynchronizationService(String token) {
     _apiService = SynchronizationApiService(
         baseUrl: Environment.apiBaseUrl, token: token);
+    _externalService.initialize(Environment.apiBaseUrl, token);
   }
 
   Future<RetrieveChangesResult> synchronize() async {
@@ -27,6 +30,16 @@ class SynchronizationService {
         settings.latestRemoteChangelogId, settings.clientId);
 
     await _updateLastSyncTimeSettings();
+    
+    // Try to resolve pending external references
+    try {
+      await _externalService.resolvePendingReferences();
+      OfflineIssueResolutionService().clearPendingReferences();
+    } catch (e) {
+      // Log error but don't fail the sync
+      print('Failed to resolve pending external references: $e');
+    }
+    
     return result;
   }
 
@@ -41,6 +54,7 @@ class SynchronizationService {
 
   void updateToken(String token) {
     _apiService.updateToken(token);
+    _externalService.initialize(Environment.apiBaseUrl, token);
   }
 
   Future<void> _updateLastSyncTimeSettings() async {

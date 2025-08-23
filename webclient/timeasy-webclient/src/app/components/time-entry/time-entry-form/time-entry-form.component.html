@@ -40,9 +40,24 @@
       </p-datepicker>
     </div>
   </div>
-  <div class="form-field">
+  <div class="form-field description-field">
     <label for="description">{{ 'timeEntries.description' | translate }}</label>
-    <input pInputText class="input-text" id="description" formControlName="description" />
+    <input 
+      pInputText
+      id="description"
+      formControlName="description"
+      (input)="onDescriptionInput($event)"
+      placeholder="Enter description or reference issues like #123"
+      class="description-input" />
+    @if (filteredSuggestions && filteredSuggestions.length > 0) {
+      <div class="suggestions-dropdown">
+        @for (suggestion of filteredSuggestions; track suggestion) {
+          <div class="suggestion-item" (click)="selectSuggestion(suggestion)">
+            {{ suggestion }}
+          </div>
+        }
+      </div>
+    }
   </div>
   <div class="button-container">
     <p-button type="submit" label="{{ 'globals.ok' | translate }}" severity="primary"></p-button>
