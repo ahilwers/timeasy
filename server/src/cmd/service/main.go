@@ -89,6 +89,6 @@ func main() {
 	)
 	externalIntegrationHandler := rest.NewExternalIntegrationHandler(tokenVerifier, externalIntegrationUsecase)
 
-	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, *externalIntegrationHandler, *userExternalAccountHandler)
+	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
 	router.Run()
 }

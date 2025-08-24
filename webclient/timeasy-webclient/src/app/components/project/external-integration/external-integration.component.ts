@@ -19,7 +19,7 @@ import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { Toast } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
 
 @Component({
   selector: 'app-external-integration',
@@ -35,7 +35,7 @@ import { Toast } from 'primeng/toast';
     Card,
     Message,
     ProgressSpinner,
-    Toast
+    ToastModule
   ],
   providers: [MessageService],
   templateUrl: './external-integration.component.html',

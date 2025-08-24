@@ -10,20 +10,29 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type UserExternalAccountHandler struct {
+type UserExternalAccountHandler interface {
+	CreateAccount(context *gin.Context)
+	GetAccounts(context *gin.Context)
+	GetAccountsByProvider(context *gin.Context)
+	UpdateAccount(context *gin.Context)
+	DeleteAccount(context *gin.Context)
+	TestAccount(context *gin.Context)
+}
+
+type userExternalAccountHandler struct {
 	tokenVerifier TokenVerifier
 	usecase       *usecase.UserExternalAccountUseCase
 }
 
-func NewUserExternalAccountHandler(tokenVerifier TokenVerifier, usecase *usecase.UserExternalAccountUseCase) *UserExternalAccountHandler {
-	return &UserExternalAccountHandler{
+func NewUserExternalAccountHandler(tokenVerifier TokenVerifier, usecase *usecase.UserExternalAccountUseCase) UserExternalAccountHandler {
+	return &userExternalAccountHandler{
 		tokenVerifier: tokenVerifier,
 		usecase:       usecase,
 	}
 }
 
 // CreateAccount creates a new external account for the user
-func (h *UserExternalAccountHandler) CreateAccount(c *gin.Context) {
+func (h *userExternalAccountHandler) CreateAccount(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -52,7 +61,7 @@ func (h *UserExternalAccountHandler) CreateAccount(c *gin.Context) {
 }
 
 // UpdateAccount updates an existing external account
-func (h *UserExternalAccountHandler) UpdateAccount(c *gin.Context) {
+func (h *userExternalAccountHandler) UpdateAccount(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -88,7 +97,7 @@ func (h *UserExternalAccountHandler) UpdateAccount(c *gin.Context) {
 }
 
 // DeleteAccount deletes an external account
-func (h *UserExternalAccountHandler) DeleteAccount(c *gin.Context) {
+func (h *userExternalAccountHandler) DeleteAccount(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -117,7 +126,7 @@ func (h *UserExternalAccountHandler) DeleteAccount(c *gin.Context) {
 }
 
 // GetAccounts returns all external accounts for the user
-func (h *UserExternalAccountHandler) GetAccounts(c *gin.Context) {
+func (h *userExternalAccountHandler) GetAccounts(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -140,7 +149,7 @@ func (h *UserExternalAccountHandler) GetAccounts(c *gin.Context) {
 }
 
 // GetAccountsByProvider returns external accounts for a specific provider
-func (h *UserExternalAccountHandler) GetAccountsByProvider(c *gin.Context) {
+func (h *userExternalAccountHandler) GetAccountsByProvider(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -174,7 +183,7 @@ func (h *UserExternalAccountHandler) GetAccountsByProvider(c *gin.Context) {
 }
 
 // TestAccount tests the connection to an external account
-func (h *UserExternalAccountHandler) TestAccount(c *gin.Context) {
+func (h *userExternalAccountHandler) TestAccount(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})

@@ -11,7 +11,16 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type ExternalIntegrationHandler struct {
+type ExternalIntegrationHandler interface {
+	ConnectProjectToAccount(context *gin.Context)
+	DisconnectProject(context *gin.Context)
+	SyncProjectIssues(context *gin.Context)
+	GetDescriptionSuggestions(context *gin.Context)
+	ResolveIssue(context *gin.Context)
+	ResolvePendingReferences(context *gin.Context)
+}
+
+type externalIntegrationHandler struct {
 	tokenVerifier TokenVerifier
 	usecase       *usecase.ExternalIntegrationUseCase
 }
@@ -25,15 +34,15 @@ type DescriptionSuggestionsResponse struct {
 	Suggestions []string `json:"suggestions"`
 }
 
-func NewExternalIntegrationHandler(tokenVerifier TokenVerifier, usecase *usecase.ExternalIntegrationUseCase) *ExternalIntegrationHandler {
-	return &ExternalIntegrationHandler{
+func NewExternalIntegrationHandler(tokenVerifier TokenVerifier, usecase *usecase.ExternalIntegrationUseCase) ExternalIntegrationHandler {
+	return &externalIntegrationHandler{
 		tokenVerifier: tokenVerifier,
 		usecase:       usecase,
 	}
 }
 
 // ConnectProjectToAccount connects a project to a user's external account
-func (h *ExternalIntegrationHandler) ConnectProjectToAccount(c *gin.Context) {
+func (h *externalIntegrationHandler) ConnectProjectToAccount(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -96,7 +105,7 @@ func (h *ExternalIntegrationHandler) ConnectProjectToAccount(c *gin.Context) {
 }
 
 // DisconnectProject disconnects a project from external provider
-func (h *ExternalIntegrationHandler) DisconnectProject(c *gin.Context) {
+func (h *externalIntegrationHandler) DisconnectProject(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -125,7 +134,7 @@ func (h *ExternalIntegrationHandler) DisconnectProject(c *gin.Context) {
 }
 
 // GetDescriptionSuggestions returns autocomplete suggestions for time entry descriptions
-func (h *ExternalIntegrationHandler) GetDescriptionSuggestions(c *gin.Context) {
+func (h *externalIntegrationHandler) GetDescriptionSuggestions(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -170,7 +179,7 @@ func (h *ExternalIntegrationHandler) GetDescriptionSuggestions(c *gin.Context) {
 }
 
 // ResolveIssue attempts to resolve an issue reference
-func (h *ExternalIntegrationHandler) ResolveIssue(c *gin.Context) {
+func (h *externalIntegrationHandler) ResolveIssue(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -211,7 +220,7 @@ func (h *ExternalIntegrationHandler) ResolveIssue(c *gin.Context) {
 }
 
 // SyncProjectIssues manually triggers a sync for project issues
-func (h *ExternalIntegrationHandler) SyncProjectIssues(c *gin.Context) {
+func (h *externalIntegrationHandler) SyncProjectIssues(c *gin.Context) {
 	projectIDStr := c.Param("id")
 	projectID, err := uuid.FromString(projectIDStr)
 	if err != nil {
@@ -252,7 +261,7 @@ func (h *ExternalIntegrationHandler) SyncProjectIssues(c *gin.Context) {
 }
 
 // ResolvePendingReferences resolves pending external references for a user
-func (h *ExternalIntegrationHandler) ResolvePendingReferences(c *gin.Context) {
+func (h *externalIntegrationHandler) ResolvePendingReferences(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})

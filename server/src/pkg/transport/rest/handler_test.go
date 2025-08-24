@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 	"timeasy-server/pkg/database/postgresql"
+	"timeasy-server/pkg/external"
 	"timeasy-server/pkg/test"
 	"timeasy-server/pkg/usecase"
 
@@ -105,14 +106,39 @@ func (t *HandlerTest) initUsecases() {
 
 func (t *HandlerTest) initHandlers() {
 	authMiddleware := NewJwtAuthMiddleware(t.tokenVerifier)
-	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase)
+	
+	// Create external connection repository for project handler
+	externalConnectionRepo := postgresql.NewPostgreSQLExternalConnectionRepository(test.Database.DB)
+	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase, externalConnectionRepo)
+	
 	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
 	t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
 	t.WeeklyStatisticsHandler = NewWeeklyStatisticsHandler(t.tokenVerifier, t.WeeklyStatisticsUsecase, t.ProjectUsecase)
 	t.TimeEntryExportHandler = NewTimeEntryExportHandler(t.tokenVerifier, t.TimeEntryUsecase)
+	
+	// Create external integration handlers
+	externalIssueRepo := postgresql.NewPostgreSQLExternalIssueRepository(test.Database.DB)
+	userExternalAccountRepo := postgresql.NewPostgreSQLUserExternalAccountRepository(test.Database.DB)
+	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
+	projectRepo := postgresql.NewPostgreSQLProjectRepository(test.Database.DB, postgresql.NewPostgreSQLTeamRepository(test.Database.DB))
+	
+	// Create provider factory (can be nil for tests)
+	providerFactory := &external.ProviderFactory{}
+	
+	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(
+		externalConnectionRepo, 
+		externalIssueRepo, 
+		userExternalAccountRepo,
+		timeEntryRepo,
+		projectRepo,
+		providerFactory)
+	userExternalAccountUsecase := usecase.NewUserExternalAccountUseCase(userExternalAccountRepo, providerFactory)
+	
+	externalIntegrationHandler := NewExternalIntegrationHandler(t.tokenVerifier, externalIntegrationUsecase)
+	userExternalAccountHandler := NewUserExternalAccountHandler(t.tokenVerifier, userExternalAccountUsecase)
 
-	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler)
+	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {
