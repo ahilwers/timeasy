@@ -1,0 +1,25 @@
+<div class="description-field">
+  <input 
+    pInputText
+    [value]="value"
+    (input)="onInput($event)"
+    (keydown)="onKeydown($event)"
+    (blur)="onTouched()"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    class="description-input"
+    autocomplete="off" />
+  
+  @if (filteredSuggestions && filteredSuggestions.length > 0) {
+    <div class="suggestions-dropdown">
+      @for (suggestion of filteredSuggestions; track suggestion; let i = $index) {
+        <div class="suggestion-item" 
+             [class.highlighted]="highlightedIndex === i"
+             (click)="selectSuggestion(suggestion)"
+             (mouseenter)="highlightedIndex = i">
+          {{ suggestion }}
+        </div>
+      }
+    </div>
+  }
+</div>

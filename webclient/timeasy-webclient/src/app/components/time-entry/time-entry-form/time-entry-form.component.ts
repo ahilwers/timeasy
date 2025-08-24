@@ -13,18 +13,19 @@ import { DatePicker } from 'primeng/datepicker';
 import { ProjectService } from '../../../services/project.service';
 import { Select } from 'primeng/select';
 import { Project } from '../../../models/project.model';
+import { DescriptionAutocompleteComponent } from '../../shared/description-autocomplete/description-autocomplete.component';
 
 @Component({
   selector: 'app-time-entry-form',
   standalone: true,
   imports: [
     Button,
-    InputText,
     ReactiveFormsModule,
     Toast,
     TranslatePipe,
     DatePicker,
-    Select
+    Select,
+    DescriptionAutocompleteComponent
   ],
   providers: [MessageService],
   templateUrl: './time-entry-form.component.html',
@@ -52,10 +53,6 @@ export class TimeEntryFormComponent implements OnInit {
   project = this.projectService.project();
   selectedProject = this.projectService.selectedProject();
   currentProjectData: Project | null = null;
-  
-  // Autocomplete for descriptions
-  descriptionSuggestions: string[] = [];
-  filteredSuggestions: string[] = [];
 
   constructor() {
     this.timeEntryService.resetState();
@@ -155,38 +152,6 @@ export class TimeEntryFormComponent implements OnInit {
     )
   }
 
-  // Manual autocomplete for description field
-  onDescriptionInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const query = input.value;
-    
-    if (query.length < 2) {
-      this.filteredSuggestions = [];
-      return;
-    }
-
-    const selectedProject = this.timeEntryForm.get('project')?.value;
-    
-    if (!selectedProject || !selectedProject.id) {
-      this.filteredSuggestions = [];
-      return;
-    }
-
-    // Get suggestions from external integration service
-    this.externalService.getDescriptionSuggestions(selectedProject.id, query, 10).subscribe({
-      next: (response) => {
-        this.filteredSuggestions = response.suggestions || [];
-      },
-      error: (error) => {
-        this.filteredSuggestions = [];
-      }
-    });
-  }
-
-  selectSuggestion(suggestion: string) {
-    this.timeEntryForm.get('description')?.setValue(suggestion);
-    this.filteredSuggestions = [];
-  }
 
   navigateToTimeEntryList() {
     this.router.navigate([`/timeentries`]);

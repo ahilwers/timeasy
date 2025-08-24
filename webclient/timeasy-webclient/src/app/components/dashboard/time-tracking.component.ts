@@ -8,6 +8,7 @@ import { TimeEntry } from '../../models/timeentry.model';
 import { ProjectService } from '../../services/project.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { TimerComponent } from './timer.component';
+import { DescriptionAutocompleteComponent } from '../shared/description-autocomplete/description-autocomplete.component';
 
 @Component({
     selector: 'app-time-tracking',
@@ -15,12 +16,12 @@ import { TimerComponent } from './timer.component';
     templateUrl: './time-tracking.component.html',
     styleUrls: ['./time-tracking.component.css'],
     imports: [
-        InputText,
         Button,
         Select,
         TranslatePipe,
         TimerComponent,
-        FormsModule
+        FormsModule,
+        DescriptionAutocompleteComponent
     ]
 })
 
@@ -56,8 +57,9 @@ export class TimeTrackingComponent implements OnInit {
             }
         });
         effect(() => {
-            if (this.project()) {
-                this.selectedProject = this.project();
+            const projectData = this.project();
+            if (projectData && !this.selectedProject) {
+                this.selectedProject = projectData;
             }
         });
         effect(() => {
