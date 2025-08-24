@@ -106,13 +106,23 @@
 
         <div class="form-field">
           <label for="oauthToken">{{ 'user.externalAccounts.oauthToken' | translate }}</label>
-          <input
-            pInputText
-            id="oauthToken"
-            type="password"
-            formControlName="oauthToken"
-            [placeholder]="'user.externalAccounts.tokenPlaceholder' | translate"
-            class="w-full">
+          <div class="token-input-group">
+            <input
+              pInputText
+              id="oauthToken"
+              type="password"
+              formControlName="oauthToken"
+              [placeholder]="'user.externalAccounts.tokenPlaceholder' | translate"
+              class="w-full">
+            <p-button
+              icon="pi pi-question-circle"
+              styleClass="p-button-text p-button-sm"
+              [pTooltip]="'user.externalAccounts.tokenHelpButton' | translate"
+              tooltipPosition="top"
+              (onClick)="showTokenHelp()"
+              [disabled]="!accountForm.get('provider')?.value">
+            </p-button>
+          </div>
           <small class="form-help">{{ 'user.externalAccounts.tokenHelp' | translate }}</small>
         </div>
 
@@ -151,4 +161,10 @@
 
   <p-confirmDialog></p-confirmDialog>
   <p-toast position="top-right"></p-toast>
+
+  <!-- Token Documentation Component -->
+  <app-token-documentation
+    [(visible)]="showTokenDocumentation"
+    [provider]="tokenDocumentationProvider">
+  </app-token-documentation>
 </div>

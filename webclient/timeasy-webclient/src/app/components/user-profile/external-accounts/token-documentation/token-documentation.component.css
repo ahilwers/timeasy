@@ -1,0 +1,72 @@
+.documentation-content {
+  line-height: 1.6;
+}
+
+.provider-section {
+  margin-bottom: 1rem;
+}
+
+.steps-section h3,
+.permissions-section h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.steps-list {
+  margin: 0 0 1rem 1.5rem;
+  padding: 0;
+}
+
+.steps-list li {
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+.steps-list li:last-child {
+  margin-bottom: 0;
+}
+
+.permissions-list {
+  margin: 0 0 1rem 1.5rem;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.permissions-list li {
+  margin-bottom: 0.5rem;
+  padding-left: 0.25rem;
+}
+
+.permissions-list li:last-child {
+  margin-bottom: 0;
+}
+
+.security-note {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  background-color: var(--orange-50);
+  border-left: 4px solid var(--orange-500);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Dark mode support */
+:host-context(.dark-mode) .security-note {
+  background-color: var(--orange-900);
+  color: var(--orange-100);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .steps-list,
+  .permissions-list {
+    margin-left: 1rem;
+  }
+  
+  .security-note {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+}

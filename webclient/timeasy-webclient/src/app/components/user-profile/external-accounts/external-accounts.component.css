@@ -58,6 +58,12 @@
   font-size: 0.875rem;
 }
 
+.token-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .form-help {
   color: #6b7280;
   font-size: 0.75rem;

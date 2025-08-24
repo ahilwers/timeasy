@@ -1,0 +1,103 @@
+<p-dialog
+  [(visible)]="visible"
+  [header]="getDialogTitle() | translate"
+  [modal]="true"
+  [style]="{ width: '600px', maxHeight: '80vh' }"
+  [closable]="true"
+  (onHide)="onDialogHide()">
+
+  <div class="documentation-content">
+    
+    <!-- GitHub Documentation -->
+    @if (provider === 'github') {
+      <div class="provider-section">
+        <div class="steps-section">
+          <h3>{{ 'tokenDocumentation.github.stepsTitle' | translate }}</h3>
+          <ol class="steps-list">
+            @for (step of getSteps(); track $index) {
+              <li [innerHTML]="step | translate"></li>
+            }
+          </ol>
+        </div>
+
+        <p-divider></p-divider>
+
+        <div class="permissions-section">
+          <h3>{{ 'tokenDocumentation.github.permissionsTitle' | translate }}</h3>
+          <ul class="permissions-list">
+            @for (permission of getPermissionsList(); track $index) {
+              <li [innerHTML]="permission | translate"></li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+
+    <!-- GitLab Documentation -->
+    @if (provider === 'gitlab') {
+      <div class="provider-section">
+        <div class="steps-section">
+          <h3>{{ 'tokenDocumentation.gitlab.stepsTitle' | translate }}</h3>
+          <ol class="steps-list">
+            @for (step of getSteps(); track $index) {
+              <li [innerHTML]="step | translate"></li>
+            }
+          </ol>
+        </div>
+
+        <p-divider></p-divider>
+
+        <div class="permissions-section">
+          <h3>{{ 'tokenDocumentation.gitlab.permissionsTitle' | translate }}</h3>
+          <ul class="permissions-list">
+            @for (permission of getPermissionsList(); track $index) {
+              <li [innerHTML]="permission | translate"></li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+
+    <!-- Jira Documentation -->
+    @if (provider === 'jira') {
+      <div class="provider-section">
+        <div class="steps-section">
+          <h3>{{ 'tokenDocumentation.jira.stepsTitle' | translate }}</h3>
+          <ol class="steps-list">
+            @for (step of getSteps(); track $index) {
+              <li [innerHTML]="step | translate"></li>
+            }
+          </ol>
+        </div>
+
+        <p-divider></p-divider>
+
+        <div class="permissions-section">
+          <h3>{{ 'tokenDocumentation.jira.permissionsTitle' | translate }}</h3>
+          <ul class="permissions-list">
+            @for (permission of getPermissionsList(); track $index) {
+              <li [innerHTML]="permission | translate"></li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+
+    <p-divider></p-divider>
+
+    <div class="security-note">
+      <i class="pi pi-shield" style="color: var(--orange-500); margin-right: 0.5rem;"></i>
+      <span [innerHTML]="'tokenDocumentation.securityNote' | translate"></span>
+    </div>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      [label]="'globals.close' | translate"
+      icon="pi pi-times"
+      (onClick)="onDialogHide()">
+    </p-button>
+  </ng-template>
+
+</p-dialog>

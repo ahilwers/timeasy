@@ -138,12 +138,63 @@
       "gitlabAuthFailed": "GitLab-Authentifizierung fehlgeschlagen: Ungültiges Token oder unzureichende Berechtigungen",
       "jiraAuthFailed": "Jira-Authentifizierung fehlgeschlagen: Ungültiges Token oder unzureichende Berechtigungen",
       "deleteConfirmTitle": "Externes Konto löschen",
-      "deleteConfirmMessage": "Möchtest du das Konto '{{name}}' wirklich löschen?"
+      "deleteConfirmMessage": "Möchtest du das Konto '{{name}}' wirklich löschen?",
+      "tokenHelpButton": "Wie erstelle ich ein Token"
+    }
+  },
+  "tokenDocumentation": {
+    "securityNote": "Wichtig: Halte deine Tokens sicher und teile sie niemals öffentlich. Tokens gewähren Zugriff auf deine Konten und sollten wie Passwörter behandelt werden.",
+    "github": {
+      "title": "So erstellst du ein GitHub Personal Access Token",
+      "stepsTitle": "Schritte zum Erstellen des Tokens:",
+      "step1": "Gehe zu <a href='https://github.com/settings/tokens' target='_blank' rel='noopener'>GitHub Einstellungen → Developer settings → Personal access tokens</a>",
+      "step2": "Klicke auf <strong>\"Generate new token\"</strong> und wähle <strong>\"Generate new token (classic)\"</strong>",
+      "step3": "Gib eine aussagekräftige <strong>Notiz</strong> ein (z.B. \"Timeasy Integration\")",
+      "step4": "Setze ein <strong>Ablaufdatum</strong> oder wähle \"No expiration\" (aus Sicherheitsgründen nicht empfohlen)",
+      "step5": "Wähle die erforderlichen <strong>Berechtigungen</strong> (siehe Berechtigungen unten)",
+      "step6": "Klicke auf <strong>\"Generate token\"</strong> am Ende der Seite",
+      "step7": "<strong>Wichtig:</strong> Kopiere das Token sofort - es wird nicht nochmal angezeigt!",
+      "step8": "Füge das Token in das OAuth Token Feld in Timeasy ein",
+      "permissionsTitle": "Erforderliche Berechtigungen (Scopes):",
+      "permission1": "<strong>repo</strong> - Vollzugriff auf private Repositories (um auf Issues zuzugreifen und Kommentare zu erstellen)",
+      "permission2": "<strong>read:user</strong> - Benutzerprofilinformationen lesen",
+      "permission3": "<strong>user:email</strong> - Auf Benutzer-E-Mail-Adressen zugreifen"
+    },
+    "gitlab": {
+      "title": "So erstellst du ein GitLab Personal Access Token",
+      "stepsTitle": "Schritte zum Erstellen des Tokens:",
+      "step1": "Gehe zu deiner GitLab-Instanz (z.B. gitlab.com) und melde dich an",
+      "step2": "Klicke auf dein <strong>Profilbild</strong> → <strong>Preferences</strong>",
+      "step3": "Klicke in der linken Seitenleiste auf <strong>Access Tokens</strong>",
+      "step4": "Gib einen <strong>Token-Namen</strong> ein (z.B. \"Timeasy Integration\")",
+      "step5": "Setze ein <strong>Ablaufdatum</strong> oder lasse es für unbegrenzte Gültigkeit leer",
+      "step6": "Wähle die erforderlichen <strong>Berechtigungen</strong> (siehe Berechtigungen unten)",
+      "step7": "Klicke auf <strong>\"Create personal access token\"</strong>",
+      "step8": "<strong>Wichtig:</strong> Kopiere das Token sofort - es wird nicht nochmal angezeigt!",
+      "permissionsTitle": "Erforderliche Berechtigungen (Scopes):",
+      "permission1": "<strong>api</strong> - Vollständiger Lese-/Schreibzugriff auf die API",
+      "permission2": "<strong>read_user</strong> - Benutzerprofilinformationen lesen",
+      "permission3": "<strong>read_repository</strong> - Repository-Informationen und Issues lesen"
+    },
+    "jira": {
+      "title": "So erstellst du ein Jira API Token",
+      "stepsTitle": "Schritte zum Erstellen des Tokens:",
+      "step1": "Gehe zur <a href='https://id.atlassian.com/manage-profile/security/api-tokens' target='_blank' rel='noopener'>Atlassian Kontoverwaltung</a>",
+      "step2": "Melde dich mit deinem Atlassian-Konto an",
+      "step3": "Klicke auf <strong>\"Create API token\"</strong>",
+      "step4": "Gib eine <strong>Bezeichnung</strong> für dein Token ein (z.B. \"Timeasy Integration\")",
+      "step5": "Klicke auf <strong>\"Create\"</strong>",
+      "step6": "<strong>Wichtig:</strong> Kopiere das Token sofort - es wird nicht nochmal angezeigt!",
+      "step7": "Verwende in Timeasy deine <strong>E-Mail-Adresse</strong> als Kontoname und füge das Token in das OAuth Token Feld ein",
+      "permissionsTitle": "Erforderliche Berechtigungen:",
+      "permission1": "<strong>Jira API-Zugriff</strong> - Das Token gewährt Zugriff auf Jira-Projekte und Issues, die du einsehen darfst",
+      "permission2": "<strong>Projektzugriff</strong> - Du benötigst mindestens \"Browse Projects\" Berechtigung in den Jira-Projekten, die du integrieren möchtest"
     }
   },
   "globals": {
     "ok": "OK",
     "cancel": "Abbrechen",
+    "close": "Schließen",
     "error": "Fehler",
     "success": "Erfolg",
     "yes": "Ja",

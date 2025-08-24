@@ -14,9 +14,11 @@ import { InputText } from 'primeng/inputtext';
 import { DropdownModule } from 'primeng/dropdown';
 import { TableModule } from 'primeng/table';
 import { ConfirmDialog } from 'primeng/confirmdialog';
-import { Toast } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService } from 'primeng/api';
+import { TokenDocumentationComponent } from './token-documentation/token-documentation.component';
 
 @Component({
   selector: 'app-external-accounts',
@@ -32,8 +34,10 @@ import { ConfirmationService } from 'primeng/api';
     DropdownModule,
     TableModule,
     ConfirmDialog,
-    Toast,
-    ProgressSpinner
+    ToastModule,
+    ProgressSpinner,
+    TooltipModule,
+    TokenDocumentationComponent
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './external-accounts.component.html',
@@ -54,6 +58,9 @@ export class ExternalAccountsComponent implements OnInit {
   showDialog = false;
   editingAccount: UserExternalAccount | null = null;
   accountForm!: FormGroup;
+  
+  showTokenDocumentation = false;
+  tokenDocumentationProvider = '';
 
   providerOptions = [
     { label: 'GitHub', value: 'github' },
@@ -292,5 +299,13 @@ export class ExternalAccountsComponent implements OnInit {
         });
       }
     });
+  }
+
+  showTokenHelp() {
+    const selectedProvider = this.accountForm.get('provider')?.value;
+    if (selectedProvider && ['github', 'gitlab', 'jira'].includes(selectedProvider)) {
+      this.tokenDocumentationProvider = selectedProvider;
+      this.showTokenDocumentation = true;
+    }
   }
 }
