@@ -50,7 +50,7 @@ export class ExternalIntegrationService {
   // Check if input matches issue patterns
   detectIssuePattern(input: string): { key: string; provider: string } | null {
     // GitHub/GitLab pattern: #123 or owner/repo#123
-    const githubPattern = /(?:^|\s)(?:[\w.-]+\/[\w.-]+)?#(\d+)(?:\s|$)/;
+    const githubPattern = /(?:^|\s|^)(?:[\w.-]+\/[\w.-]+)?#(\d+)/;
     const githubMatch = input.match(githubPattern);
     if (githubMatch) {
       return {
@@ -60,7 +60,7 @@ export class ExternalIntegrationService {
     }
 
     // Jira pattern: ABC-123
-    const jiraPattern = /(?:^|\s)([A-Z][A-Z0-9]+-\d+)(?:\s|$)/;
+    const jiraPattern = /(?:^|\s)([A-Z][A-Z0-9]+-\d+)/;
     const jiraMatch = input.match(jiraPattern);
     if (jiraMatch) {
       return {

@@ -69,7 +69,7 @@
       "projectRefPlaceholder": "Projekt-Referenz eingeben",
       "oauthToken": "OAuth Token",
       "tokenPlaceholder": "OAuth Token eingeben",
-      "tokenHelp": "Erstelle ein Personal Access Token in deinen Anbieter-Einstellungen",
+      "tokenHelp": "Für GitHub/GitLab: Personal Access Token. Für Jira: Nur API-Token (E-Mail gehört ins Feld Kontoname)",
       "githubHelp": "Format: owner/repository-name (z.B. microsoft/vscode)",
       "gitlabHelp": "Format: owner/repository-name (z.B. gitlab-org/gitlab)",
       "jiraHelp": "Format: PROJEKT-SCHLÜSSEL (z.B. PROJ)",
@@ -79,10 +79,14 @@
       "connectedTo": "Verbunden mit {{provider}}: {{projectRef}}",
       "connectSuccess": "Externe Integration erfolgreich verbunden",
       "connectError": "Externe Integration konnte nicht verbunden werden",
+      "authError": "Authentifizierung fehlgeschlagen: Bitte prüfe deine externen Konto-Anmeldedaten",
+      "accessError": "Zugang verweigert: Ungültige Projektreferenz oder unzureichende Berechtigungen",
+      "providerError": "Externer Anbieter nicht verfügbar: Bitte wende dich an den Support",
       "disconnectSuccess": "Externe Integration erfolgreich getrennt",
       "disconnectError": "Externe Integration konnte nicht getrennt werden",
       "syncSuccess": "Issue-Synchronisation erfolgreich gestartet",
-      "syncError": "Issue-Synchronisation fehlgeschlagen"
+      "syncError": "Issue-Synchronisation fehlgeschlagen",
+      "noConnectionError": "Keine externe Integration für dieses Projekt konfiguriert"
     }
   },
   "weeklyOverview": {
@@ -111,7 +115,7 @@
       "accountNamePlaceholder": "Kontoname eingeben",
       "oauthToken": "OAuth Token",
       "tokenPlaceholder": "OAuth Token eingeben",
-      "tokenHelp": "Erstelle ein Personal Access Token in deinen Anbieter-Einstellungen",
+      "tokenHelp": "Für GitHub/GitLab: Personal Access Token. Für Jira: Nur API-Token (E-Mail gehört ins Feld Kontoname)",
       "baseUrl": "Basis-URL",
       "gitlabUrlHelp": "GitLab Instanz URL eingeben",
       "jiraUrlHelp": "Jira Instanz URL eingeben",
@@ -130,6 +134,9 @@
       "deleteError": "Externes Konto konnte nicht gelöscht werden",
       "testSuccess": "Verbindungstest erfolgreich",
       "testError": "Verbindungstest fehlgeschlagen",
+      "githubAuthFailed": "GitHub-Authentifizierung fehlgeschlagen: Ungültiges Token oder unzureichende Berechtigungen",
+      "gitlabAuthFailed": "GitLab-Authentifizierung fehlgeschlagen: Ungültiges Token oder unzureichende Berechtigungen",
+      "jiraAuthFailed": "Jira-Authentifizierung fehlgeschlagen: Ungültiges Token oder unzureichende Berechtigungen",
       "deleteConfirmTitle": "Externes Konto löschen",
       "deleteConfirmMessage": "Möchtest du das Konto '{{name}}' wirklich löschen?"
     }

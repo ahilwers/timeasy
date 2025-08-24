@@ -19,6 +19,7 @@ import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Toast } from 'primeng/toast';
 
 @Component({
   selector: 'app-external-integration',
@@ -33,7 +34,8 @@ import { ProgressSpinner } from 'primeng/progressspinner';
     Button,
     Card,
     Message,
-    ProgressSpinner
+    ProgressSpinner,
+    Toast
   ],
   providers: [MessageService],
   templateUrl: './external-integration.component.html',
@@ -225,10 +227,27 @@ export class ExternalIntegrationComponent implements OnInit {
         this.isProcessing.set(false);
       },
       error: (error) => {
+        console.error('Connect project error:', error);
+        let errorMessage = this.translateService.instant('project.external.connectError');
+        
+        // Provide more specific error messages based on error type
+        if (error.status === 401) {
+          errorMessage = this.translateService.instant('project.external.authError');
+        } else if (error.status === 403) {
+          errorMessage = this.translateService.instant('project.external.accessError');
+        } else if (error.status === 503) {
+          errorMessage = this.translateService.instant('project.external.providerError');
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
+        }
+        
+        console.log('Showing error message:', errorMessage);
         this.messageService.add({
           severity: 'error',
           summary: this.translateService.instant('error'),
-          detail: error.error?.error || this.translateService.instant('project.external.connectError')
+          detail: errorMessage,
+          life: 8000, // Show for 8 seconds for better readability
+          sticky: false
         });
         this.isProcessing.set(false);
       }
@@ -279,10 +298,24 @@ export class ExternalIntegrationComponent implements OnInit {
         this.isSyncing.set(false);
       },
       error: (error) => {
+        let errorMessage = this.translateService.instant('project.external.syncError');
+        
+        // Provide more specific error messages based on error type
+        if (error.status === 401) {
+          errorMessage = this.translateService.instant('project.external.authError');
+        } else if (error.status === 404) {
+          errorMessage = this.translateService.instant('project.external.noConnectionError');
+        } else if (error.status === 503) {
+          errorMessage = this.translateService.instant('project.external.providerError');
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
+        }
+        
         this.messageService.add({
           severity: 'error',
           summary: this.translateService.instant('error'),
-          detail: error.error?.error || this.translateService.instant('project.external.syncError')
+          detail: errorMessage,
+          life: 6000 // Show for 6 seconds for better readability
         });
         this.isSyncing.set(false);
       }

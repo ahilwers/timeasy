@@ -3,6 +3,7 @@ package rest
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"timeasy-server/pkg/usecase"
 
@@ -65,7 +66,29 @@ func (h *ExternalIntegrationHandler) ConnectProjectToAccount(c *gin.Context) {
 	}
 
 	if err := h.usecase.ConnectProjectToAccount(c.Request.Context(), userUUID, projectID, userAccountID, req.ProjectRef); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// Provide more specific error status codes based on error type
+		errorMsg := err.Error()
+		
+		if strings.Contains(errorMsg, "invalid project reference") || 
+		   strings.Contains(errorMsg, "project not accessible") ||
+		   strings.Contains(errorMsg, "authentication failed") ||
+		   strings.Contains(errorMsg, "invalid token") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": errorMsg})
+			return
+		}
+		
+		if strings.Contains(errorMsg, "access denied") || 
+		   strings.Contains(errorMsg, "not found") {
+			c.JSON(http.StatusForbidden, gin.H{"error": errorMsg})
+			return
+		}
+		
+		if strings.Contains(errorMsg, "provider not configured") {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": errorMsg})
+			return
+		}
+		
+		c.JSON(http.StatusBadRequest, gin.H{"error": errorMsg})
 		return
 	}
 
@@ -201,7 +224,27 @@ func (h *ExternalIntegrationHandler) SyncProjectIssues(c *gin.Context) {
 	// TODO: Implement proper async job queue for better UX
 	err = h.usecase.SyncProjectIssues(c.Request.Context(), projectID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		errorMsg := err.Error()
+		
+		// Provide more specific error status codes
+		if strings.Contains(errorMsg, "authentication failed") ||
+		   strings.Contains(errorMsg, "invalid token") ||
+		   strings.Contains(errorMsg, "project not accessible") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": errorMsg})
+			return
+		}
+		
+		if strings.Contains(errorMsg, "no external connection found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "No external integration configured for this project"})
+			return
+		}
+		
+		if strings.Contains(errorMsg, "provider not configured") {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": errorMsg})
+			return
+		}
+		
+		c.JSON(http.StatusInternalServerError, gin.H{"error": errorMsg})
 		return
 	}
 

@@ -73,8 +73,24 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("provider not configured: %s", account.Provider)
 	}
 
-	if err := providerInstance.ValidateProjectRef(ctx, account.OAuthToken, projectRef); err != nil {
-		return fmt.Errorf("invalid project reference: %w", err)
+	// For Jira, we need to create a temporary provider with the user's base URL and handle credentials
+	if account.Provider == "jira" && account.BaseURL != "" {
+		// Create a new Jira provider instance with the user's base URL
+		jiraProvider := external.NewJiraProvider("dummy", "dummy", "", account.BaseURL)
+		
+		// Combine email and token for Jira authentication
+		jiraToken := account.OAuthToken
+		if !strings.Contains(jiraToken, ":") && account.AccountName != "" && strings.Contains(account.AccountName, "@") {
+			jiraToken = account.AccountName + ":" + account.OAuthToken
+		}
+		
+		if err := jiraProvider.ValidateProjectRef(ctx, jiraToken, projectRef); err != nil {
+			return fmt.Errorf("invalid project reference: %w", err)
+		}
+	} else {
+		if err := providerInstance.ValidateProjectRef(ctx, account.OAuthToken, projectRef); err != nil {
+			return fmt.Errorf("invalid project reference: %w", err)
+		}
 	}
 
 	// Check if connection already exists for this project
@@ -162,12 +178,14 @@ func (uc *ExternalIntegrationUseCase) GetDescriptionSuggestions(ctx context.Cont
 	// Also add suggestions from external issues (GitHub, GitLab, Jira issues)
 	var externalIssues []*model.ExternalIssue
 	externalIssues, err = uc.externalIssueRepo.List(projectID)
+	fmt.Printf("DEBUG GetDescriptionSuggestions: Fetched %d external issues for project %v, error: %v\n", len(externalIssues), projectID, err)
 	if err == nil { // Don't fail if no external issues exist
 		for _, issue := range externalIssues {
 			// Create suggestions in the format "#123 - Issue Title" (issue.KeyOrNumber already has #)
 			issueRef := fmt.Sprintf("%s - %s", issue.KeyOrNumber, issue.Title)
 			if strings.Contains(strings.ToLower(issueRef), queryLower) {
 				descMap[issueRef] = 100 // Higher priority than regular descriptions
+				fmt.Printf("DEBUG GetDescriptionSuggestions: Added issue suggestion: %s\n", issueRef)
 			}
 			
 			// Only suggest just the issue number if the full description doesn't match
@@ -175,6 +193,7 @@ func (uc *ExternalIntegrationUseCase) GetDescriptionSuggestions(ctx context.Cont
 			simpleRef := issue.KeyOrNumber
 			if strings.Contains(strings.ToLower(simpleRef), queryLower) && !strings.Contains(strings.ToLower(issueRef), queryLower) {
 				descMap[simpleRef] = 99 // High priority
+				fmt.Printf("DEBUG GetDescriptionSuggestions: Added simple issue suggestion: %s\n", simpleRef)
 			}
 		}
 	} else {
@@ -260,7 +279,14 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		}, nil
 	}
 
-	externalIssue, err := provider.GetIssue(ctx, connection.UserAccount.OAuthToken, connection.ProjectRef, keyOrNumber)
+	// For Jira, combine email and token if needed
+	token := connection.UserAccount.OAuthToken
+	if connection.Provider == "jira" && !strings.Contains(token, ":") && 
+	   connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
+		token = connection.UserAccount.AccountName + ":" + connection.UserAccount.OAuthToken
+	}
+	
+	externalIssue, err := provider.GetIssue(ctx, token, connection.ProjectRef, keyOrNumber)
 	if err != nil {
 		return &model.IssueResolveResult{
 			Key:    keyOrNumber,
@@ -302,7 +328,17 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 	fmt.Printf("DEBUG: UserAccount found: ID=%s, AccountName=%s, HasToken=%v\n", 
 		connection.UserAccount.ID, connection.UserAccount.AccountName, len(connection.UserAccount.OAuthToken) > 0)
 
-	provider, exists := uc.providerFactory.GetProvider(connection.Provider)
+	// For Jira, create a provider with the correct base URL
+	var provider external.ExternalProvider
+	var exists bool
+	if connection.Provider == "jira" && connection.UserAccount.BaseURL != "" {
+		fmt.Printf("DEBUG: Creating Jira provider with base URL: %s\n", connection.UserAccount.BaseURL)
+		provider = external.NewJiraProvider("dummy", "dummy", "", connection.UserAccount.BaseURL)
+		exists = true
+	} else {
+		provider, exists = uc.providerFactory.GetProvider(connection.Provider)
+	}
+	
 	if !exists {
 		fmt.Printf("DEBUG: Provider %s not configured\n", connection.Provider)
 		return fmt.Errorf("provider not configured: %s", connection.Provider)
@@ -310,17 +346,22 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 	fmt.Printf("DEBUG: Found provider %s\n", connection.Provider)
 
 	fmt.Printf("DEBUG: Fetching issues from %s for %s\n", connection.Provider, connection.ProjectRef)
-	fmt.Printf("DEBUG: Using OAuth token: %s...\n", connection.UserAccount.OAuthToken[:10]) // Show first 10 chars only
 	
-	// Test basic GitHub API connectivity first
-	fmt.Printf("DEBUG: Testing basic GitHub API connectivity...\n")
+	// For Jira, combine email and token if needed
+	token := connection.UserAccount.OAuthToken
+	if connection.Provider == "jira" && !strings.Contains(token, ":") && 
+	   connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
+		token = connection.UserAccount.AccountName + ":" + connection.UserAccount.OAuthToken
+	}
+	
+	fmt.Printf("DEBUG: Using OAuth token: %s...\n", token[:10]) // Show first 10 chars only
 	
 	// Create a fresh context that won't be canceled
 	freshCtx := context.Background()
 	timeoutCtx, cancel := context.WithTimeout(freshCtx, 30*time.Second)
 	defer cancel()
 	
-	issues, err := provider.ListIssues(timeoutCtx, connection.UserAccount.OAuthToken, connection.ProjectRef)
+	issues, err := provider.ListIssues(timeoutCtx, token, connection.ProjectRef)
 	if err != nil {
 		fmt.Printf("DEBUG: Failed to fetch issues: %v\n", err)
 		return fmt.Errorf("failed to fetch issues: %w", err)

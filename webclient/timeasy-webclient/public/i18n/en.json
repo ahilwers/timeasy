@@ -69,7 +69,7 @@
       "projectRefPlaceholder": "Enter project reference",
       "oauthToken": "OAuth Token",
       "tokenPlaceholder": "Enter your OAuth token",
-      "tokenHelp": "Generate a personal access token from your provider's settings",
+      "tokenHelp": "For GitHub/GitLab: Personal access token. For Jira: Just the API token (email goes in Account Name field)",
       "githubHelp": "Format: owner/repository-name (e.g. microsoft/vscode)",
       "gitlabHelp": "Format: owner/repository-name (e.g. gitlab-org/gitlab)",
       "jiraHelp": "Format: PROJECT-KEY (e.g. PROJ)",
@@ -79,10 +79,14 @@
       "connectedTo": "Connected to {{provider}}: {{projectRef}}",
       "connectSuccess": "External integration connected successfully",
       "connectError": "Failed to connect external integration",
+      "authError": "Authentication failed: Please check your external account credentials",
+      "accessError": "Access denied: Invalid project reference or insufficient permissions",
+      "providerError": "External provider not available: Please contact support",
       "disconnectSuccess": "External integration disconnected successfully",
       "disconnectError": "Failed to disconnect external integration",
       "syncSuccess": "Issues sync initiated successfully",
-      "syncError": "Failed to sync issues"
+      "syncError": "Failed to sync issues",
+      "noConnectionError": "No external integration configured for this project"
     }
   },
   "weeklyOverview": {
@@ -111,7 +115,7 @@
       "accountNamePlaceholder": "Enter account name",
       "oauthToken": "OAuth Token",
       "tokenPlaceholder": "Enter your OAuth token",
-      "tokenHelp": "Generate a personal access token from your provider's settings",
+      "tokenHelp": "For GitHub/GitLab: Personal access token. For Jira: Just the API token (email goes in Account Name field)",
       "baseUrl": "Base URL",
       "gitlabUrlHelp": "Enter your GitLab instance URL",
       "jiraUrlHelp": "Enter your Jira instance URL",
@@ -130,6 +134,9 @@
       "deleteError": "Failed to delete external account",
       "testSuccess": "Connection test successful",
       "testError": "Connection test failed",
+      "githubAuthFailed": "GitHub authentication failed: Invalid token or insufficient permissions",
+      "gitlabAuthFailed": "GitLab authentication failed: Invalid token or insufficient permissions",
+      "jiraAuthFailed": "Jira authentication failed: Invalid token or insufficient permissions",
       "deleteConfirmTitle": "Delete External Account",
       "deleteConfirmMessage": "Are you sure you want to delete the account '{{name}}'?"
     }

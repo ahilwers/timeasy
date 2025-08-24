@@ -231,10 +231,28 @@ export class ExternalAccountsComponent implements OnInit {
         this.testingAccounts.set(testing);
       },
       error: (error) => {
+        let errorMessage = this.translateService.instant('user.externalAccounts.testError');
+        
+        // Provide more specific error messages based on error type
+        if (error.status === 401 && error.error?.error) {
+          if (error.error.error.includes('GitHub authentication failed')) {
+            errorMessage = this.translateService.instant('user.externalAccounts.githubAuthFailed');
+          } else if (error.error.error.includes('GitLab authentication failed')) {
+            errorMessage = this.translateService.instant('user.externalAccounts.gitlabAuthFailed');
+          } else if (error.error.error.includes('Jira authentication failed')) {
+            errorMessage = this.translateService.instant('user.externalAccounts.jiraAuthFailed');
+          } else {
+            errorMessage = error.error.error;
+          }
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
+        }
+        
         this.messageService.add({
           severity: 'error',
           summary: this.translateService.instant('globals.error'),
-          detail: error.error?.error || this.translateService.instant('user.externalAccounts.testError')
+          detail: errorMessage,
+          life: 6000 // Show for 6 seconds for better readability
         });
         
         const testing = new Set(this.testingAccounts());

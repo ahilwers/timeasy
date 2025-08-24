@@ -2,6 +2,7 @@ package external
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,20 @@ import (
 	"github.com/gofrs/uuid"
 	"golang.org/x/oauth2"
 )
+
+// Helper function to construct Jira Basic Auth credentials
+func constructJiraCredentials(token string, accountName string) string {
+	if strings.Contains(token, ":") {
+		// Token already contains email:api_token format (backward compatibility)
+		return base64.StdEncoding.EncodeToString([]byte(token))
+	} else if accountName != "" && strings.Contains(accountName, "@") {
+		// Combine email (from accountName) and token
+		authString := accountName + ":" + token
+		return base64.StdEncoding.EncodeToString([]byte(authString))
+	}
+	// Fallback: assume token is already complete
+	return base64.StdEncoding.EncodeToString([]byte(token))
+}
 
 type JiraProvider struct {
 	config  *oauth2.Config
@@ -90,7 +105,15 @@ func (p *JiraProvider) GetIssue(ctx context.Context, token string, projectRef st
 		return nil, err
 	}
 	
-	req.Header.Set("Authorization", "Bearer "+token)
+	// Use the same authentication method as in user and project validation
+	if strings.Contains(token, ":") {
+		// Token already contains email:api_token format
+		credentials := base64.StdEncoding.EncodeToString([]byte(token))
+		req.Header.Set("Authorization", "Basic "+credentials)
+	} else {
+		// Fallback: treat as Bearer token
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	req.Header.Set("Accept", "application/json")
 	
 	resp, err := p.client.Do(req)
@@ -133,7 +156,15 @@ func (p *JiraProvider) ListIssues(ctx context.Context, token string, projectRef 
 		return nil, err
 	}
 	
-	req.Header.Set("Authorization", "Bearer "+token)
+	// Use the same authentication method as in user and project validation
+	if strings.Contains(token, ":") {
+		// Token already contains email:api_token format
+		credentials := base64.StdEncoding.EncodeToString([]byte(token))
+		req.Header.Set("Authorization", "Basic "+credentials)
+	} else {
+		// Fallback: treat as Bearer token
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	
@@ -168,8 +199,20 @@ func (p *JiraProvider) ValidateProjectRef(ctx context.Context, token string, pro
 		return err
 	}
 	
-	req.Header.Set("Authorization", "Bearer "+token)
+	// Use the same authentication method as in user validation
+	// Jira uses Basic Authentication with email:token format
+	if strings.Contains(token, ":") {
+		// Token already contains email:api_token format
+		credentials := base64.StdEncoding.EncodeToString([]byte(token))
+		req.Header.Set("Authorization", "Basic "+credentials)
+	} else {
+		// Fallback: treat as Bearer token (though this likely won't work for Jira)
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	
 	req.Header.Set("Accept", "application/json")
+	
+	fmt.Printf("DEBUG: Jira project validation - URL: %s\n", apiURL)
 	
 	resp, err := p.client.Do(req)
 	if err != nil {
@@ -177,7 +220,14 @@ func (p *JiraProvider) ValidateProjectRef(ctx context.Context, token string, pro
 	}
 	defer resp.Body.Close()
 	
+	fmt.Printf("DEBUG: Jira project validation - Status: %d\n", resp.StatusCode)
+	
 	if resp.StatusCode != http.StatusOK {
+		// Read response body for more detailed error
+		body := make([]byte, 1024)
+		n, _ := resp.Body.Read(body)
+		bodyStr := string(body[:n])
+		fmt.Printf("DEBUG: Jira project validation error response body: %s\n", bodyStr)
 		return fmt.Errorf("project not accessible: %d", resp.StatusCode)
 	}
 	
