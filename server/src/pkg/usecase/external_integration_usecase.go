@@ -67,30 +67,34 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
-	// Get provider instance and validate project reference
-	providerInstance, exists := uc.providerFactory.GetProvider(account.Provider)
-	if !exists {
-		return fmt.Errorf("provider not configured: %s", account.Provider)
+	// Create provider instance dynamically based on account settings
+	var providerInstance external.ExternalProvider
+	switch account.Provider {
+	case "github":
+		providerInstance = external.NewGitHubProvider("", "", "")
+	case "gitlab":
+		baseURL := account.BaseURL
+		if baseURL == "" {
+			baseURL = "https://gitlab.com"
+		}
+		providerInstance = external.NewGitLabProvider("", "", "", baseURL)
+	case "jira":
+		if account.BaseURL == "" {
+			return fmt.Errorf("base URL required for Jira")
+		}
+		providerInstance = external.NewJiraProvider("", "", "", account.BaseURL)
+	default:
+		return fmt.Errorf("unsupported provider: %s", account.Provider)
 	}
 
-	// For Jira, we need to create a temporary provider with the user's base URL and handle credentials
-	if account.Provider == "jira" && account.BaseURL != "" {
-		// Create a new Jira provider instance with the user's base URL
-		jiraProvider := external.NewJiraProvider("dummy", "dummy", "", account.BaseURL)
-		
-		// Combine email and token for Jira authentication
-		jiraToken := account.OAuthToken
-		if !strings.Contains(jiraToken, ":") && account.AccountName != "" && strings.Contains(account.AccountName, "@") {
-			jiraToken = account.AccountName + ":" + account.OAuthToken
-		}
-		
-		if err := jiraProvider.ValidateProjectRef(ctx, jiraToken, projectRef); err != nil {
-			return fmt.Errorf("invalid project reference: %w", err)
-		}
-	} else {
-		if err := providerInstance.ValidateProjectRef(ctx, account.OAuthToken, projectRef); err != nil {
-			return fmt.Errorf("invalid project reference: %w", err)
-		}
+	// Prepare token for validation
+	token := account.OAuthToken
+	if account.Provider == "jira" && !strings.Contains(token, ":") && account.AccountName != "" && strings.Contains(account.AccountName, "@") {
+		token = account.AccountName + ":" + account.OAuthToken
+	}
+
+	if err := providerInstance.ValidateProjectRef(ctx, token, projectRef); err != nil {
+		return fmt.Errorf("invalid project reference: %w", err)
 	}
 
 	// Check if connection already exists for this project
@@ -270,9 +274,26 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		}, nil
 	}
 
-	// Try to fetch from external provider
-	provider, exists := uc.providerFactory.GetProvider(connection.Provider)
-	if !exists {
+	// Create provider instance dynamically
+	var provider external.ExternalProvider
+	switch connection.Provider {
+	case "github":
+		provider = external.NewGitHubProvider("", "", "")
+	case "gitlab":
+		baseURL := connection.UserAccount.BaseURL
+		if baseURL == "" {
+			baseURL = "https://gitlab.com"
+		}
+		provider = external.NewGitLabProvider("", "", "", baseURL)
+	case "jira":
+		if connection.UserAccount.BaseURL == "" {
+			return &model.IssueResolveResult{
+				Key:    keyOrNumber,
+				Status: "pending",
+			}, nil
+		}
+		provider = external.NewJiraProvider("", "", "", connection.UserAccount.BaseURL)
+	default:
 		return &model.IssueResolveResult{
 			Key:    keyOrNumber,
 			Status: "pending",
@@ -328,20 +349,29 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 	fmt.Printf("DEBUG: UserAccount found: ID=%s, AccountName=%s, HasToken=%v\n", 
 		connection.UserAccount.ID, connection.UserAccount.AccountName, len(connection.UserAccount.OAuthToken) > 0)
 
-	// For Jira, create a provider with the correct base URL
+	// Create provider instance dynamically based on connection settings
 	var provider external.ExternalProvider
-	var exists bool
-	if connection.Provider == "jira" && connection.UserAccount.BaseURL != "" {
-		fmt.Printf("DEBUG: Creating Jira provider with base URL: %s\n", connection.UserAccount.BaseURL)
-		provider = external.NewJiraProvider("dummy", "dummy", "", connection.UserAccount.BaseURL)
-		exists = true
-	} else {
-		provider, exists = uc.providerFactory.GetProvider(connection.Provider)
-	}
-	
-	if !exists {
-		fmt.Printf("DEBUG: Provider %s not configured\n", connection.Provider)
-		return fmt.Errorf("provider not configured: %s", connection.Provider)
+	switch connection.Provider {
+	case "github":
+		provider = external.NewGitHubProvider("", "", "")
+		fmt.Printf("DEBUG: Created GitHub provider\n")
+	case "gitlab":
+		baseURL := connection.UserAccount.BaseURL
+		if baseURL == "" {
+			baseURL = "https://gitlab.com"
+		}
+		provider = external.NewGitLabProvider("", "", "", baseURL)
+		fmt.Printf("DEBUG: Created GitLab provider with base URL: %s\n", baseURL)
+	case "jira":
+		if connection.UserAccount.BaseURL == "" {
+			fmt.Printf("DEBUG: No base URL for Jira provider\n")
+			return fmt.Errorf("base URL required for Jira")
+		}
+		provider = external.NewJiraProvider("", "", "", connection.UserAccount.BaseURL)
+		fmt.Printf("DEBUG: Created Jira provider with base URL: %s\n", connection.UserAccount.BaseURL)
+	default:
+		fmt.Printf("DEBUG: Unsupported provider: %s\n", connection.Provider)
+		return fmt.Errorf("unsupported provider: %s", connection.Provider)
 	}
 	fmt.Printf("DEBUG: Found provider %s\n", connection.Provider)
 

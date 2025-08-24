@@ -35,17 +35,14 @@ func (uc *UserExternalAccountUseCase) CreateAccount(ctx context.Context, userID 
 		return nil, fmt.Errorf("unsupported provider: %s", req.Provider)
 	}
 
-	providerInstance, exists := uc.providerFactory.GetProvider(req.Provider)
-	if !exists {
-		return nil, fmt.Errorf("provider not configured: %s", req.Provider)
-	}
+	// We don't need to get provider from factory anymore - validation is handled directly
 
 	baseURL := req.BaseURL
 	if baseURL == "" && req.Provider == "gitlab" {
 		baseURL = "https://gitlab.com"
 	}
 
-	if err := uc.validateProviderConnectionWithAccountName(ctx, providerInstance, req.OAuthToken, req.Provider, baseURL, req.AccountName); err != nil {
+	if err := uc.validateProviderConnectionWithAccountName(ctx, nil, req.OAuthToken, req.Provider, baseURL, req.AccountName); err != nil {
 		return nil, fmt.Errorf("invalid credentials or connection failed: %w", err)
 	}
 
@@ -83,17 +80,14 @@ func (uc *UserExternalAccountUseCase) UpdateAccount(ctx context.Context, userID 
 		return nil, fmt.Errorf("cannot change provider for existing account")
 	}
 
-	providerInstance, exists := uc.providerFactory.GetProvider(req.Provider)
-	if !exists {
-		return nil, fmt.Errorf("provider not configured: %s", req.Provider)
-	}
+	// We don't need to get provider from factory anymore - validation is handled directly
 
 	baseURL := req.BaseURL
 	if baseURL == "" && req.Provider == "gitlab" {
 		baseURL = "https://gitlab.com"
 	}
 
-	if err := uc.validateProviderConnectionWithAccountName(ctx, providerInstance, req.OAuthToken, req.Provider, baseURL, req.AccountName); err != nil {
+	if err := uc.validateProviderConnectionWithAccountName(ctx, nil, req.OAuthToken, req.Provider, baseURL, req.AccountName); err != nil {
 		return nil, fmt.Errorf("invalid credentials or connection failed: %w", err)
 	}
 
@@ -171,12 +165,8 @@ func (uc *UserExternalAccountUseCase) TestAccount(ctx context.Context, userID uu
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
-	providerInstance, exists := uc.providerFactory.GetProvider(account.Provider)
-	if !exists {
-		return fmt.Errorf("provider not configured: %s", account.Provider)
-	}
-
-	return uc.validateProviderConnectionWithAccountName(ctx, providerInstance, account.OAuthToken, account.Provider, account.BaseURL, account.AccountName)
+	// We don't need to get provider from factory anymore - validation is handled directly
+	return uc.validateProviderConnectionWithAccountName(ctx, nil, account.OAuthToken, account.Provider, account.BaseURL, account.AccountName)
 }
 
 func (uc *UserExternalAccountUseCase) validateProviderConnection(ctx context.Context, provider external.ExternalProvider, token string, providerType string, baseURL string) error {
