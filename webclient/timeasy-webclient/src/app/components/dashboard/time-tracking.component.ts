@@ -50,6 +50,14 @@ export class TimeTrackingComponent implements OnInit {
                 if (this.timeEntry) {
                     this.descriptionManuallyChanged.set(false);
                     this.description.set(this.timeEntry.description);
+                    
+                    // Find the project in the projects list and set it as selectedProject
+                    const projects = this.projects();
+                    const matchingProject = projects.find(p => p.id === this.timeEntry!.projectId);
+                    if (matchingProject) {
+                        this.selectedProject = matchingProject;
+                    }
+                    
                     this.projectService.loadProject(this.timeEntry.projectId);
                     this.timerComponent?.start(new Date(this.timeEntry.startTime));
                 }
