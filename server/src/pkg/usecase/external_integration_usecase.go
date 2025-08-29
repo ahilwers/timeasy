@@ -20,6 +20,7 @@ type ExternalIntegrationUseCase struct {
 	timeEntryRepo     repository.TimeEntryRepository
 	projectRepo       repository.ProjectRepository
 	providerFactory   *external.ProviderFactory
+	teamUsecase       TeamUsecase
 }
 
 func NewExternalIntegrationUseCase(
@@ -29,6 +30,7 @@ func NewExternalIntegrationUseCase(
 	timeEntryRepo repository.TimeEntryRepository,
 	projectRepo repository.ProjectRepository,
 	providerFactory *external.ProviderFactory,
+	teamUsecase TeamUsecase,
 ) *ExternalIntegrationUseCase {
 	return &ExternalIntegrationUseCase{
 		externalConnRepo:  externalConnRepo,
@@ -37,6 +39,7 @@ func NewExternalIntegrationUseCase(
 		timeEntryRepo:     timeEntryRepo,
 		projectRepo:       projectRepo,
 		providerFactory:   providerFactory,
+		teamUsecase:       teamUsecase,
 	}
 }
 
@@ -47,8 +50,8 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("project not found or not accessible: %w", err)
 	}
 
-	if project.UserId != userID {
-		return fmt.Errorf("access denied: user does not own this project")
+	if !uc.isUserProjectAdmin(userID, project) {
+		return fmt.Errorf("access denied: user does not have admin access to this project")
 	}
 
 	owned, err := uc.userAccountRepo.ValidateAccountOwnership(userAccountID, userID)
@@ -127,8 +130,8 @@ func (uc *ExternalIntegrationUseCase) DisconnectProject(ctx context.Context, use
 		return fmt.Errorf("project not found or not accessible: %w", err)
 	}
 
-	if project.UserId != userID {
-		return fmt.Errorf("access denied: user does not own this project")
+	if !uc.isUserProjectAdmin(userID, project) {
+		return fmt.Errorf("access denied: user does not have admin access to this project")
 	}
 
 	connection, err := uc.externalConnRepo.GetByProjectID(projectID)
@@ -146,8 +149,8 @@ func (uc *ExternalIntegrationUseCase) GetDescriptionSuggestions(ctx context.Cont
 		return nil, fmt.Errorf("project not found or not accessible: %w", err)
 	}
 
-	if project.UserId != userID {
-		return nil, fmt.Errorf("access denied: user does not own this project")
+	if !uc.doesProjectBelongToUser(userID, project) {
+		return nil, fmt.Errorf("access denied: user does not have access to this project")
 	}
 
 	timeEntries, err := uc.timeEntryRepo.GetAllTimeEntriesOfUserAndProject(userID, projectID)
@@ -205,8 +208,8 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		return nil, fmt.Errorf("project not found or not accessible: %w", err)
 	}
 
-	if project.UserId != userID {
-		return nil, fmt.Errorf("access denied: user does not own this project")
+	if !uc.doesProjectBelongToUser(userID, project) {
+		return nil, fmt.Errorf("access denied: user does not have access to this project")
 	}
 
 	connection, err := uc.externalConnRepo.GetByProjectIDWithUserAccount(projectID)
@@ -427,4 +430,28 @@ func (uc *ExternalIntegrationUseCase) DetectIssuePattern(input string) (string, 
 
 func (uc *ExternalIntegrationUseCase) GetExternalIssueByID(ctx context.Context, issueID uuid.UUID) (*model.ExternalIssue, error) {
 	return uc.externalIssueRepo.GetByID(issueID)
+}
+
+// doesProjectBelongToUser checks if a user has read access to a project
+// (either directly owns it or is a member of the team it belongs to)
+func (uc *ExternalIntegrationUseCase) doesProjectBelongToUser(userID uuid.UUID, project *model.Project) bool {
+	if project.UserId == userID {
+		return true
+	}
+	if project.TeamID != nil {
+		return uc.teamUsecase.DoesUserBelongToTeam(userID, *project.TeamID)
+	}
+	return false
+}
+
+// isUserProjectAdmin checks if a user has write access to a project
+// (either directly owns it or is an admin of the team it belongs to)
+func (uc *ExternalIntegrationUseCase) isUserProjectAdmin(userID uuid.UUID, project *model.Project) bool {
+	if project.UserId == userID {
+		return true
+	}
+	if project.TeamID != nil {
+		return uc.teamUsecase.IsUserAdminInTeam(userID, *project.TeamID)
+	}
+	return false
 }
