@@ -18,6 +18,7 @@ type ExternalIntegrationHandler interface {
 	GetDescriptionSuggestions(context *gin.Context)
 	ResolveIssue(context *gin.Context)
 	ResolvePendingReferences(context *gin.Context)
+	GetExternalIssue(context *gin.Context)
 }
 
 type externalIntegrationHandler struct {
@@ -41,7 +42,6 @@ func NewExternalIntegrationHandler(tokenVerifier TokenVerifier, usecase *usecase
 	}
 }
 
-// ConnectProjectToAccount connects a project to a user's external account
 func (h *externalIntegrationHandler) ConnectProjectToAccount(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
@@ -77,26 +77,26 @@ func (h *externalIntegrationHandler) ConnectProjectToAccount(c *gin.Context) {
 	if err := h.usecase.ConnectProjectToAccount(c.Request.Context(), userUUID, projectID, userAccountID, req.ProjectRef); err != nil {
 		// Provide more specific error status codes based on error type
 		errorMsg := err.Error()
-		
-		if strings.Contains(errorMsg, "invalid project reference") || 
-		   strings.Contains(errorMsg, "project not accessible") ||
-		   strings.Contains(errorMsg, "authentication failed") ||
-		   strings.Contains(errorMsg, "invalid token") {
+
+		if strings.Contains(errorMsg, "invalid project reference") ||
+			strings.Contains(errorMsg, "project not accessible") ||
+			strings.Contains(errorMsg, "authentication failed") ||
+			strings.Contains(errorMsg, "invalid token") {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": errorMsg})
 			return
 		}
-		
-		if strings.Contains(errorMsg, "access denied") || 
-		   strings.Contains(errorMsg, "not found") {
+
+		if strings.Contains(errorMsg, "access denied") ||
+			strings.Contains(errorMsg, "not found") {
 			c.JSON(http.StatusForbidden, gin.H{"error": errorMsg})
 			return
 		}
-		
+
 		if strings.Contains(errorMsg, "provider not configured") {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": errorMsg})
 			return
 		}
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": errorMsg})
 		return
 	}
@@ -104,7 +104,6 @@ func (h *externalIntegrationHandler) ConnectProjectToAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Project connected successfully"})
 }
 
-// DisconnectProject disconnects a project from external provider
 func (h *externalIntegrationHandler) DisconnectProject(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
@@ -228,31 +227,27 @@ func (h *externalIntegrationHandler) SyncProjectIssues(c *gin.Context) {
 		return
 	}
 
-	// Validate user ownership of project (this will be checked in the usecase)
-	// For now, run sync synchronously so we can return errors to the user
-	// TODO: Implement proper async job queue for better UX
 	err = h.usecase.SyncProjectIssues(c.Request.Context(), projectID)
 	if err != nil {
 		errorMsg := err.Error()
-		
-		// Provide more specific error status codes
+
 		if strings.Contains(errorMsg, "authentication failed") ||
-		   strings.Contains(errorMsg, "invalid token") ||
-		   strings.Contains(errorMsg, "project not accessible") {
+			strings.Contains(errorMsg, "invalid token") ||
+			strings.Contains(errorMsg, "project not accessible") {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": errorMsg})
 			return
 		}
-		
+
 		if strings.Contains(errorMsg, "no external connection found") {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No external integration configured for this project"})
 			return
 		}
-		
+
 		if strings.Contains(errorMsg, "provider not configured") {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": errorMsg})
 			return
 		}
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": errorMsg})
 		return
 	}
@@ -260,7 +255,6 @@ func (h *externalIntegrationHandler) SyncProjectIssues(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Sync completed successfully"})
 }
 
-// ResolvePendingReferences resolves pending external references for a user
 func (h *externalIntegrationHandler) ResolvePendingReferences(c *gin.Context) {
 	token, err := h.tokenVerifier.VerifyToken(c)
 	if err != nil {
@@ -280,4 +274,31 @@ func (h *externalIntegrationHandler) ResolvePendingReferences(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Pending references resolved"})
+}
+
+func (h *externalIntegrationHandler) GetExternalIssue(c *gin.Context) {
+	_, err := h.tokenVerifier.VerifyToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	issueIDStr := c.Param("id")
+	issueID, err := uuid.FromString(issueIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid issue ID"})
+		return
+	}
+
+	externalIssue, err := h.usecase.GetExternalIssueByID(c.Request.Context(), issueID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "External issue not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, externalIssue)
 }

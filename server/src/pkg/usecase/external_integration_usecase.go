@@ -42,7 +42,6 @@ func NewExternalIntegrationUseCase(
 
 // ConnectProjectToAccount creates an external connection between a project and a user's external account
 func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Context, userID, projectID, userAccountID uuid.UUID, projectRef string) error {
-	// Validate that the user owns the project
 	project, err := uc.projectRepo.GetProjectById(projectID)
 	if err != nil {
 		return fmt.Errorf("project not found or not accessible: %w", err)
@@ -52,7 +51,6 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("access denied: user does not own this project")
 	}
 
-	// Validate that the user owns the external account
 	owned, err := uc.userAccountRepo.ValidateAccountOwnership(userAccountID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to validate account ownership: %w", err)
@@ -61,13 +59,11 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("access denied: account not found or not owned by user")
 	}
 
-	// Get the user account to validate project reference
 	account, err := uc.userAccountRepo.GetByID(userAccountID)
 	if err != nil {
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
-	// Create provider instance dynamically based on account settings
 	var providerInstance external.ExternalProvider
 	switch account.Provider {
 	case "github":
@@ -87,7 +83,6 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("unsupported provider: %s", account.Provider)
 	}
 
-	// Prepare token for validation
 	token := account.OAuthToken
 	if account.Provider == "jira" && !strings.Contains(token, ":") && account.AccountName != "" && strings.Contains(account.AccountName, "@") {
 		token = account.AccountName + ":" + account.OAuthToken
@@ -121,15 +116,12 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		}
 	}
 
-	// Trigger initial sync
 	go uc.SyncProjectIssues(context.Background(), projectID)
-
 	return nil
 }
 
 // DisconnectProject removes an external connection for a project
 func (uc *ExternalIntegrationUseCase) DisconnectProject(ctx context.Context, userID, projectID uuid.UUID) error {
-	// Validate that the user owns the project
 	project, err := uc.projectRepo.GetProjectById(projectID)
 	if err != nil {
 		return fmt.Errorf("project not found or not accessible: %w", err)
@@ -139,19 +131,16 @@ func (uc *ExternalIntegrationUseCase) DisconnectProject(ctx context.Context, use
 		return fmt.Errorf("access denied: user does not own this project")
 	}
 
-	// Get existing connection
 	connection, err := uc.externalConnRepo.GetByProjectID(projectID)
 	if err != nil {
 		return fmt.Errorf("no external connection found for project")
 	}
 
-	// Delete connection
 	return uc.externalConnRepo.Delete(connection.ID)
 }
 
 // GetDescriptionSuggestions returns autocomplete suggestions for time entry descriptions
 func (uc *ExternalIntegrationUseCase) GetDescriptionSuggestions(ctx context.Context, userID, projectID uuid.UUID, query string, limit int) ([]string, error) {
-	// Validate that the user owns the project
 	project, err := uc.projectRepo.GetProjectById(projectID)
 	if err != nil {
 		return nil, fmt.Errorf("project not found or not accessible: %w", err)
@@ -161,13 +150,11 @@ func (uc *ExternalIntegrationUseCase) GetDescriptionSuggestions(ctx context.Cont
 		return nil, fmt.Errorf("access denied: user does not own this project")
 	}
 
-	// Get all time entries for the project
 	timeEntries, err := uc.timeEntryRepo.GetAllTimeEntriesOfUserAndProject(userID, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get time entries: %w", err)
 	}
 
-	// Extract unique descriptions that match the query
 	descMap := make(map[string]int)
 	queryLower := strings.ToLower(query)
 
@@ -182,46 +169,37 @@ func (uc *ExternalIntegrationUseCase) GetDescriptionSuggestions(ctx context.Cont
 	// Also add suggestions from external issues (GitHub, GitLab, Jira issues)
 	var externalIssues []*model.ExternalIssue
 	externalIssues, err = uc.externalIssueRepo.List(projectID)
-	fmt.Printf("DEBUG GetDescriptionSuggestions: Fetched %d external issues for project %v, error: %v\n", len(externalIssues), projectID, err)
 	if err == nil { // Don't fail if no external issues exist
 		for _, issue := range externalIssues {
 			// Create suggestions in the format "#123 - Issue Title" (issue.KeyOrNumber already has #)
 			issueRef := fmt.Sprintf("%s - %s", issue.KeyOrNumber, issue.Title)
 			if strings.Contains(strings.ToLower(issueRef), queryLower) {
 				descMap[issueRef] = 100 // Higher priority than regular descriptions
-				fmt.Printf("DEBUG GetDescriptionSuggestions: Added issue suggestion: %s\n", issueRef)
 			}
-			
+
 			// Only suggest just the issue number if the full description doesn't match
 			// This prevents duplicates when both "#77" and "#77 - Title" would match
 			simpleRef := issue.KeyOrNumber
 			if strings.Contains(strings.ToLower(simpleRef), queryLower) && !strings.Contains(strings.ToLower(issueRef), queryLower) {
 				descMap[simpleRef] = 99 // High priority
-				fmt.Printf("DEBUG GetDescriptionSuggestions: Added simple issue suggestion: %s\n", simpleRef)
 			}
 		}
 	} else {
 		externalIssues = []*model.ExternalIssue{} // Empty slice for logging
 	}
 
-	// Sort by frequency (simple approach - convert to slice and return first N)
-	suggestions := make([]string, 0) // Initialize empty slice instead of nil
+	suggestions := make([]string, 0)
 	for desc := range descMap {
 		suggestions = append(suggestions, desc)
 		if len(suggestions) >= limit {
 			break
 		}
 	}
-
-	fmt.Printf("DEBUG GetDescriptionSuggestions: query='%s', found %d time entries, %d external issues, returning %d suggestions: %v\n", 
-		query, len(timeEntries), len(externalIssues), len(suggestions), suggestions)
-
 	return suggestions, nil
 }
 
 // ResolveIssue attempts to resolve an issue reference from the description
 func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, projectID uuid.UUID, input string) (*model.IssueResolveResult, error) {
-	// Validate that the user owns the project
 	project, err := uc.projectRepo.GetProjectById(projectID)
 	if err != nil {
 		return nil, fmt.Errorf("project not found or not accessible: %w", err)
@@ -231,7 +209,6 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		return nil, fmt.Errorf("access denied: user does not own this project")
 	}
 
-	// Get external connection for the project (with user account)
 	connection, err := uc.externalConnRepo.GetByProjectIDWithUserAccount(projectID)
 	if err != nil {
 		// No external connection, return pending
@@ -261,7 +238,6 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		}, nil
 	}
 
-	// Check if issue is already cached
 	cachedIssue, err := uc.externalIssueRepo.GetByProjectIDAndKey(projectID, connection.Provider, keyOrNumber)
 	if err == nil && cachedIssue != nil {
 		return &model.IssueResolveResult{
@@ -274,7 +250,6 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		}, nil
 	}
 
-	// Create provider instance dynamically
 	var provider external.ExternalProvider
 	switch connection.Provider {
 	case "github":
@@ -302,11 +277,11 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 
 	// For Jira, combine email and token if needed
 	token := connection.UserAccount.OAuthToken
-	if connection.Provider == "jira" && !strings.Contains(token, ":") && 
-	   connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
+	if connection.Provider == "jira" && !strings.Contains(token, ":") &&
+		connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
 		token = connection.UserAccount.AccountName + ":" + connection.UserAccount.OAuthToken
 	}
-	
+
 	externalIssue, err := provider.GetIssue(ctx, token, connection.ProjectRef, keyOrNumber)
 	if err != nil {
 		return &model.IssueResolveResult{
@@ -334,81 +309,59 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 
 // SyncProjectIssues synchronizes issues from external provider
 func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, projectID uuid.UUID) error {
-	fmt.Printf("DEBUG: Starting sync for project %v\n", projectID)
-	
 	connection, err := uc.externalConnRepo.GetByProjectIDWithUserAccount(projectID)
 	if err != nil {
-		fmt.Printf("DEBUG: No external connection found for project %v: %v\n", projectID, err)
 		return fmt.Errorf("no external connection found: %w", err)
 	}
-	fmt.Printf("DEBUG: Found connection for project %v: provider=%s, projectRef=%s\n", projectID, connection.Provider, connection.ProjectRef)
 	if connection.UserAccount == nil {
-		fmt.Printf("DEBUG: UserAccount is nil - no user external account data loaded!\n")
 		return fmt.Errorf("no user account data found for external connection")
 	}
-	fmt.Printf("DEBUG: UserAccount found: ID=%s, AccountName=%s, HasToken=%v\n", 
-		connection.UserAccount.ID, connection.UserAccount.AccountName, len(connection.UserAccount.OAuthToken) > 0)
 
 	// Create provider instance dynamically based on connection settings
 	var provider external.ExternalProvider
 	switch connection.Provider {
 	case "github":
 		provider = external.NewGitHubProvider("", "", "")
-		fmt.Printf("DEBUG: Created GitHub provider\n")
 	case "gitlab":
 		baseURL := connection.UserAccount.BaseURL
 		if baseURL == "" {
 			baseURL = "https://gitlab.com"
 		}
 		provider = external.NewGitLabProvider("", "", "", baseURL)
-		fmt.Printf("DEBUG: Created GitLab provider with base URL: %s\n", baseURL)
 	case "jira":
 		if connection.UserAccount.BaseURL == "" {
-			fmt.Printf("DEBUG: No base URL for Jira provider\n")
 			return fmt.Errorf("base URL required for Jira")
 		}
 		provider = external.NewJiraProvider("", "", "", connection.UserAccount.BaseURL)
-		fmt.Printf("DEBUG: Created Jira provider with base URL: %s\n", connection.UserAccount.BaseURL)
 	default:
-		fmt.Printf("DEBUG: Unsupported provider: %s\n", connection.Provider)
 		return fmt.Errorf("unsupported provider: %s", connection.Provider)
 	}
-	fmt.Printf("DEBUG: Found provider %s\n", connection.Provider)
 
-	fmt.Printf("DEBUG: Fetching issues from %s for %s\n", connection.Provider, connection.ProjectRef)
-	
 	// For Jira, combine email and token if needed
 	token := connection.UserAccount.OAuthToken
-	if connection.Provider == "jira" && !strings.Contains(token, ":") && 
-	   connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
+	if connection.Provider == "jira" && !strings.Contains(token, ":") &&
+		connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
 		token = connection.UserAccount.AccountName + ":" + connection.UserAccount.OAuthToken
 	}
-	
-	fmt.Printf("DEBUG: Using OAuth token: %s...\n", token[:10]) // Show first 10 chars only
-	
+
 	// Create a fresh context that won't be canceled
 	freshCtx := context.Background()
 	timeoutCtx, cancel := context.WithTimeout(freshCtx, 30*time.Second)
 	defer cancel()
-	
+
 	issues, err := provider.ListIssues(timeoutCtx, token, connection.ProjectRef)
 	if err != nil {
-		fmt.Printf("DEBUG: Failed to fetch issues: %v\n", err)
 		return fmt.Errorf("failed to fetch issues: %w", err)
 	}
-	fmt.Printf("DEBUG: Fetched %d issues from %s\n", len(issues), connection.Provider)
 
 	// Set project ID for all issues
 	for _, issue := range issues {
 		issue.ProjectID = projectID
 	}
 
-	// Batch upsert issues
 	if err := uc.externalIssueRepo.BatchUpsert(issues); err != nil {
-		fmt.Printf("DEBUG: Failed to upsert issues: %v\n", err)
 		return fmt.Errorf("failed to upsert issues: %w", err)
 	}
-	fmt.Printf("DEBUG: Successfully upserted %d issues for project %v\n", len(issues), projectID)
 
 	// Clean up old issues (older than 90 days)
 	cutoffTime := time.Now().AddDate(0, 0, -90).Unix()
@@ -419,7 +372,6 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 	return nil
 }
 
-// ResolvePendingReferences resolves pending external references in time entries
 func (uc *ExternalIntegrationUseCase) ResolvePendingReferences(ctx context.Context, userID uuid.UUID) error {
 	// Get all time entries with pending external references
 	allEntries, err := uc.timeEntryRepo.GetAllTimeEntriesOfUser(userID)
@@ -471,4 +423,8 @@ func (uc *ExternalIntegrationUseCase) DetectIssuePattern(input string) (string, 
 	}
 
 	return "", ""
+}
+
+func (uc *ExternalIntegrationUseCase) GetExternalIssueByID(ctx context.Context, issueID uuid.UUID) (*model.ExternalIssue, error) {
+	return uc.externalIssueRepo.GetByID(issueID)
 }

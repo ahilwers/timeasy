@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ConnectProjectRequest, ExternalConnection } from '../models/external-connection.model';
-import { DescriptionSuggestionsResponse, IssueResolveResult } from '../models/external-issue.model';
+import { DescriptionSuggestionsResponse, ExternalIssue, IssueResolveResult } from '../models/external-issue.model';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +45,13 @@ export class ExternalIntegrationService {
   // Resolve pending external references
   resolvePendingReferences(): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/external/resolve-pending`, {});
+  }
+
+  // Get external issue details by ID
+  getExternalIssue(issueId: string): Observable<ExternalIssue> {
+    const url = `${this.apiUrl}/external/issues/${issueId}`;
+    console.log('Making API call to:', url);
+    return this.http.get<ExternalIssue>(url);
   }
 
   // Check if input matches issue patterns

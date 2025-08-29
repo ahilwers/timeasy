@@ -15,7 +15,6 @@ type TimeEntry struct {
 	EndTime             time.Time
 	Description         string
 	ExternalIssueID     *uuid.UUID `json:"externalIssueId,omitempty"`
-	ExternalIssue       *ExternalIssue `json:"externalIssue,omitempty"`
 	PendingExternalRef  *string `json:"pendingExternalRef,omitempty"`
 	Deleted             bool
 }

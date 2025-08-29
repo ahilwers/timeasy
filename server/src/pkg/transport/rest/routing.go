@@ -60,6 +60,7 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 	protectedGroup.GET("/projects/:id/issues/resolve", externalIntegrationHandler.ResolveIssue)
 	protectedGroup.POST("/projects/:id/external/sync", externalIntegrationHandler.SyncProjectIssues)
 	protectedGroup.POST("/external/resolve-pending", externalIntegrationHandler.ResolvePendingReferences)
+	protectedGroup.GET("/external/issues/:id", externalIntegrationHandler.GetExternalIssue)
 
 	return router
 }

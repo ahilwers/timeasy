@@ -43,6 +43,20 @@
       </td>
       <td class="col-description">
         {{ timeEntry.description }}
+        @if (getExternalIssueDisplay(timeEntry); as issueDisplay) {
+          <br>
+          @if (issueDisplay.url) {
+            <a [href]="issueDisplay.url" target="_blank" class="external-issue-link">
+              <i class="pi pi-external-link"></i>
+              {{ issueDisplay.key }}
+            </a>
+          } @else {
+            <span class="external-issue-key">
+              <i class="pi pi-link"></i>
+              {{ issueDisplay.key }}
+            </span>
+          }
+        }
       </td>
       <td class="col-project">
         {{ getProjectName(timeEntry.projectId) }}
@@ -67,6 +81,20 @@
       <td colspan="2">
         <div class="mobile-description">
           {{ timeEntry.description }}
+          @if (getExternalIssueDisplay(timeEntry); as issueDisplay) {
+            <br>
+            @if (issueDisplay.url) {
+              <a [href]="issueDisplay.url" target="_blank" class="external-issue-link">
+                <i class="pi pi-external-link"></i>
+                {{ issueDisplay.key }}
+              </a>
+            } @else {
+              <span class="external-issue-key">
+                <i class="pi pi-link"></i>
+                {{ issueDisplay.key }}
+              </span>
+            }
+          }
           <span class="mobile-project">({{ getProjectName(timeEntry.projectId) }})</span>
         </div>
       </td>

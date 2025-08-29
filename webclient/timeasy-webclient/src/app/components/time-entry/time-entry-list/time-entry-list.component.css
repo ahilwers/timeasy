@@ -56,6 +56,37 @@
   margin-left: 0.5rem;
 }
 
+.external-issue-link {
+  color: #0066cc;
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.external-issue-link:hover {
+  color: #004499;
+  text-decoration: underline;
+}
+
+.external-issue-link i {
+  font-size: 0.8rem;
+}
+
+.external-issue-key {
+  color: #666;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.external-issue-key i {
+  font-size: 0.8rem;
+  color: #999;
+}
+
 /* Responsive styles */
 @media (max-width: 1000px) {
   /* Hide description and project columns */
