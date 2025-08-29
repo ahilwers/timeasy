@@ -2,6 +2,7 @@ package external
 
 import (
 	"context"
+	"fmt"
 	"timeasy-server/pkg/domain/model"
 
 	"golang.org/x/oauth2"
@@ -54,4 +55,24 @@ func (f *ProviderFactory) GetProvider(name string) (ExternalProvider, bool) {
 // GetAllProviders returns all registered providers
 func (f *ProviderFactory) GetAllProviders() map[string]ExternalProvider {
 	return f.providers
+}
+
+// CreateProvider creates a provider instance based on provider name and configuration
+func (f *ProviderFactory) CreateProvider(providerName string, baseURL string) (ExternalProvider, error) {
+	switch providerName {
+	case "github":
+		return NewGitHubProvider("", "", ""), nil
+	case "gitlab":
+		if baseURL == "" {
+			baseURL = "https://gitlab.com"
+		}
+		return NewGitLabProvider("", "", "", baseURL), nil
+	case "jira":
+		if baseURL == "" {
+			return nil, fmt.Errorf("base URL is required for Jira provider")
+		}
+		return NewJiraProvider("", "", "", baseURL), nil
+	default:
+		return nil, fmt.Errorf("unsupported provider: %s", providerName)
+	}
 }

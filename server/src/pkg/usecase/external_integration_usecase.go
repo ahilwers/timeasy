@@ -67,23 +67,9 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
-	var providerInstance external.ExternalProvider
-	switch account.Provider {
-	case "github":
-		providerInstance = external.NewGitHubProvider("", "", "")
-	case "gitlab":
-		baseURL := account.BaseURL
-		if baseURL == "" {
-			baseURL = "https://gitlab.com"
-		}
-		providerInstance = external.NewGitLabProvider("", "", "", baseURL)
-	case "jira":
-		if account.BaseURL == "" {
-			return fmt.Errorf("base URL required for Jira")
-		}
-		providerInstance = external.NewJiraProvider("", "", "", account.BaseURL)
-	default:
-		return fmt.Errorf("unsupported provider: %s", account.Provider)
+	providerInstance, err := uc.providerFactory.CreateProvider(account.Provider, account.BaseURL)
+	if err != nil {
+		return fmt.Errorf("failed to create provider: %w", err)
 	}
 
 	token := account.OAuthToken
@@ -253,25 +239,8 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		}, nil
 	}
 
-	var provider external.ExternalProvider
-	switch connection.Provider {
-	case "github":
-		provider = external.NewGitHubProvider("", "", "")
-	case "gitlab":
-		baseURL := connection.UserAccount.BaseURL
-		if baseURL == "" {
-			baseURL = "https://gitlab.com"
-		}
-		provider = external.NewGitLabProvider("", "", "", baseURL)
-	case "jira":
-		if connection.UserAccount.BaseURL == "" {
-			return &model.IssueResolveResult{
-				Key:    keyOrNumber,
-				Status: "pending",
-			}, nil
-		}
-		provider = external.NewJiraProvider("", "", "", connection.UserAccount.BaseURL)
-	default:
+	provider, err := uc.providerFactory.CreateProvider(connection.Provider, connection.UserAccount.BaseURL)
+	if err != nil {
 		return &model.IssueResolveResult{
 			Key:    keyOrNumber,
 			Status: "pending",
@@ -321,23 +290,9 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 	}
 
 	// Create provider instance dynamically based on connection settings
-	var provider external.ExternalProvider
-	switch connection.Provider {
-	case "github":
-		provider = external.NewGitHubProvider("", "", "")
-	case "gitlab":
-		baseURL := connection.UserAccount.BaseURL
-		if baseURL == "" {
-			baseURL = "https://gitlab.com"
-		}
-		provider = external.NewGitLabProvider("", "", "", baseURL)
-	case "jira":
-		if connection.UserAccount.BaseURL == "" {
-			return fmt.Errorf("base URL required for Jira")
-		}
-		provider = external.NewJiraProvider("", "", "", connection.UserAccount.BaseURL)
-	default:
-		return fmt.Errorf("unsupported provider: %s", connection.Provider)
+	provider, err := uc.providerFactory.CreateProvider(connection.Provider, connection.UserAccount.BaseURL)
+	if err != nil {
+		return fmt.Errorf("failed to create provider: %w", err)
 	}
 
 	// For Jira, combine email and token if needed
