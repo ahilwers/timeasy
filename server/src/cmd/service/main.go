@@ -3,10 +3,15 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/external"
+	"timeasy-server/pkg/sync"
 	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
 
@@ -90,6 +95,43 @@ func main() {
 	)
 	externalIntegrationHandler := rest.NewExternalIntegrationHandler(tokenVerifier, externalIntegrationUsecase)
 
+	// Setup sync scheduler for automated issue synchronization
+	syncConfig := sync.SyncConfig{
+		ActiveProjectInterval:   time.Duration(configuration.SyncActiveInterval) * time.Minute,
+		RecentProjectInterval:   time.Duration(configuration.SyncRecentInterval) * time.Minute,
+		DormantProjectInterval:  time.Duration(configuration.SyncDormantInterval) * time.Minute,
+		MaxConcurrentSyncs:      configuration.SyncMaxConcurrent,
+		ActivityWindowActive:    4 * time.Hour,
+		ActivityWindowRecent:    24 * time.Hour,
+	}
+	
+	syncScheduler := sync.NewSyncScheduler(
+		syncConfig,
+		externalIntegrationUsecase,
+		timeEntryUsecase,
+		projectUsecase,
+	)
+	
+	// Set the sync scheduler on the external integration usecase to avoid circular dependency
+	externalIntegrationUsecase.SetSyncScheduler(syncScheduler)
+	
+	// Start the sync scheduler
+	syncScheduler.Start()
+	defer syncScheduler.Stop()
+	
+	// Setup graceful shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	
 	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
-	router.Run()
+	
+	// Start the server in a goroutine
+	go func() {
+		log.Printf("Starting server...")
+		router.Run()
+	}()
+	
+	// Wait for interrupt signal
+	<-c
+	log.Printf("Shutting down gracefully...")
 }

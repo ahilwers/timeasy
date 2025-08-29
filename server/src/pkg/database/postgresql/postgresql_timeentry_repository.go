@@ -475,3 +475,59 @@ func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args .
 
 	return entries, nil
 }
+
+// GetLastActivityTimeForProject returns the most recent activity time for a project
+func (repo *postgresqlTimeEntryRepository) GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error) {
+	query := `
+		SELECT MAX(GREATEST(
+			COALESCE(start_time, '1970-01-01'::timestamp),
+			COALESCE(end_time, '1970-01-01'::timestamp)
+		)) as last_activity
+		FROM time_entries
+		WHERE project_id = $1 AND deleted = false
+	`
+	
+	var lastActivity sql.NullTime
+	err := repo.db.QueryRow(query, projectId).Scan(&lastActivity)
+	if err != nil {
+		return time.Time{}, err
+	}
+	
+	if !lastActivity.Valid {
+		return time.Time{}, nil // No activity found
+	}
+	
+	return lastActivity.Time.In(time.UTC), nil
+}
+
+// GetProjectsWithRecentActivity returns project IDs that have had activity since the given time
+func (repo *postgresqlTimeEntryRepository) GetProjectsWithRecentActivity(since time.Time) ([]uuid.UUID, error) {
+	query := `
+		SELECT DISTINCT project_id
+		FROM time_entries
+		WHERE (start_time >= $1 OR end_time >= $1) AND deleted = false
+		ORDER BY project_id
+	`
+	
+	rows, err := repo.db.Query(query, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var projectIDs []uuid.UUID
+	for rows.Next() {
+		var projectID uuid.UUID
+		err := rows.Scan(&projectID)
+		if err != nil {
+			return nil, err
+		}
+		projectIDs = append(projectIDs, projectID)
+	}
+	
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	
+	return projectIDs, nil
+}

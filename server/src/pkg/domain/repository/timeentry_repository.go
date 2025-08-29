@@ -19,4 +19,6 @@ type TimeEntryRepository interface {
 	GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error)
 	GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error)
 	GetOpenTimeEntriesForProject(userId uuid.UUID, projectId uuid.UUID, tx model.Transaction) ([]model.TimeEntry, error)
+	GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error)
+	GetProjectsWithRecentActivity(since time.Time) ([]uuid.UUID, error)
 }

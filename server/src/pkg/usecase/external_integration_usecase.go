@@ -13,6 +13,13 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+// SyncScheduler interface for managing project sync scheduling
+type SyncScheduler interface {
+	RegisterProject(projectID uuid.UUID)
+	UnregisterProject(projectID uuid.UUID)
+	TriggerImmediateSync(projectID uuid.UUID)
+}
+
 type ExternalIntegrationUseCase struct {
 	externalConnRepo  repository.ExternalConnectionRepository
 	externalIssueRepo repository.ExternalIssueRepository
@@ -20,7 +27,9 @@ type ExternalIntegrationUseCase struct {
 	timeEntryRepo     repository.TimeEntryRepository
 	projectRepo       repository.ProjectRepository
 	providerFactory   *external.ProviderFactory
+	rateLimiter       *external.ProviderRateLimiter
 	teamUsecase       TeamUsecase
+	syncScheduler     SyncScheduler
 }
 
 func NewExternalIntegrationUseCase(
@@ -39,8 +48,14 @@ func NewExternalIntegrationUseCase(
 		timeEntryRepo:     timeEntryRepo,
 		projectRepo:       projectRepo,
 		providerFactory:   providerFactory,
+		rateLimiter:       external.NewProviderRateLimiter(),
 		teamUsecase:       teamUsecase,
+		syncScheduler:     nil,
 	}
+}
+
+func (uc *ExternalIntegrationUseCase) SetSyncScheduler(scheduler SyncScheduler) {
+	uc.syncScheduler = scheduler
 }
 
 // ConnectProjectToAccount creates an external connection between a project and a user's external account
@@ -105,6 +120,10 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		}
 	}
 
+	if uc.syncScheduler != nil {
+		uc.syncScheduler.RegisterProject(projectID)
+	}
+
 	go uc.SyncProjectIssues(context.Background(), projectID)
 	return nil
 }
@@ -123,6 +142,10 @@ func (uc *ExternalIntegrationUseCase) DisconnectProject(ctx context.Context, use
 	connection, err := uc.externalConnRepo.GetByProjectID(projectID)
 	if err != nil {
 		return fmt.Errorf("no external connection found for project")
+	}
+
+	if uc.syncScheduler != nil {
+		uc.syncScheduler.UnregisterProject(projectID)
 	}
 
 	return uc.externalConnRepo.Delete(connection.ID)
@@ -307,10 +330,23 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 	timeoutCtx, cancel := context.WithTimeout(freshCtx, 30*time.Second)
 	defer cancel()
 
+	// Apply rate limiting before making API calls
+	if err := uc.rateLimiter.WaitForPermission(timeoutCtx, connection.Provider); err != nil {
+		return fmt.Errorf("rate limiting error: %w", err)
+	}
+
 	issues, err := provider.ListIssues(timeoutCtx, token, connection.ProjectRef)
 	if err != nil {
+		// Record the failure with appropriate type
+		isRateLimit := strings.Contains(err.Error(), "rate limit") ||
+			strings.Contains(err.Error(), "429") ||
+			strings.Contains(err.Error(), "too many requests")
+		uc.rateLimiter.RecordFailure(connection.Provider, isRateLimit)
 		return fmt.Errorf("failed to fetch issues: %w", err)
 	}
+
+	// Record successful API call
+	uc.rateLimiter.RecordSuccess(connection.Provider)
 
 	// Set project ID for all issues
 	for _, issue := range issues {

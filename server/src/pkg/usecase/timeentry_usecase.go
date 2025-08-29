@@ -21,6 +21,8 @@ type TimeEntryUsecase interface {
 	UpdateTimeEntry(timeEntry *model.TimeEntry, userId uuid.UUID, clientId string) error
 	UpdateTimeEntryList(timeEntry []model.TimeEntry, userId uuid.UUID, clientId string) error
 	DeleteTimeEntry(id uuid.UUID, userId uuid.UUID, clientId string) error
+	GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error)
+	GetProjectsWithRecentActivity(since time.Time) ([]uuid.UUID, error)
 }
 
 type timeEntryUsecase struct {
@@ -256,4 +258,12 @@ func (tu *timeEntryUsecase) checkProject(timeEntry *model.TimeEntry) error {
 		return NewProjectNotFoundError(timeEntry.ProjectId)
 	}
 	return nil
+}
+
+func (tu *timeEntryUsecase) GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error) {
+	return tu.repo.GetLastActivityTimeForProject(projectId)
+}
+
+func (tu *timeEntryUsecase) GetProjectsWithRecentActivity(since time.Time) ([]uuid.UUID, error) {
+	return tu.repo.GetProjectsWithRecentActivity(since)
 }
