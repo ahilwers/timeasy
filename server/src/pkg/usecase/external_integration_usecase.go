@@ -88,10 +88,7 @@ func (uc *ExternalIntegrationUseCase) ConnectProjectToAccount(ctx context.Contex
 		return fmt.Errorf("failed to create provider: %w", err)
 	}
 
-	token := account.OAuthToken
-	if account.Provider == "jira" && !strings.Contains(token, ":") && account.AccountName != "" && strings.Contains(account.AccountName, "@") {
-		token = account.AccountName + ":" + account.OAuthToken
-	}
+	token := account.GetAuthToken()
 
 	if err := providerInstance.ValidateProjectRef(ctx, token, projectRef); err != nil {
 		return fmt.Errorf("invalid project reference: %w", err)
@@ -271,12 +268,7 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 		}, nil
 	}
 
-	// For Jira, combine email and token if needed
-	token := connection.UserAccount.OAuthToken
-	if connection.Provider == "jira" && !strings.Contains(token, ":") &&
-		connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
-		token = connection.UserAccount.AccountName + ":" + connection.UserAccount.OAuthToken
-	}
+	token := connection.UserAccount.GetAuthToken()
 
 	externalIssue, err := provider.GetIssue(ctx, token, connection.ProjectRef, keyOrNumber)
 	if err != nil {
@@ -313,18 +305,12 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 		return fmt.Errorf("no user account data found for external connection")
 	}
 
-	// Create provider instance dynamically based on connection settings
 	provider, err := uc.providerFactory.CreateProvider(connection.Provider, connection.UserAccount.BaseURL)
 	if err != nil {
 		return fmt.Errorf("failed to create provider: %w", err)
 	}
 
-	// For Jira, combine email and token if needed
-	token := connection.UserAccount.OAuthToken
-	if connection.Provider == "jira" && !strings.Contains(token, ":") &&
-		connection.UserAccount.AccountName != "" && strings.Contains(connection.UserAccount.AccountName, "@") {
-		token = connection.UserAccount.AccountName + ":" + connection.UserAccount.OAuthToken
-	}
+	token := connection.UserAccount.GetAuthToken()
 
 	// Create a fresh context that won't be canceled
 	freshCtx := context.Background()

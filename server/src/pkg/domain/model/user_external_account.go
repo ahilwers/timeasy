@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -15,6 +16,17 @@ type UserExternalAccount struct {
 	BaseURL     string    `json:"baseURL,omitempty"` // For GitLab self-hosted or Jira instances
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+// GetAuthToken returns the properly formatted authentication token for API calls.
+// For Jira, it combines the email (AccountName) with the API token if needed.
+// For other providers (GitHub, GitLab), it returns the token as-is.
+func (u *UserExternalAccount) GetAuthToken() string {
+	if u.Provider == "jira" && !strings.Contains(u.OAuthToken, ":") && 
+		u.AccountName != "" && strings.Contains(u.AccountName, "@") {
+		return u.AccountName + ":" + u.OAuthToken
+	}
+	return u.OAuthToken
 }
 
 // UserExternalAccountRequest represents the request to create/update an external account
