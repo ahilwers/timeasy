@@ -86,6 +86,7 @@ func main() {
 		timeEntryRepository,
 		projectRepository,
 		providerFactory,
+		teamUsecase,
 	)
 	externalIntegrationHandler := rest.NewExternalIntegrationHandler(tokenVerifier, externalIntegrationUsecase)
 

@@ -132,7 +132,8 @@ func (t *HandlerTest) initHandlers() {
 		userExternalAccountRepo,
 		timeEntryRepo,
 		projectRepo,
-		providerFactory)
+		providerFactory,
+		t.TeamUsecase)
 	userExternalAccountUsecase := usecase.NewUserExternalAccountUseCase(userExternalAccountRepo, providerFactory)
 	
 	externalIntegrationHandler := NewExternalIntegrationHandler(t.tokenVerifier, externalIntegrationUsecase)
