@@ -8,14 +8,12 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.3
-	github.com/golang/glog v1.1.2
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lib/pq v1.10.9
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/peterbourgon/ff v1.7.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.9.0
-	github.com/szuecs/gin-glog v1.1.1
 	github.com/xuri/excelize/v2 v2.9.0
 	golang.org/x/oauth2 v0.24.0
 	gorm.io/driver/postgres v1.5.2

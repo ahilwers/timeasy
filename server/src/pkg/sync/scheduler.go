@@ -2,7 +2,7 @@ package sync
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -76,10 +76,11 @@ func NewSyncScheduler(
 }
 
 func (s *SyncScheduler) Start() {
-	log.Printf("Starting sync scheduler with config: Active=%v, Recent=%v, Dormant=%v",
-		s.config.ActiveProjectInterval,
-		s.config.RecentProjectInterval,
-		s.config.DormantProjectInterval)
+	slog.Info("Starting sync scheduler",
+		"active_interval", s.config.ActiveProjectInterval,
+		"recent_interval", s.config.RecentProjectInterval,
+		"dormant_interval", s.config.DormantProjectInterval,
+		"max_concurrent", s.config.MaxConcurrentSyncs)
 
 	go s.discoverConnectedProjects()
 	go s.schedulerLoop()
@@ -87,7 +88,7 @@ func (s *SyncScheduler) Start() {
 }
 
 func (s *SyncScheduler) Stop() {
-	log.Printf("Stopping sync scheduler...")
+	slog.Info("Stopping sync scheduler")
 	s.cancel()
 }
 
@@ -120,7 +121,7 @@ func (s *SyncScheduler) activityTrackerLoop() {
 }
 
 func (s *SyncScheduler) discoverConnectedProjects() {
-	log.Printf("Discovering connected projects...")
+	slog.Info("Discovering connected projects")
 	s.updateProjectActivity()
 }
 
@@ -132,14 +133,14 @@ func (s *SyncScheduler) updateProjectActivity() {
 
 	recentProjects, err := s.timeEntryUsecase.GetProjectsWithRecentActivity(now.Add(-s.config.ActivityWindowRecent))
 	if err != nil {
-		log.Printf("Error getting projects with recent activity: %v", err)
+		slog.Error("Error getting projects with recent activity", "error", err)
 		return
 	}
 
 	for _, projectID := range recentProjects {
 		lastActivity, err := s.timeEntryUsecase.GetLastActivityTimeForProject(projectID)
 		if err != nil {
-			log.Printf("Error getting last activity for project %s: %v", projectID, err)
+			slog.Error("Error getting last activity for project", "project_id", projectID, "error", err)
 			continue
 		}
 
@@ -152,7 +153,7 @@ func (s *SyncScheduler) updateProjectActivity() {
 				LastActivity: lastActivity,
 				NextSyncTime: now.Add(s.config.ActiveProjectInterval),
 			}
-			log.Printf("Discovered new project with external connection: %s", projectID)
+			slog.Info("Discovered new project with external connection", "project_id", projectID)
 		}
 	}
 }
@@ -195,7 +196,7 @@ func (s *SyncScheduler) syncProject(info *ProjectSyncInfo) {
 		s.mu.Unlock()
 	}()
 
-	log.Printf("Syncing project %s", info.ProjectID)
+	slog.Info("Syncing project", "project_id", info.ProjectID)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
 	defer cancel()
@@ -203,14 +204,17 @@ func (s *SyncScheduler) syncProject(info *ProjectSyncInfo) {
 	err := s.externalIntegrationUsecase.SyncProjectIssues(ctx, info.ProjectID)
 	if err != nil {
 		info.FailCount++
-		log.Printf("Failed to sync project %s: %v (fail count: %d)", info.ProjectID, err, info.FailCount)
+		slog.Error("Failed to sync project", 
+			"project_id", info.ProjectID, 
+			"error", err,
+			"fail_count", info.FailCount)
 
 		// Apply exponential backoff for failed syncs
 		backoffMultiplier := 1 << min(info.FailCount-1, 4) // Max 16x backoff
 		info.NextSyncTime = time.Now().Add(s.config.ActiveProjectInterval * time.Duration(backoffMultiplier))
 	} else {
 		info.FailCount = 0
-		log.Printf("Successfully synced project %s", info.ProjectID)
+		slog.Info("Successfully synced project", "project_id", info.ProjectID)
 	}
 }
 
@@ -245,7 +249,7 @@ func (s *SyncScheduler) RegisterProject(projectID uuid.UUID) {
 			NextSyncTime: now.Add(s.config.ActiveProjectInterval), // Sync soon after registration
 		}
 		s.projectSyncInfo[projectID] = info
-		log.Printf("Registered project %s for sync scheduling", projectID)
+		slog.Info("Registered project for sync scheduling", "project_id", projectID)
 	}
 }
 
@@ -255,7 +259,7 @@ func (s *SyncScheduler) UnregisterProject(projectID uuid.UUID) {
 	defer s.mu.Unlock()
 
 	delete(s.projectSyncInfo, projectID)
-	log.Printf("Unregistered project %s from sync scheduling", projectID)
+	slog.Info("Unregistered project from sync scheduling", "project_id", projectID)
 }
 
 func (s *SyncScheduler) TriggerImmediateSync(projectID uuid.UUID) {
@@ -265,7 +269,7 @@ func (s *SyncScheduler) TriggerImmediateSync(projectID uuid.UUID) {
 	if info, exists := s.projectSyncInfo[projectID]; exists {
 		info.NextSyncTime = time.Now()
 		info.LastActivity = time.Now()
-		log.Printf("Triggered immediate sync for project %s", projectID)
+		slog.Info("Triggered immediate sync for project", "project_id", projectID)
 	}
 }
 

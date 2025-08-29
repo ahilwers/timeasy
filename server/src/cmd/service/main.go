@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,21 +21,33 @@ import (
 var databaseService database.DatabaseService
 
 func main() {
+	// Setup structured logging with colorful console output
+	logger := slog.New(rest.NewColorfulHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     slog.LevelInfo,
+		AddSource: false, // Disable source info for cleaner console output
+	}))
+	slog.SetDefault(logger)
+
 	configuration, err := configuration.GetConfiguration()
 	if err != nil {
+		slog.Error("Failed to get configuration", "error", err)
 		panic(err)
 	}
 
-	log.Printf("Connecting to database at %v:%v\n", configuration.DbHost, configuration.DbPort)
+	slog.Info("Connecting to database",
+		"host", configuration.DbHost,
+		"port", configuration.DbPort,
+		"database", configuration.DbName)
 	err = databaseService.Init(configuration.DbHost, configuration.DbName, configuration.DbUser,
 		configuration.DbPassword, configuration.DbPort)
 	if err != nil {
+		slog.Error("Failed to initialize database", "error", err)
 		panic(err)
 	}
 
-	log.Printf("Authentication server is at %v\n", configuration.KeycloakHost)
+	slog.Info("Authentication server configured", "keycloak_host", configuration.KeycloakHost)
 
-	flag.Parse() // Intialize glog flags
+	flag.Parse()
 
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
@@ -62,7 +74,7 @@ func main() {
 
 	changelogInitUsecase := usecase.NewChangelogInitializationUsecase(changelogRepository, projectRepository, timeEntryRepository, teamRepository)
 	if err := changelogInitUsecase.InitializeChangelog(); err != nil {
-		log.Printf("Failed to initialize changelog: %v", err)
+		slog.Error("Failed to initialize changelog", "error", err)
 		panic(err)
 	}
 
@@ -97,41 +109,41 @@ func main() {
 
 	// Setup sync scheduler for automated issue synchronization
 	syncConfig := sync.SyncConfig{
-		ActiveProjectInterval:   time.Duration(configuration.SyncActiveInterval) * time.Minute,
-		RecentProjectInterval:   time.Duration(configuration.SyncRecentInterval) * time.Minute,
-		DormantProjectInterval:  time.Duration(configuration.SyncDormantInterval) * time.Minute,
-		MaxConcurrentSyncs:      configuration.SyncMaxConcurrent,
-		ActivityWindowActive:    4 * time.Hour,
-		ActivityWindowRecent:    24 * time.Hour,
+		ActiveProjectInterval:  time.Duration(configuration.SyncActiveInterval) * time.Minute,
+		RecentProjectInterval:  time.Duration(configuration.SyncRecentInterval) * time.Minute,
+		DormantProjectInterval: time.Duration(configuration.SyncDormantInterval) * time.Minute,
+		MaxConcurrentSyncs:     configuration.SyncMaxConcurrent,
+		ActivityWindowActive:   4 * time.Hour,
+		ActivityWindowRecent:   24 * time.Hour,
 	}
-	
+
 	syncScheduler := sync.NewSyncScheduler(
 		syncConfig,
 		externalIntegrationUsecase,
 		timeEntryUsecase,
 		projectUsecase,
 	)
-	
+
 	// Set the sync scheduler on the external integration usecase to avoid circular dependency
 	externalIntegrationUsecase.SetSyncScheduler(syncScheduler)
-	
+
 	// Start the sync scheduler
 	syncScheduler.Start()
 	defer syncScheduler.Stop()
-	
+
 	// Setup graceful shutdown
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	
-	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
-	
+
+	router := rest.SetupRouter(authMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
+
 	// Start the server in a goroutine
 	go func() {
-		log.Printf("Starting server...")
+		slog.Info("Starting HTTP server", "port", "8080")
 		router.Run()
 	}()
-	
+
 	// Wait for interrupt signal
 	<-c
-	log.Printf("Shutting down gracefully...")
+	slog.Info("Shutting down gracefully...")
 }

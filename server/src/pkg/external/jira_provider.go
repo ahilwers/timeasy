@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
@@ -212,7 +213,7 @@ func (p *JiraProvider) ValidateProjectRef(ctx context.Context, token string, pro
 	
 	req.Header.Set("Accept", "application/json")
 	
-	fmt.Printf("DEBUG: Jira project validation - URL: %s\n", apiURL)
+	slog.Debug("Jira project validation", "url", apiURL)
 	
 	resp, err := p.client.Do(req)
 	if err != nil {
@@ -220,14 +221,14 @@ func (p *JiraProvider) ValidateProjectRef(ctx context.Context, token string, pro
 	}
 	defer resp.Body.Close()
 	
-	fmt.Printf("DEBUG: Jira project validation - Status: %d\n", resp.StatusCode)
+	slog.Debug("Jira project validation response", "status_code", resp.StatusCode)
 	
 	if resp.StatusCode != http.StatusOK {
 		// Read response body for more detailed error
 		body := make([]byte, 1024)
 		n, _ := resp.Body.Read(body)
 		bodyStr := string(body[:n])
-		fmt.Printf("DEBUG: Jira project validation error response body: %s\n", bodyStr)
+		slog.Debug("Jira project validation error response", "body", bodyStr, "status_code", resp.StatusCode)
 		return fmt.Errorf("project not accessible: %d", resp.StatusCode)
 	}
 	

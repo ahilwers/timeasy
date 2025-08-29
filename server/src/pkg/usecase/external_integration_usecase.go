@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -289,7 +290,7 @@ func (uc *ExternalIntegrationUseCase) ResolveIssue(ctx context.Context, userID, 
 	externalIssue.ProjectID = projectID
 	if err := uc.externalIssueRepo.Create(externalIssue); err != nil {
 		// Log error but continue
-		fmt.Printf("Failed to cache external issue: %v\n", err)
+		slog.Warn("Failed to cache external issue", "error", err, "issue_id", externalIssue.ID)
 	}
 
 	return &model.IssueResolveResult{
@@ -360,7 +361,7 @@ func (uc *ExternalIntegrationUseCase) SyncProjectIssues(ctx context.Context, pro
 	// Clean up old issues (older than 90 days)
 	cutoffTime := time.Now().AddDate(0, 0, -90).Unix()
 	if err := uc.externalIssueRepo.DeleteOldIssues(projectID, connection.Provider, cutoffTime); err != nil {
-		fmt.Printf("Failed to clean up old issues: %v\n", err)
+		slog.Warn("Failed to clean up old issues", "error", err, "project_id", projectID, "provider", connection.Provider)
 	}
 
 	return nil
@@ -396,7 +397,7 @@ func (uc *ExternalIntegrationUseCase) ResolvePendingReferences(ctx context.Conte
 			entry.PendingExternalRef = nil // Clear pending reference
 
 			if err := uc.timeEntryRepo.UpdateTimeEntry(&entry, tx); err != nil {
-				fmt.Printf("Failed to update time entry %s: %v\n", entry.ID, err)
+				slog.Error("Failed to update time entry", "entry_id", entry.ID, "error", err)
 			}
 		}
 	}

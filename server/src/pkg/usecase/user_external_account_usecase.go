@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -272,16 +273,16 @@ func (uc *UserExternalAccountUseCase) validateJiraConnectionWithEmail(ctx contex
 		authString := email + ":" + token
 		credentials := base64.StdEncoding.EncodeToString([]byte(authString))
 		req.Header.Set("Authorization", "Basic "+credentials)
-		fmt.Printf("DEBUG: Using Basic Auth with email:token combination\n")
+		slog.Debug("Using Basic Auth with email:token combination")
 	} else if strings.Contains(token, ":") {
 		// Token already contains email:api_token format (backward compatibility)
 		credentials := base64.StdEncoding.EncodeToString([]byte(token))
 		req.Header.Set("Authorization", "Basic "+credentials)
-		fmt.Printf("DEBUG: Using Basic Auth with existing email:token format\n")
+		slog.Debug("Using Basic Auth with existing email:token format")
 	} else {
 		// Fallback: try Bearer token
 		req.Header.Set("Authorization", "Bearer "+token)
-		fmt.Printf("DEBUG: Using Bearer token as fallback\n")
+		slog.Debug("Using Bearer token as fallback")
 	}
 	req.Header.Set("Accept", "application/json")
 
@@ -292,10 +293,10 @@ func (uc *UserExternalAccountUseCase) validateJiraConnectionWithEmail(ctx contex
 	}
 	defer resp.Body.Close()
 
-	fmt.Printf("DEBUG: Jira validation - URL: %s, Status: %d\n", apiURL, resp.StatusCode)
-	fmt.Printf("DEBUG: Jira validation - Email: %s, Token length: %d\n", email, len(token))
+	slog.Debug("Jira validation", "url", apiURL, "status_code", resp.StatusCode)
+	slog.Debug("Jira validation credentials", "email", email, "token_length", len(token))
 	if email != "" && !strings.Contains(token, ":") {
-		fmt.Printf("DEBUG: Jira validation - Using combined credentials: %s:[token]\n", email)
+		slog.Debug("Jira validation using combined credentials", "email", email)
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
@@ -306,7 +307,7 @@ func (uc *UserExternalAccountUseCase) validateJiraConnectionWithEmail(ctx contex
 		body := make([]byte, 1024)
 		n, _ := resp.Body.Read(body)
 		bodyStr := string(body[:n])
-		fmt.Printf("DEBUG: Jira error response body: %s\n", bodyStr)
+		slog.Debug("Jira error response", "body", bodyStr)
 		return fmt.Errorf("Jira API error: status %d - %s", resp.StatusCode, bodyStr)
 	}
 

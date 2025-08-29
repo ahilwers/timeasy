@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"log/slog"
 	"github.com/xuri/excelize/v2"
 	"sort"
 	"time"
@@ -74,7 +75,7 @@ func (t timeEntryExportToXlsxUsecase) ExportTimeEntries(timeEntries []model.Time
 	excelFile := excelize.NewFile()
 	defer func() {
 		if err := excelFile.Close(); err != nil {
-			fmt.Println(err)
+			slog.Error("Failed to close Excel file", "error", err)
 		}
 	}()
 	sheetName := "Sheet1"
@@ -121,7 +122,7 @@ func (t timeEntryExportToXlsxUsecaseOneLinePerDay) ExportTimeEntries(timeEntries
 	excelFile := excelize.NewFile()
 	defer func() {
 		if err := excelFile.Close(); err != nil {
-			fmt.Println(err)
+			slog.Error("Failed to close Excel file", "error", err)
 		}
 	}()
 	sheetName := "Sheet1"

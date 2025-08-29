@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
@@ -303,9 +304,9 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 		LogHandlerError("GetProjectById", err, fmt.Sprintf("Failed to fetch external connection for project %v", projectId))
 	} else if externalConnection != nil {
 		project.ExternalConnection = externalConnection
-		fmt.Printf("DEBUG: Found external connection for project %v: %+v\n", projectId, externalConnection)
+		slog.Debug("Found external connection for project", "project_id", projectId, "connection", externalConnection)
 	} else {
-		fmt.Printf("DEBUG: No external connection found for project %v\n", projectId)
+		slog.Debug("No external connection found for project", "project_id", projectId)
 	}
 	// Note: We ignore errors here because not all projects have external connections
 

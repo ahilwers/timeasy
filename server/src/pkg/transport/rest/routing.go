@@ -1,18 +1,22 @@
 package rest
 
 import (
+	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	ginglog "github.com/szuecs/gin-glog"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
-	router := gin.Default()
+func SetupRouter(authMiddleware AuthMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
+	// Set Gin to release mode to disable debug logging
+	gin.SetMode(gin.ReleaseMode)
+	
+	// Create router without default middleware
+	router := gin.New()
 
-	router.Use(ginglog.Logger(3 * time.Second))
-	router.Use(gin.Recovery())
+	// Use our custom slog middleware instead of gin's logger and glog
+	router.Use(SlogMiddleware(logger))
+	router.Use(SlogRecoveryMiddleware(logger))
 	router.Use(corsMiddleware())
 
 	protectedGroup := router.Group("/api/v1")
@@ -64,6 +68,7 @@ func SetupRouter(authMiddleware AuthMiddleware, teamHandler TeamHandler, project
 
 	return router
 }
+
 
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
