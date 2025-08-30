@@ -105,107 +105,39 @@ export class TimeEntryService {
   updateTimeEntry(data: TimeEntry): void {
     this.resetState();
     
-    // Check if description contains issue patterns
-    const issuePattern = this.externalService.detectIssuePattern(data.description);
-    
-    if (issuePattern && data.projectId) {
-      // If issue pattern detected, resolve it first
-      this.externalService.resolveIssue(data.projectId, data.description).pipe(
-        switchMap((resolveResult) => {
-          // Update time entry with resolved issue info
-          const updatedData = { ...data };
-          if (resolveResult.status === 'resolved' && resolveResult.issueId) {
-            updatedData.externalIssueId = resolveResult.issueId;
-          } else if (resolveResult.status === 'pending') {
-            updatedData.pendingExternalRef = resolveResult.key;
-          }
-          
-          return this.http.put<TimeEntry>(`${this.apiUrl}/${updatedData.id}`, updatedData);
-        }),
-        tap((updatedTimeEntry) => {
-          this.state.lastUpdatedTimeEntry.set(updatedTimeEntry);
-          this.state.updateSuccessful.set(true);
-          this.state.error.set(null);
-        }),
-        catchError((err) => {
-          const errorMessage = err.error?.message || this.translateService.instant('timeEntries.errorUpdatingTimeEntry');
-          this.state.error.set(errorMessage);
-          this.state.updateSuccessful.set(false);
-          return of(null as unknown as TimeEntry);
-        })
-      ).subscribe();
-    } else {
-      // No issue pattern detected, update normally
-      this.http.put<TimeEntry>(`${this.apiUrl}/${data.id}`, data).pipe(
-        tap((updatedTimeEntry) => {
-          this.state.lastUpdatedTimeEntry.set(updatedTimeEntry);
-          this.state.updateSuccessful.set(true);
-          this.state.error.set(null);
-        }),
-        catchError((err) => {
-          const errorMessage = err.error?.message || this.translateService.instant('timeEntries.errorUpdatingTimeEntry');
-          this.state.error.set(errorMessage);
-          this.state.updateSuccessful.set(false);
-          return of(null as unknown as TimeEntry);
-        })
-      ).subscribe();
-    }
+    // Send time entry data directly to server - server handles issue detection and resolution
+    this.http.put<TimeEntry>(`${this.apiUrl}/${data.id}`, data).pipe(
+      tap((updatedTimeEntry) => {
+        this.state.lastUpdatedTimeEntry.set(updatedTimeEntry);
+        this.state.updateSuccessful.set(true);
+        this.state.error.set(null);
+      }),
+      catchError((err) => {
+        const errorMessage = err.error?.message || this.translateService.instant('timeEntries.errorUpdatingTimeEntry');
+        this.state.error.set(errorMessage);
+        this.state.updateSuccessful.set(false);
+        return of(null as unknown as TimeEntry);
+      })
+    ).subscribe();
   }
 
   addTimeEntry(data: TimeEntry) {
     this.resetState();
     
-    // Check if description contains issue patterns
-    const issuePattern = this.externalService.detectIssuePattern(data.description);
-    console.log('Issue pattern detection:', { description: data.description, pattern: issuePattern });
-    
-    if (issuePattern && data.projectId) {
-      // If issue pattern detected, resolve it first
-      this.externalService.resolveIssue(data.projectId, data.description).pipe(
-        switchMap((resolveResult) => {
-          console.log('Issue resolve result:', resolveResult);
-          // Update time entry with resolved issue info
-          const updatedData = { ...data };
-          if (resolveResult.status === 'resolved' && resolveResult.issueId) {
-            updatedData.externalIssueId = resolveResult.issueId;
-            console.log('Setting externalIssueId:', resolveResult.issueId);
-          } else if (resolveResult.status === 'pending') {
-            updatedData.pendingExternalRef = resolveResult.key;
-            console.log('Setting pendingExternalRef:', resolveResult.key);
-          }
-          console.log('Saving time entry with data:', updatedData);
-          
-          return this.http.post<TimeEntry>(`${this.apiUrl}`, updatedData);
-        }),
-        tap((addedTimeEntry) => {
-          this.state.lastUpdatedTimeEntry.set(addedTimeEntry);
-          this.state.error.set(null);
-          this.state.updateSuccessful.set(true);
-        }),
-        catchError((err) => {
-          const errorMessage = err.error?.message || this.translateService.instant('timeEntries.errorAddingTimeEntry');
-          this.state.error.set(errorMessage);
-          this.state.updateSuccessful.set(false);
-          return of(null as unknown as TimeEntry);
-        })
-      ).subscribe();
-    } else {
-      // No issue pattern detected, save normally
-      console.log('No issue pattern detected, saving normally');
-      this.http.post<TimeEntry>(`${this.apiUrl}`, data).pipe(
-        tap((addedTimeEntry) => {
-          this.state.lastUpdatedTimeEntry.set(addedTimeEntry);
-          this.state.error.set(null);
-          this.state.updateSuccessful.set(true);
-        }),
-        catchError((err) => {
-          const errorMessage = err.error?.message || this.translateService.instant('timeEntries.errorAddingTimeEntry');
-          this.state.error.set(errorMessage);
-          this.state.updateSuccessful.set(false);
-          return of(null as unknown as TimeEntry);
-        })
-      ).subscribe();
-    }
+    // Send time entry data directly to server - server handles issue detection and resolution
+    this.http.post<TimeEntry>(`${this.apiUrl}`, data).pipe(
+      tap((addedTimeEntry) => {
+        this.state.lastUpdatedTimeEntry.set(addedTimeEntry);
+        this.state.error.set(null);
+        this.state.updateSuccessful.set(true);
+      }),
+      catchError((err) => {
+        const errorMessage = err.error?.message || this.translateService.instant('timeEntries.errorAddingTimeEntry');
+        this.state.error.set(errorMessage);
+        this.state.updateSuccessful.set(false);
+        return of(null as unknown as TimeEntry);
+      })
+    ).subscribe();
   }
 
   deleteTimeEntry(data: TimeEntry) {

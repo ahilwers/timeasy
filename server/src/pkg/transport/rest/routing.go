@@ -10,11 +10,10 @@ import (
 func SetupRouter(authMiddleware AuthMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
 	// Set Gin to release mode to disable debug logging
 	gin.SetMode(gin.ReleaseMode)
-	
+
 	// Create router without default middleware
 	router := gin.New()
 
-	// Use our custom slog middleware instead of gin's logger and glog
 	router.Use(SlogMiddleware(logger))
 	router.Use(SlogRecoveryMiddleware(logger))
 	router.Use(corsMiddleware())
@@ -68,7 +67,6 @@ func SetupRouter(authMiddleware AuthMiddleware, logger *slog.Logger, teamHandler
 
 	return router
 }
-
 
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Minimal mock project repository for testing access control logic
 type MockProjectRepository struct {
 	mock.Mock
 }
@@ -58,10 +57,9 @@ func (m *MockProjectRepository) BeginTransaction() (model.Transaction, error) {
 	return args.Get(0).(model.Transaction), args.Error(1)
 }
 
-// createSimpleExternalIntegrationUseCase creates a test instance with minimal mocked dependencies
 func createSimpleExternalIntegrationUseCase(teamUsecase TeamUsecase) (*ExternalIntegrationUseCase, *MockProjectRepository) {
 	mockProjectRepo := &MockProjectRepository{}
-	
+
 	// Use nil for repositories that aren't needed for access control tests
 	uc := NewExternalIntegrationUseCase(
 		nil, // externalConnRepo
@@ -76,7 +74,6 @@ func createSimpleExternalIntegrationUseCase(teamUsecase TeamUsecase) (*ExternalI
 	return uc, mockProjectRepo
 }
 
-// Test helper functions
 func createTestProject(userID uuid.UUID, teamID *uuid.UUID) *model.Project {
 	project := &model.Project{
 		ID:     uuid.Must(uuid.NewV4()),
@@ -121,31 +118,25 @@ func Test_ExternalIntegrationUseCase_doesProjectBelongToUser_TeamMembership(t *t
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	// Create users and team using real usecase (not mocked)
 	projectOwnerID := GetTestUserId(t)
 	teamMemberID := GetTestUserId(t)
 	clientId := GetTestClientId(t)
 
-	// Create a team
 	team := model.Team{Name1: "Test Team"}
 	err := usecaseTest.TeamUsecase.AddTeam(&team, projectOwnerID, clientId)
 	assert.Nil(t, err)
 
-	// Add team member to the team
 	_, err = usecaseTest.TeamUsecase.AddUserToTeam(teamMemberID, &team, model.RoleList{model.RoleUser}, projectOwnerID, clientId)
 	assert.Nil(t, err)
 
-	// Create external integration usecase with real team usecase
 	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
 
 	// Create project owned by project owner and assigned to team
 	project := createTestProject(projectOwnerID, &team.ID)
 
-	// Test that team member has access
 	result := uc.doesProjectBelongToUser(teamMemberID, project)
 	assert.True(t, result)
 
-	// Test that non-team member doesn't have access
 	nonMemberID := GetTestUserId(t)
 	result = uc.doesProjectBelongToUser(nonMemberID, project)
 	assert.False(t, result)
@@ -185,13 +176,11 @@ func Test_ExternalIntegrationUseCase_isUserProjectAdmin_TeamAdmin(t *testing.T) 
 	teardownTest := usecaseTest.SetupTest(t)
 	defer teardownTest(t)
 
-	// Create users and team using real usecase (not mocked)
 	projectOwnerID := GetTestUserId(t)
 	teamAdminID := GetTestUserId(t)
 	teamMemberID := GetTestUserId(t)
 	clientId := GetTestClientId(t)
 
-	// Create a team
 	team := model.Team{Name1: "Test Team"}
 	err := usecaseTest.TeamUsecase.AddTeam(&team, projectOwnerID, clientId)
 	assert.Nil(t, err)
@@ -204,7 +193,6 @@ func Test_ExternalIntegrationUseCase_isUserProjectAdmin_TeamAdmin(t *testing.T) 
 	_, err = usecaseTest.TeamUsecase.AddUserToTeam(teamMemberID, &team, model.RoleList{model.RoleUser}, projectOwnerID, clientId)
 	assert.Nil(t, err)
 
-	// Create external integration usecase with real team usecase
 	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
 
 	// Create project owned by project owner and assigned to team
@@ -230,14 +218,13 @@ func Test_ExternalIntegrationUseCase_ConnectProjectToAccount_AccessDeniedForNonO
 	defer teardownTest(t)
 
 	uc, mockProjectRepo := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
-	
+
 	ctx := context.Background()
 	userID := uuid.Must(uuid.NewV4())
 	otherUserID := uuid.Must(uuid.NewV4())
 	projectID := uuid.Must(uuid.NewV4())
 	userAccountID := uuid.Must(uuid.NewV4())
 
-	// Mock project owned by different user
 	project := createTestProject(otherUserID, nil)
 	mockProjectRepo.On("GetProjectById", projectID).Return(project, nil)
 
@@ -254,13 +241,12 @@ func Test_ExternalIntegrationUseCase_GetDescriptionSuggestions_AccessDeniedForNo
 	defer teardownTest(t)
 
 	uc, mockProjectRepo := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
-	
+
 	ctx := context.Background()
 	userID := uuid.Must(uuid.NewV4())
 	otherUserID := uuid.Must(uuid.NewV4())
 	projectID := uuid.Must(uuid.NewV4())
 
-	// Mock project owned by different user with no team
 	project := createTestProject(otherUserID, nil)
 	mockProjectRepo.On("GetProjectById", projectID).Return(project, nil)
 
@@ -269,4 +255,292 @@ func Test_ExternalIntegrationUseCase_GetDescriptionSuggestions_AccessDeniedForNo
 	assert.Contains(t, err.Error(), "access denied")
 
 	mockProjectRepo.AssertExpectations(t)
+}
+
+func Test_ExternalIntegrationUseCase_DetectIssuePattern_GitHub(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
+
+	tests := []struct {
+		name             string
+		input            string
+		expectedKey      string
+		expectedProvider string
+	}{
+		{
+			name:             "GitHub issue number simple",
+			input:            "Fix issue #123",
+			expectedKey:      "#123",
+			expectedProvider: "github",
+		},
+		{
+			name:             "GitHub issue number at start",
+			input:            "#456 needs to be fixed",
+			expectedKey:      "#456",
+			expectedProvider: "github",
+		},
+		{
+			name:             "GitHub issue number with owner/repo",
+			input:            "Fixes owner/repo#789",
+			expectedKey:      "#789",
+			expectedProvider: "github",
+		},
+		{
+			name:             "GitHub issue in middle of text",
+			input:            "This is related to #101 and needs review",
+			expectedKey:      "#101",
+			expectedProvider: "github",
+		},
+		{
+			name:             "GitHub issue with dots and dashes in repo name",
+			input:            "Fixed bug my-org/my.repo#999",
+			expectedKey:      "#999",
+			expectedProvider: "github",
+		},
+		{
+			name:             "No GitHub issue pattern",
+			input:            "Just regular text without issue",
+			expectedKey:      "",
+			expectedProvider: "",
+		},
+		{
+			name:             "Hash without number",
+			input:            "Use # for comments",
+			expectedKey:      "",
+			expectedProvider: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			key, provider := uc.DetectIssuePattern(tt.input)
+			assert.Equal(t, tt.expectedKey, key)
+			assert.Equal(t, tt.expectedProvider, provider)
+		})
+	}
+}
+
+func Test_ExternalIntegrationUseCase_DetectIssuePattern_GitLab(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
+
+	// GitLab uses the same pattern as GitHub, so test similar cases
+	tests := []struct {
+		name             string
+		input            string
+		expectedKey      string
+		expectedProvider string
+	}{
+		{
+			name:             "GitLab issue number simple",
+			input:            "Resolve issue #789",
+			expectedKey:      "#789",
+			expectedProvider: "github", // Note: Currently returns "github" for GitLab patterns too
+		},
+		{
+			name:             "GitLab issue with group/project",
+			input:            "Fixed in group/project#234",
+			expectedKey:      "#234",
+			expectedProvider: "github",
+		},
+		{
+			name:             "GitLab merge request reference",
+			input:            "Closes !567",
+			expectedKey:      "",
+			expectedProvider: "", // MR patterns not supported yet
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			key, provider := uc.DetectIssuePattern(tt.input)
+			assert.Equal(t, tt.expectedKey, key)
+			assert.Equal(t, tt.expectedProvider, provider)
+		})
+	}
+}
+
+func Test_ExternalIntegrationUseCase_DetectIssuePattern_Jira(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
+
+	tests := []struct {
+		name             string
+		input            string
+		expectedKey      string
+		expectedProvider string
+	}{
+		{
+			name:             "Jira issue simple",
+			input:            "Fix bug PROJ-123",
+			expectedKey:      "PROJ-123",
+			expectedProvider: "jira",
+		},
+		{
+			name:             "Jira issue at start",
+			input:            "ABC-456 is broken",
+			expectedKey:      "ABC-456",
+			expectedProvider: "jira",
+		},
+		{
+			name:             "Jira issue in middle",
+			input:            "This relates to TICKET-789 and needs work",
+			expectedKey:      "TICKET-789",
+			expectedProvider: "jira",
+		},
+		{
+			name:             "Jira issue with numbers in project key",
+			input:            "Fixed PROJ2024-999",
+			expectedKey:      "PROJ2024-999",
+			expectedProvider: "jira",
+		},
+		{
+			name:             "Multiple Jira issues - first one detected",
+			input:            "PROJ-123 and PROJ-456 are related",
+			expectedKey:      "PROJ-123",
+			expectedProvider: "jira",
+		},
+		{
+			name:             "Invalid Jira format - lowercase",
+			input:            "proj-123 is not valid",
+			expectedKey:      "",
+			expectedProvider: "",
+		},
+		{
+			name:             "Invalid Jira format - no dash",
+			input:            "PROJ123 is not valid",
+			expectedKey:      "",
+			expectedProvider: "",
+		},
+		{
+			name:             "Invalid Jira format - starts with number",
+			input:            "123-PROJ is not valid",
+			expectedKey:      "",
+			expectedProvider: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			key, provider := uc.DetectIssuePattern(tt.input)
+			assert.Equal(t, tt.expectedKey, key)
+			assert.Equal(t, tt.expectedProvider, provider)
+		})
+	}
+}
+
+func Test_ExternalIntegrationUseCase_DetectIssuePattern_Mixed(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
+
+	tests := []struct {
+		name             string
+		input            string
+		expectedKey      string
+		expectedProvider string
+		description      string
+	}{
+		{
+			name:             "Both GitHub and Jira - GitHub detected first",
+			input:            "Fix #123 and PROJ-456",
+			expectedKey:      "#123",
+			expectedProvider: "github",
+			description:      "Should detect GitHub pattern first when both are present",
+		},
+		{
+			name:             "Both Jira and GitHub - GitHub priority",
+			input:            "PROJ-789 relates to #101",
+			expectedKey:      "#101",
+			expectedProvider: "github",
+			description:      "Should detect GitHub pattern first due to priority, even when Jira appears first",
+		},
+		{
+			name:             "Empty string",
+			input:            "",
+			expectedKey:      "",
+			expectedProvider: "",
+			description:      "Should handle empty input gracefully",
+		},
+		{
+			name:             "Only whitespace",
+			input:            "   \t\n   ",
+			expectedKey:      "",
+			expectedProvider: "",
+			description:      "Should handle whitespace-only input",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			key, provider := uc.DetectIssuePattern(tt.input)
+			assert.Equal(t, tt.expectedKey, key, tt.description)
+			assert.Equal(t, tt.expectedProvider, provider, tt.description)
+		})
+	}
+}
+
+func Test_ExternalIntegrationUseCase_ProcessTimeEntryIssueDetection_EmptyDescription(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
+
+	ctx := context.Background()
+	userID := uuid.Must(uuid.NewV4())
+	projectID := uuid.Must(uuid.NewV4())
+
+	timeEntry := &model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		UserId:      userID,
+		ProjectId:   projectID,
+		Description: "",
+	}
+
+	err := uc.ProcessTimeEntryIssueDetection(ctx, timeEntry, userID)
+	assert.Nil(t, err)
+	assert.Nil(t, timeEntry.ExternalIssueID)
+	assert.Nil(t, timeEntry.PendingExternalRef)
+}
+
+func Test_ExternalIntegrationUseCase_ProcessTimeEntryIssueDetection_NoIssuePattern(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	uc, _ := createSimpleExternalIntegrationUseCase(usecaseTest.TeamUsecase)
+
+	ctx := context.Background()
+	userID := uuid.Must(uuid.NewV4())
+	projectID := uuid.Must(uuid.NewV4())
+
+	// Set up a time entry with existing external data that should be cleared
+	existingIssueID := uuid.Must(uuid.NewV4())
+	existingPendingRef := "OLD-123"
+
+	timeEntry := &model.TimeEntry{
+		ID:                 uuid.Must(uuid.NewV4()),
+		UserId:             userID,
+		ProjectId:          projectID,
+		Description:        "Just regular work without issue reference",
+		ExternalIssueID:    &existingIssueID,
+		PendingExternalRef: &existingPendingRef,
+	}
+
+	err := uc.ProcessTimeEntryIssueDetection(ctx, timeEntry, userID)
+	assert.Nil(t, err)
+	assert.Nil(t, timeEntry.ExternalIssueID, "Should clear existing external issue ID")
+	assert.Nil(t, timeEntry.PendingExternalRef, "Should clear existing pending reference")
 }

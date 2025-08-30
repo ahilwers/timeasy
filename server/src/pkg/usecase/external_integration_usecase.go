@@ -410,6 +410,45 @@ func (uc *ExternalIntegrationUseCase) GetExternalIssueByID(ctx context.Context, 
 	return uc.externalIssueRepo.GetByID(issueID)
 }
 
+// ProcessTimeEntryIssueDetection detects and resolves issues in time entry descriptions
+func (uc *ExternalIntegrationUseCase) ProcessTimeEntryIssueDetection(ctx context.Context, timeEntry *model.TimeEntry, userId uuid.UUID) error {
+	// Skip if description is empty
+	if timeEntry.Description == "" {
+		return nil
+	}
+
+	// Detect issue patterns
+	key, provider := uc.DetectIssuePattern(timeEntry.Description)
+	if key == "" || provider == "" {
+		// No issue pattern detected, clear any existing external issue fields
+		timeEntry.ExternalIssueID = nil
+		timeEntry.PendingExternalRef = nil
+		return nil
+	}
+
+	// Try to resolve the issue
+	result, err := uc.ResolveIssue(ctx, userId, timeEntry.ProjectId, timeEntry.Description)
+	if err != nil {
+		// If resolution fails, set as pending reference
+		timeEntry.ExternalIssueID = nil
+		pendingRef := key
+		timeEntry.PendingExternalRef = &pendingRef
+		return nil // Don't fail the entire operation due to issue resolution failure
+	}
+
+	// Apply resolution result
+	if result.Status == "resolved" && result.IssueID != nil {
+		timeEntry.ExternalIssueID = result.IssueID
+		timeEntry.PendingExternalRef = nil
+	} else {
+		timeEntry.ExternalIssueID = nil
+		pendingRef := key
+		timeEntry.PendingExternalRef = &pendingRef
+	}
+
+	return nil
+}
+
 // doesProjectBelongToUser checks if a user has read access to a project
 // (either directly owns it or is a member of the team it belongs to)
 func (uc *ExternalIntegrationUseCase) doesProjectBelongToUser(userID uuid.UUID, project *model.Project) bool {

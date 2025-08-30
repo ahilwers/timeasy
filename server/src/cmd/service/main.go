@@ -63,27 +63,6 @@ func main() {
 
 	externalConnectionRepository := postgresql.NewPostgreSQLExternalConnectionRepository(databaseService.Database.DB)
 
-	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase, externalConnectionRepository)
-
-	timeEntryRepository := postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB)
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(timeEntryRepository, projectUsecase, changelogRepository)
-	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
-
-	syncUsecase := usecase.NewSyncUsecase(postgresql.NewPostgreSQLSyncRepository(databaseService.Database.DB), changelogRepository, projectRepository, timeEntryRepository)
-	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
-
-	changelogInitUsecase := usecase.NewChangelogInitializationUsecase(changelogRepository, projectRepository, timeEntryRepository, teamRepository)
-	if err := changelogInitUsecase.InitializeChangelog(); err != nil {
-		slog.Error("Failed to initialize changelog", "error", err)
-		panic(err)
-	}
-
-	weeklyStatisticsUsecase := usecase.NewWeeklyStatisticsUsecase(timeEntryUsecase)
-	weeklyStatisticsHandler := rest.NewWeeklyStatisticsHandler(tokenVerifier, weeklyStatisticsUsecase, projectUsecase)
-
-	timeEntryExportHandler := rest.NewTimeEntryExportHandler(tokenVerifier, timeEntryUsecase)
-
-	// External integration setup
 	externalIssueRepository := postgresql.NewPostgreSQLExternalIssueRepository(databaseService.Database.DB)
 	userExternalAccountRepository := postgresql.NewPostgreSQLUserExternalAccountRepository(databaseService.Database.DB)
 
@@ -96,6 +75,8 @@ func main() {
 	)
 	userExternalAccountHandler := rest.NewUserExternalAccountHandler(tokenVerifier, userExternalAccountUsecase)
 
+	timeEntryRepository := postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB)
+
 	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(
 		externalConnectionRepository,
 		externalIssueRepository,
@@ -105,6 +86,25 @@ func main() {
 		providerFactory,
 		teamUsecase,
 	)
+
+	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase, externalConnectionRepository)
+
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(timeEntryRepository, projectUsecase, changelogRepository, externalIntegrationUsecase)
+	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
+
+	syncUsecase := usecase.NewSyncUsecase(postgresql.NewPostgreSQLSyncRepository(databaseService.Database.DB), changelogRepository, projectRepository, timeEntryRepository, externalIntegrationUsecase)
+	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
+
+	changelogInitUsecase := usecase.NewChangelogInitializationUsecase(changelogRepository, projectRepository, timeEntryRepository, teamRepository)
+	if err := changelogInitUsecase.InitializeChangelog(); err != nil {
+		slog.Error("Failed to initialize changelog", "error", err)
+		panic(err)
+	}
+
+	weeklyStatisticsUsecase := usecase.NewWeeklyStatisticsUsecase(timeEntryUsecase)
+	weeklyStatisticsHandler := rest.NewWeeklyStatisticsHandler(tokenVerifier, weeklyStatisticsUsecase, projectUsecase)
+
+	timeEntryExportHandler := rest.NewTimeEntryExportHandler(tokenVerifier, timeEntryUsecase)
 	externalIntegrationHandler := rest.NewExternalIntegrationHandler(tokenVerifier, externalIntegrationUsecase)
 
 	// Setup sync scheduler for automated issue synchronization
@@ -124,7 +124,6 @@ func main() {
 		projectUsecase,
 	)
 
-	// Set the sync scheduler on the external integration usecase to avoid circular dependency
 	externalIntegrationUsecase.SetSyncScheduler(syncScheduler)
 
 	// Start the sync scheduler
@@ -137,7 +136,6 @@ func main() {
 
 	router := rest.SetupRouter(authMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
 
-	// Start the server in a goroutine
 	go func() {
 		slog.Info("Starting HTTP server", "port", "8080")
 		router.Run()

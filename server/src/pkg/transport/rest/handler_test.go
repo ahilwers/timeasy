@@ -97,10 +97,22 @@ func (t *HandlerTest) initUsecases() {
 	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase, changelogRepo)
 
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
-	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase, changelogRepo)
+	
+	// Create external integration usecase for testing
+	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(
+		nil, // externalConnRepo - not needed for handler tests
+		nil, // externalIssueRepo - not needed for handler tests
+		nil, // userAccountRepo - not needed for handler tests
+		timeEntryRepo,
+		projectRepo,
+		nil, // providerFactory - not needed for handler tests
+		t.TeamUsecase,
+	)
+	
+	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase, changelogRepo, externalIntegrationUsecase)
 
 	syncRepo := postgresql.NewPostgreSQLSyncRepository(test.Database.DB)
-	t.SyncUsecase = usecase.NewSyncUsecase(syncRepo, changelogRepo, projectRepo, timeEntryRepo)
+	t.SyncUsecase = usecase.NewSyncUsecase(syncRepo, changelogRepo, projectRepo, timeEntryRepo, externalIntegrationUsecase)
 
 	t.WeeklyStatisticsUsecase = usecase.NewWeeklyStatisticsUsecase(t.TimeEntryUsecase)
 }

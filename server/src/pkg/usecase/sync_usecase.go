@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"context"
+	"log/slog"
 	"strings"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
@@ -22,6 +24,7 @@ type syncUsecase struct {
 	changelogRepository repository.ChangelogRepository
 	projectRepository   repository.ProjectRepository
 	timeEntryRepository repository.TimeEntryRepository
+	externalUsecase     *ExternalIntegrationUseCase
 }
 
 func NewSyncUsecase(
@@ -29,12 +32,14 @@ func NewSyncUsecase(
 	changelogRepository repository.ChangelogRepository,
 	projectRepository repository.ProjectRepository,
 	timeEntryRepository repository.TimeEntryRepository,
+	externalUsecase *ExternalIntegrationUseCase,
 ) SyncUsecase {
 	return &syncUsecase{
 		syncRepository:      syncRepository,
 		changelogRepository: changelogRepository,
 		projectRepository:   projectRepository,
 		timeEntryRepository: timeEntryRepository,
+		externalUsecase:     externalUsecase,
 	}
 }
 
@@ -178,6 +183,19 @@ func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEn
 	for i := range timeEntries {
 		timeEntry := &timeEntries[i]
 		
+		// Process issue detection and resolution before saving
+		err := usecase.processIssueDetection(context.Background(), timeEntry, userId)
+		if err != nil {
+			// Log error but don't fail the sync - issue detection is not critical
+			slog.Warn("Failed to process issue detection during sync operation",
+				"time_entry_id", timeEntry.ID,
+				"user_id", userId,
+				"project_id", timeEntry.ProjectId,
+				"description", timeEntry.Description,
+				"client_id", clientId,
+				"error", err)
+		}
+		
 		// Check if this is an open time entry (no end time)
 		if timeEntry.EndTime.IsZero() {
 			err := usecase.mergeOpenTimeEntriesIfNeeded(timeEntry, userId, clientId, tx)
@@ -209,7 +227,21 @@ func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEn
 func (usecase *syncUsecase) processTimeEntryUpdates(timeEntries []model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
 	for i := range timeEntries {
 		timeEntry := &timeEntries[i]
-		err := usecase.timeEntryRepository.UpdateTimeEntry(timeEntry, tx)
+		
+		// Process issue detection and resolution before saving
+		err := usecase.processIssueDetection(context.Background(), timeEntry, userId)
+		if err != nil {
+			// Log error but don't fail the sync - issue detection is not critical
+			slog.Warn("Failed to process issue detection during sync operation",
+				"time_entry_id", timeEntry.ID,
+				"user_id", userId,
+				"project_id", timeEntry.ProjectId,
+				"description", timeEntry.Description,
+				"client_id", clientId,
+				"error", err)
+		}
+		
+		err = usecase.timeEntryRepository.UpdateTimeEntry(timeEntry, tx)
 		if err != nil {
 			return err
 		}
@@ -272,6 +304,17 @@ func (usecase *syncUsecase) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, er
 
 func (usecase *syncUsecase) GetLatestChangelogEntryId() (int64, error) {
 	return usecase.changelogRepository.GetLatestChangelogEntryId()
+}
+
+// processIssueDetection detects and resolves issues in time entry descriptions during sync
+func (usecase *syncUsecase) processIssueDetection(ctx context.Context, timeEntry *model.TimeEntry, userId uuid.UUID) error {
+	// Skip if no external integration usecase available (for backward compatibility)
+	if usecase.externalUsecase == nil {
+		return nil
+	}
+
+	// Use the centralized method from ExternalIntegrationUseCase
+	return usecase.externalUsecase.ProcessTimeEntryIssueDetection(ctx, timeEntry, userId)
 }
 
 // mergeOpenTimeEntriesIfNeeded checks if there are existing open time entries for the same project
