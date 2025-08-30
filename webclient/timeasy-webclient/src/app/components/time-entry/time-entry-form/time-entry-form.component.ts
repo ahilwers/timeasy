@@ -58,23 +58,15 @@ export class TimeEntryFormComponent implements OnInit {
     this.timeEntryService.resetState();
     effect(() => {
       const timeEntryData = this.timeEntry();
-      if (timeEntryData) {
-        this.projectService.loadProject(timeEntryData.projectId);
+      if (timeEntryData && this.projects().length > 0) {
+        const matchingProject = this.projects().find(p => p.id === timeEntryData.projectId);
         this.timeEntryForm.patchValue({
+          project: matchingProject,
           startTime: timeEntryData.startTime,
           startDate: timeEntryData.startTime,
           endTime: timeEntryData.endTime,
           endDate: timeEntryData.endTime,
           description: timeEntryData.description
-        });
-      }
-    });
-    effect(() => {
-      const projectData = this.project();
-      if (projectData && projectData != this.currentProjectData) {
-        this.currentProjectData = projectData;
-        this.timeEntryForm.patchValue({
-          project: projectData,
         });
       }
     });
