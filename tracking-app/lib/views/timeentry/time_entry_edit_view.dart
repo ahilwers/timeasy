@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:timeasy/components/custom_datetime_picker.dart';
+import 'package:timeasy/components/enhanced_description_input.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/event_sync_service.dart';
@@ -39,6 +40,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
   final String _projectId;
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final _formEditTimeEntryKey = GlobalKey<FormState>();
+  final _descriptionController = TextEditingController();
 
   _TimeEntryEditWidgetState(this._projectId, this._timeEntryId);
 
@@ -53,11 +55,19 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
           _timeEntry = timeEntryFromDb;
           _endTimeWasEmpty = _timeEntry!.endTime ==
               null; // Indicates that we're editing a time entry that is not completed yet
+          _descriptionController.text = _timeEntry!.description ?? '';
         });
       });
     } else {
       _timeEntry = new TimeEntry(_projectId);
+      _descriptionController.text = '';
     }
+  }
+  
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -205,31 +215,10 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
                               style: TextStyle(fontWeight: FontWeight.bold))
                         ]),
                     SizedBox(height: 8),
-                    TextFormField(
-                      initialValue: _timeEntry!.description ?? '',
-                      decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.whatDidYouDo,
-                        border: OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Theme.of(context).inputDecorationTheme.border
-                                    is OutlineInputBorder
-                                ? (Theme.of(context).inputDecorationTheme.border
-                                        as OutlineInputBorder)
-                                    .borderSide
-                                    .color
-                                : Theme.of(context).dividerColor,
-                          ),
-                        ),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      ),
-                      maxLines: 3,
-                      onChanged: (value) {
-                        setState(() {
-                          _timeEntry!.description = value;
-                        });
-                      },
+                    EnhancedDescriptionInput(
+                      projectId: _projectId,
+                      controller: _descriptionController,
+                      hintText: AppLocalizations.of(context)!.whatDidYouDo,
                     ),
                   ],
                 )),
@@ -251,6 +240,9 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
 
   void _saveTimeEntry(FormState form) {
     form.save();
+    // Update description from the enhanced input controller
+    _timeEntry!.description = _descriptionController.text;
+    
     if (_timeEntryId != null) {
       _timeEntryRepository.updateTimeEntry(_timeEntry!);
     } else {

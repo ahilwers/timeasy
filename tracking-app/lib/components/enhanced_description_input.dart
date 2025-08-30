@@ -1,9 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import '../services/external_integration_service.dart';
-import '../services/internet_connection_service.dart';
+
+import '../bloc/authentication/authentication_bloc.dart';
+import '../bloc/authentication/authentication_state.dart';
+import '../bloc/internetconnection/internet_connection_bloc.dart';
+import '../bloc/internetconnection/internet_connection_state.dart';
+import '../environment.dart';
 import '../models/external_issue.dart';
+import '../services/external_integration_service.dart';
 
 class EnhancedDescriptionInput extends StatefulWidget {
   final String projectId;
@@ -24,23 +31,24 @@ class EnhancedDescriptionInput extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _EnhancedDescriptionInputState createState() => _EnhancedDescriptionInputState();
+  _EnhancedDescriptionInputState createState() =>
+      _EnhancedDescriptionInputState();
 }
 
 class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
-  final ExternalIntegrationService _externalService = ExternalIntegrationService();
-  final InternetConnectionService _connectionService = InternetConnectionService();
-  final OfflineIssueResolutionService _offlineService = OfflineIssueResolutionService();
-  
+  final ExternalIntegrationService _externalService =
+      ExternalIntegrationService();
+  final OfflineIssueResolutionService _offlineService =
+      OfflineIssueResolutionService();
+
   Timer? _debounceTimer;
   Timer? _issueDetectionTimer;
-  
+
   List<String> _suggestions = [];
   IssueResolveResult? _resolvedIssue;
   String? _pendingIssue;
   bool _isResolving = false;
-  bool _showSuggestions = false;
-  
+
   final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
@@ -51,9 +59,21 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
     if (widget.initialValue != null) {
       widget.controller.text = widget.initialValue!;
     }
-    
+
+    // Initialize the external integration service
+    _initializeExternalService();
+
     widget.controller.addListener(_onTextChanged);
     _focusNode.addListener(_onFocusChanged);
+  }
+
+  void _initializeExternalService() {
+    final authState = context.read<AuthenticationBloc>().state;
+    if (authState is AuthenticationAuthenticated &&
+        authState.credentials.accessToken != null) {
+      _externalService.initialize(
+          Environment.apiBaseUrl, authState.credentials.accessToken!);
+    }
   }
 
   @override
@@ -69,13 +89,13 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
 
   void _onTextChanged() {
     final text = widget.controller.text;
-    
+
     // Debounced autocomplete
     _debounceTimer?.cancel();
     _debounceTimer = Timer(Duration(milliseconds: 150), () {
       _getSuggestions(text);
     });
-    
+
     // Debounced issue detection
     _issueDetectionTimer?.cancel();
     _issueDetectionTimer = Timer(Duration(milliseconds: 300), () {
@@ -95,42 +115,41 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
     if (query.length < 2) {
       setState(() {
         _suggestions = [];
-        _showSuggestions = false;
       });
       _removeOverlay();
       return;
     }
 
     try {
-      bool isOnline = await _connectionService.isConnected();
-      
+      final connectionState = context.read<InternetConnectionBloc>().state;
+      bool isOnline = connectionState is InternetConnectionConnected;
+
       if (isOnline) {
         final response = await _externalService.getDescriptionSuggestions(
           widget.projectId,
           query,
           limit: 5,
         );
-        
+
         setState(() {
           _suggestions = response.suggestions;
-          _showSuggestions = _suggestions.isNotEmpty;
         });
-        
+
         if (_focusNode.hasFocus && _suggestions.isNotEmpty) {
           _showOverlay();
         }
       } else {
         // Use cached suggestions when offline
-        final cachedSuggestions = await _externalService.getCachedDescriptionSuggestions(
+        final cachedSuggestions =
+            await _externalService.getCachedDescriptionSuggestions(
           widget.projectId,
           query,
         );
-        
+
         setState(() {
           _suggestions = cachedSuggestions;
-          _showSuggestions = _suggestions.isNotEmpty;
         });
-        
+
         if (_focusNode.hasFocus && _suggestions.isNotEmpty) {
           _showOverlay();
         }
@@ -139,7 +158,6 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
       // Handle error silently for UX
       setState(() {
         _suggestions = [];
-        _showSuggestions = false;
       });
       _removeOverlay();
     }
@@ -157,16 +175,18 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
       return;
     }
 
-    bool isOnline = await _connectionService.isConnected();
-    
+    final connectionState = context.read<InternetConnectionBloc>().state;
+    bool isOnline = connectionState is InternetConnectionConnected;
+
     if (isOnline) {
       setState(() {
         _isResolving = true;
       });
-      
+
       try {
-        final result = await _externalService.resolveIssue(widget.projectId, input);
-        
+        final result =
+            await _externalService.resolveIssue(widget.projectId, input);
+
         setState(() {
           _isResolving = false;
           if (result.isResolved) {
@@ -177,7 +197,7 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
             _resolvedIssue = null;
           }
         });
-        
+
         if (result.isResolved) {
           widget.onIssueResolved?.call(result);
         }
@@ -187,7 +207,7 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
           _pendingIssue = issuePattern.key;
           _resolvedIssue = null;
         });
-        
+
         _offlineService.addPendingReference(issuePattern.key);
         widget.onPendingReference?.call(issuePattern.key);
       }
@@ -197,7 +217,7 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
         _pendingIssue = issuePattern.key;
         _resolvedIssue = null;
       });
-      
+
       _offlineService.addPendingReference(issuePattern.key);
       widget.onPendingReference?.call(issuePattern.key);
     }
@@ -214,7 +234,7 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
 
   void _showOverlay() {
     _removeOverlay();
-    
+
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         width: MediaQuery.of(context).size.width - 32,
@@ -264,25 +284,27 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
         margin: EdgeInsets.only(top: 8),
         child: Chip(
           avatar: Icon(Icons.link, size: 16),
-          label: Text('${_resolvedIssue!.key} · ${_resolvedIssue!.title ?? ''}'),
+          label:
+              Text('${_resolvedIssue!.key} · ${_resolvedIssue!.title ?? ''}'),
           backgroundColor: Colors.green.shade100,
           deleteIcon: Icon(Icons.close, size: 16),
           onDeleted: _clearIssues,
         ),
       );
     }
-    
+
     if (_pendingIssue != null) {
       return Container(
         margin: EdgeInsets.only(top: 8),
         child: Chip(
           avatar: Icon(Icons.schedule, size: 16),
-          label: Text('${_pendingIssue!} (${AppLocalizations.of(context)!.pending})'),
+          label: Text(
+              '${_pendingIssue!} (${AppLocalizations.of(context)!.pending})'),
           backgroundColor: Colors.orange.shade100,
         ),
       );
     }
-    
+
     return SizedBox.shrink();
   }
 
@@ -297,16 +319,17 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
             controller: widget.controller,
             focusNode: _focusNode,
             decoration: InputDecoration(
-              hintText: widget.hintText ?? AppLocalizations.of(context)!.description,
+              hintText: widget.hintText ??
+                  AppLocalizations.of(context)!.entryDescription,
               border: OutlineInputBorder(),
-              suffixIcon: _isResolving 
-                ? Container(
-                    width: 20,
-                    height: 20,
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : null,
+              suffixIcon: _isResolving
+                  ? Container(
+                      width: 20,
+                      height: 20,
+                      padding: EdgeInsets.all(12),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : null,
             ),
             maxLines: 3,
             minLines: 1,
