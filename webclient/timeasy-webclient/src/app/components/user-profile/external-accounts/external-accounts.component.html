@@ -1,170 +1,123 @@
 <div class="external-accounts-container">
-  <p-card>
-    <ng-template pTemplate="header">
-      <div class="card-header">
-        <h2>{{ 'user.externalAccounts.title' | translate }}</h2>
-        <p-button
-          [label]="'user.externalAccounts.addAccount' | translate"
-          icon="pi pi-plus"
-          (onClick)="openCreateDialog()"
-          styleClass="p-button-success">
-        </p-button>
-      </div>
-    </ng-template>
+    <p-card>
+        <ng-template pTemplate="header">
+            <div class="card-header">
+                <h2>{{ 'user.externalAccounts.title' | translate }}</h2>
+                <p-button type="button" icon="pi pi-plus" (click)="openCreateDialog()"></p-button>
+            </div>
+        </ng-template>
 
-    <ng-template pTemplate="content">
-      @if (isLoading()) {
-        <div class="loading-container">
-          <p-progressSpinner></p-progressSpinner>
-          <span>{{ 'user.externalAccounts.loading' | translate }}</span>
-        </div>
-      } @else if (accounts().length === 0) {
-        <div class="no-accounts">
-          <i class="pi pi-info-circle"></i>
-          <h3>{{ 'user.externalAccounts.noAccounts' | translate }}</h3>
-          <p>{{ 'user.externalAccounts.noAccountsDescription' | translate }}</p>
-        </div>
-      } @else {
-        <p-table [value]="accounts()" [responsiveLayout]="'scroll'">
-          <ng-template pTemplate="header">
-            <tr>
-              <th>{{ 'user.externalAccounts.provider' | translate }}</th>
-              <th>{{ 'user.externalAccounts.accountName' | translate }}</th>
-              <th>{{ 'user.externalAccounts.baseUrl' | translate }}</th>
-              <th>{{ 'user.externalAccounts.actions' | translate }}</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-account>
-            <tr>
-              <td>
-                <div class="provider-cell">
-                  <i [class]="getProviderIcon(account.provider)"></i>
-                  <span>{{ getProviderDisplayName(account.provider) }}</span>
+        <ng-template pTemplate="content">
+            @if (isLoading()) {
+            <div class="loading-container">
+                <p-progressSpinner></p-progressSpinner>
+                <span>{{ 'user.externalAccounts.loading' | translate }}</span>
+            </div>
+            } @else if (accounts().length === 0) {
+            <div class="no-accounts">
+                <i class="pi pi-info-circle"></i>
+                <h3>{{ 'user.externalAccounts.noAccounts' | translate }}</h3>
+                <p>{{ 'user.externalAccounts.noAccountsDescription' | translate }}</p>
+            </div>
+            } @else {
+            <p-table [value]="accounts()" [responsiveLayout]="'scroll'">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>{{ 'user.externalAccounts.provider' | translate }}</th>
+                        <th>{{ 'user.externalAccounts.accountName' | translate }}</th>
+                        <th>{{ 'user.externalAccounts.baseUrl' | translate }}</th>
+                        <th>{{ 'user.externalAccounts.actions' | translate }}</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-account>
+                    <tr>
+                        <td>
+                            <div class="provider-cell">
+                                <i [class]="getProviderIcon(account.provider)"></i>
+                                <span>{{ getProviderDisplayName(account.provider) }}</span>
+                            </div>
+                        </td>
+                        <td>{{ account.accountName }}</td>
+                        <td>{{ account.baseURL || '-' }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <p-button icon="pi pi-check-circle"
+                                    styleClass="p-button-rounded p-button-text p-button-success"
+                                    (onClick)="testAccount(account.id)" [loading]="testingAccounts().has(account.id)">
+                                </p-button>
+                                <p-button icon="pi pi-pencil" styleClass="p-button-rounded p-button-text"
+                                    (onClick)="openEditDialog(account)">
+                                </p-button>
+                                <p-button icon="pi pi-trash" styleClass="p-button-rounded p-button-text p-button-danger"
+                                    (onClick)="confirmDelete(account)">
+                                </p-button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+            }
+        </ng-template>
+    </p-card>
+
+    <!-- Create/Edit Dialog -->
+    <p-dialog [(visible)]="showDialog" [header]="dialogTitle()" [modal]="true" [style]="{ width: '500px' }"
+        [closable]="true">
+
+        <form [formGroup]="accountForm" (ngSubmit)="saveAccount()">
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="provider">{{ 'user.externalAccounts.provider' | translate }}</label>
+                    <p-dropdown id="provider" formControlName="provider" [options]="providerOptions" optionLabel="label"
+                        optionValue="value" [placeholder]="'user.externalAccounts.selectProvider' | translate"
+                        styleClass="w-full">
+                    </p-dropdown>
                 </div>
-              </td>
-              <td>{{ account.accountName }}</td>
-              <td>{{ account.baseURL || '-' }}</td>
-              <td>
-                <div class="action-buttons">
-                  <p-button
-                    icon="pi pi-check-circle"
-                    styleClass="p-button-rounded p-button-text p-button-success"
-                    (onClick)="testAccount(account.id)"
-                    [loading]="testingAccounts().has(account.id)">
-                  </p-button>
-                  <p-button
-                    icon="pi pi-pencil"
-                    styleClass="p-button-rounded p-button-text"
-                    (onClick)="openEditDialog(account)">
-                  </p-button>
-                  <p-button
-                    icon="pi pi-trash"
-                    styleClass="p-button-rounded p-button-text p-button-danger"
-                    (onClick)="confirmDelete(account)">
-                  </p-button>
+
+                <div class="form-field">
+                    <label for="accountName">{{ 'user.externalAccounts.accountName' | translate }}</label>
+                    <input pInputText id="accountName" formControlName="accountName"
+                        [placeholder]="'user.externalAccounts.accountNamePlaceholder' | translate" class="w-full">
                 </div>
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
-      }
-    </ng-template>
-  </p-card>
 
-  <!-- Create/Edit Dialog -->
-  <p-dialog
-    [(visible)]="showDialog"
-    [header]="dialogTitle()"
-    [modal]="true"
-    [style]="{ width: '500px' }"
-    [closable]="true">
-    
-    <form [formGroup]="accountForm" (ngSubmit)="saveAccount()">
-      <div class="form-grid">
-        <div class="form-field">
-          <label for="provider">{{ 'user.externalAccounts.provider' | translate }}</label>
-          <p-dropdown
-            id="provider"
-            formControlName="provider"
-            [options]="providerOptions"
-            optionLabel="label"
-            optionValue="value"
-            [placeholder]="'user.externalAccounts.selectProvider' | translate"
-            styleClass="w-full">
-          </p-dropdown>
-        </div>
+                <div class="form-field">
+                    <label for="oauthToken">{{ 'user.externalAccounts.oauthToken' | translate }}</label>
+                    <div class="token-input-group">
+                        <input pInputText id="oauthToken" type="password" formControlName="oauthToken"
+                            [placeholder]="'user.externalAccounts.tokenPlaceholder' | translate" class="w-full">
+                        <p-button icon="pi pi-question-circle" styleClass="p-button-text p-button-sm"
+                            [pTooltip]="'user.externalAccounts.tokenHelpButton' | translate" tooltipPosition="top"
+                            (onClick)="showTokenHelp()" [disabled]="!accountForm.get('provider')?.value">
+                        </p-button>
+                    </div>
+                    <small class="form-help">{{ 'user.externalAccounts.tokenHelp' | translate }}</small>
+                </div>
 
-        <div class="form-field">
-          <label for="accountName">{{ 'user.externalAccounts.accountName' | translate }}</label>
-          <input
-            pInputText
-            id="accountName"
-            formControlName="accountName"
-            [placeholder]="'user.externalAccounts.accountNamePlaceholder' | translate"
-            class="w-full">
-        </div>
+                @if (shouldShowBaseUrl()) {
+                <div class="form-field">
+                    <label for="baseURL">{{ 'user.externalAccounts.baseUrl' | translate }}</label>
+                    <input pInputText id="baseURL" formControlName="baseURL" [placeholder]="getBaseUrlPlaceholder()"
+                        class="w-full">
+                    <small class="form-help">{{ getBaseUrlHelp() }}</small>
+                </div>
+                }
+            </div>
 
-        <div class="form-field">
-          <label for="oauthToken">{{ 'user.externalAccounts.oauthToken' | translate }}</label>
-          <div class="token-input-group">
-            <input
-              pInputText
-              id="oauthToken"
-              type="password"
-              formControlName="oauthToken"
-              [placeholder]="'user.externalAccounts.tokenPlaceholder' | translate"
-              class="w-full">
-            <p-button
-              icon="pi pi-question-circle"
-              styleClass="p-button-text p-button-sm"
-              [pTooltip]="'user.externalAccounts.tokenHelpButton' | translate"
-              tooltipPosition="top"
-              (onClick)="showTokenHelp()"
-              [disabled]="!accountForm.get('provider')?.value">
-            </p-button>
-          </div>
-          <small class="form-help">{{ 'user.externalAccounts.tokenHelp' | translate }}</small>
-        </div>
+            <div class="button-container">
+                <p-button type="button" [label]="'globals.cancel' | translate" icon="pi pi-times"
+                    styleClass="p-button-outlined" (onClick)="closeDialog()">
+                </p-button>
+                <p-button type="submit" [label]="'globals.ok' | translate" icon="pi pi-check"
+                    [disabled]="!accountForm.valid" [loading]="isSaving()">
+                </p-button>
+            </div>
+        </form>
+    </p-dialog>
 
-        @if (shouldShowBaseUrl()) {
-          <div class="form-field">
-            <label for="baseURL">{{ 'user.externalAccounts.baseUrl' | translate }}</label>
-            <input
-              pInputText
-              id="baseURL"
-              formControlName="baseURL"
-              [placeholder]="getBaseUrlPlaceholder()"
-              class="w-full">
-            <small class="form-help">{{ getBaseUrlHelp() }}</small>
-          </div>
-        }
-      </div>
+    <p-confirmDialog></p-confirmDialog>
+    <p-toast position="top-right"></p-toast>
 
-      <div class="form-actions">
-        <p-button
-          type="button"
-          [label]="'globals.cancel' | translate"
-          icon="pi pi-times"
-          styleClass="p-button-outlined"
-          (onClick)="closeDialog()">
-        </p-button>
-        <p-button
-          type="submit"
-          [label]="'globals.save' | translate"
-          icon="pi pi-check"
-          [disabled]="!accountForm.valid"
-          [loading]="isSaving()">
-        </p-button>
-      </div>
-    </form>
-  </p-dialog>
-
-  <p-confirmDialog></p-confirmDialog>
-  <p-toast position="top-right"></p-toast>
-
-  <!-- Token Documentation Component -->
-  <app-token-documentation
-    [(visible)]="showTokenDocumentation"
-    [provider]="tokenDocumentationProvider">
-  </app-token-documentation>
+    <!-- Token Documentation Component -->
+    <app-token-documentation [(visible)]="showTokenDocumentation" [provider]="tokenDocumentationProvider">
+    </app-token-documentation>
 </div>

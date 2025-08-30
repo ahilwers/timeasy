@@ -1,78 +1,73 @@
 <div class="header-container">
-  @if (isNew()) {
+    @if (isNew()) {
     <h1>{{ 'projects.add' | translate }}</h1>
-  } @else {
+    } @else {
     <h1>{{ 'projects.edit' | translate }} - {{project()?.name ?? ''}}</h1>
-  }
+    }
 </div>
 
 <form class="form-container" [formGroup]="projectForm" (ngSubmit)="onSubmit()">
-  <p-toast></p-toast>
-  <div class="form-field">
-    <label for="name">{{ 'projects.name' | translate }}</label>
-    <input pInputText class="input-text" id="name" formControlName="name" />
-  </div>
+    <p-toast></p-toast>
+    <div class="form-field">
+        <label for="name">{{ 'projects.name' | translate }}</label>
+        <input pInputText class="input-text" id="name" formControlName="name" />
+    </div>
 
 
-  <div class="form-field">
-    <label for="color">{{ 'projects.color' | translate }}</label>
-    <p-dropdown
-      id="color"
-      formControlName="color"
-      [options]="colors"
-      optionLabel="name"
-      optionValue="hex"
-      placeholder="{{ 'projects.selectColor' | translate }}"
-      [virtualScroll]="false"
-    >
-      <ng-template let-color pTemplate="item">
-        <div style="display: flex; align-items: center;">
-        <span
-          style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #ccc;"
-          [style.background]="color.hex"
-        ></span>
-          <span>{{ color.name }}</span>
-        </div>
-      </ng-template>
-      <ng-template let-color pTemplate="selectedItem">
-        <div style="display: flex; align-items: center;">
-        <span
-          style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #ccc;"
-          [style.background]="color?.hex"
-        ></span>
-          <span>{{ color?.name }}</span>
-        </div>
-      </ng-template>
-    </p-dropdown>
-  </div>
+    <div class="form-field">
+        <label for="color">{{ 'projects.color' | translate }}</label>
+        <p-dropdown id="color" formControlName="color" [options]="colors" optionLabel="name" optionValue="hex"
+            placeholder="{{ 'projects.selectColor' | translate }}" [virtualScroll]="false">
+            <ng-template let-color pTemplate="item">
+                <div style="display: flex; align-items: center;">
+                    <span
+                        style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #ccc;"
+                        [style.background]="color.hex"></span>
+                    <span>{{ color.name }}</span>
+                </div>
+            </ng-template>
+            <ng-template let-color pTemplate="selectedItem">
+                <div style="display: flex; align-items: center;">
+                    <span
+                        style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #ccc;"
+                        [style.background]="color?.hex"></span>
+                    <span>{{ color?.name }}</span>
+                </div>
+            </ng-template>
+        </p-dropdown>
+    </div>
 
-  <div class="form-field">
-    <label for="hourlyRate">{{ 'projects.hourlyRate' | translate }}</label>
-    <p-inputnumber id="hourlyRate" formControlName="hourlyRate" inputId="hourlyRate" mode="decimal" [useGrouping]="false" [minFractionDigits]="2" [maxFractionDigits]="2"/>
-  </div>
+    <div class="form-field">
+        <label for="hourlyRate">{{ 'projects.hourlyRate' | translate }}</label>
+        <p-inputnumber id="hourlyRate" formControlName="hourlyRate" inputId="hourlyRate" mode="decimal"
+            [useGrouping]="false" [minFractionDigits]="2" [maxFractionDigits]="2" />
+    </div>
 
-  <div class="form-field">
-    <label for="timeBudget">{{ 'projects.timeBudget' | translate }}</label>
-    <p-inputnumber id="timeBudget" formControlName="timeBudget" inputId="timeBudget" [useGrouping]="false" suffix=" {{ 'projects.hours' | translate }}" />
-  </div>
+    <div class="form-field">
+        <label for="timeBudget">{{ 'projects.timeBudget' | translate }}</label>
+        <p-inputnumber id="timeBudget" formControlName="timeBudget" inputId="timeBudget" [useGrouping]="false"
+            suffix=" {{ 'projects.hours' | translate }}" />
+    </div>
 
-  <div class="form-field">
-    <label for="deadline">{{ 'projects.deadline' | translate }}</label>
-    <p-datepicker id="deadline" formControlName="deadline" [iconDisplay]="'input'" [showIcon]="true" [showButtonBar]="true" inputId="deadline" />
-  </div>
+    <div class="form-field">
+        <label for="deadline">{{ 'projects.deadline' | translate }}</label>
+        <p-datepicker id="deadline" formControlName="deadline" [iconDisplay]="'input'" [showIcon]="true"
+            [showButtonBar]="true" inputId="deadline" />
+    </div>
 
-  <div class="form-field">
-    <label for="isActive">{{ 'projects.isActive' | translate }}</label>
-    <p-toggleswitch id="isActive" formControlName="isActive" inputId="isActive" />
-  </div>
+    <div class="form-field">
+        <label for="isActive">{{ 'projects.isActive' | translate }}</label>
+        <p-toggleswitch id="isActive" formControlName="isActive" inputId="isActive" />
+    </div>
 
-  <div class="button-container">
-    <p-button type="submit" label="{{ 'globals.ok' | translate }}" severity="primary"></p-button>
-    <p-button type="button" label="{{ 'globals.cancel' | translate }}" severity="secondary" (click)="navigateToProjectList()"></p-button>
-  </div>
+    <div class="button-container">
+        <p-button type="button" label="{{ 'globals.cancel' | translate }}" icon="pi pi-times" severity="secondary"
+            (click)="navigateToProjectList()"></p-button>
+        <p-button type="submit" label="{{ 'globals.ok' | translate }}" icon="pi pi-check" severity="primary"></p-button>
+    </div>
 </form>
 
 <!-- External Integration Section - Only show for existing projects -->
 @if (!isNew() && projectId) {
-  <app-external-integration [projectId]="projectId"></app-external-integration>
+<app-external-integration [projectId]="projectId"></app-external-integration>
 }
