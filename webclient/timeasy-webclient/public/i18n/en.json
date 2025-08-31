@@ -66,6 +66,43 @@
     "in": "in",
     "project": "Project"
   },
+  "user": {
+    "profile": {
+      "title": "User Profile",
+      "information": "Profile Information",
+      "edit": "Edit Profile",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "username": "Username",
+      "language": "Language",
+      "errors": {
+        "firstNameRequired": "First name is required",
+        "lastNameRequired": "Last name is required",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email address"
+      }
+    },
+    "password": {
+      "title": "Change Password",
+      "current": "Current Password",
+      "new": "New Password",
+      "confirm": "Confirm Password",
+      "change": "Change Password",
+      "errors": {
+        "currentRequired": "Current password is required",
+        "newRequired": "New password is required",
+        "confirmRequired": "Password confirmation is required",
+        "minLength": "Password must be at least 8 characters long",
+        "mismatch": "Passwords do not match"
+      }
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
   "globals": {
     "ok": "OK",
     "cancel": "Cancel",

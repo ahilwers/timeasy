@@ -1,11 +1,12 @@
 import {Component, effect, inject, ViewChild} from '@angular/core';
+import {Router} from '@angular/router';
 import {Button} from 'primeng/button';
 import {Popover} from 'primeng/popover';
 import Keycloak, {KeycloakProfile} from 'keycloak-js';
 import {KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs} from 'keycloak-angular';
 import {Menu} from 'primeng/menu';
 import {MenuItem} from 'primeng/api';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslateService, TranslateModule} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-header',
@@ -13,7 +14,8 @@ import {TranslateService} from '@ngx-translate/core';
   imports: [
     Button,
     Popover,
-    Menu
+    Menu,
+    TranslateModule
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css'
@@ -30,6 +32,7 @@ export class HeaderComponent {
   private readonly keyCloak = inject(Keycloak);
   private readonly keyCloakSignal = inject(KEYCLOAK_EVENT_SIGNAL);
   private readonly translateService = inject(TranslateService);
+  private readonly router = inject(Router);
 
   constructor() {
     effect(() => {
@@ -61,6 +64,11 @@ export class HeaderComponent {
 
   logout() {
     this.keyCloak.logout()
+  }
+
+  navigateToProfile() {
+    this.op.hide(); // Close the popover
+    this.router.navigate(['/user']);
   }
 
   toggle({event}: { event: any }) {

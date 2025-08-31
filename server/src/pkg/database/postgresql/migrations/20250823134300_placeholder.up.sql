@@ -1,0 +1,2 @@
+-- Placeholder migration - no changes needed
+-- This migration was missing and causing startup issues

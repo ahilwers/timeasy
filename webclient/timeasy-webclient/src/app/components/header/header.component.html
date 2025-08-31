@@ -43,11 +43,12 @@
                   <span>{{ userProfile.firstName }} {{ userProfile.lastName }}</span>
                 </div>
               }
-          <div>
+          <div class="user-actions">
             @if (!authenticated) {
               <p-button (click)="login()" label="Login"/>
             } @else {
-              <p-button (click)="logout()" label="Logout"/>
+              <p-button (click)="navigateToProfile()" label="{{'user.profile.title' | translate}}" icon="pi pi-user" severity="secondary" [outlined]="true" class="profile-button"/>
+              <p-button (click)="logout()" label="Logout" severity="danger"/>
             }
           </div>
         </div>
