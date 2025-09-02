@@ -13,131 +13,33 @@
   @if (user()) {
     <!-- Profile Information Card -->
     <p-card class="profile-card" [header]="('user.profile.information' | translate)">
-      @if (!isEditMode()) {
-        <!-- View Mode -->
-        <div class="profile-info">
-          <div class="info-row">
-            <strong>{{'user.profile.firstName' | translate}}:</strong>
-            <span>{{ user()?.firstName }}</span>
-          </div>
-          <div class="info-row">
-            <strong>{{'user.profile.lastName' | translate}}:</strong>
-            <span>{{ user()?.lastName }}</span>
-          </div>
-          <div class="info-row">
-            <strong>{{'user.profile.email' | translate}}:</strong>
-            <span>{{ user()?.email }}</span>
-          </div>
-          <div class="info-row">
-            <strong>{{'user.profile.username' | translate}}:</strong>
-            <span>{{ user()?.username }}</span>
-          </div>
-          <div class="info-row">
-            <strong>{{'user.profile.language' | translate}}:</strong>
-            <span>{{ currentUserLanguageName }}</span>
-          </div>
+      <!-- View Mode -->
+      <div class="profile-info">
+        <div class="info-row">
+          <strong>{{'user.profile.firstName' | translate}}:</strong>
+          <span>{{ user()?.firstName }}</span>
         </div>
-      } @else {
-        <!-- Edit Mode -->
-        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-          <div class="form-fields">
-            <div class="field">
-              <label for="firstName">{{'user.profile.firstName' | translate}} *</label>
-              <input pInputText id="firstName" formControlName="firstName" class="full-width"
-                     [class.ng-invalid]="profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched" />
-              <small class="p-error" *ngIf="profileForm.get('firstName')?.hasError('required') && profileForm.get('firstName')?.touched">
-                {{'user.profile.errors.firstNameRequired' | translate}}
-              </small>
-            </div>
-
-            <div class="field">
-              <label for="lastName">{{'user.profile.lastName' | translate}} *</label>
-              <input pInputText id="lastName" formControlName="lastName" class="full-width"
-                     [class.ng-invalid]="profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched" />
-              <small class="p-error" *ngIf="profileForm.get('lastName')?.hasError('required') && profileForm.get('lastName')?.touched">
-                {{'user.profile.errors.lastNameRequired' | translate}}
-              </small>
-            </div>
-
-            <div class="field">
-              <label for="email">{{'user.profile.email' | translate}} *</label>
-              <input pInputText id="email" formControlName="email" type="email" class="full-width"
-                     [class.ng-invalid]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched" />
-              <small class="p-error" *ngIf="profileForm.get('email')?.hasError('required') && profileForm.get('email')?.touched">
-                {{'user.profile.errors.emailRequired' | translate}}
-              </small>
-              <small class="p-error" *ngIf="profileForm.get('email')?.hasError('email') && profileForm.get('email')?.touched">
-                {{'user.profile.errors.emailInvalid' | translate}}
-              </small>
-            </div>
-
-            <div class="field">
-              <label for="language">{{'user.profile.language' | translate}}</label>
-              <p-dropdown id="language" formControlName="language" [options]="availableLanguages" 
-                         optionLabel="name" optionValue="code" class="full-width"></p-dropdown>
-            </div>
-          </div>
-        </form>
-      }
+        <div class="info-row">
+          <strong>{{'user.profile.lastName' | translate}}:</strong>
+          <span>{{ user()?.lastName }}</span>
+        </div>
+        <div class="info-row">
+          <strong>{{'user.profile.email' | translate}}:</strong>
+          <span>{{ user()?.email }}</span>
+        </div>
+        <div class="info-row">
+          <strong>{{'user.profile.username' | translate}}:</strong>
+          <span>{{ user()?.username }}</span>
+        </div>
+        <div class="info-row">
+          <strong>{{'user.profile.language' | translate}}:</strong>
+          <span>{{ currentUserLanguageName }}</span>
+        </div>
+      </div>
       
       <ng-template pTemplate="footer">
-        @if (!isEditMode()) {
-          <p-button label="{{'user.profile.edit' | translate}}" (onClick)="toggleEditMode()" 
-                    [disabled]="isLoading()"></p-button>
-        } @else {
-          <p-button label="{{'common.save' | translate}}" (onClick)="saveProfile()" 
-                    [disabled]="!profileForm.valid || isLoading()" class="p-button-success"></p-button>
-          <p-button label="{{'common.cancel' | translate}}" (onClick)="toggleEditMode()" 
-                    [disabled]="isLoading()" class="p-button-secondary ml-2"></p-button>
-        }
-      </ng-template>
-    </p-card>
-
-    <!-- Password Change Card -->
-    <p-card class="password-card" [header]="('user.password.title' | translate)">
-      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-        <div class="form-fields">
-          <div class="field">
-            <label for="currentPassword">{{'user.password.current' | translate}} *</label>
-            <p-password id="currentPassword" formControlName="currentPassword" class="full-width"
-                       [feedback]="false" [toggleMask]="true"
-                       [class.ng-invalid]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched"></p-password>
-            <small class="p-error" *ngIf="passwordForm.get('currentPassword')?.hasError('required') && passwordForm.get('currentPassword')?.touched">
-              {{'user.password.errors.currentRequired' | translate}}
-            </small>
-          </div>
-
-          <div class="field">
-            <label for="newPassword">{{'user.password.new' | translate}} *</label>
-            <p-password id="newPassword" formControlName="newPassword" class="full-width"
-                       [feedback]="true" [toggleMask]="true"
-                       [class.ng-invalid]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched"></p-password>
-            <small class="p-error" *ngIf="passwordForm.get('newPassword')?.hasError('required') && passwordForm.get('newPassword')?.touched">
-              {{'user.password.errors.newRequired' | translate}}
-            </small>
-            <small class="p-error" *ngIf="passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched">
-              {{'user.password.errors.minLength' | translate}}
-            </small>
-          </div>
-
-          <div class="field">
-            <label for="confirmPassword">{{'user.password.confirm' | translate}} *</label>
-            <p-password id="confirmPassword" formControlName="confirmPassword" class="full-width"
-                       [feedback]="false" [toggleMask]="true"
-                       [class.ng-invalid]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched"></p-password>
-            <small class="p-error" *ngIf="passwordForm.get('confirmPassword')?.hasError('required') && passwordForm.get('confirmPassword')?.touched">
-              {{'user.password.errors.confirmRequired' | translate}}
-            </small>
-            <small class="p-error" *ngIf="passwordForm.get('confirmPassword')?.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched">
-              {{'user.password.errors.mismatch' | translate}}
-            </small>
-          </div>
-        </div>
-      </form>
-      
-      <ng-template pTemplate="footer">
-        <p-button label="{{'user.password.change' | translate}}" (onClick)="changePassword()" 
-                  [disabled]="!passwordForm.valid || isLoading()" severity="danger"></p-button>
+        <p-button label="{{'user.profile.edit' | translate}}" (onClick)="openAccountManagement()" 
+                  [disabled]="isLoading()" icon="pi pi-external-link"></p-button>
       </ng-template>
     </p-card>
   }

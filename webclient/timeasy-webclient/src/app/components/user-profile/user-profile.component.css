@@ -4,8 +4,7 @@
   padding: 20px;
 }
 
-.profile-card,
-.password-card {
+.profile-card {
   margin-bottom: 24px;
 }
 
@@ -36,26 +35,6 @@
   color: #666;
 }
 
-.form-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.field label {
-  font-weight: 500;
-  color: #333;
-}
-
-.full-width {
-  width: 100%;
-}
 
 .loading {
   display: flex;
@@ -80,23 +59,7 @@
   margin-left: 0.5rem;
 }
 
-.p-error {
-  font-size: 0.875rem;
-  color: #e24c4c;
-  margin-top: 0.25rem;
-}
 
-:host ::ng-deep .ng-invalid.ng-touched {
-  border-color: #e24c4c;
-}
-
-:host ::ng-deep .p-inputtext.ng-invalid.ng-touched {
-  border-color: #e24c4c;
-}
-
-:host ::ng-deep .p-password.ng-invalid.ng-touched input {
-  border-color: #e24c4c;
-}
 
 @media (max-width: 600px) {
   .user-profile-container {
@@ -116,9 +79,5 @@
   :host ::ng-deep .p-card-footer {
     flex-direction: column;
     gap: 8px;
-  }
-
-  .ml-2 {
-    margin-left: 0;
   }
 }
