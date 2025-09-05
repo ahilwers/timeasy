@@ -1,13 +1,11 @@
 package rest
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"os"
 	"testing"
 	"timeasy-server/pkg/database/postgresql"
-	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/test"
 	"timeasy-server/pkg/usecase"
 
@@ -55,29 +53,6 @@ func (t *authTokenMock) HasRole(role string) (bool, error) {
 	return args.Get(0).(bool), args.Error(1)
 }
 
-type mockUserRepository struct {
-	mock.Mock
-}
-
-func (m *mockUserRepository) GetUserProfile(ctx context.Context, userToken string) (*model.User, error) {
-	args := m.Called(ctx, userToken)
-	return args.Get(0).(*model.User), args.Error(1)
-}
-
-func (m *mockUserRepository) UpdateUserProfile(ctx context.Context, userToken string, updateRequest *model.UserProfileUpdateRequest) (*model.User, error) {
-	args := m.Called(ctx, userToken, updateRequest)
-	return args.Get(0).(*model.User), args.Error(1)
-}
-
-func (m *mockUserRepository) ChangePassword(ctx context.Context, userToken string, passwordRequest *model.PasswordChangeRequest) error {
-	args := m.Called(ctx, userToken, passwordRequest)
-	return args.Error(0)
-}
-
-func (m *mockUserRepository) GetOrCreateUser(ctx context.Context, keycloakUserID uuid.UUID, keycloakData map[string]interface{}) (*model.User, error) {
-	args := m.Called(ctx, keycloakUserID, keycloakData)
-	return args.Get(0).(*model.User), args.Error(1)
-}
 
 type HandlerTest struct {
 	ProjectUsecase          usecase.ProjectUsecase
@@ -85,14 +60,12 @@ type HandlerTest struct {
 	TeamUsecase             usecase.TeamUsecase
 	SyncUsecase             usecase.SyncUsecase
 	WeeklyStatisticsUsecase *usecase.WeeklyStatisticsUsecase
-	UserUsecase             usecase.UserUsecase
 	ProjectHandler          ProjectHandler
 	TimeEntryHandler        TimeEntryHandler
 	TeamHandler             TeamHandler
 	SyncHandler             SyncHandler
 	WeeklyStatisticsHandler WeeklyStatisticsHandler
 	TimeEntryExportHandler  TimeEntryExportHandler
-	UserHandler             *UserHandler
 	Router                  *gin.Engine
 	tokenVerifier           TokenVerifier
 }
@@ -130,9 +103,6 @@ func (t *HandlerTest) initUsecases() {
 
 	t.WeeklyStatisticsUsecase = usecase.NewWeeklyStatisticsUsecase(t.TimeEntryUsecase)
 	
-	// Create mock UserRepository for testing
-	mockUserRepo := &mockUserRepository{}
-	t.UserUsecase = usecase.NewUserUsecase(mockUserRepo)
 }
 
 func (t *HandlerTest) initHandlers() {
@@ -143,9 +113,7 @@ func (t *HandlerTest) initHandlers() {
 	t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
 	t.WeeklyStatisticsHandler = NewWeeklyStatisticsHandler(t.tokenVerifier, t.WeeklyStatisticsUsecase, t.ProjectUsecase)
 	t.TimeEntryExportHandler = NewTimeEntryExportHandler(t.tokenVerifier, t.TimeEntryUsecase)
-	t.UserHandler = NewUserHandler(t.UserUsecase, t.tokenVerifier)
-
-	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, t.UserHandler)
+	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {

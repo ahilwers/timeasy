@@ -71,6 +71,7 @@
       "title": "Benutzerprofil",
       "information": "Profilinformationen",
       "edit": "Profil bearbeiten",
+      "changePassword": "Passwort ändern",
       "firstName": "Vorname",
       "lastName": "Nachname",
       "email": "E-Mail",
@@ -80,7 +81,12 @@
         "firstNameRequired": "Vorname ist erforderlich",
         "lastNameRequired": "Nachname ist erforderlich",
         "emailRequired": "E-Mail ist erforderlich",
-        "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein"
+        "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "failedToLoadProfile": "Benutzerprofil konnte nicht geladen werden",
+        "authenticationRequired": "Sie müssen angemeldet sein, um auf die Kontoverwaltung zuzugreifen.",
+        "passwordAuthenticationRequired": "Sie müssen angemeldet sein, um das Passwort zu ändern.",
+        "accountManagementUnavailable": "Kontoverwaltung ist nicht verfügbar. Bitte wenden Sie sich an den Support.",
+        "passwordChangeUnavailable": "Passwort-Änderungsseite ist nicht verfügbar. Bitte wenden Sie sich an den Support."
       }
     },
     "password": {

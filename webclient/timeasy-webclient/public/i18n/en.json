@@ -71,6 +71,7 @@
       "title": "User Profile",
       "information": "Profile Information",
       "edit": "Edit Profile",
+      "changePassword": "Change Password",
       "firstName": "First Name",
       "lastName": "Last Name",
       "email": "Email",
@@ -80,7 +81,12 @@
         "firstNameRequired": "First name is required",
         "lastNameRequired": "Last name is required",
         "emailRequired": "Email is required",
-        "emailInvalid": "Please enter a valid email address"
+        "emailInvalid": "Please enter a valid email address",
+        "failedToLoadProfile": "Failed to load user profile",
+        "authenticationRequired": "You must be logged in to access account management.",
+        "passwordAuthenticationRequired": "You must be logged in to change your password.",
+        "accountManagementUnavailable": "Unable to access account management. Please contact support.",
+        "passwordChangeUnavailable": "Unable to access change password page. Please contact support."
       }
     },
     "password": {

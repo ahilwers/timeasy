@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import Keycloak from 'keycloak-js';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -8,6 +8,7 @@ import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
+import { Router } from '@angular/router';
 import { UserProfile } from '../../interfaces/auth-provider.interface';
 import { UserService } from '../../services/user.service';
 
@@ -29,6 +30,7 @@ export class UserProfileComponent implements OnInit {
     private readonly userService = inject(UserService);
     private readonly messageService = inject(MessageService);
     private readonly keycloak = inject(Keycloak);
+    private readonly translateService = inject(TranslateService);
 
     user = signal<UserProfile | null>(null);
     isLoading = signal(false);
@@ -47,7 +49,7 @@ export class UserProfileComponent implements OnInit {
         return lang?.name || 'English';
     }
 
-    constructor() {}
+    constructor(private router: Router) { }
 
     async ngOnInit() {
         await this.loadUserProfile();
@@ -63,13 +65,13 @@ export class UserProfileComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Failed to load user profile:', error);
-                    this.showError('Failed to load user profile');
+                    this.showError('user.profile.errors.failedToLoadProfile');
                     this.isLoading.set(false);
                 }
             });
         } catch (error) {
             console.error('Failed to load user profile:', error);
-            this.showError('Failed to load user profile');
+            this.showError('user.profile.errors.failedToLoadProfile');
             this.isLoading.set(false);
         }
     }
@@ -77,16 +79,36 @@ export class UserProfileComponent implements OnInit {
     openAccountManagement() {
         try {
             if (!this.keycloak.authenticated) {
-                this.showError('You must be logged in to access account management.');
+                this.showError('user.profile.errors.authenticationRequired');
                 return;
             }
-            this.keycloak.accountManagement();
+            this.keycloak.createLoginUrl().then(url => {
+                const loginUrl = `${url}&kc_action=UPDATE_PROFILE`
+                window.open(loginUrl, '_blank');
+            });
         }
         catch (error) {
             console.error('All methods failed:', error);
-            this.showError('Unable to access account management. Please contact support.');
+            this.showError('user.profile.errors.accountManagementUnavailable');
         }
     }
+
+    openPasswordManagement() {
+        try {
+            if (!this.keycloak.authenticated) {
+                this.showError('user.profile.errors.passwordAuthenticationRequired');
+                return;
+            }
+            this.keycloak.createLoginUrl().then(url => {
+                const changePasswordUrl = `${url}&kc_action=UPDATE_PASSWORD`
+                window.open(changePasswordUrl, '_blank');
+            });
+        }
+        catch (error) {
+            this.showError('user.profile.errors.passwordChangeUnavailable');
+        }
+    }
+
 
     private showSuccess(message: string) {
         this.messageService.add({
@@ -97,11 +119,13 @@ export class UserProfileComponent implements OnInit {
         });
     }
 
-    private showError(message: string) {
+    private showError(messageKey: string) {
+        const translatedMessage = this.translateService.instant(messageKey);
+        const errorTitle = this.translateService.instant('globals.error');
         this.messageService.add({
             severity: 'error',
-            summary: 'Error',
-            detail: message,
+            summary: errorTitle,
+            detail: translatedMessage,
             life: 5000
         });
     }

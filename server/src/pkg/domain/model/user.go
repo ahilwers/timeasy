@@ -15,15 +15,3 @@ type User struct {
 	Attributes  map[string]string `json:"attributes,omitempty"`
 }
 
-type UserProfileUpdateRequest struct {
-	FirstName   *string           `json:"firstName,omitempty"`
-	LastName    *string           `json:"lastName,omitempty"`
-	Email       *string           `json:"email,omitempty"`
-	Language    *string           `json:"language,omitempty"`
-	Attributes  map[string]string `json:"attributes,omitempty"`
-}
-
-type PasswordChangeRequest struct {
-	CurrentPassword string `json:"currentPassword" binding:"required"`
-	NewPassword     string `json:"newPassword" binding:"required,min=8"`
-}
