@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"log/slog"
+	"errors"
 	"strings"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
@@ -243,19 +244,39 @@ func (usecase *syncUsecase) processTimeEntryUpdates(timeEntries []model.TimeEntr
 		
 		err = usecase.timeEntryRepository.UpdateTimeEntry(timeEntry, tx)
 		if err != nil {
-			return err
-		}
+			// If entity not found, try to add it instead
+			if errors.Is(err, repository.ErrEntityNotFound) {
+				err = usecase.timeEntryRepository.AddTimeEntry(timeEntry, tx)
+				if err != nil {
+					return err
+				}
 
-		changelogEntry := &model.ChangelogEntry{
-			EntityType:      model.EntityTypeTimeEntry,
-			EntityID:        timeEntry.ID,
-			Operation:       model.OperationUpdated,
-			ChangedByUser:   userId,
-			ChangedByClient: clientId,
-		}
-		err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
-		if err != nil {
-			return err
+				changelogEntry := &model.ChangelogEntry{
+					EntityType:      model.EntityTypeTimeEntry,
+					EntityID:        timeEntry.ID,
+					Operation:       model.OperationCreated,
+					ChangedByUser:   userId,
+					ChangedByClient: clientId,
+				}
+				err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		} else {
+			changelogEntry := &model.ChangelogEntry{
+				EntityType:      model.EntityTypeTimeEntry,
+				EntityID:        timeEntry.ID,
+				Operation:       model.OperationUpdated,
+				ChangedByUser:   userId,
+				ChangedByClient: clientId,
+			}
+			err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
