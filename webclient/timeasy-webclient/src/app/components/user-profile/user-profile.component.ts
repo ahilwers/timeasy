@@ -91,7 +91,7 @@ export class UserProfileComponent implements OnInit {
             }
             this.keycloak.createLoginUrl().then(url => {
                 const loginUrl = `${url}&kc_action=UPDATE_PROFILE`
-                window.open(loginUrl, '_blank');
+                window.location.href = loginUrl;
             });
         }
         catch (error) {
@@ -108,7 +108,7 @@ export class UserProfileComponent implements OnInit {
             }
             this.keycloak.createLoginUrl().then(url => {
                 const changePasswordUrl = `${url}&kc_action=UPDATE_PASSWORD`
-                window.open(changePasswordUrl, '_blank');
+                window.location.href = changePasswordUrl;
             });
         }
         catch (error) {
