@@ -1,0 +1,1 @@
+async function c(r){const{elementId:s}=r,e=()=>document.getElementById(s);if(e()===null){let t;const l=new Promise(o=>t=o),n=new MutationObserver(()=>{e()!==null&&(n.disconnect(),t())});n.observe(document.body,{childList:!0,subtree:!0}),await l}}export{c as w};
