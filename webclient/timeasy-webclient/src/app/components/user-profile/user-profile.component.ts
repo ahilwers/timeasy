@@ -10,7 +10,6 @@ import { ToastModule } from 'primeng/toast';
 
 import { Router } from '@angular/router';
 import { UserProfile } from '../../interfaces/auth-provider.interface';
-import { UserService } from '../../services/user.service';
 
 @Component({
     selector: 'app-user-profile',
@@ -27,7 +26,6 @@ import { UserService } from '../../services/user.service';
     styleUrl: './user-profile.component.css'
 })
 export class UserProfileComponent implements OnInit {
-    private readonly userService = inject(UserService);
     private readonly messageService = inject(MessageService);
     private readonly keycloak = inject(Keycloak);
     private readonly translateService = inject(TranslateService);
@@ -58,17 +56,26 @@ export class UserProfileComponent implements OnInit {
     private async loadUserProfile() {
         this.isLoading.set(true);
         try {
-            this.userService.getCurrentUser().subscribe({
-                next: (user) => {
-                    this.user.set(user);
-                    this.isLoading.set(false);
-                },
-                error: (error) => {
-                    console.error('Failed to load user profile:', error);
-                    this.showError('user.profile.errors.failedToLoadProfile');
-                    this.isLoading.set(false);
-                }
-            });
+            if (!this.keycloak.authenticated) {
+                this.showError('user.profile.errors.authenticationRequired');
+                this.isLoading.set(false);
+                return;
+            }
+
+            const keycloakProfile = await this.keycloak.loadUserProfile();
+            const userProfile: UserProfile = {
+                id: this.keycloak.subject || '',
+                username: keycloakProfile.username || '',
+                email: keycloakProfile.email || '',
+                firstName: keycloakProfile.firstName || '',
+                lastName: keycloakProfile.lastName || '',
+                displayName: `${keycloakProfile.firstName} ${keycloakProfile.lastName}`.trim() || keycloakProfile.username || '',
+                language: this.extractLanguageFromAttributes(keycloakProfile.attributes) || 'en',
+                attributes: this.convertAttributes(keycloakProfile.attributes)
+            };
+
+            this.user.set(userProfile);
+            this.isLoading.set(false);
         } catch (error) {
             console.error('Failed to load user profile:', error);
             this.showError('user.profile.errors.failedToLoadProfile');
@@ -128,6 +135,37 @@ export class UserProfileComponent implements OnInit {
             detail: translatedMessage,
             life: 5000
         });
+    }
+
+    private extractLanguageFromAttributes(attributes: Record<string, unknown> | undefined): string | undefined {
+        if (!attributes || !attributes['locale']) {
+            return undefined;
+        }
+
+        const locale = attributes['locale'];
+        if (Array.isArray(locale) && locale.length > 0) {
+            return String(locale[0]);
+        }
+
+        return String(locale);
+    }
+
+    private convertAttributes(attributes: Record<string, unknown> | undefined): { [key: string]: string[] } | undefined {
+        if (!attributes) {
+            return undefined;
+        }
+
+        const converted: { [key: string]: string[] } = {};
+
+        Object.entries(attributes).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+                converted[key] = value.map(v => String(v));
+            } else if (value !== undefined && value !== null) {
+                converted[key] = [String(value)];
+            }
+        });
+
+        return Object.keys(converted).length > 0 ? converted : undefined;
     }
 
 }
