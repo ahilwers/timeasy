@@ -1,9 +1,10 @@
-import {Component, effect, inject, OnInit} from '@angular/core';
+import {Component, effect, inject, OnInit, OnDestroy} from '@angular/core';
 import Keycloak, {KeycloakProfile} from 'keycloak-js';
 import {KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs} from 'keycloak-angular';
 import {Menu} from 'primeng/menu';
 import {MenuItem} from 'primeng/api';
 import {TranslateService} from '@ngx-translate/core';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-menu',
@@ -13,13 +14,14 @@ import {TranslateService} from '@ngx-translate/core';
   styleUrl: './menu.component.css'
 })
 
-export class MenuComponent implements OnInit {
+export class MenuComponent implements OnInit, OnDestroy {
   authenticated : boolean = false;
   userProfile : KeycloakProfile = {};
   isAdmin : boolean = false;
   private readonly keyCloak = inject(Keycloak);
   private readonly keyCloakSignal = inject(KEYCLOAK_EVENT_SIGNAL);
   private readonly translateService = inject(TranslateService)
+  private langChangeSubscription: Subscription | undefined;
 
   menuItems : MenuItem[] = [];
 
@@ -46,6 +48,17 @@ export class MenuComponent implements OnInit {
 
   ngOnInit(): void {
     this.updateMenu();
+    
+    // Subscribe to language changes to update menu labels
+    this.langChangeSubscription = this.translateService.onLangChange.subscribe(() => {
+      this.updateMenu();
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.langChangeSubscription) {
+      this.langChangeSubscription.unsubscribe();
+    }
   }
 
   login() {
