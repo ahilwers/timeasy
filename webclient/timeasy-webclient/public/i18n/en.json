@@ -1,129 +1,254 @@
 {
-  "menu": {
-    "home": "Home",
-    "dashboard": "Dashboard",
-    "projects": "Projects",
-    "timeEntries": "Time Entries",
-    "weeklyOverview": "Weekly Overview",
-    "admin": "Admin"
-  },
-  "dashboard": {
-    "headline": "Dashboard",
-    "yourWeek": "Your Week",
-    "projectsThisWeek": "Projects This Week",
-    "noDataThisWeek": "You didn't track any times this week yet."
-  },
-  "timeEntries": {
-    "headline": "Time Entries",
-    "startTime": "Start Time",
-    "startDate": "Start Date",
-    "endTime": "End Time",
-    "endDate": "End Date",
-    "description": "Description",
-    "project": "Project",
-    "add" : "Add Time Entry",
-    "edit" : "Edit Time Entry",
-    "selectProject": "Please select a project",
-    "deleteTimeEntry": "Delete Time Entry",
-    "confirmDelete": "Are you sure you want to delete this time entry?",
-    "timeEntries.errorLoadingTimeEntries": "Failed to load time entries.",
-    "timeEntries.errorDeletingTimeEntry": "Failed to delete time entry.",
-    "timeEntries.errorUpdatingTimeEntry": "Failed to update time entry.",
-    "timeEntries.errorAddingTimeEntry": "Failed to add time entry.",
-    "dateRange": "Date Range"
-  },
-  "projects": {
-    "headline": "Projects",
-    "name": "Name",
-    "add" : "Add Project",
-    "edit" : "Edit Project",
-    "project": "Project",
-    "specifyName": "Bitte geben Sie einen Namen ein",
-    "deleteProject": "Delete Project",
-    "confirmDelete": "Are you sure you want to delete this project?",
-    "errorLoadingProject": "Failed to load project.",
-    "errorLoadingProjects": "Failed to load projects.",
-    "errorUpdatingProject": "Failed to update project.",
-    "errorDeletingProject": "Failed to delete project.",
-    "errorAddingProject": "Failed to add project.",
-    "color": "Color",
-    "selectColor": "Please select a color",
-    "deadline": "Deadline",
-    "hourlyRate": "Hourly Rate",
-    "timeBudget": "Time Budget",
-    "hours": "h",
-    "isActive": "Active"
-  },
-  "weeklyOverview": {
-    "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",
-    "errorLoadingWeekNumber": "Failed to load week number.",
-    "headline": "Weekly Overview",
-    "total": "Total",
-    "allProjects": "All Projects"
-  },
-  "timeTracking": {
-    "whatAreYouWorkingOn": "What are you working on?",
-    "in": "in",
-    "project": "Project"
-  },
-  "user": {
-    "profile": {
-      "title": "User Profile",
-      "information": "Profile Information",
-      "edit": "Edit Profile",
-      "changePassword": "Change Password",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "email": "Email",
-      "username": "Username",
-      "language": "Language",
-      "errors": {
-        "firstNameRequired": "First name is required",
-        "lastNameRequired": "Last name is required",
-        "emailRequired": "Email is required",
-        "emailInvalid": "Please enter a valid email address",
-        "failedToLoadProfile": "Failed to load user profile",
-        "authenticationRequired": "You must be logged in to access account management.",
-        "passwordAuthenticationRequired": "You must be logged in to change your password.",
-        "accountManagementUnavailable": "Unable to access account management. Please contact support.",
-        "passwordChangeUnavailable": "Unable to access change password page. Please contact support."
-      }
+    "menu": {
+        "home": "Home",
+        "dashboard": "Dashboard",
+        "projects": "Projects",
+        "timeEntries": "Time Entries",
+        "weeklyOverview": "Weekly Overview",
+        "admin": "Admin"
     },
-    "password": {
-      "title": "Change Password",
-      "current": "Current Password",
-      "new": "New Password",
-      "confirm": "Confirm Password",
-      "change": "Change Password",
-      "errors": {
-        "currentRequired": "Current password is required",
-        "newRequired": "New password is required",
-        "confirmRequired": "Password confirmation is required",
-        "minLength": "Password must be at least 8 characters long",
-        "mismatch": "Passwords do not match"
-      }
+    "dashboard": {
+        "headline": "Dashboard",
+        "yourWeek": "Your Week",
+        "projectsThisWeek": "Projects This Week",
+        "noDataThisWeek": "You didn't track any times this week yet."
+    },
+    "timeEntries": {
+        "headline": "Time Entries",
+        "startTime": "Start Time",
+        "startDate": "Start Date",
+        "endTime": "End Time",
+        "endDate": "End Date",
+        "description": "Description",
+        "project": "Project",
+        "add": "Add Time Entry",
+        "edit": "Edit Time Entry",
+        "selectProject": "Please select a project",
+        "deleteTimeEntry": "Delete Time Entry",
+        "confirmDelete": "Are you sure you want to delete this time entry?",
+        "timeEntries.errorLoadingTimeEntries": "Failed to load time entries.",
+        "timeEntries.errorDeletingTimeEntry": "Failed to delete time entry.",
+        "timeEntries.errorUpdatingTimeEntry": "Failed to update time entry.",
+        "timeEntries.errorAddingTimeEntry": "Failed to add time entry.",
+        "dateRange": "Date Range",
+        "form": {
+            "resolvingIssue": "Resolving issue...",
+            "pending": "pending"
+        }
+    },
+    "projects": {
+        "headline": "Projects",
+        "name": "Name",
+        "add": "Add Project",
+        "edit": "Edit Project",
+        "project": "Project",
+        "specifyName": "Bitte geben Sie einen Namen ein",
+        "deleteProject": "Delete Project",
+        "confirmDelete": "Are you sure you want to delete this project?",
+        "errorLoadingProject": "Failed to load project.",
+        "errorLoadingProjects": "Failed to load projects.",
+        "errorUpdatingProject": "Failed to update project.",
+        "errorDeletingProject": "Failed to delete project.",
+        "errorAddingProject": "Failed to add project.",
+        "color": "Color",
+        "selectColor": "Please select a color",
+        "deadline": "Deadline",
+        "hourlyRate": "Hourly Rate",
+        "timeBudget": "Time Budget",
+        "hours": "h",
+        "isActive": "Active",
+        "external": {
+            "title": "External Integration",
+            "provider": "Provider",
+            "selectProvider": "Select a provider",
+            "account": "External Account",
+            "selectAccount": "Select an external account",
+            "noAccounts": "No external accounts configured. Please set up an external account first.",
+            "manageAccounts": "Manage External Accounts",
+            "projectRef": "Project Reference",
+            "projectRefPlaceholder": "Enter project reference",
+            "oauthToken": "OAuth Token",
+            "tokenPlaceholder": "Enter your OAuth token",
+            "tokenHelp": "For GitHub/GitLab: Personal access token. For Jira: Just the API token (email goes in Account Name field)",
+            "githubHelp": "Format: owner/repository-name (e.g. microsoft/vscode)",
+            "gitlabHelp": "Format: owner/repository-name (e.g. gitlab-org/gitlab)",
+            "jiraHelp": "Format: PROJECT-KEY (e.g. PROJ)",
+            "connect": "Connect",
+            "disconnect": "Disconnect",
+            "sync": "Sync Issues",
+            "connectedTo": "Connected to {{provider}}: {{projectRef}}",
+            "connectSuccess": "External integration connected successfully",
+            "connectError": "Failed to connect external integration",
+            "authError": "Authentication failed: Please check your external account credentials",
+            "accessError": "Access denied: Invalid project reference or insufficient permissions",
+            "providerError": "External provider not available: Please contact support",
+            "disconnectSuccess": "External integration disconnected successfully",
+            "disconnectError": "Failed to disconnect external integration",
+            "syncSuccess": "Issues sync initiated successfully",
+            "syncError": "Failed to sync issues",
+            "noConnectionError": "No external integration configured for this project"
+        }
+    },
+    "weeklyOverview": {
+        "errorLoadingWeeklyStatistics": "Failed to load weekly statistics.",
+        "errorLoadingWeekNumber": "Failed to load week number.",
+        "headline": "Weekly Overview",
+        "total": "Total",
+        "allProjects": "All Projects"
+    },
+    "timeTracking": {
+        "whatAreYouWorkingOn": "What are you working on?",
+        "in": "in",
+        "project": "Project"
+    },
+    "user": {
+        "profile": {
+            "title": "User Profile",
+            "information": "Profile Information",
+            "edit": "Edit Profile",
+            "changePassword": "Change Password",
+            "firstName": "First Name",
+            "lastName": "Last Name",
+            "email": "Email",
+            "username": "Username",
+            "language": "Language",
+            "errors": {
+                "firstNameRequired": "First name is required",
+                "lastNameRequired": "Last name is required",
+                "emailRequired": "Email is required",
+                "emailInvalid": "Please enter a valid email address",
+                "failedToLoadProfile": "Failed to load user profile",
+                "authenticationRequired": "You must be logged in to access account management.",
+                "passwordAuthenticationRequired": "You must be logged in to change your password.",
+                "accountManagementUnavailable": "Unable to access account management. Please contact support.",
+                "passwordChangeUnavailable": "Unable to access change password page. Please contact support."
+            }
+        },
+        "password": {
+            "title": "Change Password",
+            "current": "Current Password",
+            "new": "New Password",
+            "confirm": "Confirm Password",
+            "change": "Change Password",
+            "errors": {
+                "currentRequired": "Current password is required",
+                "newRequired": "New password is required",
+                "confirmRequired": "Password confirmation is required",
+                "minLength": "Password must be at least 8 characters long",
+                "mismatch": "Passwords do not match"
+            }
+        },
+        "menu": {
+            "externalAccounts": "External Accounts"
+        },
+        "externalAccounts": {
+            "title": "External Accounts",
+            "addAccount": "Add Account",
+            "editAccount": "Edit Account",
+            "provider": "Provider",
+            "selectProvider": "Select Provider",
+            "accountName": "Account Name",
+            "accountNamePlaceholder": "Enter account name",
+            "oauthToken": "OAuth Token",
+            "tokenPlaceholder": "Enter your OAuth token",
+            "tokenHelp": "For GitHub/GitLab: Personal access token. For Jira: Just the API token (email goes in Account Name field)",
+            "baseUrl": "Base URL",
+            "gitlabUrlHelp": "Enter your GitLab instance URL",
+            "jiraUrlHelp": "Enter your Jira instance URL",
+            "actions": "Actions",
+            "test": "Test Connection",
+            "edit": "Edit",
+            "delete": "Delete",
+            "loading": "Loading accounts...",
+            "noAccounts": "No External Accounts",
+            "noAccountsDescription": "You haven't configured any external accounts yet. Add an account to get started.",
+            "loadError": "Failed to load external accounts",
+            "saveError": "Failed to save external account",
+            "createSuccess": "External account created successfully",
+            "updateSuccess": "External account updated successfully",
+            "deleteSuccess": "External account deleted successfully",
+            "deleteError": "Failed to delete external account",
+            "testSuccess": "Connection test successful",
+            "testError": "Connection test failed",
+            "githubAuthFailed": "GitHub authentication failed: Invalid token or insufficient permissions",
+            "gitlabAuthFailed": "GitLab authentication failed: Invalid token or insufficient permissions",
+            "jiraAuthFailed": "Jira authentication failed: Invalid token or insufficient permissions",
+            "deleteConfirmTitle": "Delete External Account",
+            "deleteConfirmMessage": "Are you sure you want to delete the account '{{name}}'?",
+            "tokenHelpButton": "How to create a token"
+        }
+    },
+    "tokenDocumentation": {
+        "securityNote": "Important: Keep your tokens secure and never share them publicly. Tokens provide access to your accounts and should be treated like passwords.",
+        "github": {
+            "title": "How to Create a GitHub Personal Access Token",
+            "stepsTitle": "Steps to Create Token:",
+            "step1": "Go to <a href='https://github.com/settings/tokens' target='_blank' rel='noopener'>GitHub Settings → Developer settings → Personal access tokens</a>",
+            "step2": "Click <strong>\"Generate new token\"</strong> and select <strong>\"Generate new token (classic)\"</strong>",
+            "step3": "Enter a descriptive <strong>Note</strong> (e.g., \"Timeasy Integration\")",
+            "step4": "Set an <strong>Expiration date</strong> or select \"No expiration\" (not recommended for security)",
+            "step5": "Select the required <strong>scopes</strong> (see permissions below)",
+            "step6": "Click <strong>\"Generate token\"</strong> at the bottom of the page",
+            "step7": "<strong>Important:</strong> Copy the token immediately - it won't be shown again!",
+            "step8": "Paste the token into the OAuth Token field in Timeasy",
+            "permissionsTitle": "Required Permissions (Scopes):",
+            "permission1": "<strong>repo</strong> - Full control of private repositories (to access issues and create comments)",
+            "permission2": "<strong>read:user</strong> - Read user profile information",
+            "permission3": "<strong>user:email</strong> - Access user email addresses"
+        },
+        "gitlab": {
+            "title": "How to Create a GitLab Personal Access Token",
+            "stepsTitle": "Steps to Create Token:",
+            "step1": "Go to your GitLab instance (e.g., gitlab.com) and sign in",
+            "step2": "Click your <strong>profile avatar</strong> → <strong>Preferences</strong>",
+            "step3": "In the left sidebar, click <strong>Access Tokens</strong>",
+            "step4": "Enter a <strong>Token name</strong> (e.g., \"Timeasy Integration\")",
+            "step5": "Set an <strong>Expiration date</strong> or leave blank for no expiration",
+            "step6": "Select the required <strong>scopes</strong> (see permissions below)",
+            "step7": "Click <strong>\"Create personal access token\"</strong>",
+            "step8": "<strong>Important:</strong> Copy the token immediately - it won't be shown again!",
+            "permissionsTitle": "Required Permissions (Scopes):",
+            "permission1": "<strong>api</strong> - Complete read/write access to the API",
+            "permission2": "<strong>read_user</strong> - Read user profile information",
+            "permission3": "<strong>read_repository</strong> - Read repository information and issues"
+        },
+        "jira": {
+            "title": "How to Create a Jira API Token",
+            "stepsTitle": "Steps to Create Token:",
+            "step1": "Go to <a href='https://id.atlassian.com/manage-profile/security/api-tokens' target='_blank' rel='noopener'>Atlassian Account Management</a>",
+            "step2": "Sign in with your Atlassian account",
+            "step3": "Click <strong>\"Create API token\"</strong>",
+            "step4": "Enter a <strong>Label</strong> for your token (e.g., \"Timeasy Integration\")",
+            "step5": "Click <strong>\"Create\"</strong>",
+            "step6": "<strong>Important:</strong> Copy the token immediately - it won't be shown again!",
+            "step7": "In Timeasy, use your <strong>email address</strong> as the Account Name and paste the token in the OAuth Token field",
+            "permissionsTitle": "Required Permissions:",
+            "permission1": "<strong>Jira API access</strong> - The token provides access to Jira projects and issues you have permission to view",
+            "permission2": "<strong>Project access</strong> - You must have at least \"Browse Projects\" permission in the Jira projects you want to integrate"
+        }
+    },
+    "common": {
+        "loading": "Loading...",
+        "save": "Save",
+        "cancel": "Cancel"
+    },
+    "globals": {
+        "ok": "OK",
+        "cancel": "Cancel",
+        "close": "Close",
+        "error": "Error",
+        "success": "Success",
+        "yes": "Yes",
+        "no": "No",
+        "confirmation": "Confirmation",
+        "weekdays": {
+            "monday": "Monday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday",
+            "sunday": "Sunday"
+        }
     }
-  },
-  "common": {
-    "loading": "Loading...",
-    "save": "Save",
-    "cancel": "Cancel"
-  },
-  "globals": {
-    "ok": "OK",
-    "cancel": "Cancel",
-    "error": "Error",
-    "yes": "Yes",
-    "no": "No",
-    "confirmation": "Confirmation",
-    "weekdays": {
-      "monday": "Monday",
-      "tuesday": "Tuesday",
-      "wednesday": "Wednesday",
-      "thursday": "Thursday",
-      "friday": "Friday",
-      "saturday": "Saturday",
-      "sunday": "Sunday"
-    }
-  }
 }

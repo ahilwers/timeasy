@@ -4,4 +4,6 @@ export interface TimeEntry {
   description: string;
   startTime: Date;
   endTime: Date | undefined;
+  externalIssueId?: string;
+  pendingExternalRef?: string;
 }

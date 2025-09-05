@@ -1,1 +1,0 @@
--- Placeholder migration rollback - no changes needed

@@ -3,9 +3,11 @@ package rest
 import (
 	"encoding/json"
 	"log"
+	"log/slog"
 	"os"
 	"testing"
 	"timeasy-server/pkg/database/postgresql"
+	"timeasy-server/pkg/external"
 	"timeasy-server/pkg/test"
 	"timeasy-server/pkg/usecase"
 
@@ -53,7 +55,6 @@ func (t *authTokenMock) HasRole(role string) (bool, error) {
 	return args.Get(0).(bool), args.Error(1)
 }
 
-
 type HandlerTest struct {
 	ProjectUsecase          usecase.ProjectUsecase
 	TimeEntryUsecase        usecase.TimeEntryUsecase
@@ -96,24 +97,61 @@ func (t *HandlerTest) initUsecases() {
 	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase, changelogRepo)
 
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
-	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase, changelogRepo)
+
+	// Create external integration usecase for testing
+	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(
+		nil, // externalConnRepo - not needed for handler tests
+		nil, // externalIssueRepo - not needed for handler tests
+		nil, // userAccountRepo - not needed for handler tests
+		timeEntryRepo,
+		projectRepo,
+		nil, // providerFactory - not needed for handler tests
+		t.TeamUsecase,
+	)
+
+	t.TimeEntryUsecase = usecase.NewTimeEntryUsecase(timeEntryRepo, t.ProjectUsecase, changelogRepo, externalIntegrationUsecase)
 
 	syncRepo := postgresql.NewPostgreSQLSyncRepository(test.Database.DB)
-	t.SyncUsecase = usecase.NewSyncUsecase(syncRepo, changelogRepo, projectRepo, timeEntryRepo)
+	t.SyncUsecase = usecase.NewSyncUsecase(syncRepo, changelogRepo, projectRepo, timeEntryRepo, externalIntegrationUsecase)
 
 	t.WeeklyStatisticsUsecase = usecase.NewWeeklyStatisticsUsecase(t.TimeEntryUsecase)
-	
+
 }
 
 func (t *HandlerTest) initHandlers() {
 	authMiddleware := NewJwtAuthMiddleware(t.tokenVerifier)
-	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase)
+
+	externalConnectionRepo := postgresql.NewPostgreSQLExternalConnectionRepository(test.Database.DB)
+	t.ProjectHandler = NewProjectHandler(t.tokenVerifier, t.ProjectUsecase, t.TeamUsecase, externalConnectionRepo)
+
 	t.TimeEntryHandler = NewTimeEntryHandler(t.tokenVerifier, t.TimeEntryUsecase)
 	t.TeamHandler = NewTeamHandler(t.tokenVerifier, t.TeamUsecase)
 	t.SyncHandler = NewSyncHandler(t.tokenVerifier, t.SyncUsecase)
 	t.WeeklyStatisticsHandler = NewWeeklyStatisticsHandler(t.tokenVerifier, t.WeeklyStatisticsUsecase, t.ProjectUsecase)
 	t.TimeEntryExportHandler = NewTimeEntryExportHandler(t.tokenVerifier, t.TimeEntryUsecase)
-	t.Router = SetupRouter(authMiddleware, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler)
+
+	externalIssueRepo := postgresql.NewPostgreSQLExternalIssueRepository(test.Database.DB)
+	userExternalAccountRepo := postgresql.NewPostgreSQLUserExternalAccountRepository(test.Database.DB)
+	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
+	projectRepo := postgresql.NewPostgreSQLProjectRepository(test.Database.DB, postgresql.NewPostgreSQLTeamRepository(test.Database.DB))
+
+	providerFactory := &external.ProviderFactory{}
+
+	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(
+		externalConnectionRepo,
+		externalIssueRepo,
+		userExternalAccountRepo,
+		timeEntryRepo,
+		projectRepo,
+		providerFactory,
+		t.TeamUsecase)
+	userExternalAccountUsecase := usecase.NewUserExternalAccountUseCase(userExternalAccountRepo, providerFactory)
+
+	externalIntegrationHandler := NewExternalIntegrationHandler(t.tokenVerifier, externalIntegrationUsecase)
+	userExternalAccountHandler := NewUserExternalAccountHandler(t.tokenVerifier, userExternalAccountUsecase)
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	t.Router = SetupRouter(authMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {

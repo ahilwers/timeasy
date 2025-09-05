@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit} from '@angular/core';
+import {Component, effect, inject, OnInit, signal} from '@angular/core';
 import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 import {UtcToLocalTimePipe} from '../../../pipes/utc-to-local-time.pipe';
 import {Button} from 'primeng/button';
@@ -12,6 +12,8 @@ import {ConfirmDialog} from 'primeng/confirmdialog';
 import {Toast} from 'primeng/toast';
 import {ProjectService} from '../../../services/project.service';
 import {Project} from '../../../models/project.model';
+import {ExternalIntegrationService} from '../../../services/external-integration.service';
+import {ExternalIssue} from '../../../models/external-issue.model';
 import {Select} from 'primeng/select';
 import {FormsModule} from '@angular/forms';
 import {DatePicker} from 'primeng/datepicker';
@@ -43,6 +45,7 @@ export class TimeEntryListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly timeEntryService = inject(TimeEntryService);
   private readonly projectService = inject(ProjectService);
+  private readonly externalService = inject(ExternalIntegrationService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
@@ -56,6 +59,7 @@ export class TimeEntryListComponent implements OnInit {
   selectedProjectId = this.timeEntryService.selectedProjectId();
 
   projectMap = new Map<string, Project>();
+  externalIssuesMap = signal(new Map<string, ExternalIssue>());
   exportMenuItems: MenuItem[];
 
   constructor() {
@@ -77,6 +81,19 @@ export class TimeEntryListComponent implements OnInit {
     });
     effect(() => {
       this.timeEntryService.loadTimeEntries(this.selectedProjectId(), this.selectedDateRange());
+    });
+    // Load external issues when time entries change, but use a computed to avoid infinite loops
+    effect(() => {
+      const entries = this.timeEntries();
+      const deleted = this.deleted();
+      
+      // Only load external issues when time entries are loaded (not when deleted)
+      if (entries && entries.length > 0 && !deleted) {
+        // Use a micro task to avoid triggering during the current change detection cycle
+        Promise.resolve().then(() => {
+          this.loadExternalIssuesIfNeeded(entries);
+        });
+      }
     });
     this.exportMenuItems = [
       {
@@ -183,6 +200,66 @@ export class TimeEntryListComponent implements OnInit {
 
   exportTimeEntries(exportFormat: TimeEntryExportFomat) {
     this.timeEntryService.exportTimeEntries(this.selectedProjectId(), this.selectedDateRange(), exportFormat);
+  }
+
+  private loadingExternalIssues = new Set<string>(); // Track loading state
+
+  loadExternalIssuesIfNeeded(entries: TimeEntry[]): void {
+    console.log('Loading external issues for entries:', entries.length);
+    
+    entries.forEach(entry => {
+      if (entry.externalIssueId && 
+          !this.externalIssuesMap().has(entry.externalIssueId) && 
+          !this.loadingExternalIssues.has(entry.externalIssueId)) {
+        
+        console.log('Fetching external issue for ID:', entry.externalIssueId);
+        this.loadingExternalIssues.add(entry.externalIssueId);
+        
+        this.externalService.getExternalIssue(entry.externalIssueId).subscribe({
+          next: (externalIssue) => {
+            console.log('Received external issue:', externalIssue);
+            this.loadingExternalIssues.delete(entry.externalIssueId!);
+            
+            // Update the signal by modifying the current map
+            this.externalIssuesMap.update(currentMap => {
+              const newMap = new Map(currentMap);
+              newMap.set(entry.externalIssueId!, externalIssue);
+              console.log('Updated external issues map, now has:', newMap.size, 'issues');
+              return newMap;
+            });
+          },
+          error: (err) => {
+            console.error('Failed to load external issue:', entry.externalIssueId, err);
+            this.loadingExternalIssues.delete(entry.externalIssueId!);
+          }
+        });
+      }
+    });
+  }
+
+
+  getExternalIssueDisplay(timeEntry: TimeEntry): { key: string; url?: string } | undefined {
+    // Check if we have loaded external issue data
+    if (timeEntry.externalIssueId) {
+      const externalIssue = this.externalIssuesMap().get(timeEntry.externalIssueId);
+      console.log('Looking for external issue:', timeEntry.externalIssueId, 'found:', externalIssue);
+      if (externalIssue) {
+        return {
+          key: externalIssue.key,
+          url: externalIssue.url
+        };
+      }
+    }
+    
+    // Fallback to pendingExternalRef (shows issue key without link)
+    if (timeEntry.pendingExternalRef) {
+      console.log('Using pendingExternalRef:', timeEntry.pendingExternalRef);
+      return {
+        key: timeEntry.pendingExternalRef
+      };
+    }
+    
+    return undefined;
   }
 
   protected readonly TimeEntryExportFomat = TimeEntryExportFomat;

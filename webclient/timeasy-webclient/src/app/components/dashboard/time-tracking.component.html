@@ -1,12 +1,14 @@
 <div class="main-layout">
-  <div class="input-field-container">
-    <input [ngModel]="description()" (ngModelChange)="onDescriptionChanged($event)" pInputText type="text" id="description" autocomplete="off" placeholder="{{ 'timeTracking.whatAreYouWorkingOn' | translate}}" class="input-field" />
-  </div>
-  <div>
-    {{ "in" | translate }}
-  </div>
   <div>
     <p-select id="project" [(ngModel)]="selectedProject" [options]="projects()" optionLabel="name" [filter]="true" filterBy="name" placeholder="{{ 'timeTracking.project' | translate }}" (onChange)="projectSelected($event)"></p-select>
+  </div>
+  <div class="input-field-container">
+    <app-description-autocomplete
+      [ngModel]="description()" 
+      (ngModelChange)="onDescriptionChanged($event)"
+      [projectId]="selectedProject?.id"
+      [placeholder]="'timeTracking.whatAreYouWorkingOn' | translate">
+    </app-description-autocomplete>
   </div>
   <div>
     <app-timer #timerRef></app-timer>

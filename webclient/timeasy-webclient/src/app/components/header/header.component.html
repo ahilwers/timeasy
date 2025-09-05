@@ -1,66 +1,80 @@
 <header class="header">
-  <div class="logo-container">
-    <svg width="32px" height="32px" viewBox="0 0 179 155" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="stroke:currentColor;fill:currentColor;fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
-      <g transform="matrix(1,0,0,1,-302.807,-419.848)">
-          <g transform="matrix(0.375076,0,0,0.375076,192.979,302.287)">
-              <path d="M419.483,392.162C454.372,353.642 504.774,329.431 560.787,329.431" style="fill:none;stroke:black;stroke-width:31.99px;"/>
-          </g>
-        <g transform="matrix(0.375076,0,0,0.375076,192.979,302.287)">
-              <path d="M560.787,329.431C665.993,329.431 751.408,414.846 751.408,520.053C751.408,625.259 665.993,710.674 560.787,710.674C455.58,710.674 370.165,625.259 370.165,520.053" style="fill:none;stroke:black;stroke-width:31.99px;"/>
-          </g>
-        <g transform="matrix(0.534182,0.0719162,-0.0817154,0.606968,186.873,154.076)">
-              <path d="M308.475,524.359L352.665,486.525L390.174,524.192" style="fill:none;stroke:black;stroke-width:20.8px;"/>
-          </g>
-        <g transform="matrix(0.712589,0,0,0.712589,52.8914,145.082)">
-              <circle cx="491.763" cy="494.344" r="8.027" style="fill:rgb(10,0,0);stroke:black;stroke-width:16.84px;"/>
-          </g>
-        <g transform="matrix(0.498694,0.158209,0.255878,0.507573,45.2276,161.691)">
-              <path d="M508.043,469.835L575.293,410.098" style="fill:none;stroke:black;stroke-width:16.86px;"/>
-          </g>
-      </g>
-    </svg>
-    <span class="logo-text">timeasy</span>
-  </div>
-  
-  <div class="header-right">
-    <!-- Mobile Burger Button -->
-    <div class="burger-menu" [class.hidden]="mobileMenuOpen" (click)="toggleMobileMenu()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="burger-icon" [class.open]="mobileMenuOpen">
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
+    <div class="logo-container">
+        <svg width="32px" height="32px" viewBox="0 0 179 155" version="1.1" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/"
+            style="stroke:currentColor;fill:currentColor;fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+            <g transform="matrix(1,0,0,1,-302.807,-419.848)">
+                <g transform="matrix(0.375076,0,0,0.375076,192.979,302.287)">
+                    <path d="M419.483,392.162C454.372,353.642 504.774,329.431 560.787,329.431"
+                        style="fill:none;stroke:black;stroke-width:31.99px;" />
+                </g>
+                <g transform="matrix(0.375076,0,0,0.375076,192.979,302.287)">
+                    <path
+                        d="M560.787,329.431C665.993,329.431 751.408,414.846 751.408,520.053C751.408,625.259 665.993,710.674 560.787,710.674C455.58,710.674 370.165,625.259 370.165,520.053"
+                        style="fill:none;stroke:black;stroke-width:31.99px;" />
+                </g>
+                <g transform="matrix(0.534182,0.0719162,-0.0817154,0.606968,186.873,154.076)">
+                    <path d="M308.475,524.359L352.665,486.525L390.174,524.192"
+                        style="fill:none;stroke:black;stroke-width:20.8px;" />
+                </g>
+                <g transform="matrix(0.712589,0,0,0.712589,52.8914,145.082)">
+                    <circle cx="491.763" cy="494.344" r="8.027"
+                        style="fill:rgb(10,0,0);stroke:black;stroke-width:16.84px;" />
+                </g>
+                <g transform="matrix(0.498694,0.158209,0.255878,0.507573,45.2276,161.691)">
+                    <path d="M508.043,469.835L575.293,410.098" style="fill:none;stroke:black;stroke-width:16.86px;" />
+                </g>
+            </g>
+        </svg>
+        <span class="logo-text">timeasy</span>
     </div>
-    
-    <!-- User Profile Button -->
-    <div class="user-button">
-      <p-button icon="pi pi-user" [rounded]="true" [text]="true" (onClick)="toggle({event : $event})" severity="secondary"/>
-      <p-popover #op>
-        <div class="menu-contents">
-              @if (authenticated) {
-                <div class="user-info">
-                  <span>{{ userProfile.username }}</span>
-                  <span>{{ userProfile.firstName }} {{ userProfile.lastName }}</span>
-                </div>
-              }
-          <div class="user-actions">
-            @if (!authenticated) {
-              <p-button (click)="login()" label="Login"/>
-            } @else {
-              <p-button (click)="navigateToProfile()" label="{{'user.profile.title' | translate}}" icon="pi pi-user" severity="secondary" [outlined]="true" class="profile-button"/>
-              <p-button (click)="logout()" label="Logout" severity="danger"/>
-            }
-          </div>
+
+    <div class="header-right">
+        <!-- Mobile Burger Button -->
+        <div class="burger-menu" [class.hidden]="mobileMenuOpen" (click)="toggleMobileMenu()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="burger-icon" [class.open]="mobileMenuOpen">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
         </div>
-      </p-popover>
+
+        <!-- User Profile Button -->
+        <div class="user-button">
+            <p-button icon="pi pi-user" [rounded]="true" [text]="true" (onClick)="toggle({event : $event})"
+                severity="secondary" />
+            <p-popover #op>
+                <div class="menu-contents">
+                    @if (authenticated) {
+                    <div class="user-info">
+                        <p-button [text]="true" label="{{ userProfile.username }}" routerLink="/user"
+                            styleClass="p-button-sm" (click)="op.hide()" />
+                        <span>{{ userProfile.firstName }} {{ userProfile.lastName }}</span>
+                    </div>
+                    <div class="user-menu-actions">
+                        <p-button icon="pi pi-link" [text]="true" label="{{ 'user.menu.externalAccounts' | translate }}"
+                            routerLink="/user/external-accounts" styleClass="p-button-sm" (click)="op.hide()" />
+                    </div>
+                    }
+                    <div class="user-actions">
+                        @if (!authenticated) {
+                        <p-button (click)="login()" label="Login" />
+                        } @else {
+                        <p-button (click)="logout()" label="Logout" severity="danger" />
+                        }
+                    </div>
+                </div>
+            </p-popover>
+        </div>
     </div>
-  </div>
 </header>
 
 <!-- Mobile Navigation Overlay -->
 <div class="mobile-nav" [class.open]="mobileMenuOpen">
-  <div class="mobile-menu-close" (click)="closeMobileMenu()">
-    <i class="pi pi-times"></i>
-  </div>
-  <p-menu [model]="menuItems" (click)="closeMobileMenu()"></p-menu>
+    <div class="mobile-menu-close" (click)="closeMobileMenu()">
+        <i class="pi pi-times"></i>
+    </div>
+    <p-menu [model]="menuItems" (click)="closeMobileMenu()"></p-menu>
 </div>
