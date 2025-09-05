@@ -1,10 +1,11 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of, tap } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, tap } from 'rxjs';
 import { TimeEntry } from '../models/timeentry.model';
 import { environment } from '../../environments/environment';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeEntryState } from './time-entry.state';
+import { ExternalIntegrationService } from './external-integration.service';
 
 export enum TimeEntryExportFomat {
   CSV = 'CSV',
@@ -21,6 +22,7 @@ export class TimeEntryService {
 
   private readonly translateService = inject(TranslateService);
   private readonly http = inject(HttpClient);
+  private readonly externalService = inject(ExternalIntegrationService);
 
   timeEntries = computed(() => this.state.timeEntries);
   timeEntry = computed(() => this.state.timeEntry);
@@ -102,6 +104,8 @@ export class TimeEntryService {
 
   updateTimeEntry(data: TimeEntry): void {
     this.resetState();
+    
+    // Send time entry data directly to server - server handles issue detection and resolution
     this.http.put<TimeEntry>(`${this.apiUrl}/${data.id}`, data).pipe(
       tap((updatedTimeEntry) => {
         this.state.lastUpdatedTimeEntry.set(updatedTimeEntry);
@@ -113,13 +117,14 @@ export class TimeEntryService {
         this.state.error.set(errorMessage);
         this.state.updateSuccessful.set(false);
         return of(null as unknown as TimeEntry);
-      }),
-    ).subscribe(() => {
-    })
+      })
+    ).subscribe();
   }
 
   addTimeEntry(data: TimeEntry) {
     this.resetState();
+    
+    // Send time entry data directly to server - server handles issue detection and resolution
     this.http.post<TimeEntry>(`${this.apiUrl}`, data).pipe(
       tap((addedTimeEntry) => {
         this.state.lastUpdatedTimeEntry.set(addedTimeEntry);
@@ -131,9 +136,8 @@ export class TimeEntryService {
         this.state.error.set(errorMessage);
         this.state.updateSuccessful.set(false);
         return of(null as unknown as TimeEntry);
-      }),
-    ).subscribe(() => {
-    })
+      })
+    ).subscribe();
   }
 
   deleteTimeEntry(data: TimeEntry) {

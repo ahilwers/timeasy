@@ -1,0 +1,61 @@
+<p-card [header]="'projects.external.title' | translate">
+    <div class="external-integration-form">
+        @if (isConnected()) {
+        <!-- Connected state -->
+        <p-message severity="success" [text]="getConnectionMessage()"></p-message>
+        <div class="connection-actions">
+            <p-button [label]="'projects.external.sync' | translate" icon="pi pi-refresh" (onClick)="syncIssues()"
+                [loading]="isSyncing()" styleClass="p-button-outlined">
+            </p-button>
+            <p-button [label]="'projects.external.disconnect' | translate" icon="pi pi-unlink" (onClick)="disconnect()"
+                [loading]="isProcessing()" severity="danger" styleClass="p-button-outlined">
+            </p-button>
+        </div>
+        } @else {
+        <!-- Connection form -->
+        @if (isLoadingAccounts()) {
+        <div class="loading-container">
+            <p-progressSpinner></p-progressSpinner>
+            <span>{{ 'user.externalAccounts.loading' | translate }}</span>
+        </div>
+        } @else if (userAccounts().length === 0) {
+        <p-message severity="info" [text]="'projects.external.noAccounts' | translate">
+        </p-message>
+        <p-button [label]="'projects.external.manageAccounts' | translate" icon="pi pi-external-link"
+            routerLink="/user/external-accounts" styleClass="p-button-outlined">
+        </p-button>
+        } @else {
+        <form [formGroup]="connectionForm" (ngSubmit)="connect()">
+            <div class="form-field">
+                <label for="userAccountId">{{ 'projects.external.account' | translate }}</label>
+                <p-dropdown id="userAccountId" formControlName="userAccountId" [options]="getAccountOptions()"
+                    optionLabel="label" optionValue="value"
+                    [placeholder]="'projects.external.selectAccount' | translate" styleClass="w-full">
+                    <ng-template let-account pTemplate="item">
+                        <div class="account-option">
+                            <i [class]="getProviderIcon(account.provider)"></i>
+                            <span>{{ account.accountName }} ({{ getProviderDisplayName(account.provider) }})</span>
+                        </div>
+                    </ng-template>
+                </p-dropdown>
+            </div>
+
+            <div class="form-field">
+                <label for="projectRef">{{ 'projects.external.projectRef' | translate }}</label>
+                <input pInputText id="projectRef" formControlName="projectRef"
+                    [placeholder]="getProjectRefPlaceholder()" class="w-full">
+                <small class="form-help">{{ getProjectRefHelp() }}</small>
+            </div>
+
+            <div class="form-actions">
+                <p-button type="submit" [label]="'projects.external.connect' | translate" icon="pi pi-link"
+                    [disabled]="!connectionForm.valid" [loading]="isProcessing()">
+                </p-button>
+            </div>
+        </form>
+        }
+        }
+    </div>
+</p-card>
+
+<p-toast position="top-right"></p-toast>

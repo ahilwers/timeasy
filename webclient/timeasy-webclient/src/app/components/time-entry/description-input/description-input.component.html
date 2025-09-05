@@ -1,0 +1,49 @@
+<div class="description-input-container">
+  <div class="input-wrapper">
+    <p-autoComplete
+      [formControl]="control"
+      [suggestions]="suggestions()"
+      (completeMethod)="search($event)"
+      (onInput)="onInputChange($event)"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      styleClass="w-full"
+      field="value"
+      [dropdown]="false"
+      [multiple]="false">
+    </p-autoComplete>
+    
+    @if (isResolving()) {
+      <div class="resolving-indicator">
+        <p-progressSpinner 
+          [style]="{ width: '16px', height: '16px' }"
+          strokeWidth="4">
+        </p-progressSpinner>
+        <span class="resolving-text">{{ 'timeEntry.form.resolvingIssue' | translate }}</span>
+      </div>
+    }
+  </div>
+  
+  @if (resolvedIssue()) {
+    <div class="resolved-issue">
+      <p-chip 
+        [label]="getIssueChipLabel()"
+        icon="pi pi-external-link"
+        styleClass="issue-chip"
+        [removable]="true"
+        (onRemove)="clearResolvedIssue()">
+      </p-chip>
+    </div>
+  }
+  
+  @if (pendingIssue()) {
+    <div class="pending-issue">
+      <p-chip 
+        [label]="getPendingIssueLabel()"
+        icon="pi pi-clock"
+        severity="warning"
+        styleClass="pending-chip">
+      </p-chip>
+    </div>
+  }
+</div>

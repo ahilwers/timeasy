@@ -44,8 +44,8 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntry(entry *model.TimeEntry, 
 
 	query := `
 		INSERT INTO time_entries (
-			id, user_id, project_id, start_time, end_time, description
-		) VALUES ($1, $2, $3, $4, $5, $6)
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	_, err := sqlTx.Exec(
@@ -56,6 +56,8 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntry(entry *model.TimeEntry, 
 		entry.StartTime,
 		entry.EndTime,
 		entry.Description,
+		entry.ExternalIssueID,
+		entry.PendingExternalRef,
 	)
 
 	return err
@@ -69,8 +71,8 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntryList(entries []model.Time
 
 	query := `
 		INSERT INTO time_entries (
-			id, user_id, project_id, start_time, end_time, description
-		) VALUES ($1, $2, $3, $4, $5, $6)
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	for _, entry := range entries {
@@ -91,6 +93,8 @@ func (repo *postgresqlTimeEntryRepository) AddTimeEntryList(entries []model.Time
 			entry.StartTime,
 			entry.EndTime,
 			entry.Description,
+			entry.ExternalIssueID,
+			entry.PendingExternalRef,
 		)
 		if err != nil {
 			return err
@@ -111,8 +115,10 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntr
 			project_id = $2,
 			start_time = $3,
 			end_time = $4,
-			description = $5
-		WHERE id = $6
+			description = $5,
+			external_issue_id = $6,
+			pending_external_ref = $7
+		WHERE id = $8
 	`
 
 	result, err := sqlTx.Exec(
@@ -122,6 +128,8 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntr
 		entry.StartTime,
 		entry.EndTime,
 		entry.Description,
+		entry.ExternalIssueID,
+		entry.PendingExternalRef,
 		entry.ID,
 	)
 
@@ -153,8 +161,10 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.T
 			project_id = $2,
 			start_time = $3,
 			end_time = $4,
-			description = $5
-		WHERE id = $6
+			description = $5,
+			external_issue_id = $6,
+			pending_external_ref = $7
+		WHERE id = $8
 	`
 
 	for _, entry := range entries {
@@ -165,6 +175,8 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.T
 			entry.StartTime,
 			entry.EndTime,
 			entry.Description,
+			entry.ExternalIssueID,
+			entry.PendingExternalRef,
 			entry.ID,
 		)
 
@@ -212,12 +224,13 @@ func (repo *postgresqlTimeEntryRepository) DeleteTimeEntry(entry *model.TimeEntr
 func (repo *postgresqlTimeEntryRepository) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
 	query := `
 		SELECT
-			id, user_id, project_id, start_time, end_time, description
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
 		FROM time_entries
 		WHERE id = $1 AND deleted = false
 	`
 
 	var entry model.TimeEntry
+	var pendingExternalRef sql.NullString
 	err := repo.db.QueryRow(query, id).Scan(
 		&entry.ID,
 		&entry.UserId,
@@ -225,7 +238,14 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntryById(id uuid.UUID) (*mode
 		&entry.StartTime,
 		&entry.EndTime,
 		&entry.Description,
+		&entry.ExternalIssueID,
+		&pendingExternalRef,
 	)
+	
+	// Handle nullable string
+	if pendingExternalRef.Valid {
+		entry.PendingExternalRef = &pendingExternalRef.String
+	}
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -243,7 +263,7 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntryById(id uuid.UUID) (*mode
 func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID) (*model.TimeEntry, error) {
 	query := `
 		SELECT
-			id, user_id, project_id, start_time, end_time, description
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
 		FROM time_entries
 		WHERE user_id = $1 AND (end_time IS NULL OR end_time = '0001-01-01 00:00:00'::timestamp) AND deleted = false
 		ORDER BY start_time DESC
@@ -251,6 +271,7 @@ func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID
 	`
 
 	var entry model.TimeEntry
+	var pendingExternalRef sql.NullString
 	err := repo.db.QueryRow(query, userId).Scan(
 		&entry.ID,
 		&entry.UserId,
@@ -258,7 +279,14 @@ func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID
 		&entry.StartTime,
 		&entry.EndTime,
 		&entry.Description,
+		&entry.ExternalIssueID,
+		&pendingExternalRef,
 	)
+	
+	// Handle nullable string
+	if pendingExternalRef.Valid {
+		entry.PendingExternalRef = &pendingExternalRef.String
+	}
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -276,7 +304,7 @@ func (repo *postgresqlTimeEntryRepository) GetLastOpenTimeEntry(userId uuid.UUID
 func (repo *postgresqlTimeEntryRepository) GetAllTimeEntries() ([]model.TimeEntry, error) {
 	query := `
 		SELECT
-			id, user_id, project_id, start_time, end_time, description
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
 		FROM time_entries
 		WHERE deleted = false
 		ORDER BY start_time DESC, end_time DESC
@@ -288,7 +316,7 @@ func (repo *postgresqlTimeEntryRepository) GetAllTimeEntries() ([]model.TimeEntr
 func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUser(userId uuid.UUID) ([]model.TimeEntry, error) {
 	query := `
 		SELECT
-			id, user_id, project_id, start_time, end_time, description
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
 		FROM time_entries
 		WHERE user_id = $1 AND deleted = false
 		ORDER BY start_time DESC, end_time DESC
@@ -300,7 +328,7 @@ func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUser(userId uuid.U
 func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUserAndProject(userId uuid.UUID, projectId uuid.UUID) ([]model.TimeEntry, error) {
 	query := `
 		SELECT
-			id, user_id, project_id, start_time, end_time, description
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
 		FROM time_entries
 		WHERE user_id = $1 AND project_id = $2 AND deleted = false
 		ORDER BY start_time DESC, end_time DESC
@@ -312,7 +340,7 @@ func (repo *postgresqlTimeEntryRepository) GetAllTimeEntriesOfUserAndProject(use
 func (repo *postgresqlTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetweenDates(userId uuid.UUID, projectId uuid.UUID, startDate time.Time, endDate time.Time) ([]model.TimeEntry, error) {
 	query := `
         SELECT
-            id, user_id, project_id, start_time, end_time, description
+            id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
         FROM time_entries
         WHERE user_id = $1
           AND DATE(start_time) >= $2
@@ -335,7 +363,7 @@ func (repo *postgresqlTimeEntryRepository) GetTimeEntriesOfUserAndProjectBetween
 func (repo *postgresqlTimeEntryRepository) GetOpenTimeEntriesForProject(userId uuid.UUID, projectId uuid.UUID, tx model.Transaction) ([]model.TimeEntry, error) {
 	query := `
 		SELECT
-			id, user_id, project_id, start_time, end_time, description
+			id, user_id, project_id, start_time, end_time, description, external_issue_id, pending_external_ref
 		FROM time_entries
 		WHERE user_id = $1 AND project_id = $2 AND (end_time IS NULL OR end_time = '0001-01-01 00:00:00'::timestamp) AND deleted = false
 		ORDER BY start_time ASC
@@ -362,6 +390,7 @@ func (repo *postgresqlTimeEntryRepository) GetOpenTimeEntriesForProject(userId u
 	var entries []model.TimeEntry
 	for rows.Next() {
 		var entry model.TimeEntry
+		var pendingExternalRef sql.NullString
 		err := rows.Scan(
 			&entry.ID,
 			&entry.UserId,
@@ -369,9 +398,16 @@ func (repo *postgresqlTimeEntryRepository) GetOpenTimeEntriesForProject(userId u
 			&entry.StartTime,
 			&entry.EndTime,
 			&entry.Description,
+			&entry.ExternalIssueID,
+			&pendingExternalRef,
 		)
 		if err != nil {
 			return nil, err
+		}
+		
+		// Handle nullable string
+		if pendingExternalRef.Valid {
+			entry.PendingExternalRef = &pendingExternalRef.String
 		}
 
 		// Ensure times have UTC location
@@ -407,6 +443,7 @@ func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args .
 	var entries []model.TimeEntry
 	for rows.Next() {
 		var entry model.TimeEntry
+		var pendingExternalRef sql.NullString
 		err := rows.Scan(
 			&entry.ID,
 			&entry.UserId,
@@ -414,9 +451,16 @@ func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args .
 			&entry.StartTime,
 			&entry.EndTime,
 			&entry.Description,
+			&entry.ExternalIssueID,
+			&pendingExternalRef,
 		)
 		if err != nil {
 			return nil, err
+		}
+		
+		// Handle nullable string
+		if pendingExternalRef.Valid {
+			entry.PendingExternalRef = &pendingExternalRef.String
 		}
 
 		// Ensure times have UTC location
@@ -430,4 +474,60 @@ func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args .
 	}
 
 	return entries, nil
+}
+
+// GetLastActivityTimeForProject returns the most recent activity time for a project
+func (repo *postgresqlTimeEntryRepository) GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error) {
+	query := `
+		SELECT MAX(GREATEST(
+			COALESCE(start_time, '1970-01-01'::timestamp),
+			COALESCE(end_time, '1970-01-01'::timestamp)
+		)) as last_activity
+		FROM time_entries
+		WHERE project_id = $1 AND deleted = false
+	`
+	
+	var lastActivity sql.NullTime
+	err := repo.db.QueryRow(query, projectId).Scan(&lastActivity)
+	if err != nil {
+		return time.Time{}, err
+	}
+	
+	if !lastActivity.Valid {
+		return time.Time{}, nil // No activity found
+	}
+	
+	return lastActivity.Time.In(time.UTC), nil
+}
+
+// GetProjectsWithRecentActivity returns project IDs that have had activity since the given time
+func (repo *postgresqlTimeEntryRepository) GetProjectsWithRecentActivity(since time.Time) ([]uuid.UUID, error) {
+	query := `
+		SELECT DISTINCT project_id
+		FROM time_entries
+		WHERE (start_time >= $1 OR end_time >= $1) AND deleted = false
+		ORDER BY project_id
+	`
+	
+	rows, err := repo.db.Query(query, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var projectIDs []uuid.UUID
+	for rows.Next() {
+		var projectID uuid.UUID
+		err := rows.Scan(&projectID)
+		if err != nil {
+			return nil, err
+		}
+		projectIDs = append(projectIDs, projectID)
+	}
+	
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	
+	return projectIDs, nil
 }

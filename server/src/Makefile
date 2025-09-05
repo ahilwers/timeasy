@@ -4,5 +4,7 @@ run: build
 	@./bin/timeasy-server
 test:
 	@go test -v ./...
+richtest:
+	@richgo test -v ./...
 
 

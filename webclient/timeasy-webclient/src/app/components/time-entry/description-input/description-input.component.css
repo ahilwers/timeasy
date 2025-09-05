@@ -1,0 +1,45 @@
+.description-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.resolving-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.resolved-issue,
+.pending-issue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .issue-chip {
+  background-color: #10b981;
+  color: white;
+}
+
+:host ::ng-deep .pending-chip {
+  background-color: #f59e0b;
+  color: white;
+}
+
+:host ::ng-deep .issue-chip .p-chip-text {
+  cursor: pointer;
+}
+
+.resolving-text {
+  font-size: 0.75rem;
+}

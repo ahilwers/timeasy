@@ -2,10 +2,13 @@ package rest
 
 import (
 	"fmt"
-	"github.com/shopspring/decimal"
+	"log/slog"
 	"net/http"
 	"timeasy-server/pkg/domain/model"
+	"timeasy-server/pkg/domain/repository"
 	"timeasy-server/pkg/usecase"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
@@ -21,16 +24,18 @@ type ProjectHandler interface {
 }
 
 type projectHandler struct {
-	tokenVerifier TokenVerifier
-	usecase       usecase.ProjectUsecase
-	teamUsecase   usecase.TeamUsecase
+	tokenVerifier          TokenVerifier
+	usecase                usecase.ProjectUsecase
+	teamUsecase            usecase.TeamUsecase
+	externalConnectionRepo repository.ExternalConnectionRepository
 }
 
-func NewProjectHandler(tokenVerifier TokenVerifier, usecase usecase.ProjectUsecase, teamUsecase usecase.TeamUsecase) ProjectHandler {
+func NewProjectHandler(tokenVerifier TokenVerifier, usecase usecase.ProjectUsecase, teamUsecase usecase.TeamUsecase, externalConnectionRepo repository.ExternalConnectionRepository) ProjectHandler {
 	return &projectHandler{
-		tokenVerifier: tokenVerifier,
-		usecase:       usecase,
-		teamUsecase:   teamUsecase,
+		tokenVerifier:          tokenVerifier,
+		usecase:                usecase,
+		teamUsecase:            teamUsecase,
+		externalConnectionRepo: externalConnectionRepo,
 	}
 }
 
@@ -67,10 +72,10 @@ func (handler *projectHandler) AddProject(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get optional clientId from URL query parameter
 	clientId := context.Query("clientId")
-	
+
 	newProject := model.Project{
 		UserId: userId,
 	}
@@ -140,7 +145,7 @@ func (handler *projectHandler) UpdateProject(context *gin.Context) {
 			return
 		}
 	}
-	
+
 	// Get optional clientId from URL query parameter
 	clientId := context.Query("clientId")
 
@@ -180,7 +185,7 @@ func (handler *projectHandler) DeleteProject(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get optional clientId from URL query parameter
 	clientId := context.Query("clientId")
 
@@ -292,6 +297,19 @@ func (handler *projectHandler) GetProjectById(context *gin.Context) {
 			return
 		}
 	}
+
+	// Fetch external connection information
+	externalConnection, err := handler.externalConnectionRepo.GetByProjectID(projectId)
+	if err != nil {
+		LogHandlerError("GetProjectById", err, fmt.Sprintf("Failed to fetch external connection for project %v", projectId))
+	} else if externalConnection != nil {
+		project.ExternalConnection = externalConnection
+		slog.Debug("Found external connection for project", "project_id", projectId, "connection", externalConnection)
+	} else {
+		slog.Debug("No external connection found for project", "project_id", projectId)
+	}
+	// Note: We ignore errors here because not all projects have external connections
+
 	context.JSON(http.StatusOK, project)
 }
 
@@ -350,7 +368,7 @@ func (handler *projectHandler) AssignProjectToTeam(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get optional clientId from URL query parameter
 	clientId := context.Query("clientId")
 

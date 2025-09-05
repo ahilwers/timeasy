@@ -213,5 +213,17 @@
     "projectActive": "Active",
     "@projectActive": {
         "description": "Label for the project active status toggle"
+    },
+    "pending": "pending",
+    "@pending": {
+        "description": "Status for pending issue references"
+    },
+    "resolvingIssue": "Resolving issue...",
+    "@resolvingIssue": {
+        "description": "Status message while resolving an issue reference"
+    },
+    "issueResolved": "Issue resolved",
+    "@issueResolved": {
+        "description": "Status message when an issue is successfully resolved"
     }
 }

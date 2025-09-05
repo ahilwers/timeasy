@@ -76,7 +76,6 @@ export const appConfig: ApplicationConfig = {
       ripple: true
     }),
     { provide: LOCALE_ID, useValue: locale },
-    provideHttpClient(),
     provideTranslateService({
       loader: {
         provide: TranslateLoader,

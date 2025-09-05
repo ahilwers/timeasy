@@ -85,5 +85,8 @@
     "alreadyHaveAccount": "Du hast schon einen Account?",
     "signInHere": "Dann melde dich hier an",
     "settings": "Einstellungen",
-    "projectActive": "Aktiv"
+    "projectActive": "Aktiv",
+    "pending": "ausstehend",
+    "resolvingIssue": "Issue wird aufgelöst...",
+    "issueResolved": "Issue aufgelöst"
 }

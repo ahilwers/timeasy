@@ -1,8 +1,10 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
@@ -21,19 +23,23 @@ type TimeEntryUsecase interface {
 	UpdateTimeEntry(timeEntry *model.TimeEntry, userId uuid.UUID, clientId string) error
 	UpdateTimeEntryList(timeEntry []model.TimeEntry, userId uuid.UUID, clientId string) error
 	DeleteTimeEntry(id uuid.UUID, userId uuid.UUID, clientId string) error
+	GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error)
+	GetProjectsWithRecentActivity(since time.Time) ([]uuid.UUID, error)
 }
 
 type timeEntryUsecase struct {
-	repo           repository.TimeEntryRepository
-	projectUsecase ProjectUsecase
-	changelogRepo  repository.ChangelogRepository
+	repo             repository.TimeEntryRepository
+	projectUsecase   ProjectUsecase
+	changelogRepo    repository.ChangelogRepository
+	externalUsecase  *ExternalIntegrationUseCase
 }
 
-func NewTimeEntryUsecase(repo repository.TimeEntryRepository, projectUsecase ProjectUsecase, changelogRepo repository.ChangelogRepository) TimeEntryUsecase {
+func NewTimeEntryUsecase(repo repository.TimeEntryRepository, projectUsecase ProjectUsecase, changelogRepo repository.ChangelogRepository, externalUsecase *ExternalIntegrationUseCase) TimeEntryUsecase {
 	return &timeEntryUsecase{
-		repo:           repo,
-		projectUsecase: projectUsecase,
-		changelogRepo:  changelogRepo,
+		repo:             repo,
+		projectUsecase:   projectUsecase,
+		changelogRepo:    changelogRepo,
+		externalUsecase:  externalUsecase,
 	}
 }
 
@@ -73,6 +79,19 @@ func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry, userId uuid
 	if err != nil {
 		return err
 	}
+
+	// Process issue detection and resolution
+	err = tu.processIssueDetection(context.Background(), timeEntry, userId)
+	if err != nil {
+		// Log warning but don't fail - issue detection is not critical
+		slog.Warn("Failed to process issue detection for time entry",
+			"time_entry_id", timeEntry.ID,
+			"user_id", userId,
+			"project_id", timeEntry.ProjectId,
+			"description", timeEntry.Description,
+			"error", err)
+	}
+
 	tx, err := tu.repo.BeginTransaction()
 	if err != nil {
 		return err
@@ -98,10 +117,22 @@ func (tu *timeEntryUsecase) AddTimeEntry(timeEntry *model.TimeEntry, userId uuid
 }
 
 func (tu *timeEntryUsecase) AddTimeEntryList(timeEntryList []model.TimeEntry, userId uuid.UUID, clientId string) error {
-	for _, timeEntry := range timeEntryList {
-		err := tu.checkEntry(&timeEntry)
+	for i := range timeEntryList {
+		err := tu.checkEntry(&timeEntryList[i])
 		if err != nil {
 			return err
+		}
+		// Process issue detection and resolution
+		err = tu.processIssueDetection(context.Background(), &timeEntryList[i], userId)
+		if err != nil {
+			// Log warning but don't fail - issue detection is not critical
+			slog.Warn("Failed to process issue detection for time entry in bulk operation",
+				"time_entry_id", timeEntryList[i].ID,
+				"user_id", userId,
+				"project_id", timeEntryList[i].ProjectId,
+				"description", timeEntryList[i].Description,
+				"bulk_index", i,
+				"error", err)
 		}
 	}
 	tx, err := tu.repo.BeginTransaction()
@@ -139,6 +170,19 @@ func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry, userId u
 	if err != nil {
 		return err
 	}
+
+	// Process issue detection and resolution
+	err = tu.processIssueDetection(context.Background(), timeEntry, userId)
+	if err != nil {
+		// Log warning but don't fail - issue detection is not critical
+		slog.Warn("Failed to process issue detection for time entry",
+			"time_entry_id", timeEntry.ID,
+			"user_id", userId,
+			"project_id", timeEntry.ProjectId,
+			"description", timeEntry.Description,
+			"error", err)
+	}
+
 	tx, err := tu.repo.BeginTransaction()
 	if err != nil {
 		return err
@@ -163,18 +207,30 @@ func (tu *timeEntryUsecase) UpdateTimeEntry(timeEntry *model.TimeEntry, userId u
 	return tx.Commit()
 }
 
-func (tu *timeEntryUsecase) UpdateTimeEntryList(timeEntry []model.TimeEntry, userId uuid.UUID, clientId string) error {
-	for _, timeEntry := range timeEntry {
-		err := tu.checkEntry(&timeEntry)
+func (tu *timeEntryUsecase) UpdateTimeEntryList(timeEntryList []model.TimeEntry, userId uuid.UUID, clientId string) error {
+	for i := range timeEntryList {
+		err := tu.checkEntry(&timeEntryList[i])
 		if err != nil {
 			return err
+		}
+		// Process issue detection and resolution
+		err = tu.processIssueDetection(context.Background(), &timeEntryList[i], userId)
+		if err != nil {
+			// Log warning but don't fail - issue detection is not critical
+			slog.Warn("Failed to process issue detection for time entry in bulk operation",
+				"time_entry_id", timeEntryList[i].ID,
+				"user_id", userId,
+				"project_id", timeEntryList[i].ProjectId,
+				"description", timeEntryList[i].Description,
+				"bulk_index", i,
+				"error", err)
 		}
 	}
 	tx, err := tu.repo.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	for _, timeEntry := range timeEntry {
+	for _, timeEntry := range timeEntryList {
 		err = tu.repo.UpdateTimeEntry(&timeEntry, tx)
 		if err != nil {
 			_ = tx.Rollback()
@@ -256,4 +312,23 @@ func (tu *timeEntryUsecase) checkProject(timeEntry *model.TimeEntry) error {
 		return NewProjectNotFoundError(timeEntry.ProjectId)
 	}
 	return nil
+}
+
+func (tu *timeEntryUsecase) GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error) {
+	return tu.repo.GetLastActivityTimeForProject(projectId)
+}
+
+func (tu *timeEntryUsecase) GetProjectsWithRecentActivity(since time.Time) ([]uuid.UUID, error) {
+	return tu.repo.GetProjectsWithRecentActivity(since)
+}
+
+// processIssueDetection detects and resolves issues in time entry descriptions
+func (tu *timeEntryUsecase) processIssueDetection(ctx context.Context, timeEntry *model.TimeEntry, userId uuid.UUID) error {
+	// Skip if no external integration usecase available (for backward compatibility)
+	if tu.externalUsecase == nil {
+		return nil
+	}
+
+	// Use the centralized method from ExternalIntegrationUseCase
+	return tu.externalUsecase.ProcessTimeEntryIssueDetection(ctx, timeEntry, userId)
 }

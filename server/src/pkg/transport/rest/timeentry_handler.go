@@ -34,10 +34,12 @@ func NewTimeEntryHandler(tokenVerifier TokenVerifier, entryUsecase usecase.TimeE
 }
 
 type timeEntryUpdateDto struct {
-	Description string    `json:"description,omitempty"`
-	StartTime   string    `json:"startTime" binding:"required"`
-	EndTime     string    `json:"endTime,omitempty"`
-	ProjectId   uuid.UUID `json:"projectId" binding:"required"`
+	Description        string     `json:"description,omitempty"`
+	StartTime          string     `json:"startTime" binding:"required"`
+	EndTime            string     `json:"endTime,omitempty"`
+	ProjectId          uuid.UUID  `json:"projectId" binding:"required"`
+	ExternalIssueID    *uuid.UUID `json:"externalIssueId,omitempty"`
+	PendingExternalRef *string    `json:"pendingExternalRef,omitempty"`
 }
 
 type timeEntryDto struct {
@@ -370,6 +372,8 @@ func (handler *timeEntryHandler) fillEntryFromDto(entry *model.TimeEntry, dto ti
 		entry.EndTime = endTime
 	}
 	entry.ProjectId = dto.ProjectId
+	entry.ExternalIssueID = dto.ExternalIssueID
+	entry.PendingExternalRef = dto.PendingExternalRef
 	return nil
 }
 
@@ -391,6 +395,8 @@ func (handler *timeEntryHandler) createDtoFromTimeEntry(timeEntry *model.TimeEnt
 		dto.EndTime = timeEntry.EndTime.Format(time.RFC3339)
 	}
 	dto.ProjectId = timeEntry.ProjectId
+	dto.ExternalIssueID = timeEntry.ExternalIssueID
+	dto.PendingExternalRef = timeEntry.PendingExternalRef
 	return dto
 }
 

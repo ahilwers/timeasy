@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TimeEntry } from '../../../models/timeentry.model';
 import { TimeEntryService } from '../../../services/time-entry.service';
+import { ExternalIntegrationService } from '../../../services/external-integration.service';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Toast } from 'primeng/toast';
@@ -12,18 +13,19 @@ import { DatePicker } from 'primeng/datepicker';
 import { ProjectService } from '../../../services/project.service';
 import { Select } from 'primeng/select';
 import { Project } from '../../../models/project.model';
+import { DescriptionAutocompleteComponent } from '../../shared/description-autocomplete/description-autocomplete.component';
 
 @Component({
   selector: 'app-time-entry-form',
   standalone: true,
   imports: [
     Button,
-    InputText,
     ReactiveFormsModule,
     Toast,
     TranslatePipe,
     DatePicker,
-    Select
+    Select,
+    DescriptionAutocompleteComponent
   ],
   providers: [MessageService],
   templateUrl: './time-entry-form.component.html',
@@ -36,6 +38,7 @@ export class TimeEntryFormComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly timeEntryService = inject(TimeEntryService);
   private readonly projectService = inject(ProjectService);
+  private readonly externalService = inject(ExternalIntegrationService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
 
@@ -55,23 +58,15 @@ export class TimeEntryFormComponent implements OnInit {
     this.timeEntryService.resetState();
     effect(() => {
       const timeEntryData = this.timeEntry();
-      if (timeEntryData) {
-        this.projectService.loadProject(timeEntryData.projectId);
+      if (timeEntryData && this.projects().length > 0) {
+        const matchingProject = this.projects().find(p => p.id === timeEntryData.projectId);
         this.timeEntryForm.patchValue({
+          project: matchingProject,
           startTime: timeEntryData.startTime,
           startDate: timeEntryData.startTime,
           endTime: timeEntryData.endTime,
           endDate: timeEntryData.endTime,
           description: timeEntryData.description
-        });
-      }
-    });
-    effect(() => {
-      const projectData = this.project();
-      if (projectData && projectData != this.currentProjectData) {
-        this.currentProjectData = projectData;
-        this.timeEntryForm.patchValue({
-          project: projectData,
         });
       }
     });
@@ -148,6 +143,7 @@ export class TimeEntryFormComponent implements OnInit {
       time.getMilliseconds()
     )
   }
+
 
   navigateToTimeEntryList() {
     this.router.navigate([`/timeentries`]);

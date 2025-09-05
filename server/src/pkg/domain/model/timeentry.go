@@ -7,14 +7,16 @@ import (
 )
 
 type TimeEntry struct {
-	ID          uuid.UUID
-	UserId      uuid.UUID
-	ProjectId   uuid.UUID
-	Project     Project
-	StartTime   time.Time
-	EndTime     time.Time
-	Description string
-	Deleted     bool
+	ID                  uuid.UUID
+	UserId              uuid.UUID
+	ProjectId           uuid.UUID
+	Project             Project
+	StartTime           time.Time
+	EndTime             time.Time
+	Description         string
+	ExternalIssueID     *uuid.UUID `json:"externalIssueId,omitempty"`
+	PendingExternalRef  *string `json:"pendingExternalRef,omitempty"`
+	Deleted             bool
 }
 
 func (timeEntry *TimeEntry) GetSeconds() int {

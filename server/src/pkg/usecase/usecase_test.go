@@ -52,10 +52,22 @@ func (u *UsecaseTest) initUsecases() {
 	u.ProjectUsecase = NewProjectUsecase(u.ProjectRepository, u.TeamUsecase, u.ChangelogRepository)
 
 	u.TimeEntryRepository = postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
-	u.TimeEntryUsecase = NewTimeEntryUsecase(u.TimeEntryRepository, u.ProjectUsecase, u.ChangelogRepository)
+	
+	// Create external integration usecase for testing
+	externalIntegrationUsecase := NewExternalIntegrationUseCase(
+		nil, // externalConnRepo - not needed for basic tests
+		nil, // externalIssueRepo - not needed for basic tests
+		nil, // userAccountRepo - not needed for basic tests
+		u.TimeEntryRepository,
+		u.ProjectRepository,
+		nil, // providerFactory - not needed for basic tests
+		u.TeamUsecase,
+	)
+	
+	u.TimeEntryUsecase = NewTimeEntryUsecase(u.TimeEntryRepository, u.ProjectUsecase, u.ChangelogRepository, externalIntegrationUsecase)
 
 	syncRepo := postgresql.NewPostgreSQLSyncRepository(test.Database.DB)
-	u.SyncUsecase = NewSyncUsecase(syncRepo, u.ChangelogRepository, u.ProjectRepository, u.TimeEntryRepository)
+	u.SyncUsecase = NewSyncUsecase(syncRepo, u.ChangelogRepository, u.ProjectRepository, u.TimeEntryRepository, externalIntegrationUsecase)
 }
 
 func GetTestUserId(t *testing.T) uuid.UUID {

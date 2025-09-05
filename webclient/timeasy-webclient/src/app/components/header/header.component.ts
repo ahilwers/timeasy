@@ -1,19 +1,22 @@
 import {Component, effect, inject, ViewChild} from '@angular/core';
+import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {Popover} from 'primeng/popover';
 import Keycloak, {KeycloakProfile} from 'keycloak-js';
 import {KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs} from 'keycloak-angular';
 import {Menu} from 'primeng/menu';
 import {MenuItem} from 'primeng/api';
-import {TranslateService} from '@ngx-translate/core';
+import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [
+    RouterLink,
     Button,
     Popover,
-    Menu
+    Menu,
+    TranslatePipe
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css'

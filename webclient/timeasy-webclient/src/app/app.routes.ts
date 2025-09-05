@@ -25,6 +25,11 @@ const routes: Routes = [
     canActivate: [canActivateAuth],
   },
   {
+    path: 'user/external-accounts',
+    loadComponent: () => import('./components/user-profile/external-accounts/external-accounts.component').then(m => m.ExternalAccountsComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
     path: 'projects',
     loadComponent: () => import('./components/project/project-list/project-list.component').then(m => m.ProjectListComponent),
     canActivate: [canActivateAuth],

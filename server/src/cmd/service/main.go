@@ -2,34 +2,52 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	"timeasy-server/pkg/configuration"
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/database/postgresql"
+	"timeasy-server/pkg/external"
+	"timeasy-server/pkg/sync"
 	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
-	
+
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 var databaseService database.DatabaseService
 
 func main() {
+	// Setup structured logging with colorful console output
+	logger := slog.New(rest.NewColorfulHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     slog.LevelInfo,
+		AddSource: false, // Disable source info for cleaner console output
+	}))
+	slog.SetDefault(logger)
+
 	configuration, err := configuration.GetConfiguration()
 	if err != nil {
+		slog.Error("Failed to get configuration", "error", err)
 		panic(err)
 	}
 
-	log.Printf("Connecting to database at %v:%v\n", configuration.DbHost, configuration.DbPort)
+	slog.Info("Connecting to database",
+		"host", configuration.DbHost,
+		"port", configuration.DbPort,
+		"database", configuration.DbName)
 	err = databaseService.Init(configuration.DbHost, configuration.DbName, configuration.DbUser,
 		configuration.DbPassword, configuration.DbPort)
 	if err != nil {
+		slog.Error("Failed to initialize database", "error", err)
 		panic(err)
 	}
 
-	log.Printf("Authentication server is at %v\n", configuration.KeycloakHost)
+	slog.Info("Authentication server configured", "keycloak_host", configuration.KeycloakHost)
 
-	flag.Parse() // Intialize glog flags
+	flag.Parse()
 
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
@@ -42,19 +60,44 @@ func main() {
 
 	projectRepository := postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository)
 	projectUsecase := usecase.NewProjectUsecase(projectRepository, teamUsecase, changelogRepository)
-	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase)
+
+	externalConnectionRepository := postgresql.NewPostgreSQLExternalConnectionRepository(databaseService.Database.DB)
+
+	externalIssueRepository := postgresql.NewPostgreSQLExternalIssueRepository(databaseService.Database.DB)
+	userExternalAccountRepository := postgresql.NewPostgreSQLUserExternalAccountRepository(databaseService.Database.DB)
+
+	// Create empty provider factory - providers will be created dynamically as needed
+	providerFactory := external.NewProviderFactory()
+
+	userExternalAccountUsecase := usecase.NewUserExternalAccountUseCase(
+		userExternalAccountRepository,
+		providerFactory,
+	)
+	userExternalAccountHandler := rest.NewUserExternalAccountHandler(tokenVerifier, userExternalAccountUsecase)
 
 	timeEntryRepository := postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB)
-	timeEntryUsecase := usecase.NewTimeEntryUsecase(timeEntryRepository, projectUsecase, changelogRepository)
+
+	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(
+		externalConnectionRepository,
+		externalIssueRepository,
+		userExternalAccountRepository,
+		timeEntryRepository,
+		projectRepository,
+		providerFactory,
+		teamUsecase,
+	)
+
+	projectHandler := rest.NewProjectHandler(tokenVerifier, projectUsecase, teamUsecase, externalConnectionRepository)
+
+	timeEntryUsecase := usecase.NewTimeEntryUsecase(timeEntryRepository, projectUsecase, changelogRepository, externalIntegrationUsecase)
 	timeEntryHandler := rest.NewTimeEntryHandler(tokenVerifier, timeEntryUsecase)
 
-	syncUsecase := usecase.NewSyncUsecase(postgresql.NewPostgreSQLSyncRepository(databaseService.Database.DB), changelogRepository, projectRepository, timeEntryRepository)
+	syncUsecase := usecase.NewSyncUsecase(postgresql.NewPostgreSQLSyncRepository(databaseService.Database.DB), changelogRepository, projectRepository, timeEntryRepository, externalIntegrationUsecase)
 	syncHandler := rest.NewSyncHandler(tokenVerifier, syncUsecase)
 
-	// Initialize changelog for existing databases
 	changelogInitUsecase := usecase.NewChangelogInitializationUsecase(changelogRepository, projectRepository, timeEntryRepository, teamRepository)
 	if err := changelogInitUsecase.InitializeChangelog(); err != nil {
-		log.Printf("Failed to initialize changelog: %v", err)
+		slog.Error("Failed to initialize changelog", "error", err)
 		panic(err)
 	}
 
@@ -62,7 +105,43 @@ func main() {
 	weeklyStatisticsHandler := rest.NewWeeklyStatisticsHandler(tokenVerifier, weeklyStatisticsUsecase, projectUsecase)
 
 	timeEntryExportHandler := rest.NewTimeEntryExportHandler(tokenVerifier, timeEntryUsecase)
+	externalIntegrationHandler := rest.NewExternalIntegrationHandler(tokenVerifier, externalIntegrationUsecase)
 
-	router := rest.SetupRouter(authMiddleware, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler)
-	router.Run()
+	// Setup sync scheduler for automated issue synchronization
+	syncConfig := sync.SyncConfig{
+		ActiveProjectInterval:  time.Duration(configuration.SyncActiveInterval) * time.Minute,
+		RecentProjectInterval:  time.Duration(configuration.SyncRecentInterval) * time.Minute,
+		DormantProjectInterval: time.Duration(configuration.SyncDormantInterval) * time.Minute,
+		MaxConcurrentSyncs:     configuration.SyncMaxConcurrent,
+		ActivityWindowActive:   4 * time.Hour,
+		ActivityWindowRecent:   24 * time.Hour,
+	}
+
+	syncScheduler := sync.NewSyncScheduler(
+		syncConfig,
+		externalIntegrationUsecase,
+		timeEntryUsecase,
+		projectUsecase,
+	)
+
+	externalIntegrationUsecase.SetSyncScheduler(syncScheduler)
+
+	// Start the sync scheduler
+	syncScheduler.Start()
+	defer syncScheduler.Stop()
+
+	// Setup graceful shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	router := rest.SetupRouter(authMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
+
+	go func() {
+		slog.Info("Starting HTTP server", "port", "8080")
+		router.Run()
+	}()
+
+	// Wait for interrupt signal
+	<-c
+	slog.Info("Shutting down gracefully...")
 }
