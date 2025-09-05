@@ -14,6 +14,7 @@ import { ProjectService } from '../../../services/project.service';
 import { Select } from 'primeng/select';
 import { Project } from '../../../models/project.model';
 import { DescriptionAutocompleteComponent } from '../../shared/description-autocomplete/description-autocomplete.component';
+import { PrimeNGLocaleService } from '../../../services/primeng-locale.service';
 
 @Component({
   selector: 'app-time-entry-form',
@@ -41,6 +42,7 @@ export class TimeEntryFormComponent implements OnInit {
   private readonly externalService = inject(ExternalIntegrationService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
+  private readonly primeNGLocaleService = inject(PrimeNGLocaleService);
 
   timeEntryId: string = '';
   timeEntryForm!: FormGroup;
@@ -86,6 +88,8 @@ export class TimeEntryFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.primeNGLocaleService.setLocaleForPrimeNG();
+    
     this.projectService.loadProjects();
     this.timeEntryForm = this.formBuilder.group({
       project: new FormControl<Project | null>(this.selectedProject(), [Validators.required]),
@@ -103,6 +107,7 @@ export class TimeEntryFormComponent implements OnInit {
       this.timeEntryService.loadTimeEntry(this.timeEntryId);
     }
   }
+
 
   onSubmit() {
     if (this.timeEntryForm.valid) {

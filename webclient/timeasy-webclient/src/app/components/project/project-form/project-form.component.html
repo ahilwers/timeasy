@@ -40,13 +40,13 @@
     <div class="form-field">
         <label for="hourlyRate">{{ 'projects.hourlyRate' | translate }}</label>
         <p-inputnumber id="hourlyRate" formControlName="hourlyRate" inputId="hourlyRate" mode="decimal"
-            [useGrouping]="false" [minFractionDigits]="2" [maxFractionDigits]="2" />
+            [useGrouping]="false" [minFractionDigits]="2" [maxFractionDigits]="2" [locale]="userLocale" />
     </div>
 
     <div class="form-field">
         <label for="timeBudget">{{ 'projects.timeBudget' | translate }}</label>
         <p-inputnumber id="timeBudget" formControlName="timeBudget" inputId="timeBudget" [useGrouping]="false"
-            suffix=" {{ 'projects.hours' | translate }}" />
+            suffix=" {{ 'projects.hours' | translate }}" [locale]="userLocale" />
     </div>
 
     <div class="form-field">

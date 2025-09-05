@@ -4,6 +4,7 @@ import {MenuComponent} from './components/menu/menu.component';
 import {HeaderComponent} from './components/header/header.component';
 import {FooterComponent} from './components/footer/footer.component';
 import { LanguageService } from './services/language.service';
+import { DynamicLocaleService } from './services/dynamic-locale.service';
 
 @Component({
   selector: 'app-root',
@@ -17,8 +18,14 @@ export class AppComponent {
   title = 'timeasy-webclient';
 
   private readonly languageService = inject(LanguageService);
+  private readonly dynamicLocaleService = inject(DynamicLocaleService);
 
   constructor() {
-    this.languageService.initializeLanguage();
+    this.initializeServices();
+  }
+
+  private async initializeServices(): Promise<void> {
+    await this.languageService.initializeLanguage();
+    await this.dynamicLocaleService.initializeLocale();
   }
 }

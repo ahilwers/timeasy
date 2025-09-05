@@ -14,6 +14,8 @@ import {DateOnly} from '../../../models/date_only';
 import {InputNumber} from 'primeng/inputnumber';
 import {ToggleSwitch} from 'primeng/toggleswitch';
 import {ExternalIntegrationComponent} from '../external-integration/external-integration.component';
+import {PrimeNGLocaleService} from '../../../services/primeng-locale.service';
+import {DynamicLocaleService} from '../../../services/dynamic-locale.service';
 
 @Component({
   selector: 'app-project-form',
@@ -41,6 +43,8 @@ export class ProjectFormComponent implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
+  private readonly dynamicLocaleService = inject(DynamicLocaleService);
+  private readonly primeNGLocaleService = inject(PrimeNGLocaleService);
 
   projectId : string = '';
   projectForm!: FormGroup;
@@ -49,6 +53,7 @@ export class ProjectFormComponent implements OnInit {
   project = this.projectService.project();
   error = this.projectService.error();
   updateSuccessful = this.projectService.updateSuccessful();
+  userLocale: string = 'en-US';
 
   colors = [
     { name: 'Blue', hex: '#1E90FF' },
@@ -89,6 +94,9 @@ export class ProjectFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.primeNGLocaleService.setLocaleForPrimeNG();
+    this.userLocale = this.dynamicLocaleService.getCurrentLocale();
+    
     this.projectForm = this.formBuilder.group({
       name: ['', [Validators.required]],
       color: [this.colors[0].hex, [Validators.required]],
@@ -105,6 +113,7 @@ export class ProjectFormComponent implements OnInit {
       this.projectService.loadProject(this.projectId);
     }
   }
+
 
   onSubmit() {
     if (this.projectForm.valid) {
