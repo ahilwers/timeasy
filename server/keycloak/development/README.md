@@ -10,4 +10,4 @@ Remember to set the client secrets for the client "timeasy-server" correctly.
 You can add your themes to the themes directory. If you use the provided docker-compose.yaml these themes are imported
 into Keycloak.
 
-The Tailcloakify theme from https://github.com/CoreSpeed-io/tailcloakify is already included.
+The Tailcloakify theme from https://github.com/ALMiG-Kompressoren-GmbH/tailcloakify is already included.
