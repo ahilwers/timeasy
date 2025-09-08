@@ -1,0 +1,1 @@
+import{j as s}from"./index-Kjc2dqvG.js";function d(a){const{kcContext:i,i18n:e,doUseDefaultCss:n,Template:l,classes:o}=a,{msg:r}=e;return s.jsx(l,{kcContext:i,i18n:e,doUseDefaultCss:n,classes:o,displayInfo:!1,displayRequiredFields:!1,displayMessage:!1,headerNode:s.jsx(s.Fragment,{}),children:s.jsx("p",{children:r("magicLinkFailLogin")})})}export{d as default};

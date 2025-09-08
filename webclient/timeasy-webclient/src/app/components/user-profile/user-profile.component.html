@@ -1,13 +1,50 @@
-<h1>User-Profile</h1>
+<div class="user-profile-container">
+    <p-toast></p-toast>
 
-@if (user) {
-  <p>
-    Name: {{user.name}}
-  </p>
-  <p>
-    Email: {{user.email}}
-  </p>
-  <p>
-    Username: {{user.username}}
-  </p>
-}
+    <h1>{{'user.profile.title' | translate}}</h1>
+
+    @if (isLoading()) {
+    <div class="loading">
+        <p-progressSpinner [style]="{width: '50px', height: '50px'}"></p-progressSpinner>
+        <p>{{'common.loading' | translate}}</p>
+    </div>
+    }
+
+    @if (user()) {
+    <!-- Profile Information Card -->
+    <p-card class="profile-card" [header]="('user.profile.information' | translate)">
+        <!-- View Mode -->
+        <div class="profile-info">
+            <div class="info-row">
+                <strong>{{'user.profile.firstName' | translate}}:</strong>
+                <span>{{ user()?.firstName }}</span>
+            </div>
+            <div class="info-row">
+                <strong>{{'user.profile.lastName' | translate}}:</strong>
+                <span>{{ user()?.lastName }}</span>
+            </div>
+            <div class="info-row">
+                <strong>{{'user.profile.email' | translate}}:</strong>
+                <span>{{ user()?.email }}</span>
+            </div>
+            <div class="info-row">
+                <strong>{{'user.profile.username' | translate}}:</strong>
+                <span>{{ user()?.username }}</span>
+            </div>
+            <div class="info-row">
+                <strong>{{'user.profile.language' | translate}}:</strong>
+                <span>{{ currentUserLanguageName }}</span>
+            </div>
+        </div>
+
+        <ng-template pTemplate="footer">
+            <div class="button-group">
+                <p-button label="{{'user.profile.edit' | translate}}" (onClick)="openAccountManagement()"
+                    [disabled]="isLoading()" icon="pi pi-external-link"></p-button>
+                <p-button label="{{'user.profile.changePassword' | translate}}" (onClick)="openPasswordManagement()"
+                    [disabled]="isLoading()" icon="pi pi-key" severity="secondary"></p-button>
+            </div>
+        </ng-template>
+    </p-card>
+    }
+</div>

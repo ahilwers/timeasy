@@ -18,6 +18,7 @@ import localeDe from '@angular/common/locales/de';
 import {registerLocaleData} from '@angular/common';
 import {provideTranslateService, TranslateLoader} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
+import {MessageService} from 'primeng/api';
 import { environment } from '../environments/environment';
 
 export const provideKeycloakAngular = () =>
@@ -82,6 +83,7 @@ export const appConfig: ApplicationConfig = {
         useFactory: httpLoaderFactory,
         deps: [HttpClient],
       },
-    })
+    }),
+    MessageService
   ],
 };
