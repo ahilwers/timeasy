@@ -2,7 +2,7 @@ name: WebApp CI-Build  # Fixed YAML syntax error
 
 on:
   push:
-    branches: [main, develop, 'feature/*']
+    branches: [main, develop, 'feature/*', '*-add-build-workflows-*']
     paths:
       - 'webclient/**'
       - '.github/workflows/webapp-ci-build.yaml'
