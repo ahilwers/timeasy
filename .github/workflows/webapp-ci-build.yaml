@@ -1,18 +1,17 @@
-name: WebApp CI-Build  # Fixed YAML syntax error
+name: WebApp CI-Build
 
 on:
   push:
-    branches: [main, develop, 'feature/*', '*-add-build-workflows-*']
     paths:
-      - 'webclient/**'
-      - '.github/workflows/webapp-ci-build.yaml'
+      - "webclient/**"
+      - ".github/workflows/webapp-ci-build.yaml"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'webclient/**'
-      - '.github/workflows/webapp-ci-build.yaml'
+      - "webclient/**"
+      - ".github/workflows/webapp-ci-build.yaml"
   schedule:
-    - cron: '0 2 * * *'  # Nightly build at 2 AM
+    - cron: "0 2 * * *" # Nightly build at 2 AM
 
 jobs:
   build:
@@ -27,9 +26,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: './webclient/timeasy-webclient/package-lock.json'
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "./webclient/timeasy-webclient/package-lock.json"
 
       - name: Install dependencies
         run: npm ci
