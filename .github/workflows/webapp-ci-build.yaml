@@ -1,4 +1,4 @@
-name: WebApp CI-Build
+name: WebApp CI-Build  # Fixed YAML syntax error
 
 on:
   push:
