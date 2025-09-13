@@ -1,6 +1,19 @@
 name: Server CI-Build
 
-on: [push]
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".github/workflows/server-ci-build.yaml"
+    tags:
+      - "v*"  # Trigger on version tags
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "server/**"
+      - ".github/workflows/server-ci-build.yaml"
+  schedule:
+    - cron: "0 2 * * *" # Nightly build at 2 AM
 
 jobs:
   build:
@@ -9,7 +22,7 @@ jobs:
       run:
         working-directory: ./server/src
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -21,3 +34,40 @@ jobs:
 
       - name: Test
         run: go test -v ./...
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/96-add-build-workflows-for-tracking-app-and-web-app' || startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ahilwers/timeasy-server
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server/src
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
