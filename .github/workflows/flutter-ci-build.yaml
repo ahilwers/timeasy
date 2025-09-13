@@ -1,0 +1,84 @@
+name: Flutter CI-Build
+
+on:
+  push:
+    branches: [main, develop, 'feature/*']
+    paths:
+      - 'tracking-app/**'
+      - '.github/workflows/flutter-ci-build.yaml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'tracking-app/**'
+      - '.github/workflows/flutter-ci-build.yaml'
+  schedule:
+    - cron: '0 2 * * *'  # Nightly build at 2 AM
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tracking-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate localization files
+        run: flutter gen-l10n
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      # - name: Build APK
+      #   run: flutter build apk --release
+
+      # - name: Upload APK artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: timeasy-apk-${{ github.sha }}
+      #     path: tracking-app/build/app/outputs/flutter-apk/app-release.apk
+
+  build-ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./tracking-app
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate localization files
+        run: flutter gen-l10n
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: timeasy-ios-${{ github.sha }}
+          path: tracking-app/build/ios/iphoneos/Runner.app
+
