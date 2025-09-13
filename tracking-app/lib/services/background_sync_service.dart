@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
+import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
@@ -9,10 +11,13 @@ class BackgroundSyncService {
   Timer? _timer;
   late SynchronizationService _syncService;
   late SynchronizationBloc _synchronizationBloc;
+  AuthenticationBloc? _authenticationBloc;
 
-  BackgroundSyncService(String token, SynchronizationBloc synchronizationBloc) {
+  BackgroundSyncService(String token, SynchronizationBloc synchronizationBloc,
+      {AuthenticationBloc? authenticationBloc}) {
     _syncService = SynchronizationService(token);
     _synchronizationBloc = synchronizationBloc;
+    _authenticationBloc = authenticationBloc;
   }
 
   void updateToken(String token) {
@@ -22,7 +27,6 @@ class BackgroundSyncService {
   void startSync() {
     synchronize();
     _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
-      // Only synchronize if not already in progress
       if (!isSyncing()) {
         await synchronize();
       }
@@ -33,14 +37,16 @@ class BackgroundSyncService {
     _timer?.cancel();
   }
 
-  /// Checks if synchronization is currently in progress
   bool isSyncing() {
     return _synchronizationBloc.state is SynchronizationInProgress;
   }
 
   Future<void> synchronize() async {
-    // Check if synchronization is already in progress
     if (isSyncing()) {
+      return;
+    }
+
+    if (!isAuthenticated()) {
       return;
     }
 
@@ -52,5 +58,14 @@ class BackgroundSyncService {
     } catch (e) {
       _synchronizationBloc.add(SynchronizationErrorEvent(e.toString()));
     }
+  }
+
+  bool isAuthenticated() {
+    if (_authenticationBloc == null) {
+      return false;
+    }
+    final state = _authenticationBloc!.state;
+    final isAuth = state is AuthenticationAuthenticated;
+    return isAuth;
   }
 }

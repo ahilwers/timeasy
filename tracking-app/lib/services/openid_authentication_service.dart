@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
 import 'package:openid_client/openid_client.dart';
 import 'package:openid_client/openid_client_io.dart' as io;
 import 'package:timeasy/models/api_credentials.dart';
@@ -35,9 +36,90 @@ class OpenIdAuthenticationService {
   }
 
   Future<void> logout(ApiCredentials apiCredential) async {
+    print('Starting logout process...');
+    print('Logout URL: ${apiCredential.logoutUrl}');
+    print('Access Token: ${apiCredential.accessToken?.substring(0, 20)}...');
+    
     if (apiCredential.logoutUrl != null) {
-      _urlLauncher(apiCredential.logoutUrl!);
+      try {
+        // Try different logout approaches
+        await _performKeycloakLogout(apiCredential);
+      } catch (e) {
+        print('All logout attempts failed: $e');
+      }
+    } else {
+      print('No logout URL available');
     }
+  }
+
+  Future<void> _performKeycloakLogout(ApiCredentials apiCredential) async {
+    final logoutUrl = apiCredential.logoutUrl!;
+    print('Attempting logout with URL: $logoutUrl');
+    
+    // Method 1: Try GET request first
+    try {
+      print('Trying GET request to logout URL...');
+      final response = await http.get(Uri.parse(logoutUrl));
+      print('GET Logout response status: ${response.statusCode}');
+      print('GET Logout response body: ${response.body}');
+      
+      if (response.statusCode >= 200 && response.statusCode < 400) {
+        print('Successfully logged out from Keycloak via GET');
+        return;
+      }
+    } catch (e) {
+      print('GET logout failed: $e');
+    }
+    
+    // Method 2: Try POST request with refresh token
+    try {
+      print('Trying POST request to logout endpoint...');
+      final uri = Uri.parse(logoutUrl);
+      final logoutEndpoint = '${uri.scheme}://${uri.host}:${uri.port}/realms/${_extractRealm(logoutUrl)}/protocol/openid-connect/logout';
+      
+      final response = await http.post(
+        Uri.parse(logoutEndpoint),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'client_id': clientId,
+          'refresh_token': apiCredential.refreshToken ?? '',
+        },
+      );
+      
+      print('POST Logout response status: ${response.statusCode}');
+      print('POST Logout response body: ${response.body}');
+      
+      if (response.statusCode >= 200 && response.statusCode < 400) {
+        print('Successfully logged out from Keycloak via POST');
+        return;
+      }
+    } catch (e) {
+      print('POST logout failed: $e');
+    }
+    
+    // Method 3: Fallback to opening URL in browser
+    try {
+      print('Falling back to opening logout URL in browser...');
+      await _urlLauncher(logoutUrl);
+      await Future.delayed(Duration(seconds: 3)); // Give time for browser logout
+      print('Opened logout URL in browser');
+    } catch (urlError) {
+      print('Could not open logout URL: $urlError');
+      throw Exception('All logout methods failed');
+    }
+  }
+  
+  String _extractRealm(String logoutUrl) {
+    // Extract realm from logout URL like: http://localhost:8080/realms/timeasy/protocol/openid-connect/logout
+    final uri = Uri.parse(logoutUrl);
+    final pathSegments = uri.pathSegments;
+    final realmIndex = pathSegments.indexOf('realms');
+    if (realmIndex != -1 && realmIndex + 1 < pathSegments.length) {
+      return pathSegments[realmIndex + 1];
+    }
+    return 'timeasy'; // Default realm
   }
 
   Future<bool> refreshToken(ApiCredentials apiCredential) async {
