@@ -1,10 +1,11 @@
 package postgresql
 
 import (
-	"database/sql"
-	"fmt"
-	"timeasy-server/pkg/domain/model"
-	"timeasy-server/pkg/domain/repository"
+    "database/sql"
+    "fmt"
+    "time"
+    "timeasy-server/pkg/domain/model"
+    "timeasy-server/pkg/domain/repository"
 
 	"github.com/gofrs/uuid"
 	"github.com/shopspring/decimal"
@@ -88,18 +89,18 @@ func (repo *postgresqlSyncRepository) UpdateAndDeleteData(data model.SyncData) e
 
 // GetUpdatedTimeEntriesOfUser retrieves time entries that have been updated since a specific changelog entry ID
 func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UUID, sinceTimeLogEntry int64, untilTimeLogEntry int64, excludeClientId string) (model.TimeEntrySyncResult, error) {
-	query := `
-		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description, te.deleted,
-			   p.id as project_id, p.name as project_name, p.user_id as project_user_id,
-			   p.team_id as project_team_id, p.color as project_color, p.deadline::date as project_deadline,
-			   p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget,
-			   p.is_active as project_is_active, p.deleted as project_deleted,
-			   cl.operation
-		FROM change_log cl
-		LEFT JOIN time_entries te ON cl.entity_id = te.id
-		LEFT JOIN projects p ON te.project_id = p.id
-		WHERE cl.id > $1
-	`
+    query := `
+        SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description, te.deleted,
+               p.id as project_id, p.name as project_name, p.user_id as project_user_id,
+               p.team_id as project_team_id, p.color as project_color, p.deadline::date as project_deadline,
+               p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget,
+               p.is_active as project_is_active, p.deleted as project_deleted,
+               cl.operation, cl.changed_at, cl.id
+        FROM change_log cl
+        LEFT JOIN time_entries te ON cl.entity_id = te.id
+        LEFT JOIN projects p ON te.project_id = p.id
+        WHERE cl.id > $1
+    `
 
 	args := []interface{}{sinceTimeLogEntry}
 	paramIndex := 2
@@ -132,27 +133,29 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 	updatedEntries := make(map[uuid.UUID]model.TimeEntry)
 	deletedEntries := make(map[uuid.UUID]model.TimeEntry)
 
-	for rows.Next() {
-		var entry model.TimeEntry
-		var project model.Project
-		var operation string
-		var teamID sql.NullString
-		var deadline sql.NullTime
-		var hourlyRate sql.NullString
-		var timeBudget sql.NullInt64
-		var isActive sql.NullBool
-		var color sql.NullString
-		var projectDeleted sql.NullBool
+    for rows.Next() {
+        var entry model.TimeEntry
+        var project model.Project
+        var operation string
+        var teamID sql.NullString
+        var deadline sql.NullTime
+        var hourlyRate sql.NullString
+        var timeBudget sql.NullInt64
+        var isActive sql.NullBool
+        var color sql.NullString
+        var projectDeleted sql.NullBool
+        var changedAt time.Time
+        var changeLogId int64
 
-		err := rows.Scan(
-			&entry.ID, &entry.UserId, &entry.ProjectId, &entry.StartTime, &entry.EndTime, &entry.Description, &entry.Deleted,
-			&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
-			&hourlyRate, &timeBudget, &isActive, &projectDeleted,
-			&operation,
-		)
-		if err != nil {
-			return model.TimeEntrySyncResult{}, err
-		}
+        err := rows.Scan(
+            &entry.ID, &entry.UserId, &entry.ProjectId, &entry.StartTime, &entry.EndTime, &entry.Description, &entry.Deleted,
+            &project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
+            &hourlyRate, &timeBudget, &isActive, &projectDeleted,
+            &operation, &changedAt, &changeLogId,
+        )
+        if err != nil {
+            return model.TimeEntrySyncResult{}, err
+        }
 
 		// Set project fields
 		if teamID.Valid {
@@ -179,7 +182,9 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 			project.IsActive = true // Default is active
 		}
 
-		entry.Project = project
+        entry.Project = project
+        entry.ChangeAt = changedAt.UTC()
+        entry.ChangeLogId = changeLogId
 
 		// Update the appropriate map based on the operation
 		switch operation {
@@ -227,14 +232,14 @@ func (repo *postgresqlSyncRepository) GetUpdatedTimeEntriesOfUser(userId uuid.UU
 
 // GetUpdatedProjectsOfUser retrieves projects that have been updated since a specific changelog entry ID
 func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID, sinceTimeLogEntry int64, untilTimeLogEntry int64, excludeClientId string) (model.ProjectSyncResult, error) {
-	query := `
-		SELECT p.id, p.name, p.user_id, p.team_id, p.color, p.deadline::date,
-			   p.hourly_rate, p.time_budget, p.is_active, p.deleted,
-			   cl.operation
-		FROM change_log cl
-		LEFT JOIN projects p ON cl.entity_id = p.id
-		WHERE cl.id > $1
-	`
+    query := `
+        SELECT p.id, p.name, p.user_id, p.team_id, p.color, p.deadline::date,
+               p.hourly_rate, p.time_budget, p.is_active, p.deleted,
+               cl.operation, cl.changed_at, cl.id
+        FROM change_log cl
+        LEFT JOIN projects p ON cl.entity_id = p.id
+        WHERE cl.id > $1
+    `
 
 	args := []interface{}{sinceTimeLogEntry}
 	paramIndex := 2
@@ -267,23 +272,25 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 	updatedProjects := make(map[uuid.UUID]model.Project)
 	deletedProjects := make(map[uuid.UUID]model.Project)
 
-	for rows.Next() {
-		var project model.Project
-		var operation string
-		var teamID sql.NullString
-		var deadline sql.NullTime
-		var hourlyRate sql.NullString
-		var timeBudget sql.NullInt64
-		var isActive sql.NullBool
-		var color sql.NullString
+    for rows.Next() {
+        var project model.Project
+        var operation string
+        var teamID sql.NullString
+        var deadline sql.NullTime
+        var hourlyRate sql.NullString
+        var timeBudget sql.NullInt64
+        var isActive sql.NullBool
+        var color sql.NullString
+        var changedAt time.Time
+        var changeLogId int64
 
-		err := rows.Scan(
-			&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
-			&hourlyRate, &timeBudget, &isActive, &project.Deleted, &operation,
-		)
-		if err != nil {
-			return model.ProjectSyncResult{}, err
-		}
+        err := rows.Scan(
+            &project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
+            &hourlyRate, &timeBudget, &isActive, &project.Deleted, &operation, &changedAt, &changeLogId,
+        )
+        if err != nil {
+            return model.ProjectSyncResult{}, err
+        }
 
 		// Set project fields
 		if teamID.Valid {
@@ -310,7 +317,11 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 			project.IsActive = true // Default is active
 		}
 
-		// Update the appropriate map based on the operation
+        // Attach change metadata
+        project.ChangeAt = changedAt.UTC()
+        project.ChangeLogId = changeLogId
+
+        // Update the appropriate map based on the operation
 		switch operation {
 		case string(model.OperationCreated):
 			createdProjects[project.ID] = project

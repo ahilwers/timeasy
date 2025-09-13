@@ -62,7 +62,6 @@ class TimeEntryRepository {
 
   // Method for syncing from server - creates changelog entries marked as server-side
   Future<TimeEntry> updateTimeEntryFromSync(TimeEntry timeEntry) async {
-    timeEntry.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
     await db.transaction((txn) async {
       await txn.update(TimeEntry.tableName, timeEntry.toMap(),

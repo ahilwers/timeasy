@@ -62,7 +62,6 @@ class ProjectRepository {
 
   // Method for syncing from server - creates changelog entries marked as server-side
   Future<Project> updateProjectFromSync(Project project) async {
-    project.updated = DateTime.now().toUtc();
     final db = await DBProvider.dbProvider.database;
     await db.transaction((txn) async {
       await txn.update(Project.tableName, project.toMap(),

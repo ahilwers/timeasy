@@ -9,6 +9,8 @@ class TimeEntrySyncData {
   final DateTime? endTime;
   final String projectId;
   final ChangeType changeType;
+  final DateTime? changeTimestamp; // Provided by server for ordering/metadata
+  final int? changeLogId; // Server change_log id (optional)
 
   TimeEntrySyncData({
     required this.id,
@@ -17,6 +19,8 @@ class TimeEntrySyncData {
     this.endTime,
     required this.projectId,
     required this.changeType,
+    this.changeTimestamp,
+    this.changeLogId,
   });
 
   factory TimeEntrySyncData.fromJson(Map<String, dynamic> json) {
@@ -37,6 +41,11 @@ class TimeEntrySyncData {
       projectId: json['projectId'] as String,
       changeType:
           ChangeTypeHelper.convertFromString(json['changeType'] as String),
+      changeTimestamp: (json['changeTimestamp'] != null &&
+              (json['changeTimestamp'] as String).trim().isNotEmpty)
+          ? DateTime.parse(json['changeTimestamp'] as String).toUtc()
+          : null,
+      changeLogId: json['changeLogId'] as int?,
     );
   }
 
