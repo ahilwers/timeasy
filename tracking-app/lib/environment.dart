@@ -1,21 +1,35 @@
+import 'dart:io';
+
 class Environment {
   static const String DEV_ENVIRONMENT = "dev";
 
   static const _ENVIRONMENT =
       String.fromEnvironment("environment", defaultValue: DEV_ENVIRONMENT);
 
-  static late final apiBaseUrl = _config["apiBaseUrl"];
-  static late final authUrl = _config["authUrl"];
+  static late final apiBaseUrl = _getApiBaseUrl();
+  static late final authUrl = _getAuthUrl();
 
-  static late final Map<String, dynamic> _config =
-      Environment._ENVIRONMENT == DEV_ENVIRONMENT
-          ? _developmentConfig
-          : _productionConfig;
+  static String _getApiBaseUrl() {
+    if (_ENVIRONMENT == DEV_ENVIRONMENT) {
+      if (Platform.isAndroid) {
+        return "http://10.0.2.2:8080/api/v1";
+      } else {
+        return "http://localhost:8080/api/v1";
+      }
+    }
+    return _productionConfig["apiBaseUrl"];
+  }
 
-  static const Map<String, dynamic> _developmentConfig = {
-    "apiBaseUrl": "http://localhost:8080/api/v1",
-    "authUrl": "http://localhost:8180/realms/timeasy"
-  };
+  static String _getAuthUrl() {
+    if (_ENVIRONMENT == DEV_ENVIRONMENT) {
+      if (Platform.isAndroid) {
+        return "http://10.0.2.2:8180/realms/timeasy";
+      } else {
+        return "http://localhost:8180/realms/timeasy";
+      }
+    }
+    return _productionConfig["authUrl"];
+  }
 
   static const Map<String, dynamic> _productionConfig = {
     "apiBaseUrl": "https://api.timeasy.org/api/v1",
