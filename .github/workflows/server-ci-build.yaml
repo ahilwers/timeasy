@@ -12,6 +12,7 @@ on:
     paths:
       - "server/**"
       - ".github/workflows/server-ci-build.yaml"
+  workflow_dispatch:
   # schedule:
   #   - cron: "0 2 * * *" # Nightly build at 2 AM
 
