@@ -32,7 +32,6 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
   String? _projectId;
   Project? _project;
   final ProjectRepository _projectRepository = new ProjectRepository();
-  final EventSyncService _eventSyncService = new EventSyncService();
   final _formEditProjectKey = GlobalKey<FormState>();
 
   // Color options for the project

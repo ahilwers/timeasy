@@ -208,7 +208,7 @@ class _DataListState extends State<DataList> {
                 .formatDuration(DateTime.now().difference(timeEntry.startTime));
 
         return Dismissible(
-          key: Key(timeEntry.id ?? index.toString()),
+          key: Key(timeEntry.id),
           background: Container(
             color: Colors.blue,
             alignment: Alignment.centerLeft,
@@ -261,10 +261,9 @@ class _DataListState extends State<DataList> {
             if (direction == DismissDirection.endToStart) {
               // Store a copy of the time entry for potential undo
               final deletedTimeEntry = timeEntry;
-              final deletedIndex = index;
 
               // Delete the item
-              _timeEntryRepository.deleteTimeEntryById(timeEntry.id!).then((_) {
+              _timeEntryRepository.deleteTimeEntryById(timeEntry.id).then((_) {
                 setState(() {
                   timeEntries!.removeAt(index);
                 });
@@ -421,17 +420,7 @@ class _DataListState extends State<DataList> {
     });
   }
 
-  String _getTitle() {
-    return "${AppLocalizations.of(context)!.times} (${_project.name})";
-  }
 
-  String _generateFilename(DateTimeRange dateRange) {
-    var fromDate =
-        "${dateRange.start.year}-${dateRange.start.month.toString().padLeft(2, '0')}-${dateRange.start.day.toString().padLeft(2, '0')}";
-    var toDate =
-        "${dateRange.end.year}-${dateRange.end.month.toString().padLeft(2, '0')}-${dateRange.end.day.toString().padLeft(2, '0')}";
-    return "${fromDate} - ${toDate} ${_project.name}.xlsx";
-  }
 
   void showToast(String message) {
     Fluttertoast.showToast(
