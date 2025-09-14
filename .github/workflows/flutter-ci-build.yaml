@@ -23,6 +23,12 @@ jobs:
           flutter-version: "3.24.x"
           cache: true
 
+      - name: Install Android SDK 35
+        shell: bash
+        run: |
+          echo "y" | sdkmanager --licenses || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" "ndk;26.1.10909125"
+
       - name: Get dependencies
         run: flutter pub get
 
