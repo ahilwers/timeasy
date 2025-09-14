@@ -2,17 +2,16 @@ name: Flutter CI-Build
 
 on:
   push:
-    branches: [main, develop, 'feature/*']
     paths:
-      - 'tracking-app/**'
-      - '.github/workflows/flutter-ci-build.yaml'
+      - "tracking-app/**"
+      - ".github/workflows/flutter-ci-build.yaml"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'tracking-app/**'
-      - '.github/workflows/flutter-ci-build.yaml'
-  schedule:
-    - cron: '0 2 * * *'  # Nightly build at 2 AM
+      - "tracking-app/**"
+      - ".github/workflows/flutter-ci-build.yaml"
+  # schedule:
+  #   - cron: "0 2 * * *" # Nightly build at 2 AM
 
 jobs:
   build:
@@ -27,7 +26,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.x'
+          flutter-version: "3.24.x"
           cache: true
 
       - name: Get dependencies
@@ -64,7 +63,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.x'
+          flutter-version: "3.24.x"
           cache: true
 
       - name: Get dependencies
@@ -81,4 +80,3 @@ jobs:
         with:
           name: timeasy-ios-${{ github.sha }}
           path: tracking-app/build/ios/iphoneos/Runner.app
-
