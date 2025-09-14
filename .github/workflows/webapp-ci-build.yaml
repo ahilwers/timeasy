@@ -6,14 +6,14 @@ on:
       - "webclient/**"
       - ".github/workflows/webapp-ci-build.yaml"
     tags:
-      - "v*"  # Trigger on version tags
+      - "v*" # Trigger on version tags
   pull_request:
     branches: [main, develop]
     paths:
       - "webclient/**"
       - ".github/workflows/webapp-ci-build.yaml"
-  schedule:
-    - cron: "0 2 * * *" # Nightly build at 2 AM
+  # schedule:
+  #   - cron: "0 2 * * *" # Nightly build at 2 AM
 
 jobs:
   build:
