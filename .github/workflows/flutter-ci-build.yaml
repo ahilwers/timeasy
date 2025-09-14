@@ -32,12 +32,9 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          accept-licenses: true
-          packages: |
-            platforms;android-35
-            build-tools;35.0.0
-            platform-tools
-            ndk;26.1.10909125
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: true
+          packages: platforms;android-35 build-tools;35.0.0 platform-tools ndk;26.1.10909125
 
       - name: Get dependencies
         run: flutter pub get
