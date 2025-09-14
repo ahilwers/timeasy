@@ -5,14 +5,7 @@ on:
     paths:
       - "tracking-app/**"
       - ".github/workflows/flutter-ci-build.yaml"
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "tracking-app/**"
-      - ".github/workflows/flutter-ci-build.yaml"
   workflow_dispatch:
-  # schedule:
-  #   - cron: "0 2 * * *" # Nightly build at 2 AM
 
 jobs:
   build:
