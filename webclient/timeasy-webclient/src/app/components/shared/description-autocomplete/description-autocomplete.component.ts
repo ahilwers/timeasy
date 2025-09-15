@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter, forwardRef, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, inject, OnDestroy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { InputText } from 'primeng/inputtext';
 import { ExternalIntegrationService } from '../../../services/external-integration.service';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-description-autocomplete',
@@ -21,7 +22,7 @@ import { ExternalIntegrationService } from '../../../services/external-integrati
     }
   ]
 })
-export class DescriptionAutocompleteComponent implements ControlValueAccessor {
+export class DescriptionAutocompleteComponent implements ControlValueAccessor, OnDestroy {
   @Input() projectId?: string;
   @Input() placeholder: string = 'Enter description or reference issues like #123';
   @Input() disabled: boolean = false;
@@ -37,6 +38,30 @@ export class DescriptionAutocompleteComponent implements ControlValueAccessor {
   private onChange = (value: string) => {};
   onTouched = () => {};
 
+  private searchSubject = new Subject<string>();
+
+  constructor() {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => {
+        if (query.length < 2 || !this.projectId) {
+          return of({ suggestions: [] });
+        }
+        return this.externalService.getDescriptionSuggestions(this.projectId, query, 10);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.filteredSuggestions = response.suggestions || [];
+        this.highlightedIndex = -1;
+      },
+      error: (error) => {
+        this.filteredSuggestions = [];
+        this.highlightedIndex = -1;
+      }
+    });
+  }
+
   onInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const query = input.value;
@@ -49,23 +74,7 @@ export class DescriptionAutocompleteComponent implements ControlValueAccessor {
       return;
     }
 
-    if (!this.projectId) {
-      this.filteredSuggestions = [];
-      this.highlightedIndex = -1;
-      return;
-    }
-
-    // Get suggestions from external integration service
-    this.externalService.getDescriptionSuggestions(this.projectId, query, 10).subscribe({
-      next: (response) => {
-        this.filteredSuggestions = response.suggestions || [];
-        this.highlightedIndex = -1;
-      },
-      error: (error) => {
-        this.filteredSuggestions = [];
-        this.highlightedIndex = -1;
-      }
-    });
+    this.searchSubject.next(query);
   }
 
   onKeydown(event: KeyboardEvent) {
@@ -124,5 +133,9 @@ export class DescriptionAutocompleteComponent implements ControlValueAccessor {
 
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubject.complete();
   }
 }
