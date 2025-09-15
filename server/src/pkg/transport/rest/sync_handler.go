@@ -84,21 +84,22 @@ func (handler *syncHandler) GetChangedEntries(context *gin.Context) {
 }
 
 func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEntry, syncEntries *SyncEntries, changeType ChangeType) {
-	for _, entry := range timeEntries {
-		// Skip entries with invalid start times
-		if entry.StartTime.IsZero() || entry.StartTime.Year() < 1900 {
-			LogHandlerError("appendChangedTimeEntries", nil, fmt.Sprintf("skipping time entry %s with invalid start time: %v", entry.ID, entry.StartTime))
-			continue
-		}
-		
-		syncTimeEntry := ChangedTimeEntryDto{
-			Id:              entry.ID,
-			Description:     entry.Description,
-			StartTime:       entry.StartTime.UTC().Truncate(time.Second).Format(time.RFC3339),
-			ProjectId:       entry.ProjectId,
-			ChangeType:      changeType,
-			ChangeTimestamp: time.Now().UTC().Format(time.RFC3339),
-		}
+    for _, entry := range timeEntries {
+        // Skip entries with invalid start times
+        if entry.StartTime.IsZero() || entry.StartTime.Year() < 1900 {
+            LogHandlerError("appendChangedTimeEntries", nil, fmt.Sprintf("skipping time entry %s with invalid start time: %v", entry.ID, entry.StartTime))
+            continue
+        }
+        
+        syncTimeEntry := ChangedTimeEntryDto{
+            Id:              entry.ID,
+            Description:     entry.Description,
+            StartTime:       entry.StartTime.UTC().Truncate(time.Second).Format(time.RFC3339),
+            ProjectId:       entry.ProjectId,
+            ChangeType:      changeType,
+            ChangeTimestamp: entry.ChangeAt.UTC().Truncate(time.Second).Format(time.RFC3339),
+            ChangeLogId:     entry.ChangeLogId,
+        }
 		
 		// Only include EndTime if it's valid
 		if !entry.EndTime.IsZero() && entry.EndTime.Year() >= 1900 {
@@ -110,23 +111,24 @@ func (handler *syncHandler) appendChangedTimeEntries(timeEntries []model.TimeEnt
 }
 
 func (handler *syncHandler) appendChangedProjects(projects []model.Project, syncEntries *SyncEntries, changeType ChangeType) {
-	for _, project := range projects {
-		deadline := project.Deadline
-		hourlyRateFloat, _ := project.HourlyRate.Float64()
-		timeBudget := project.TimeBudget
-		isActive := project.IsActive
-		color := project.Color
-		
-		syncProject := ChangedProjectDto{
-			Id:              project.ID,
-			Name:            project.Name,
-			Color:           &color,
-			HourlyRate:      &hourlyRateFloat,
-			TimeBudget:      &timeBudget,
-			IsActive:        &isActive,
-			ChangeType:      changeType,
-			ChangeTimestamp: time.Now().UTC().Format(time.RFC3339),
-		}
+    for _, project := range projects {
+        deadline := project.Deadline
+        hourlyRateFloat, _ := project.HourlyRate.Float64()
+        timeBudget := project.TimeBudget
+        isActive := project.IsActive
+        color := project.Color
+        
+        syncProject := ChangedProjectDto{
+            Id:              project.ID,
+            Name:            project.Name,
+            Color:           &color,
+            HourlyRate:      &hourlyRateFloat,
+            TimeBudget:      &timeBudget,
+            IsActive:        &isActive,
+            ChangeType:      changeType,
+            ChangeTimestamp: project.ChangeAt.UTC().Truncate(time.Second).Format(time.RFC3339),
+            ChangeLogId:     project.ChangeLogId,
+        }
 		
 		// Only set deadline if it's not zero/null
 		if !deadline.IsZero() {

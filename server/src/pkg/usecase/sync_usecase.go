@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"context"
-	"log/slog"
 	"errors"
+	"log/slog"
 	"strings"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
@@ -183,7 +183,7 @@ func (usecase *syncUsecase) processTimeEntries(data model.SyncData, userId uuid.
 func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
 	for i := range timeEntries {
 		timeEntry := &timeEntries[i]
-		
+
 		// Process issue detection and resolution before saving
 		err := usecase.processIssueDetection(context.Background(), timeEntry, userId)
 		if err != nil {
@@ -196,7 +196,7 @@ func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEn
 				"client_id", clientId,
 				"error", err)
 		}
-		
+
 		// Check if this is an open time entry (no end time)
 		if timeEntry.EndTime.IsZero() {
 			err := usecase.mergeOpenTimeEntriesIfNeeded(timeEntry, userId, clientId, tx)
@@ -228,7 +228,7 @@ func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEn
 func (usecase *syncUsecase) processTimeEntryUpdates(timeEntries []model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
 	for i := range timeEntries {
 		timeEntry := &timeEntries[i]
-		
+
 		// Process issue detection and resolution before saving
 		err := usecase.processIssueDetection(context.Background(), timeEntry, userId)
 		if err != nil {
@@ -241,7 +241,7 @@ func (usecase *syncUsecase) processTimeEntryUpdates(timeEntries []model.TimeEntr
 				"client_id", clientId,
 				"error", err)
 		}
-		
+
 		err = usecase.timeEntryRepository.UpdateTimeEntry(timeEntry, tx)
 		if err != nil {
 			// If entity not found, try to add it instead
@@ -342,9 +342,9 @@ func (usecase *syncUsecase) processIssueDetection(ctx context.Context, timeEntry
 // and merges them if needed, using the earlier start time and the ID from the incoming entry
 func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
 	// Find existing open time entries for this project
-	existingOpenEntries, err := usecase.timeEntryRepository.GetOpenTimeEntriesForProject(userId, newTimeEntry.ProjectId, tx)
-	if err != nil {
-		return err
+	existingOpenEntries, getOpenErr := usecase.timeEntryRepository.GetOpenTimeEntriesForProject(userId, newTimeEntry.ProjectId, tx)
+	if getOpenErr != nil {
+		return getOpenErr
 	}
 
 	if len(existingOpenEntries) == 0 {
@@ -364,35 +364,61 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 		return usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
 	}
 
-	// Merge logic: use the earliest start time and the ID from the new entry
-	earliestStartTime := newTimeEntry.StartTime
+	// Merge logic: use the most recent entry (latest start time) to avoid resurrecting old entries
+	latestStartTime := newTimeEntry.StartTime
 	var entryToKeep *model.TimeEntry = newTimeEntry
 	var entriesToDelete []model.TimeEntry
 
 	for _, existingEntry := range existingOpenEntries {
-		if existingEntry.StartTime.Before(earliestStartTime) {
-			earliestStartTime = existingEntry.StartTime
+		if existingEntry.StartTime.After(latestStartTime) {
+			// Use the existing entry if it's more recent
+			latestStartTime = existingEntry.StartTime
+			entryToKeep = &existingEntry
+			// Move the new entry to the delete list instead
+			entriesToDelete = []model.TimeEntry{*newTimeEntry}
+			// Add all other existing entries to delete list
+			for _, otherEntry := range existingOpenEntries {
+				if otherEntry.ID != existingEntry.ID {
+					entriesToDelete = append(entriesToDelete, otherEntry)
+				}
+			}
+			break
+		} else {
+			entriesToDelete = append(entriesToDelete, existingEntry)
 		}
-		entriesToDelete = append(entriesToDelete, existingEntry)
 	}
 
-	// Update the new entry with the earliest start time
-	entryToKeep.StartTime = earliestStartTime
-	
+	// Keep the start time of the most recent entry
+	entryToKeep.StartTime = latestStartTime
+
 	// Combine descriptions if they exist and are different
 	var descriptions []string
-	if newTimeEntry.Description != "" {
-		descriptions = append(descriptions, newTimeEntry.Description)
+
+	// Always start with the description from the entry we're keeping
+	if entryToKeep.Description != "" {
+		descriptions = append(descriptions, entryToKeep.Description)
 	}
-	for _, existingEntry := range existingOpenEntries {
-		if existingEntry.Description != "" && existingEntry.Description != newTimeEntry.Description {
-			descriptions = append(descriptions, existingEntry.Description)
+
+	// Add descriptions from entries being deleted if they're different
+	for _, entryToDelete := range entriesToDelete {
+		if entryToDelete.Description != "" && entryToDelete.Description != entryToKeep.Description {
+			// Avoid duplicates
+			isDuplicate := false
+			for _, existing := range descriptions {
+				if existing == entryToDelete.Description {
+					isDuplicate = true
+					break
+				}
+			}
+			if !isDuplicate {
+				descriptions = append(descriptions, entryToDelete.Description)
+			}
 		}
 	}
+
+	// Update the description if we have multiple unique descriptions
 	if len(descriptions) > 1 {
 		entryToKeep.Description = strings.Join(descriptions, "; ")
-	} else if len(descriptions) == 1 {
-		entryToKeep.Description = descriptions[0]
 	}
 
 	// Delete the existing open entries
@@ -415,8 +441,27 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 		}
 	}
 
-	// Add the merged entry
-	err = usecase.timeEntryRepository.AddTimeEntry(entryToKeep, tx)
+	// Check if we're keeping an existing entry or the new one
+	isKeepingExisting := false
+	for _, existingEntry := range existingOpenEntries {
+		if existingEntry.ID == entryToKeep.ID {
+			isKeepingExisting = true
+			break
+		}
+	}
+
+	var changelogOperation model.Operation
+	var err error
+	if isKeepingExisting {
+		// Update the existing entry with merged data
+		err = usecase.timeEntryRepository.UpdateTimeEntry(entryToKeep, tx)
+		changelogOperation = model.OperationUpdated
+	} else {
+		// Add the new entry
+		err = usecase.timeEntryRepository.AddTimeEntry(entryToKeep, tx)
+		changelogOperation = model.OperationCreated
+	}
+
 	if err != nil {
 		return err
 	}
@@ -424,7 +469,7 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 	createChangelogEntry := &model.ChangelogEntry{
 		EntityType:      model.EntityTypeTimeEntry,
 		EntityID:        entryToKeep.ID,
-		Operation:       model.OperationCreated,
+		Operation:       changelogOperation,
 		ChangedByUser:   userId,
 		ChangedByClient: "server-merge", // Use a special client ID so the mobile app receives it back
 	}

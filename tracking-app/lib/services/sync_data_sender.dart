@@ -19,36 +19,113 @@ class SyncDataSender {
   SyncDataSender(this._apiService) {}
 
   Future<void> sendNewestEntries(String? clientId) async {
-    var syncData = await createSyncData();
-    await _apiService.sendSyncData(syncData, clientId);
-    await _saveLatestLocalChangelogId();
+    final prepared = await _createPreparedSync();
+    await _apiService.sendSyncData(prepared.payload, clientId);
+    await _saveLatestLocalChangelogId(prepared.maxLocalChangelogIdIncluded);
   }
 
-  Future<SyncData> createSyncData() async {
+  // class moved to top-level below
+
+  Future<_PreparedSyncPayload> _createPreparedSync() async {
     var settings = await _settingsRepository.getSettings();
     var changelogEntries = await _changelogRepository
         .getUnsentChanges(settings.latestLocalChangelogId);
 
+    int? maxLocalId;
+    if (changelogEntries.isNotEmpty) {
+      maxLocalId = changelogEntries
+          .map((e) => e.changelogId!)
+          .reduce((a, b) => a > b ? a : b);
+    }
+
+    // Coalesce per-entity changes to a single final operation
+    final Map<String, ChangelogEntry> finalChanges = {};
+    for (final entry in changelogEntries) {
+      final key = '${entry.entityType}:${entry.entityId}';
+      final existing = finalChanges[key];
+      if (existing == null) {
+        finalChanges[key] = entry;
+        continue;
+      }
+      switch (entry.changeType) {
+        case ChangeType.DELETED:
+          // Deletion wins; keep latest timestamp for auditing
+          finalChanges[key] = ChangelogEntry(
+            entityType: existing.entityType,
+            entityId: existing.entityId,
+            changeType: ChangeType.DELETED,
+            timestamp: entry.timestamp.isAfter(existing.timestamp)
+                ? entry.timestamp
+                : existing.timestamp,
+            changelogId: entry.changelogId,
+          );
+          break;
+        case ChangeType.NEW:
+          // Keep NEW (idempotent)
+          finalChanges[key] = ChangelogEntry(
+            entityType: existing.entityType,
+            entityId: existing.entityId,
+            changeType: ChangeType.NEW,
+            timestamp: entry.timestamp.isAfter(existing.timestamp)
+                ? entry.timestamp
+                : existing.timestamp,
+            changelogId: entry.changelogId,
+          );
+          break;
+        case ChangeType.CHANGED:
+          // If already NEW, keep NEW; else mark as CHANGED
+          if (existing.changeType == ChangeType.NEW) {
+            // Keep as NEW but bump timestamp
+            finalChanges[key] = ChangelogEntry(
+              entityType: existing.entityType,
+              entityId: existing.entityId,
+              changeType: ChangeType.NEW,
+              timestamp: entry.timestamp.isAfter(existing.timestamp)
+                  ? entry.timestamp
+                  : existing.timestamp,
+              changelogId: entry.changelogId,
+            );
+          } else if (existing.changeType == ChangeType.DELETED) {
+            // Deletion still wins
+            // no-op
+          } else {
+            finalChanges[key] = ChangelogEntry(
+              entityType: existing.entityType,
+              entityId: existing.entityId,
+              changeType: ChangeType.CHANGED,
+              timestamp: entry.timestamp.isAfter(existing.timestamp)
+                  ? entry.timestamp
+                  : existing.timestamp,
+              changelogId: entry.changelogId,
+            );
+          }
+          break;
+      }
+    }
+
     var projects = <ProjectSyncData>[];
     var timeEntries = <TimeEntrySyncData>[];
 
-    for (var changelogEntry in changelogEntries) {
-      if (changelogEntry.entityType == 'Project') {
-        var projectSyncData =
-            await _createProjectSyncDataFromChangelog(changelogEntry);
+    for (final change in finalChanges.values) {
+      if (change.entityType == 'Project') {
+        final projectSyncData =
+            await _createProjectSyncDataFromChangelog(change);
         if (projectSyncData != null) {
           projects.add(projectSyncData);
         }
-      } else if (changelogEntry.entityType == 'TimeEntry') {
-        var timeEntrySyncData =
-            await _createTimeEntrySyncDataFromChangelog(changelogEntry);
+      } else if (change.entityType == 'TimeEntry') {
+        final timeEntrySyncData =
+            await _createTimeEntrySyncDataFromChangelog(change);
         if (timeEntrySyncData != null) {
           timeEntries.add(timeEntrySyncData);
         }
       }
     }
 
-    return new SyncData(timeEntries: timeEntries, projects: projects);
+    return _PreparedSyncPayload(
+      payload: SyncData(timeEntries: timeEntries, projects: projects),
+      maxLocalChangelogIdIncluded: maxLocalId,
+    );
   }
 
   Future<ProjectSyncData?> _createProjectSyncDataFromChangelog(
@@ -85,20 +162,21 @@ class SyncDataSender {
     return null;
   }
 
-  Future<void> _saveLatestLocalChangelogId() async {
+  Future<void> _saveLatestLocalChangelogId(int? maxIncludedId) async {
+    if (maxIncludedId == null) return;
     var settings = await _settingsRepository.getSettings();
-    var changelogEntries = await _changelogRepository
-        .getUnsentChanges(settings.latestLocalChangelogId);
+    settings.latestLocalChangelogId = maxIncludedId;
+    await _settingsRepository.saveSettings(settings);
 
-    if (changelogEntries.isNotEmpty) {
-      var latestChangelogId = changelogEntries
-          .map((e) => e.changelogId!)
-          .reduce((a, b) => a > b ? a : b);
-      settings.latestLocalChangelogId = latestChangelogId;
-      await _settingsRepository.saveSettings(settings);
-
-      // Clean up sent changelog entries
-      await _changelogRepository.deleteSentChanges(latestChangelogId);
-    }
+    // Clean up sent (or coalesced) changelog entries up to the included max id
+    await _changelogRepository.deleteSentChanges(maxIncludedId);
   }
+}
+
+// Holds the payload and the max local changelog id included to avoid race
+// conditions when cleaning up the local outbox.
+class _PreparedSyncPayload {
+  final SyncData payload;
+  final int? maxLocalChangelogIdIncluded;
+  _PreparedSyncPayload({required this.payload, required this.maxLocalChangelogIdIncluded});
 }

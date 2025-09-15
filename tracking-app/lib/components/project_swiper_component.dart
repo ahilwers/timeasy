@@ -148,10 +148,13 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         });
       } else {
         // First try to get the last used project from SharedPreferences
-        _projectRepository.getLastUsedProjectOrDefault().then((lastUsedProject) {
+        _projectRepository
+            .getLastUsedProjectOrDefault()
+            .then((lastUsedProject) {
           if (mounted) {
             if (lastUsedProject != null) {
-              final index = _projects.indexWhere((p) => p.id == lastUsedProject.id);
+              final index =
+                  _projects.indexWhere((p) => p.id == lastUsedProject.id);
               if (index != -1) {
                 setState(() {
                   _currentPage = index;
@@ -172,12 +175,13 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                 return;
               }
             }
-            
+
             // Fallback: check if there's already a selected project in the bloc
             final currentProject =
                 context.read<SelectedProjectBloc>().state.project;
             if (currentProject != null) {
-              final index = _projects.indexWhere((p) => p.id == currentProject.id);
+              final index =
+                  _projects.indexWhere((p) => p.id == currentProject.id);
               if (index != -1) {
                 setState(() {
                   _currentPage = index;
@@ -199,7 +203,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     });
 
     // Load suggestions and check timing status will be handled after the async
-    // project selection is complete, but we need to handle the case where 
+    // project selection is complete, but we need to handle the case where
     // there's no last used project initially
     Future.delayed(Duration(milliseconds: 200), () {
       if (mounted && _projects.isNotEmpty && _currentPage < _projects.length) {
@@ -258,21 +262,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     }
 
     final currentProject = _projects[_currentPage];
-    await _timeEntryRepository.closeLatestTimeEntry(currentProject.id);
 
-    // Create a new time entry
-    final timeEntry = TimeEntry(currentProject.id);
+    final timeEntry = await _timeEntryRepository.startTimingWithConflictCheck(
+        currentProject.id, _descriptionController.text.trim());
 
-    // Set description if provided
-    final description = _descriptionController.text.trim();
-    if (description.isNotEmpty) {
-      timeEntry.description = description;
-    }
-
-    // Add the time entry
-    await _timeEntryRepository.addTimeEntry(timeEntry);
-
-    // Store reference to the current open time entry
     _currentOpenTimeEntry = timeEntry;
 
     setState(() {
@@ -289,7 +282,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     }
 
     final currentProject = _projects[_currentPage];
-    await _timeEntryRepository.closeLatestTimeEntry(currentProject.id);
+    await _timeEntryRepository.stopTimingWithConflictCheck(currentProject.id);
+
+    _currentOpenTimeEntry = null;
 
     setState(() {
       _currentState = AppState.STOPPED;

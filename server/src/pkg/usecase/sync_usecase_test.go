@@ -195,7 +195,7 @@ func Test_syncUsecase_MergesDuplicateOpenTimeEntries(t *testing.T) {
 	// Verify the merged entry has the correct properties
 	mergedEntry := openEntries[0]
 	assert.Equal(t, newOpenEntry.ID, mergedEntry.ID, "Should use the ID from the incoming entry")
-	assert.True(t, mergedEntry.StartTime.UTC().Equal(earlierTime), "Should use the earliest start time")
+	assert.True(t, mergedEntry.StartTime.UTC().Equal(laterTime), "Should use the latest start time")
 	assert.Contains(t, mergedEntry.Description, "existing open entry", "Should contain the existing entry's description")
 	assert.Contains(t, mergedEntry.Description, "new open entry", "Should contain the new entry's description")
 	assert.True(t, mergedEntry.EndTime.IsZero(), "Should still be an open entry")
@@ -323,7 +323,7 @@ func Test_syncUsecase_MergesMultipleOpenTimeEntries(t *testing.T) {
 	// Verify the merged entry properties
 	mergedEntry := openEntries[0]
 	assert.Equal(t, thirdOpenEntry.ID, mergedEntry.ID, "Should use the ID from the incoming entry")
-	assert.True(t, mergedEntry.StartTime.UTC().Equal(earliestTime), "Should use the earliest start time")
+	assert.True(t, mergedEntry.StartTime.UTC().Equal(latestTime), "Should use the latest start time")
 	
 	// Should contain all three descriptions
 	assert.Contains(t, mergedEntry.Description, "first entry")
@@ -391,9 +391,9 @@ func Test_syncUsecase_MobileAppReceivesMergedEntryBack(t *testing.T) {
 	assert.Equal(t, 1, len(result.Created), "Mobile app should receive the merged entry back")
 	receivedEntry := result.Created[0]
 	
-	// Verify the received entry has the mobile app's ID but the earlier start time
+	// Verify the received entry has the mobile app's ID and the later start time
 	assert.Equal(t, mobileEntry.ID, receivedEntry.ID, "Should have mobile app's entry ID")
-	assert.True(t, receivedEntry.StartTime.UTC().Equal(webStartTime), "Should have the earlier start time from web entry")
+	assert.True(t, receivedEntry.StartTime.UTC().Equal(mobileStartTime), "Should have the later start time from mobile entry")
 	assert.Contains(t, receivedEntry.Description, "web entry", "Should contain web entry description")
 	assert.Contains(t, receivedEntry.Description, "mobile entry", "Should contain mobile entry description")
 	

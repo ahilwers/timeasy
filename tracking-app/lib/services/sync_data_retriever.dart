@@ -72,7 +72,15 @@ class SyncDataRetriever {
     timeEntry.description = entry.description;
     timeEntry.startTime = entry.startTime;
     timeEntry.endTime = entry.endTime;
-    timeEntry.created = DateTime.now();
+    // Use server-provided change timestamp when available to keep ordering consistent
+    if (entry.changeTimestamp != null) {
+      // For new entries, set created to server timestamp; for updates, repository updates .updated
+      timeEntry.created = entry.changeTimestamp!;
+      timeEntry.updated = entry.changeTimestamp!;
+    } else {
+      timeEntry.created = DateTime.now().toUtc();
+      timeEntry.updated = timeEntry.created;
+    }
     return timeEntry;
   }
 
@@ -132,16 +140,16 @@ class SyncDataRetriever {
       return;
     }
 
-    // Find the earliest start time
-    DateTime earliestStartTime = newTimeEntry.startTime;
+    // Use the most recent (latest) start time and keep the newest entry semantics
+    DateTime latestStartTime = newTimeEntry.startTime;
     for (var existingEntry in existingOpenEntries) {
-      if (existingEntry.startTime.isBefore(earliestStartTime)) {
-        earliestStartTime = existingEntry.startTime;
+      if (existingEntry.startTime.isAfter(latestStartTime)) {
+        latestStartTime = existingEntry.startTime;
       }
     }
 
-    // Update the new entry with the earliest start time
-    newTimeEntry.startTime = earliestStartTime;
+    // Update the new entry with the latest start time
+    newTimeEntry.startTime = latestStartTime;
 
     // Combine descriptions if they exist and are different
     List<String> descriptions = [];

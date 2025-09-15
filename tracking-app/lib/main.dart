@@ -37,7 +37,9 @@ void main() {
           create: (context) {
             final syncBloc =
                 BlocProvider.of<SynchronizationBloc>(context, listen: false);
-            return BackgroundSyncService("", syncBloc);
+            final authBloc =
+                BlocProvider.of<AuthenticationBloc>(context, listen: false);
+            return BackgroundSyncService("", syncBloc, authenticationBloc: authBloc);
           },
         ),
       ],
@@ -193,7 +195,8 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
             backgroundSyncService.updateToken(state.credentials.accessToken!);
             backgroundSyncService.startSync();
             eventSyncService.updateToken(state.credentials.accessToken!);
-          } else if (state is AuthenticationError) {
+          } else {
+            // Stop background sync on logout (AuthenticationInitial) or error
             backgroundSyncService.stopSync();
           }
         },
