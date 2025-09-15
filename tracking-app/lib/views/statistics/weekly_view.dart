@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
@@ -119,7 +118,4 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
     );
   }
 
-  String _getTitle() {
-    return "${AppLocalizations.of(context)!.weeklyOverview} (${_project.name})";
-  }
 }

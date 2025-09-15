@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
 import 'package:timeasy/components/custom_datetime_picker.dart';
 import 'package:timeasy/components/enhanced_description_input.dart';
 import 'package:timeasy/models/time_entry.dart';
@@ -97,9 +96,6 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
         ),
       );
     } else {
-      Locale locale = Localizations.localeOf(context);
-      var dateFormatter = new DateFormat.yMd(locale.toString());
-      var timeFormatter = new DateFormat.Hm(locale.toString());
       return Scaffold(
           appBar: AppBar(
             title: Text(

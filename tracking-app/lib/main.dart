@@ -1,4 +1,3 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -85,7 +84,6 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   int _currentPageIndex = 0;
   final ProjectRepository _projectRepository = ProjectRepository();
   late InternetConnectionService _internetConnectionService;
-  List<Project>? _projects;
   Project? _currentProject;
   bool _hasProjects = false;
 
@@ -287,7 +285,6 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   _loadProjects() {
     _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
       setState(() {
-        _projects = projectsFromDb;
         _hasProjects = projectsFromDb.isNotEmpty;
         
         // If we have projects but no current project is set, set the first one

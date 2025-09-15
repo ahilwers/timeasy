@@ -90,7 +90,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
         final project = projects![index];
 
         return Dismissible(
-          key: Key(project.id ?? index.toString()),
+          key: Key(project.id),
           background: Container(
             color: Colors.blue,
             alignment: Alignment.centerLeft,
@@ -230,7 +230,4 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
     });
   }
 
-  String _getTitle() {
-    return AppLocalizations.of(context)!.projects;
-  }
 }

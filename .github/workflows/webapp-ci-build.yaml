@@ -1,4 +1,4 @@
-name: Server CI-Build
+name: WebApp CI-Build
 
 on:
   push:
@@ -9,20 +9,30 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./server/src
+        working-directory: ./webclient/timeasy-webclient
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          go-version: "1.24"
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "./webclient/timeasy-webclient/package-lock.json"
 
-      - name: Build
-        run: make build
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
 
       - name: Test
-        run: go test -v ./...
+        run: npm run test -- --watch=false --browsers=ChromeHeadless
+
+      - name: Build
+        run: npm run build
 
   docker:
     needs: build
@@ -45,7 +55,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ahilwers/timeasy-server
+          images: ahilwers/timeasy-webclient
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -56,7 +66,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./server/src
+          context: ./webclient/timeasy-webclient
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

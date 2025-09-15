@@ -270,7 +270,7 @@ class _EnhancedDescriptionInputState extends State<EnhancedDescriptionInput> {
       ),
     );
 
-    Overlay.of(context)?.insert(_overlayEntry!);
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   void _removeOverlay() {
