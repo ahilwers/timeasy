@@ -52,6 +52,12 @@ class SynchronizationService {
     return result;
   }
 
+  Future<void> sendChangesToServer() async {
+    var settings = await _settingsRepository.getSettings();
+    var dataSender = new SyncDataSender(_apiService);
+    await dataSender.sendNewestEntries(settings.clientId);
+  }
+
   void updateToken(String token) {
     _apiService.updateToken(token);
     _externalService.initialize(Environment.apiBaseUrl, token);

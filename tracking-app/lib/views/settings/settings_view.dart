@@ -10,6 +10,7 @@ import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
+import 'package:timeasy/views/debug/debug_logs_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsView extends StatefulWidget {
@@ -54,6 +55,16 @@ class SettingsViewState extends State<SettingsView> {
                         ElevatedButton(
                           child: Text('Logout'),
                           onPressed: () => _logout(),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 15),
+                            textStyle: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          child: Text('Debug Logs'),
+                          onPressed: () => _openDebugLogs(),
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 30, vertical: 15),
@@ -194,6 +205,13 @@ class SettingsViewState extends State<SettingsView> {
 
   void _logout() {
     context.read<AuthenticationBloc>().add(LogoutEvent());
+  }
+
+  void _openDebugLogs() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DebugLogsView()),
+    );
   }
 
   void _launchWebsite() async {

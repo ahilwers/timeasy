@@ -36,6 +36,9 @@ class ChangelogRepository {
       whereArgs.add(lastChangelogId);
     }
 
+    final timestamp = DateTime.now().toIso8601String();
+    print('[$timestamp] ChangelogRepository: Getting unsent changes with lastChangelogId: $lastChangelogId, whereClause: $whereClause');
+
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
       where: whereClause,
@@ -43,17 +46,23 @@ class ChangelogRepository {
       orderBy: '$idColumn ASC',
     );
 
-    return List.generate(maps.length, (i) {
+    final entries = List.generate(maps.length, (i) {
       return ChangelogEntry.fromMap(maps[i]);
     });
+
+    print('[$timestamp] ChangelogRepository: Found ${entries.length} unsent changes: ${entries.map((e) => 'ID:${e.changelogId} ${e.entityType}:${e.entityId} ${e.changeType}').join(', ')}');
+    return entries;
   }
 
   Future<int> deleteSentChanges(int lastChangelogId) async {
     final db = await _db;
-    return await db.delete(
+    final deletedCount = await db.delete(
       tableName,
       where: '$idColumn <= ?',
       whereArgs: [lastChangelogId],
     );
+    final timestamp = DateTime.now().toIso8601String();
+    print('[$timestamp] ChangelogRepository: Deleted $deletedCount changelog entries with ID <= $lastChangelogId');
+    return deletedCount;
   }
 }
