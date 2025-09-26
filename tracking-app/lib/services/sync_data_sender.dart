@@ -21,6 +21,11 @@ class SyncDataSender {
 
   Future<void> sendNewestEntries(String? clientId) async {
     final prepared = await _createPreparedSync();
+    if (prepared.payload.timeEntries.isEmpty &&
+        prepared.payload.projects.isEmpty) {
+      AppLogger.i('No local changes to send - skipping', method: 'sync');
+      return;
+    }
     AppLogger.i(
         'About to send ${prepared.payload.timeEntries.length} time entries, ${prepared.payload.projects.length} projects. Max changelog ID: ${prepared.maxLocalChangelogIdIncluded}',
         method: 'sync');
