@@ -123,19 +123,39 @@ func (usecase *syncUsecase) processProjectUpdates(projects []model.Project, user
 		project := &projects[i]
 		err := usecase.projectRepository.UpdateProject(project, tx)
 		if err != nil {
-			return err
-		}
+			// If entity not found, try to add it instead
+			if errors.Is(err, repository.ErrEntityNotFound) {
+				err = usecase.projectRepository.AddProject(project, tx)
+				if err != nil {
+					return err
+				}
 
-		changelogEntry := &model.ChangelogEntry{
-			EntityType:      model.EntityTypeProject,
-			EntityID:        project.ID,
-			Operation:       model.OperationUpdated,
-			ChangedByUser:   userId,
-			ChangedByClient: clientId,
-		}
-		err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
-		if err != nil {
-			return err
+				changelogEntry := &model.ChangelogEntry{
+					EntityType:      model.EntityTypeProject,
+					EntityID:        project.ID,
+					Operation:       model.OperationCreated,
+					ChangedByUser:   userId,
+					ChangedByClient: clientId,
+				}
+				err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		} else {
+			changelogEntry := &model.ChangelogEntry{
+				EntityType:      model.EntityTypeProject,
+				EntityID:        project.ID,
+				Operation:       model.OperationUpdated,
+				ChangedByUser:   userId,
+				ChangedByClient: clientId,
+			}
+			err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -146,7 +166,16 @@ func (usecase *syncUsecase) processProjectDeletions(projects []model.Project, us
 		project := &projects[i]
 		err := usecase.projectRepository.DeleteProject(project, tx)
 		if err != nil {
-			return err
+			if errors.Is(err, repository.ErrEntityNotFound) {
+				slog.Warn("Project to be deleted not found, skipping",
+					"project_id", project.ID,
+					"user_id", userId,
+					"project_name", project.Name,
+					"client_id", clientId)
+				continue
+			} else {
+				return err
+			}
 		}
 
 		changelogEntry := &model.ChangelogEntry{

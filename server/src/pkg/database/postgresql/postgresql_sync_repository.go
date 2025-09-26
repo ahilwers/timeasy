@@ -578,12 +578,25 @@ func (repo *postgresqlSyncRepository) updateProject(tx *sql.Tx, project *model.P
 		deadline = nil
 	}
 
-	_, err := tx.Exec(
+	result, err := tx.Exec(
 		query,
 		project.ID, project.Name, project.UserId, project.TeamID, project.Color,
 		deadline, project.HourlyRate, project.TimeBudget, project.IsActive, project.Deleted,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return repository.ErrEntityNotFound
+	}
+
+	return nil
 }
 
 func (repo *postgresqlSyncRepository) deleteProject(tx *sql.Tx, project *model.Project) error {
@@ -592,10 +605,20 @@ func (repo *postgresqlSyncRepository) deleteProject(tx *sql.Tx, project *model.P
 		SET deleted = true
 		WHERE id = $1
 	`
-	_, err := tx.Exec(query, project.ID)
-
-	if err == nil {
-		project.Deleted = true
+	result, err := tx.Exec(query, project.ID)
+	if err != nil {
+		return err
 	}
-	return err
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return repository.ErrEntityNotFound
+	}
+
+	project.Deleted = true
+	return nil
 }
