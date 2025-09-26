@@ -287,7 +287,17 @@ func (usecase *syncUsecase) processTimeEntryDeletions(timeEntries []model.TimeEn
 		timeEntry := &timeEntries[i]
 		err := usecase.timeEntryRepository.DeleteTimeEntry(timeEntry, tx)
 		if err != nil {
-			return err
+			if errors.Is(err, repository.ErrEntityNotFound) {
+				slog.Warn("Time entry to be deleted not found, skipping",
+					"time_entry_id", timeEntry.ID,
+					"user_id", userId,
+					"project_id", timeEntry.ProjectId,
+					"description", timeEntry.Description,
+					"client_id", clientId)
+				continue
+			} else {
+				return err
+			}
 		}
 
 		changelogEntry := &model.ChangelogEntry{

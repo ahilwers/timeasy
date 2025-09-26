@@ -623,3 +623,131 @@ func Test_syncUsecase_CanFetchTimeEntriesWithinSpecificChangelogIdRange(t *testi
 	assert.Equal(t, 0, len(result.Updated))
 	assert.Equal(t, 0, len(result.Deleted))
 }
+
+func Test_syncUsecase_UpdateOfNonExistentEntryCreatesEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create a time entry that doesn't exist in the database (simulating a missed sync)
+	nonExistentEntryId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	entryToUpdate := model.TimeEntry{
+		ID:          nonExistentEntryId,
+		Description: "updated entry",
+		StartTime:   time.Now(),
+		EndTime:     time.Now().Add(1 * time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+
+	// Try to sync an update to this non-existent entry
+	syncData := model.SyncData{
+		TimeEntriesToBeUpdated: []model.TimeEntry{entryToUpdate},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify the entry was created (not updated)
+	createdEntry, err := usecaseTest.TimeEntryUsecase.GetTimeEntryById(nonExistentEntryId)
+	assert.Nil(t, err)
+	assert.NotNil(t, createdEntry)
+	assert.Equal(t, "updated entry", createdEntry.Description)
+	assert.Equal(t, userId, createdEntry.UserId)
+	assert.Equal(t, project.ID, createdEntry.ProjectId)
+}
+
+func Test_syncUsecase_DeletionOfNonExistentEntrySucceeds(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create a time entry that doesn't exist in the database (simulating a missed sync or race condition)
+	nonExistentEntryId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	entryToDelete := model.TimeEntry{
+		ID:          nonExistentEntryId,
+		Description: "entry to delete",
+		StartTime:   time.Now(),
+		EndTime:     time.Now().Add(1 * time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+
+	// Try to sync a deletion of this non-existent entry
+	syncData := model.SyncData{
+		TimeEntriesToBeDeleted: []model.TimeEntry{entryToDelete},
+	}
+
+	// This should succeed (not fail) even though the entry doesn't exist
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify the entry still doesn't exist (since it was never there to begin with)
+	deletedEntry, err := usecaseTest.TimeEntryUsecase.GetTimeEntryById(nonExistentEntryId)
+	assert.NotNil(t, err) // Should get an error because entry doesn't exist
+	assert.Nil(t, deletedEntry)
+}
+
+func Test_syncUsecase_MixedDeletionWithExistingAndNonExistentEntries(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create an actual time entry in the database
+	existingEntry := model.TimeEntry{
+		Description: "existing entry",
+		StartTime:   time.Now(),
+		EndTime:     time.Now().Add(1 * time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&existingEntry, userId, clientId)
+	assert.Nil(t, err)
+
+	// Create a non-existent entry
+	nonExistentEntryId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	nonExistentEntry := model.TimeEntry{
+		ID:          nonExistentEntryId,
+		Description: "non-existent entry",
+		StartTime:   time.Now(),
+		EndTime:     time.Now().Add(1 * time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+
+	// Try to delete both entries (one exists, one doesn't)
+	syncData := model.SyncData{
+		TimeEntriesToBeDeleted: []model.TimeEntry{existingEntry, nonExistentEntry},
+	}
+
+	// This should succeed overall, even with the non-existent entry
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify the existing entry was actually deleted
+	deletedEntry, err := usecaseTest.TimeEntryUsecase.GetTimeEntryById(existingEntry.ID)
+	assert.NotNil(t, err) // Should get an error because entry was deleted
+	assert.Nil(t, deletedEntry)
+
+	// Verify the non-existent entry still doesn't exist
+	stillNonExistent, err := usecaseTest.TimeEntryUsecase.GetTimeEntryById(nonExistentEntryId)
+	assert.NotNil(t, err) // Should get an error because entry never existed
+	assert.Nil(t, stillNonExistent)
+}
