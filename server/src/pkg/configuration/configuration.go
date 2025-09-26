@@ -21,6 +21,8 @@ type Configuration struct {
 	SyncRecentInterval  int // Minutes - sync interval for recently active projects
 	SyncDormantInterval int // Minutes - sync interval for dormant projects
 	SyncMaxConcurrent   int // Maximum concurrent sync operations
+	LokiEndpoint        string // Loki server endpoint for logging
+	LokiBearerToken     string // Bearer token for Loki authentication
 }
 
 func GetConfiguration() (Configuration, error) {
@@ -37,6 +39,8 @@ func GetConfiguration() (Configuration, error) {
 		syncRecentInterval  = fs.String("sync-recent-interval", "60", "Sync interval for recently active projects (minutes)")
 		syncDormantInterval = fs.String("sync-dormant-interval", "1440", "Sync interval for dormant projects (minutes)")
 		syncMaxConcurrent   = fs.String("sync-max-concurrent", "3", "Maximum concurrent sync operations")
+		lokiEndpoint        = fs.String("loki-endpoint", "", "Loki server endpoint for logging (e.g., https://loki.example.com/loki/api/v1/push)")
+		lokiBearerToken     = fs.String("loki-bearer-token", "", "Bearer token for Loki authentication")
 
 		_ = fs.String("config", "", "config file (optional)")
 	)
@@ -83,6 +87,9 @@ func GetConfiguration() (Configuration, error) {
 		return configuration, fmt.Errorf("invalid sync max concurrent: %w", err)
 	}
 	configuration.SyncMaxConcurrent = syncConcurrent
+
+	configuration.LokiEndpoint = *lokiEndpoint
+	configuration.LokiBearerToken = *lokiBearerToken
 
 	return configuration, nil
 }
