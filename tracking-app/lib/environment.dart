@@ -4,7 +4,7 @@ class Environment {
   static const String DEV_ENVIRONMENT = "dev";
 
   static const _ENVIRONMENT =
-      String.fromEnvironment("environment", defaultValue: DEV_ENVIRONMENT);
+      String.fromEnvironment("ENVIRONMENT", defaultValue: DEV_ENVIRONMENT);
 
   static late final apiBaseUrl = _getApiBaseUrl();
   static late final authUrl = _getAuthUrl();
@@ -29,6 +29,10 @@ class Environment {
       }
     }
     return _productionConfig["authUrl"];
+  }
+
+  static String getEnvironment() {
+    return _ENVIRONMENT;
   }
 
   static const Map<String, dynamic> _productionConfig = {

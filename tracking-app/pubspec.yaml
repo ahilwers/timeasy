@@ -46,6 +46,9 @@ dependencies:
   smooth_page_indicator: ^1.1.0
   time_picker_spinner_pop_up: ^2.0.0
   flutter_typeahead: ^5.2.0
+  logger: ^2.4.0
+  logging: ^1.2.0
+  logging_appenders: ^1.2.0
 
 dev_dependencies:
   flutter_test:

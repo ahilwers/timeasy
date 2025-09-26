@@ -48,3 +48,33 @@ Just place your icon in the path configured in the pubspec.yaml and run
 
 flutter pub run flutter_launcher_icons:main
 
+## Using OpenTelemetry for Logging
+
+### For Development (flutter run)
+
+flutter run --dart-define=LOKI_ENDPOINT=<your-loki-endpoint> --dart-define=LOKI_BEARER_TOKEN=<your-bearer-token>
+
+### For Production Builds
+
+#### Android APK:
+
+flutter build apk --dart-define=LOKI_ENDPOINT=<your-loki-endpoint> --dart-define=LOKI_BEARER_TOKEN=<your-bearer-token>
+
+#### iOS:
+
+flutter build ios --dart-define=LOKI_ENDPOINT=<your-loki-endpoint> --dart-define=LOKI_BEARER_TOKEN=<your-bearer-token>
+
+### Additional Environment Variables
+
+You can also optionally set these additional variables:
+- ENVIRONMENT (defaults to 'development')
+
+Example with all variables:
+flutter build apk \
+--dart-define=LOKI_ENDPOINT=https://your-loki-instance.com/loki/api/v1/push \
+--dart-define=LOKI_BEARER_TOKEN=your_bearer_token_here \
+--dart-define=ENVIRONMENT=production \
+
+The telemetry logger will only initialize Loki logging if LOKI_ENDPOINT is provided and non-empty. If not provided, it falls
+back to local console logging only.
+

@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:timeasy/models/change_type.dart';
 import 'package:timeasy/models/changelog_entry.dart';
 import 'package:timeasy/models/project_sync_data.dart';
@@ -10,6 +8,7 @@ import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
+import 'package:timeasy/utils/app_logger.dart';
 
 class SyncDataSender {
   final SynchronizationApiService _apiService;
@@ -21,45 +20,23 @@ class SyncDataSender {
   SyncDataSender(this._apiService) {}
 
   Future<void> sendNewestEntries(String? clientId) async {
-    final timestamp = DateTime.now().toIso8601String();
     final prepared = await _createPreparedSync();
-    final logMessage1 = '[$timestamp] SyncDataSender: About to send ${prepared.payload.timeEntries.length} time entries, ${prepared.payload.projects.length} projects. Max changelog ID: ${prepared.maxLocalChangelogIdIncluded}';
-    print(logMessage1);
-    _logToFile(logMessage1);
+    AppLogger.i(
+        'About to send ${prepared.payload.timeEntries.length} time entries, ${prepared.payload.projects.length} projects. Max changelog ID: ${prepared.maxLocalChangelogIdIncluded}',
+        method: 'sync');
 
     try {
       await _apiService.sendSyncData(prepared.payload, clientId);
-      final logMessage2 = '[$timestamp] SyncDataSender: Successfully sent data to server';
-      print(logMessage2);
-      _logToFile(logMessage2);
+      AppLogger.i('Successfully sent data to server', method: 'sync');
 
       await _saveLatestLocalChangelogId(prepared.maxLocalChangelogIdIncluded);
-      final logMessage3 = '[$timestamp] SyncDataSender: Updated latestLocalChangelogId to ${prepared.maxLocalChangelogIdIncluded} and deleted sent entries';
-      print(logMessage3);
-      _logToFile(logMessage3);
+      AppLogger.i(
+          'Updated latestLocalChangelogId to ${prepared.maxLocalChangelogIdIncluded} and deleted sent entries',
+          method: 'sync');
     } catch (e) {
-      final logMessage4 = '[$timestamp] SyncDataSender: FAILED to send data to server - ERROR: $e';
-      print(logMessage4);
-      _logToFile(logMessage4);
-      // Re-throw the exception so calling code knows it failed
+      AppLogger.e('FAILED to send data to server', error: e, method: 'sync');
       rethrow;
     }
-  }
-
-  Future<void> _logToFile(String message) async {
-    try {
-      // Simple file logging - you can access this file via device file explorer
-      final file = await _getLogFile();
-      await file.writeAsString('$message\n', mode: FileMode.append);
-    } catch (e) {
-      // Don't let logging errors break sync
-      print('Failed to write to log file: $e');
-    }
-  }
-
-  Future<File> _getLogFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/sync_debug.log');
   }
 
   // class moved to top-level below
@@ -216,5 +193,6 @@ class SyncDataSender {
 class _PreparedSyncPayload {
   final SyncData payload;
   final int? maxLocalChangelogIdIncluded;
-  _PreparedSyncPayload({required this.payload, required this.maxLocalChangelogIdIncluded});
+  _PreparedSyncPayload(
+      {required this.payload, required this.maxLocalChangelogIdIncluded});
 }

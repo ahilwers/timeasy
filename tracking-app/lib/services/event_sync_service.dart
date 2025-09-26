@@ -7,6 +7,7 @@ import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/services/synchronization_service.dart';
 import 'package:timeasy/tools/retrieve_changes_result.dart';
+import 'package:timeasy/utils/app_logger.dart';
 
 /// A service that handles synchronization triggered by specific events in the app.
 ///
@@ -90,19 +91,24 @@ class EventSyncService {
   /// It runs send-only synchronization in the background and doesn't block the UI.
   Future<void> sendDataToServer() async {
     if (!canSync()) {
-      print('EventSyncService: Cannot sync - isInitialized: $_isInitialized, isAuthenticated: ${_isInitialized ? isAuthenticated() : false}, isConnected: ${_isInitialized ? isConnected() : false}, isSyncing: ${_isInitialized ? isSyncing() : false}');
+      AppLogger.w(
+          'EventSyncService: Cannot sync - isInitialized: $_isInitialized, isAuthenticated: ${_isInitialized ? isAuthenticated() : false}, isConnected: ${_isInitialized ? isConnected() : false}, isSyncing: ${_isInitialized ? isSyncing() : false}');
       return;
     }
 
-    print('EventSyncService: Starting send-only sync to server');
+    AppLogger.i('EventSyncService: Starting send-only sync to server',
+        method: 'sync');
     _syncBloc!.add(SynchonizationStartEvent());
     try {
       await _syncService!.sendChangesToServer();
-      print('EventSyncService: Send-only sync completed successfully');
+      AppLogger.i('EventSyncService: Send-only sync completed successfully',
+          method: 'sync');
       // For send-only, we create a minimal success result since we didn't retrieve anything
-      _syncBloc!.add(SynchronizationSuccessEvent(RetrieveChangesResult(false, false)));
+      _syncBloc!.add(
+          SynchronizationSuccessEvent(RetrieveChangesResult(false, false)));
     } catch (e) {
-      print('EventSyncService: Send-only sync failed with error: $e');
+      AppLogger.e('EventSyncService: Send-only sync failed',
+          error: e, method: 'sync');
       _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
     }
   }
