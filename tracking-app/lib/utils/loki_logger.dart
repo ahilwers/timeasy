@@ -10,6 +10,7 @@ class LokiLogger {
   static LokiLogger? _instance;
   late Logger _lokiLogger;
   late pretty_logger.Logger _fallbackLogger;
+  static String? _globalClientId;
 
   // Compile-time configuration
   static const String _lokiEndpoint = String.fromEnvironment(
@@ -44,6 +45,12 @@ class LokiLogger {
     } catch (e) {
       print('[LokiLogger] Failed to get package info: $e');
     }
+  }
+
+  // Set the global client ID to be included in all logs
+  static void setClientId(String? clientId) {
+    _globalClientId = clientId;
+    print('[LokiLogger] Client ID updated to: $clientId');
   }
 
   void _initializeLokiLogger() {
@@ -160,16 +167,6 @@ class LokiLogger {
     }
   }
 
-  static Map<String, String> getConfiguration() {
-    return {
-      'lokiEndpoint': _lokiEndpoint,
-      'environment': Environment.getEnvironment(),
-      'serviceName': _serviceName,
-      'serviceVersion': _serviceVersion,
-      'lokiEnabled': instance._isLokiEnabled.toString(),
-    };
-  }
-
   void _sendToLokiDirect(Level logLevel, String message, dynamic error,
       StackTrace? stackTrace, String method) {
     if (_lokiEndpoint.isEmpty || _lokiBearerToken.isEmpty) {
@@ -195,11 +192,13 @@ class LokiLogger {
             "level": level,
             "version": _serviceVersion,
             if (method.isNotEmpty) "method": method,
+            if (_globalClientId != null) "client_id": _globalClientId!,
           },
           "values": [
             [
               "${DateTime.now().microsecondsSinceEpoch * 1000}", // Nanosecond timestamp
               jsonEncode({
+                "client_id": _globalClientId ?? "not_set",
                 "msg": message,
                 "logger": _serviceName,
                 if (error != null) "error": error.toString(),

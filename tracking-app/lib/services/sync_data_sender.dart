@@ -23,7 +23,7 @@ class SyncDataSender {
     final prepared = await _createPreparedSync();
     if (prepared.payload.timeEntries.isEmpty &&
         prepared.payload.projects.isEmpty) {
-      AppLogger.i('No local changes to send - skipping', method: 'sync');
+      AppLogger.d('No local changes to send - skipping', method: 'sync');
       return;
     }
     AppLogger.i(

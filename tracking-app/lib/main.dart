@@ -16,6 +16,7 @@ import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
 import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/services/internet_connection_service.dart';
@@ -32,6 +33,15 @@ void main() async {
 
   // Initialize logger version from pubspec.yaml
   await LokiLogger.initializeVersion();
+
+  // Initialize client ID for logging
+  try {
+    final settingsRepository = SettingsRepository();
+    final settings = await settingsRepository.getSettings();
+    LokiLogger.setClientId(settings.clientId);
+  } catch (e) {
+    AppLogger.w('Failed to initialize client ID for logging', error: e);
+  }
 
   AppLogger.i('App starting up');
 
