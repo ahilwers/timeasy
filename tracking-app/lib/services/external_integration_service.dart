@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../models/external_issue.dart';
 
 class ExternalIntegrationService {
-  static final ExternalIntegrationService _instance = ExternalIntegrationService._internal();
+  static final ExternalIntegrationService _instance =
+      ExternalIntegrationService._internal();
   factory ExternalIntegrationService() => _instance;
   ExternalIntegrationService._internal();
 
@@ -17,22 +20,21 @@ class ExternalIntegrationService {
   }
 
   Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer $_authToken',
-  };
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_authToken',
+      };
 
   /// Get description suggestions for autocomplete
   Future<DescriptionSuggestionsResponse> getDescriptionSuggestions(
-    String projectId, 
-    String query, 
-    {int limit = 10}
-  ) async {
+      String projectId, String query,
+      {int limit = 10}) async {
     if (_baseUrl == null || _authToken == null) {
       throw Exception('Service not initialized');
     }
 
-    final uri = Uri.parse('$_baseUrl/api/v1/projects/$projectId/descriptions/suggest')
-        .replace(queryParameters: {
+    final uri =
+        Uri.parse('$_baseUrl/api/v1/projects/$projectId/descriptions/suggest')
+            .replace(queryParameters: {
       'q': query,
       'limit': limit.toString(),
     });
@@ -48,7 +50,8 @@ class ExternalIntegrationService {
   }
 
   /// Resolve an issue reference
-  Future<IssueResolveResult> resolveIssue(String projectId, String input) async {
+  Future<IssueResolveResult> resolveIssue(
+      String projectId, String input) async {
     if (_baseUrl == null || _authToken == null) {
       throw Exception('Service not initialized');
     }
@@ -72,12 +75,13 @@ class ExternalIntegrationService {
       throw Exception('Service not initialized');
     }
 
-    final uri = Uri.parse('$_baseUrl/api/v1/external/resolve-pending');
+    final uri = Uri.parse('$_baseUrl/external/resolve-pending');
 
     final response = await http.post(uri, headers: _headers);
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to resolve pending references: ${response.statusCode}');
+      throw Exception(
+          'Failed to resolve pending references: ${response.statusCode}');
     }
   }
 
@@ -107,7 +111,8 @@ class ExternalIntegrationService {
   }
 
   /// Get cached description suggestions for offline mode
-  Future<List<String>> getCachedDescriptionSuggestions(String projectId, String query) async {
+  Future<List<String>> getCachedDescriptionSuggestions(
+      String projectId, String query) async {
     // This would implement local caching logic
     // For now, return empty list when offline
     return [];
@@ -123,7 +128,8 @@ class IssuePattern {
 
 /// Offline issue resolution service
 class OfflineIssueResolutionService {
-  static final OfflineIssueResolutionService _instance = OfflineIssueResolutionService._internal();
+  static final OfflineIssueResolutionService _instance =
+      OfflineIssueResolutionService._internal();
   factory OfflineIssueResolutionService() => _instance;
   OfflineIssueResolutionService._internal();
 
