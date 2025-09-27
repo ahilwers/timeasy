@@ -3,8 +3,10 @@ package configuration
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/peterbourgon/ff"
 )
@@ -17,12 +19,13 @@ type Configuration struct {
 	DbPassword          string
 	KeycloakHost        string
 	KeycloakRealm       string
-	SyncActiveInterval  int // Minutes - sync interval for active projects
-	SyncRecentInterval  int // Minutes - sync interval for recently active projects
-	SyncDormantInterval int // Minutes - sync interval for dormant projects
-	SyncMaxConcurrent   int // Maximum concurrent sync operations
+	SyncActiveInterval  int    // Minutes - sync interval for active projects
+	SyncRecentInterval  int    // Minutes - sync interval for recently active projects
+	SyncDormantInterval int    // Minutes - sync interval for dormant projects
+	SyncMaxConcurrent   int    // Maximum concurrent sync operations
 	LokiEndpoint        string // Loki server endpoint for logging
 	LokiBearerToken     string // Bearer token for Loki authentication
+	LogLevel            string // Log level: DEBUG, INFO, WARN, ERROR
 }
 
 func GetConfiguration() (Configuration, error) {
@@ -41,6 +44,7 @@ func GetConfiguration() (Configuration, error) {
 		syncMaxConcurrent   = fs.String("sync-max-concurrent", "3", "Maximum concurrent sync operations")
 		lokiEndpoint        = fs.String("loki-endpoint", "", "Loki server endpoint for logging (e.g., https://loki.example.com/loki/api/v1/push)")
 		lokiBearerToken     = fs.String("loki-bearer-token", "", "Bearer token for Loki authentication")
+		logLevel            = fs.String("log-level", "INFO", "Log level: DEBUG, INFO, WARN, ERROR")
 
 		_ = fs.String("config", "", "config file (optional)")
 	)
@@ -90,6 +94,22 @@ func GetConfiguration() (Configuration, error) {
 
 	configuration.LokiEndpoint = *lokiEndpoint
 	configuration.LokiBearerToken = *lokiBearerToken
+	configuration.LogLevel = *logLevel
 
 	return configuration, nil
+}
+
+func (c *Configuration) ParseLogLevel() slog.Level {
+	switch strings.ToUpper(c.LogLevel) {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN", "WARNING":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }

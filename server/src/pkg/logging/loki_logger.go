@@ -27,6 +27,7 @@ type LokiHandler struct {
 	wg          sync.WaitGroup
 	ctx         context.Context
 	cancel      context.CancelFunc
+	level       slog.Level
 }
 
 type LokiLogEntry struct {
@@ -54,7 +55,8 @@ func NewLokiLogger(config configuration.Configuration, fallbackHandler slog.Hand
 	if config.LokiEndpoint != "" && config.LokiBearerToken != "" {
 		slog.Info("Initializing Loki logging", "endpoint", config.LokiEndpoint)
 
-		lokiHandler, err := NewLokiHandler(config.LokiEndpoint, config.LokiBearerToken)
+		logLevel := config.ParseLogLevel()
+		lokiHandler, err := NewLokiHandler(config.LokiEndpoint, config.LokiBearerToken, logLevel)
 		if err != nil {
 			slog.Error("Failed to create Loki handler", "error", err)
 			return nil, err
@@ -83,7 +85,7 @@ func NewLokiLogger(config configuration.Configuration, fallbackHandler slog.Hand
 	}
 }
 
-func NewLokiHandler(endpoint, bearerToken string) (*LokiHandler, error) {
+func NewLokiHandler(endpoint, bearerToken string, level slog.Level) (*LokiHandler, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	handler := &LokiHandler{
@@ -95,6 +97,7 @@ func NewLokiHandler(endpoint, bearerToken string) (*LokiHandler, error) {
 		buffer: make(chan LokiLogEntry, 1000),
 		ctx:    ctx,
 		cancel: cancel,
+		level:  level,
 	}
 
 	// Start background worker to send logs
@@ -133,7 +136,7 @@ func (h *LokiHandler) Shutdown(ctx context.Context) error {
 }
 
 func (h *LokiHandler) Enabled(_ context.Context, level slog.Level) bool {
-	return true
+	return level >= h.level
 }
 
 func (h *LokiHandler) Handle(_ context.Context, record slog.Record) error {

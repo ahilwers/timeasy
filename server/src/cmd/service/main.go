@@ -23,18 +23,19 @@ import (
 var databaseService database.DatabaseService
 
 func main() {
-	// Setup base structured logging with colorful console output
-	colorfulHandler := rest.NewColorfulHandler(os.Stdout, &slog.HandlerOptions{
-		Level:     slog.LevelInfo,
-		AddSource: false, // Disable source info for cleaner console output
-	})
-	slog.SetDefault(slog.New(colorfulHandler)) // will be overriden by Loki logger later on
-
 	configuration, err := configuration.GetConfiguration()
 	if err != nil {
 		slog.Error("Failed to get configuration", "error", err)
 		panic(err)
 	}
+
+	// Setup base structured logging with colorful console output using configured log level
+	logLevel := configuration.ParseLogLevel()
+	colorfulHandler := rest.NewColorfulHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     logLevel,
+		AddSource: false, // Disable source info for cleaner console output
+	})
+	slog.SetDefault(slog.New(colorfulHandler)) // will be overriden by Loki logger later on
 
 	// Setup Loki logging with fallback to colorful console handler
 	lokiLogger, err := logging.NewLokiLogger(configuration, colorfulHandler)
@@ -55,6 +56,8 @@ func main() {
 			slog.Error("Failed to shutdown Loki logger", "error", err)
 		}
 	}()
+
+	slog.Debug("Debug logging enabled")
 
 	slog.Info("Connecting to database",
 		"host", configuration.DbHost,
