@@ -83,8 +83,6 @@ class LokiLogger {
     );
   }
 
-  bool get _isLokiEnabled => _lokiEndpoint.isNotEmpty;
-
   static void d(String message,
       {dynamic error, StackTrace? stackTrace, String method = ''}) {
     instance._logDebug(message, error, stackTrace, method);
