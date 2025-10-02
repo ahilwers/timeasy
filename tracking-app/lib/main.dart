@@ -16,15 +16,35 @@ import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
 import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/services/internet_connection_service.dart';
+import 'package:timeasy/utils/app_logger.dart';
+import 'package:timeasy/utils/loki_logger.dart';
 import 'package:timeasy/views/project/project_list_view.dart';
 import 'package:timeasy/views/statistics/weekly_view.dart';
 import 'package:timeasy/views/theme.dart';
 import 'package:timeasy/views/timeentry/time_entry_list_view.dart';
 
-void main() {
+void main() async {
+  // Ensure Flutter bindings are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize logger version from pubspec.yaml
+  await LokiLogger.initializeVersion();
+
+  // Initialize client ID for logging
+  try {
+    final settingsRepository = SettingsRepository();
+    final settings = await settingsRepository.getSettings();
+    LokiLogger.setClientId(settings.clientId);
+  } catch (e) {
+    AppLogger.w('Failed to initialize client ID for logging', error: e);
+  }
+
+  AppLogger.i('App starting up');
+
   runApp(
     MultiBlocProvider(
       providers: [
@@ -38,7 +58,8 @@ void main() {
                 BlocProvider.of<SynchronizationBloc>(context, listen: false);
             final authBloc =
                 BlocProvider.of<AuthenticationBloc>(context, listen: false);
-            return BackgroundSyncService("", syncBloc, authenticationBloc: authBloc);
+            return BackgroundSyncService("", syncBloc,
+                authenticationBloc: authBloc);
           },
         ),
       ],
@@ -49,8 +70,9 @@ void main() {
 
 class MyApp extends StatelessWidget {
   // Global navigator key for accessing context anywhere
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -92,7 +114,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     super.initState();
     initializeDateFormatting();
     WidgetsBinding.instance.addObserver(this);
-    
+
     // Initialize the EventSyncService with the available blocs
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -104,7 +126,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
         );
       }
     });
-    
+
     _internetConnectionService = InternetConnectionService(
       onConnectionChanged: (bool hasInternet) {
         _setConnectionState(hasInternet);
@@ -145,12 +167,11 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     // Monitor changes to the selected project
     Future.delayed(Duration.zero, () {
       context.read<SelectedProjectBloc>().stream.listen((state) {
-        if (state is SelectedProjectSet &&
-            state.project != null) {
+        if (state is SelectedProjectSet && state.project != null) {
           setState(() {
             _setCurrentProject(state.project!);
             _hasProjects = true;
-            
+
             // Reload projects to ensure we have the latest data
             _loadProjects();
           });
@@ -286,11 +307,13 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     _projectRepository.getAllProjects().then((List<Project> projectsFromDb) {
       setState(() {
         _hasProjects = projectsFromDb.isNotEmpty;
-        
+
         // If we have projects but no current project is set, set the first one
-        if (_hasProjects && _currentProject == null && projectsFromDb.isNotEmpty) {
+        if (_hasProjects &&
+            _currentProject == null &&
+            projectsFromDb.isNotEmpty) {
           _setCurrentProject(projectsFromDb[0]);
-          
+
           // Update the selected project in the bloc
           context.read<SelectedProjectBloc>().add(
                 SetSelectedProjectEvent(projectsFromDb[0]),

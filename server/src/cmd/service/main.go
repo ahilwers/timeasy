@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/external"
+	"timeasy-server/pkg/logging"
 	"timeasy-server/pkg/sync"
 	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
@@ -21,18 +23,41 @@ import (
 var databaseService database.DatabaseService
 
 func main() {
-	// Setup structured logging with colorful console output
-	logger := slog.New(rest.NewColorfulHandler(os.Stdout, &slog.HandlerOptions{
-		Level:     slog.LevelInfo,
-		AddSource: false, // Disable source info for cleaner console output
-	}))
-	slog.SetDefault(logger)
-
 	configuration, err := configuration.GetConfiguration()
 	if err != nil {
 		slog.Error("Failed to get configuration", "error", err)
 		panic(err)
 	}
+
+	// Setup base structured logging with colorful console output using configured log level
+	logLevel := configuration.ParseLogLevel()
+	colorfulHandler := rest.NewColorfulHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     logLevel,
+		AddSource: false, // Disable source info for cleaner console output
+	})
+	slog.SetDefault(slog.New(colorfulHandler)) // will be overriden by Loki logger later on
+
+	// Setup Loki logging with fallback to colorful console handler
+	lokiLogger, err := logging.NewLokiLogger(configuration, colorfulHandler)
+	if err != nil {
+		slog.Error("Failed to initialize Loki logger", "error", err)
+		panic(err)
+	}
+
+	// Set up the combined logger as the default
+	logger := slog.New(lokiLogger.Handler())
+	slog.SetDefault(logger)
+
+	// Ensure graceful shutdown of Loki logger
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := lokiLogger.Shutdown(ctx); err != nil {
+			slog.Error("Failed to shutdown Loki logger", "error", err)
+		}
+	}()
+
+	slog.Debug("Debug logging enabled")
 
 	slog.Info("Connecting to database",
 		"host", configuration.DbHost,

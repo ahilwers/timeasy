@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:timeasy/dataaccess/database.dart';
 import 'package:timeasy/models/changelog_entry.dart';
+import 'package:timeasy/utils/app_logger.dart';
 
 class ChangelogRepository {
   static final String tableName = "Changelog";
@@ -36,6 +37,8 @@ class ChangelogRepository {
       whereArgs.add(lastChangelogId);
     }
 
+    AppLogger.d('ChangelogRepository: Getting unsent changes with lastChangelogId: $lastChangelogId, whereClause: $whereClause');
+
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
       where: whereClause,
@@ -43,17 +46,22 @@ class ChangelogRepository {
       orderBy: '$idColumn ASC',
     );
 
-    return List.generate(maps.length, (i) {
+    final entries = List.generate(maps.length, (i) {
       return ChangelogEntry.fromMap(maps[i]);
     });
+
+    AppLogger.d('ChangelogRepository: Found ${entries.length} unsent changes: ${entries.map((e) => 'ID:${e.changelogId} ${e.entityType}:${e.entityId} ${e.changeType}').join(', ')}');
+    return entries;
   }
 
   Future<int> deleteSentChanges(int lastChangelogId) async {
     final db = await _db;
-    return await db.delete(
+    final deletedCount = await db.delete(
       tableName,
       where: '$idColumn <= ?',
       whereArgs: [lastChangelogId],
     );
+    AppLogger.d('ChangelogRepository: Deleted $deletedCount changelog entries with ID <= $lastChangelogId');
+    return deletedCount;
   }
 }

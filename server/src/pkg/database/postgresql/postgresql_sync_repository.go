@@ -501,8 +501,21 @@ func (repo *postgresqlSyncRepository) updateTimeEntry(tx *sql.Tx, entry *model.T
 		SET user_id = $2, project_id = $3, start_time = $4, end_time = $5, description = $6, deleted = $7
 		WHERE id = $1
 	`
-	_, err := tx.Exec(query, entry.ID, entry.UserId, entry.ProjectId, entry.StartTime, entry.EndTime, entry.Description, entry.Deleted)
-	return err
+	result, err := tx.Exec(query, entry.ID, entry.UserId, entry.ProjectId, entry.StartTime, entry.EndTime, entry.Description, entry.Deleted)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return repository.ErrEntityNotFound
+	}
+
+	return nil
 }
 
 func (repo *postgresqlSyncRepository) deleteTimeEntry(tx *sql.Tx, entry *model.TimeEntry) error {
@@ -511,12 +524,22 @@ func (repo *postgresqlSyncRepository) deleteTimeEntry(tx *sql.Tx, entry *model.T
 		SET deleted = true
 		WHERE id = $1
 	`
-	_, err := tx.Exec(query, entry.ID)
-
-	if err == nil {
-		entry.Deleted = true
+	result, err := tx.Exec(query, entry.ID)
+	if err != nil {
+		return err
 	}
-	return err
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return repository.ErrEntityNotFound
+	}
+
+	entry.Deleted = true
+	return nil
 }
 
 func (repo *postgresqlSyncRepository) createProject(tx *sql.Tx, project *model.Project) error {
@@ -555,12 +578,25 @@ func (repo *postgresqlSyncRepository) updateProject(tx *sql.Tx, project *model.P
 		deadline = nil
 	}
 
-	_, err := tx.Exec(
+	result, err := tx.Exec(
 		query,
 		project.ID, project.Name, project.UserId, project.TeamID, project.Color,
 		deadline, project.HourlyRate, project.TimeBudget, project.IsActive, project.Deleted,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return repository.ErrEntityNotFound
+	}
+
+	return nil
 }
 
 func (repo *postgresqlSyncRepository) deleteProject(tx *sql.Tx, project *model.Project) error {
@@ -569,10 +605,20 @@ func (repo *postgresqlSyncRepository) deleteProject(tx *sql.Tx, project *model.P
 		SET deleted = true
 		WHERE id = $1
 	`
-	_, err := tx.Exec(query, project.ID)
-
-	if err == nil {
-		project.Deleted = true
+	result, err := tx.Exec(query, project.ID)
+	if err != nil {
+		return err
 	}
-	return err
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return repository.ErrEntityNotFound
+	}
+
+	project.Deleted = true
+	return nil
 }

@@ -8,6 +8,7 @@ import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/synchronization_api_service.dart';
+import 'package:timeasy/utils/app_logger.dart';
 
 class SyncDataSender {
   final SynchronizationApiService _apiService;
@@ -20,8 +21,27 @@ class SyncDataSender {
 
   Future<void> sendNewestEntries(String? clientId) async {
     final prepared = await _createPreparedSync();
-    await _apiService.sendSyncData(prepared.payload, clientId);
-    await _saveLatestLocalChangelogId(prepared.maxLocalChangelogIdIncluded);
+    if (prepared.payload.timeEntries.isEmpty &&
+        prepared.payload.projects.isEmpty) {
+      AppLogger.d('No local changes to send - skipping', method: 'sync');
+      return;
+    }
+    AppLogger.i(
+        'About to send ${prepared.payload.timeEntries.length} time entries, ${prepared.payload.projects.length} projects. Max changelog ID: ${prepared.maxLocalChangelogIdIncluded}',
+        method: 'sync');
+
+    try {
+      await _apiService.sendSyncData(prepared.payload, clientId);
+      AppLogger.i('Successfully sent data to server', method: 'sync');
+
+      await _saveLatestLocalChangelogId(prepared.maxLocalChangelogIdIncluded);
+      AppLogger.i(
+          'Updated latestLocalChangelogId to ${prepared.maxLocalChangelogIdIncluded} and deleted sent entries',
+          method: 'sync');
+    } catch (e) {
+      AppLogger.e('FAILED to send data to server', error: e, method: 'sync');
+      rethrow;
+    }
   }
 
   // class moved to top-level below
@@ -178,5 +198,6 @@ class SyncDataSender {
 class _PreparedSyncPayload {
   final SyncData payload;
   final int? maxLocalChangelogIdIncluded;
-  _PreparedSyncPayload({required this.payload, required this.maxLocalChangelogIdIncluded});
+  _PreparedSyncPayload(
+      {required this.payload, required this.maxLocalChangelogIdIncluded});
 }

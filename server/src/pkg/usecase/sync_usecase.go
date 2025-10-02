@@ -96,6 +96,7 @@ func (usecase *syncUsecase) processProjects(data model.SyncData, userId uuid.UUI
 }
 
 func (usecase *syncUsecase) processProjectCreations(projects []model.Project, userId uuid.UUID, clientId string, tx model.Transaction) error {
+	slog.Debug("Processing project creations", "count", len(projects), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range projects {
 		project := &projects[i]
 		err := usecase.projectRepository.AddProject(project, tx)
@@ -119,34 +120,74 @@ func (usecase *syncUsecase) processProjectCreations(projects []model.Project, us
 }
 
 func (usecase *syncUsecase) processProjectUpdates(projects []model.Project, userId uuid.UUID, clientId string, tx model.Transaction) error {
+	slog.Debug("Processing project updates", "count", len(projects), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range projects {
 		project := &projects[i]
 		err := usecase.projectRepository.UpdateProject(project, tx)
 		if err != nil {
-			return err
-		}
+			// If entity not found, try to add it instead
+			if errors.Is(err, repository.ErrEntityNotFound) {
+				slog.Warn("Project to be updated not found, adding as new",
+					"project_id", project.ID,
+					"user_id", userId,
+					"project_name", project.Name,
+					"client_id", clientId,
+					"method", "sync",
+				)
+				err = usecase.projectRepository.AddProject(project, tx)
+				if err != nil {
+					return err
+				}
 
-		changelogEntry := &model.ChangelogEntry{
-			EntityType:      model.EntityTypeProject,
-			EntityID:        project.ID,
-			Operation:       model.OperationUpdated,
-			ChangedByUser:   userId,
-			ChangedByClient: clientId,
-		}
-		err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
-		if err != nil {
-			return err
+				changelogEntry := &model.ChangelogEntry{
+					EntityType:      model.EntityTypeProject,
+					EntityID:        project.ID,
+					Operation:       model.OperationCreated,
+					ChangedByUser:   userId,
+					ChangedByClient: clientId,
+				}
+				err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		} else {
+			changelogEntry := &model.ChangelogEntry{
+				EntityType:      model.EntityTypeProject,
+				EntityID:        project.ID,
+				Operation:       model.OperationUpdated,
+				ChangedByUser:   userId,
+				ChangedByClient: clientId,
+			}
+			err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
 func (usecase *syncUsecase) processProjectDeletions(projects []model.Project, userId uuid.UUID, clientId string, tx model.Transaction) error {
+	slog.Debug("Processing project deletions", "count", len(projects), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range projects {
 		project := &projects[i]
 		err := usecase.projectRepository.DeleteProject(project, tx)
 		if err != nil {
-			return err
+			if errors.Is(err, repository.ErrEntityNotFound) {
+				slog.Warn("Project to be deleted not found, skipping",
+					"project_id", project.ID,
+					"user_id", userId,
+					"project_name", project.Name,
+					"client_id", clientId,
+					"method", "sync",
+				)
+				continue
+			} else {
+				return err
+			}
 		}
 
 		changelogEntry := &model.ChangelogEntry{
@@ -181,6 +222,7 @@ func (usecase *syncUsecase) processTimeEntries(data model.SyncData, userId uuid.
 }
 
 func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
+	slog.Debug("Processing time entry creations", "count", len(timeEntries), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range timeEntries {
 		timeEntry := &timeEntries[i]
 
@@ -226,6 +268,7 @@ func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEn
 }
 
 func (usecase *syncUsecase) processTimeEntryUpdates(timeEntries []model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
+	slog.Debug("Processing time entry updates", "count", len(timeEntries), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range timeEntries {
 		timeEntry := &timeEntries[i]
 
@@ -246,6 +289,14 @@ func (usecase *syncUsecase) processTimeEntryUpdates(timeEntries []model.TimeEntr
 		if err != nil {
 			// If entity not found, try to add it instead
 			if errors.Is(err, repository.ErrEntityNotFound) {
+				slog.Warn("Time entry to be updated not found, adding as new",
+					"time_entry_id", timeEntry.ID,
+					"user_id", userId,
+					"project_id", timeEntry.ProjectId,
+					"description", timeEntry.Description,
+					"client_id", clientId,
+					"method", "sync",
+				)
 				err = usecase.timeEntryRepository.AddTimeEntry(timeEntry, tx)
 				if err != nil {
 					return err
@@ -283,11 +334,24 @@ func (usecase *syncUsecase) processTimeEntryUpdates(timeEntries []model.TimeEntr
 }
 
 func (usecase *syncUsecase) processTimeEntryDeletions(timeEntries []model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
+	slog.Debug("Processing time entry deletions", "count", len(timeEntries), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range timeEntries {
 		timeEntry := &timeEntries[i]
 		err := usecase.timeEntryRepository.DeleteTimeEntry(timeEntry, tx)
 		if err != nil {
-			return err
+			if errors.Is(err, repository.ErrEntityNotFound) {
+				slog.Warn("Time entry to be deleted not found, skipping",
+					"time_entry_id", timeEntry.ID,
+					"user_id", userId,
+					"project_id", timeEntry.ProjectId,
+					"description", timeEntry.Description,
+					"client_id", clientId,
+					"method", "sync",
+				)
+				continue
+			} else {
+				return err
+			}
 		}
 
 		changelogEntry := &model.ChangelogEntry{
@@ -341,6 +405,7 @@ func (usecase *syncUsecase) processIssueDetection(ctx context.Context, timeEntry
 // mergeOpenTimeEntriesIfNeeded checks if there are existing open time entries for the same project
 // and merges them if needed, using the earlier start time and the ID from the incoming entry
 func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.TimeEntry, userId uuid.UUID, clientId string, tx model.Transaction) error {
+	slog.Debug("Merging open time entries if needed", "time_entry_id", newTimeEntry.ID, "user_id", userId, "project_id", newTimeEntry.ProjectId, "client_id", clientId, "method", "sync")
 	// Find existing open time entries for this project
 	existingOpenEntries, getOpenErr := usecase.timeEntryRepository.GetOpenTimeEntriesForProject(userId, newTimeEntry.ProjectId, tx)
 	if getOpenErr != nil {
@@ -364,6 +429,8 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 		return usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
 	}
 
+	slog.Debug("Found existing open time entries to merge", "existing_count", len(existingOpenEntries), "time_entry_id", newTimeEntry.ID, "user_id", userId, "project_id", newTimeEntry.ProjectId, "client_id", clientId, "method", "sync")
+
 	// Merge logic: use the most recent entry (latest start time) to avoid resurrecting old entries
 	latestStartTime := newTimeEntry.StartTime
 	var entryToKeep *model.TimeEntry = newTimeEntry
@@ -374,6 +441,7 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 			// Use the existing entry if it's more recent
 			latestStartTime = existingEntry.StartTime
 			entryToKeep = &existingEntry
+			slog.Debug("Choosing existing entry to keep during merge", "kept_time_entry_id", entryToKeep.ID, "user_id", userId, "project_id", newTimeEntry.ProjectId, "client_id", clientId, "method", "sync")
 			// Move the new entry to the delete list instead
 			entriesToDelete = []model.TimeEntry{*newTimeEntry}
 			// Add all other existing entries to delete list
@@ -423,6 +491,7 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 
 	// Delete the existing open entries
 	for _, entryToDelete := range entriesToDelete {
+		slog.Debug("Deleting duplicate open time entry during merge", "deleted_time_entry_id", entryToDelete.ID, "user_id", userId, "project_id", newTimeEntry.ProjectId, "client_id", clientId, "method", "sync")
 		err := usecase.timeEntryRepository.DeleteTimeEntry(&entryToDelete, tx)
 		if err != nil {
 			return err
@@ -453,10 +522,12 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 	var changelogOperation model.Operation
 	var err error
 	if isKeepingExisting {
+		slog.Debug("Updating existing time entry during merge", "kept_time_entry_id", entryToKeep.ID, "user_id", userId, "project_id", newTimeEntry.ProjectId, "client_id", clientId, "method", "sync")
 		// Update the existing entry with merged data
 		err = usecase.timeEntryRepository.UpdateTimeEntry(entryToKeep, tx)
 		changelogOperation = model.OperationUpdated
 	} else {
+		slog.Debug("Adding new time entry during merge", "kept_time_entry_id", entryToKeep.ID, "user_id", userId, "project_id", newTimeEntry.ProjectId, "client_id", clientId, "method", "sync")
 		// Add the new entry
 		err = usecase.timeEntryRepository.AddTimeEntry(entryToKeep, tx)
 		changelogOperation = model.OperationCreated

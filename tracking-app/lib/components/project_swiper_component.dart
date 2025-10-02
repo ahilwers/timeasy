@@ -95,7 +95,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       if (_currentOpenTimeEntry!.description != description) {
         _currentOpenTimeEntry!.description = description;
         await _timeEntryRepository.updateTimeEntry(_currentOpenTimeEntry!);
-        EventSyncService().sendDataToServer();
+        // Try to sync in background - don't block local functionality
+        if (EventSyncService().isInitialized() && EventSyncService().canSync()) {
+          EventSyncService().sendDataToServer();
+        }
       }
     }
   }
@@ -291,10 +294,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       _buttonAnimationController.reverse();
     });
 
-    // Try to sync in background - don't block local functionality
-    if (EventSyncService().isInitialized() && EventSyncService().canSync()) {
-      EventSyncService().sendDataToServer();
-    }
+    EventSyncService().sendDataToServer();
   }
 
   void _toggleState() {

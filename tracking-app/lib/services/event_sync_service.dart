@@ -6,6 +6,8 @@ import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/services/synchronization_service.dart';
+import 'package:timeasy/tools/retrieve_changes_result.dart';
+import 'package:timeasy/utils/app_logger.dart';
 
 /// A service that handles synchronization triggered by specific events in the app.
 ///
@@ -86,15 +88,27 @@ class EventSyncService {
   /// Sends the changed local data to the server if the user is authenticated and has internet connection.
   /// This method is designed to be called when data is changed and a manual synchronization
   /// needs to be triggered.
-  /// It runs synchronization in the background and doesn't block the UI.
+  /// It runs send-only synchronization in the background and doesn't block the UI.
   Future<void> sendDataToServer() async {
     if (!canSync()) {
+      AppLogger.w(
+          'EventSyncService: Cannot sync - isInitialized: $_isInitialized, isAuthenticated: ${_isInitialized ? isAuthenticated() : false}, isConnected: ${_isInitialized ? isConnected() : false}, isSyncing: ${_isInitialized ? isSyncing() : false}');
       return;
     }
+
+    AppLogger.i('EventSyncService: Starting send-only sync to server',
+        method: 'sync');
+    _syncBloc!.add(SynchonizationStartEvent());
     try {
-      // Note: sendChangesToServer is not needed as synchronize() handles both send and receive
-      await _syncService!.synchronize();
+      await _syncService!.sendChangesToServer();
+      AppLogger.i('EventSyncService: Send-only sync completed successfully',
+          method: 'sync');
+      // For send-only, we create a minimal success result since we didn't retrieve anything
+      _syncBloc!.add(
+          SynchronizationSuccessEvent(RetrieveChangesResult(false, false)));
     } catch (e) {
+      AppLogger.e('EventSyncService: Send-only sync failed',
+          error: e, method: 'sync');
       _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
     }
   }
