@@ -160,7 +160,7 @@ func Test_syncUsecase_MergesDuplicateOpenTimeEntries(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	
+
 	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
 	assert.Nil(t, err)
 	err = usecaseTest.TimeEntryRepository.AddTimeEntry(&existingOpenEntry, tx)
@@ -172,7 +172,7 @@ func Test_syncUsecase_MergesDuplicateOpenTimeEntries(t *testing.T) {
 	newOpenEntry := model.TimeEntry{
 		ID:          uuid.Must(uuid.NewV4()),
 		Description: "new open entry",
-		StartTime:   laterTime, // Later time
+		StartTime:   laterTime,   // Later time
 		EndTime:     time.Time{}, // Zero time means open
 		UserId:      userId,
 		ProjectId:   project.ID,
@@ -204,16 +204,16 @@ func Test_syncUsecase_MergesDuplicateOpenTimeEntries(t *testing.T) {
 	// The existing entry should be marked as deleted, and the new merged entry should be created
 	result, err := usecaseTest.SyncUsecase.GetChangedTimeEntries(userId, 1, 0, "")
 	assert.Nil(t, err)
-	
+
 	// Should have one created entry (the merged one) and one deleted entry (the existing one)
 	assert.Equal(t, 1, len(result.Created), "Should have one created entry")
 	assert.Equal(t, 1, len(result.Deleted), "Should have one deleted entry")
-	
+
 	// The created entry should be the merged one
 	assert.Equal(t, newOpenEntry.ID, result.Created[0].ID)
 	assert.Contains(t, result.Created[0].Description, "existing open entry")
 	assert.Contains(t, result.Created[0].Description, "new open entry")
-	
+
 	// The deleted entry should be the existing one
 	assert.Equal(t, existingOpenEntry.ID, result.Deleted[0].ID)
 }
@@ -264,20 +264,20 @@ func Test_syncUsecase_MergesMultipleOpenTimeEntries(t *testing.T) {
 	clientId := GetTestClientId(t)
 
 	// Create fixed times for testing
-	earliestTime := time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)  // 9 AM
-	middleTime := time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC)   // 10 AM
-	latestTime := time.Date(2025, 1, 1, 11, 0, 0, 0, time.UTC)   // 11 AM
+	earliestTime := time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC) // 9 AM
+	middleTime := time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC)  // 10 AM
+	latestTime := time.Date(2025, 1, 1, 11, 0, 0, 0, time.UTC)  // 11 AM
 
 	// Create two existing open time entries in the database
 	firstOpenEntry := model.TimeEntry{
 		ID:          uuid.Must(uuid.NewV4()),
 		Description: "first entry",
 		StartTime:   earliestTime, // Earliest
-		EndTime:     time.Time{}, // Open
+		EndTime:     time.Time{},  // Open
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	
+
 	secondOpenEntry := model.TimeEntry{
 		ID:          uuid.Must(uuid.NewV4()),
 		Description: "second entry",
@@ -286,7 +286,7 @@ func Test_syncUsecase_MergesMultipleOpenTimeEntries(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	
+
 	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
 	assert.Nil(t, err)
 	err = usecaseTest.TimeEntryRepository.AddTimeEntry(&firstOpenEntry, tx)
@@ -300,7 +300,7 @@ func Test_syncUsecase_MergesMultipleOpenTimeEntries(t *testing.T) {
 	thirdOpenEntry := model.TimeEntry{
 		ID:          uuid.Must(uuid.NewV4()),
 		Description: "third entry",
-		StartTime:   latestTime, // Latest
+		StartTime:   latestTime,  // Latest
 		EndTime:     time.Time{}, // Open
 		UserId:      userId,
 		ProjectId:   project.ID,
@@ -324,10 +324,10 @@ func Test_syncUsecase_MergesMultipleOpenTimeEntries(t *testing.T) {
 	mergedEntry := openEntries[0]
 	assert.Equal(t, thirdOpenEntry.ID, mergedEntry.ID, "Should use the ID from the incoming entry")
 	assert.True(t, mergedEntry.StartTime.UTC().Equal(latestTime), "Should use the latest start time")
-	
+
 	// Should contain all three descriptions
 	assert.Contains(t, mergedEntry.Description, "first entry")
-	assert.Contains(t, mergedEntry.Description, "second entry") 
+	assert.Contains(t, mergedEntry.Description, "second entry")
 	assert.Contains(t, mergedEntry.Description, "third entry")
 }
 
@@ -350,7 +350,7 @@ func Test_syncUsecase_MobileAppReceivesMergedEntryBack(t *testing.T) {
 		UserId:      userId,
 		ProjectId:   project.ID,
 	}
-	
+
 	// Add web entry directly to database (simulating it was already synced from web)
 	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
 	assert.Nil(t, err)
@@ -390,13 +390,13 @@ func Test_syncUsecase_MobileAppReceivesMergedEntryBack(t *testing.T) {
 	// The mobile app should receive back the merged entry with updated start time
 	assert.Equal(t, 1, len(result.Created), "Mobile app should receive the merged entry back")
 	receivedEntry := result.Created[0]
-	
+
 	// Verify the received entry has the mobile app's ID and the later start time
 	assert.Equal(t, mobileEntry.ID, receivedEntry.ID, "Should have mobile app's entry ID")
 	assert.True(t, receivedEntry.StartTime.UTC().Equal(mobileStartTime), "Should have the later start time from mobile entry")
 	assert.Contains(t, receivedEntry.Description, "web entry", "Should contain web entry description")
 	assert.Contains(t, receivedEntry.Description, "mobile entry", "Should contain mobile entry description")
-	
+
 	// Mobile app should also receive deletion of the web entry
 	assert.Equal(t, 1, len(result.Deleted), "Mobile app should receive deletion of web entry")
 	assert.Equal(t, webEntry.ID, result.Deleted[0].ID, "Should delete the web entry")
@@ -864,4 +864,483 @@ func Test_syncUsecase_MixedProjectDeletionWithExistingAndNonExistentProjects(t *
 	stillNonExistent, err := usecaseTest.ProjectUsecase.GetProjectById(nonExistentProjectId)
 	assert.NotNil(t, err) // Should get an error because project never existed
 	assert.Nil(t, stillNonExistent)
+}
+
+// Tests for our recent fixes
+
+func Test_syncUsecase_CreateWithExistingDeletedIdResurrects(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create a time entry and mark it as deleted (simulating previous deletion)
+	entryId := uuid.Must(uuid.NewV4())
+	existingEntry := model.TimeEntry{
+		ID:          entryId,
+		Description: "deleted entry",
+		StartTime:   time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC),
+		EndTime:     time.Date(2025, 1, 1, 11, 0, 0, 0, time.UTC),
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     true, // Marked as deleted
+	}
+
+	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryRepository.AddTimeEntry(&existingEntry, tx)
+	assert.Nil(t, err)
+	err = tx.Commit()
+	assert.Nil(t, err)
+
+	// Tracking app tries to "create" the same entry (with same ID) but as active
+	resurrectEntry := model.TimeEntry{
+		ID:          entryId, // Same ID as deleted entry
+		Description: "resurrected entry",
+		StartTime:   time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC),
+		EndTime:     time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC),
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false, // Not deleted
+	}
+
+	// Process as CREATE operation - should be converted to UPDATE internally
+	syncData := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{resurrectEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify the entry was updated (resurrected) rather than creating a new one
+	retrievedEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(entryId)
+	assert.Nil(t, err)
+	assert.NotNil(t, retrievedEntry)
+	assert.Equal(t, "resurrected entry", retrievedEntry.Description)
+	assert.False(t, retrievedEntry.Deleted, "Entry should be undeleted")
+	assert.True(t, retrievedEntry.StartTime.Equal(resurrectEntry.StartTime), "Should have updated start time")
+}
+
+func Test_syncUsecase_MergeWithDeletedFlagFromIncomingEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create an existing open time entry
+	existingTime := time.Date(2025, 1, 1, 11, 0, 0, 0, time.UTC) // Later time
+	existingEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "existing entry",
+		StartTime:   existingTime,
+		EndTime:     time.Time{}, // Open entry
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false,
+	}
+
+	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryRepository.AddTimeEntry(&existingEntry, tx)
+	assert.Nil(t, err)
+	err = tx.Commit()
+	assert.Nil(t, err)
+
+	// Simulate that this entry gets marked as deleted somehow (e.g., previous merge operation)
+	existingEntry.Deleted = true
+	tx, err = usecaseTest.TimeEntryRepository.BeginTransaction()
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryRepository.UpdateTimeEntry(&existingEntry, tx)
+	assert.Nil(t, err)
+	err = tx.Commit()
+	assert.Nil(t, err)
+
+	// Now tracking app sends a new open entry with earlier time and deleted=false
+	newTime := time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC) // Earlier time
+	newEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "new entry from app",
+		StartTime:   newTime,
+		EndTime:     time.Time{}, // Open entry
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false, // Not deleted
+	}
+
+	// Process sync - since existing entry is deleted, it won't be found by GetOpenTimeEntriesForProject
+	// So the new entry should be added normally without merge
+	syncData := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{newEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify that the new entry was added (no merge because existing was deleted)
+	openEntries, err := usecaseTest.TimeEntryRepository.GetOpenTimeEntriesForProject(userId, project.ID, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(openEntries), "Should have exactly one open time entry")
+
+	addedEntry := openEntries[0]
+	assert.Equal(t, newEntry.ID, addedEntry.ID, "Should be the new entry")
+	assert.False(t, addedEntry.Deleted, "Entry should not be deleted")
+	assert.Equal(t, "new entry from app", addedEntry.Description)
+
+	// Verify the deleted entry is still in the database but not returned by GetOpenTimeEntriesForProject
+	deletedEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(existingEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, deletedEntry)
+	assert.True(t, deletedEntry.Deleted, "Original entry should still be deleted")
+}
+
+func Test_syncUsecase_SecondPrecisionTimeComparisonInMerge(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create times that differ only by milliseconds (within same second)
+	baseTime := time.Date(2025, 1, 1, 10, 0, 47, 0, time.UTC)
+	existingTime := baseTime.Add(369 * time.Millisecond) // 10:00:47.369
+	newTime := baseTime.Add(500 * time.Millisecond)      // 10:00:47.500
+
+	// Create existing open entry with millisecond precision
+	existingEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "existing entry",
+		StartTime:   existingTime,
+		EndTime:     time.Time{}, // Open
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+
+	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryRepository.AddTimeEntry(&existingEntry, tx)
+	assert.Nil(t, err)
+	err = tx.Commit()
+	assert.Nil(t, err)
+
+	// Create new entry with slightly different milliseconds
+	newEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "new entry",
+		StartTime:   newTime,
+		EndTime:     time.Time{}, // Open
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+
+	// Process sync - with second-precision comparison, these should be treated as same time
+	syncData := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{newEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify that the new entry is kept (not the existing one) because second-precision
+	// comparison treats them as equal, so incoming entry wins
+	openEntries, err := usecaseTest.TimeEntryRepository.GetOpenTimeEntriesForProject(userId, project.ID, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(openEntries), "Should have exactly one open time entry after merge")
+
+	mergedEntry := openEntries[0]
+	assert.Equal(t, newEntry.ID, mergedEntry.ID, "Should use the incoming entry's ID")
+	assert.Contains(t, mergedEntry.Description, "existing entry")
+	assert.Contains(t, mergedEntry.Description, "new entry")
+}
+
+func Test_syncUsecase_UpdateOperationPreservesDeletedFlag(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create a time entry and mark it as deleted
+	timeEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "original entry",
+		StartTime:   time.Now(),
+		EndTime:     time.Now().Add(1 * time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     true, // Marked as deleted
+	}
+
+	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryRepository.AddTimeEntry(&timeEntry, tx)
+	assert.Nil(t, err)
+	err = tx.Commit()
+	assert.Nil(t, err)
+
+	// Now update the entry from tracking app with deleted=false
+	updatedEntry := timeEntry
+	updatedEntry.Description = "updated entry"
+	updatedEntry.Deleted = false // Tracking app sends it as not deleted
+
+	// Process sync update
+	syncData := model.SyncData{
+		TimeEntriesToBeUpdated: []model.TimeEntry{updatedEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify the entry was updated and the deleted flag was properly set to false
+	retrievedEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, retrievedEntry)
+	assert.Equal(t, "updated entry", retrievedEntry.Description)
+	assert.False(t, retrievedEntry.Deleted, "Entry should be undeleted after update from tracking app")
+}
+
+func Test_syncUsecase_UpdateOfDeletedEntryToDeletedPreservesDeleted(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Create a time entry and mark it as deleted
+	timeEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "original entry",
+		StartTime:   time.Now(),
+		EndTime:     time.Now().Add(1 * time.Hour),
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     true, // Marked as deleted
+	}
+
+	tx, err := usecaseTest.TimeEntryRepository.BeginTransaction()
+	assert.Nil(t, err)
+	err = usecaseTest.TimeEntryRepository.AddTimeEntry(&timeEntry, tx)
+	assert.Nil(t, err)
+	err = tx.Commit()
+	assert.Nil(t, err)
+
+	// Update the entry but keep it deleted (edge case test)
+	updatedEntry := timeEntry
+	updatedEntry.Description = "updated but still deleted"
+	updatedEntry.Deleted = true // Still deleted
+
+	// Process sync update
+	syncData := model.SyncData{
+		TimeEntriesToBeUpdated: []model.TimeEntry{updatedEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify the entry was updated but remains deleted
+	retrievedEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, retrievedEntry)
+	assert.Equal(t, "updated but still deleted", retrievedEntry.Description)
+	assert.True(t, retrievedEntry.Deleted, "Entry should remain deleted if tracking app sends it as deleted")
+}
+
+func Test_syncUsecase_CompleteScenarioRecreatingIssue102(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := "tracking-app-client"
+
+	// Step 1: Tracking app creates an open time entry
+	baseTime := time.Date(2025, 10, 2, 5, 48, 47, 0, time.UTC)
+	originalTime := baseTime.Add(369 * time.Millisecond) // 05:48:47.369
+
+	originalEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "tracking app entry",
+		StartTime:   originalTime,
+		EndTime:     time.Time{}, // Open entry
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false,
+	}
+
+	syncData1 := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{originalEntry},
+	}
+
+	err := usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData1, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 2: Simulate a race condition where the tracking app creates another entry
+	// in the same second (this simulates the precision issue we found)
+	raceTime := baseTime.Add(500 * time.Millisecond) // 05:48:47.500
+
+	raceEntry := model.TimeEntry{
+		ID:          uuid.Must(uuid.NewV4()),
+		Description: "race condition entry",
+		StartTime:   raceTime,
+		EndTime:     time.Time{}, // Open entry
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false,
+	}
+
+	syncData2 := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{raceEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData2, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 3: Verify only one entry exists and it's not deleted
+	openEntries, err := usecaseTest.TimeEntryRepository.GetOpenTimeEntriesForProject(userId, project.ID, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(openEntries), "Should have exactly one open entry after merge")
+
+	finalEntry := openEntries[0]
+	assert.False(t, finalEntry.Deleted, "Final entry should not be deleted")
+	assert.Contains(t, finalEntry.Description, "tracking app entry")
+	assert.Contains(t, finalEntry.Description, "race condition entry")
+
+	// Step 4: User closes the entry in tracking app and syncs an update
+	closedEntry := finalEntry
+	closedEntry.EndTime = time.Now()
+	closedEntry.Description = "updated and closed"
+	closedEntry.Deleted = false // Explicitly not deleted
+
+	syncData3 := model.SyncData{
+		TimeEntriesToBeUpdated: []model.TimeEntry{closedEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData3, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 5: Verify the entry is properly updated and not deleted
+	updatedEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(finalEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, updatedEntry)
+	assert.Equal(t, "updated and closed", updatedEntry.Description)
+	assert.False(t, updatedEntry.Deleted, "Entry should remain not deleted after update")
+	assert.False(t, updatedEntry.EndTime.IsZero(), "Entry should have an end time")
+}
+
+func Test_syncUsecase_ProjectCreationWithExistingDeletedIdResurrects(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	clientId := GetTestClientId(t)
+
+	// Step 1: Create a project and then mark it as deleted
+	project := addProject(t, usecaseTest.ProjectUsecase, "Deleted Project", userId)
+	projectId := project.ID
+
+	// Mark it as deleted by updating it
+	deletedProject := project
+	deletedProject.Deleted = true
+
+	tx, err := usecaseTest.ProjectRepository.BeginTransaction()
+	assert.Nil(t, err)
+	err = usecaseTest.ProjectRepository.UpdateProject(&deletedProject, tx)
+	assert.Nil(t, err)
+	err = tx.Commit()
+	assert.Nil(t, err)
+
+	// Step 2: Verify project exists but is deleted
+	projectFromDb, err := usecaseTest.SyncUsecase.GetProjectById(projectId)
+	assert.Nil(t, err)
+	assert.NotNil(t, projectFromDb)
+	assert.True(t, projectFromDb.Deleted)
+
+	// Step 3: Send project creation from tracking app with same ID
+	newProject := model.Project{
+		ID:      projectId, // Same ID as deleted project
+		Name:    "Resurrected Project",
+		UserId:  userId,
+		Color:   "#FF0000",
+		Deleted: false,
+	}
+
+	syncData := model.SyncData{
+		ProjectsToBeCreated: []model.Project{newProject},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 4: Verify project is resurrected and updated
+	resurrectedProject, err := usecaseTest.SyncUsecase.GetProjectById(projectId)
+	assert.Nil(t, err)
+	assert.NotNil(t, resurrectedProject)
+	assert.Equal(t, "Resurrected Project", resurrectedProject.Name)
+	assert.Equal(t, "#FF0000", resurrectedProject.Color)
+	assert.False(t, resurrectedProject.Deleted, "Project should be resurrected (not deleted)")
+}
+
+func Test_syncUsecase_ProjectUpdateWithDeletedFlagFromIncomingEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	clientId := GetTestClientId(t)
+
+	// Step 1: Create a project
+	project := addProject(t, usecaseTest.ProjectUsecase, "Original Project", userId)
+
+	// Step 2: Update project from tracking app with deleted=true
+	deletedProject := project
+	deletedProject.Name = "Deleted Project"
+	deletedProject.Deleted = true
+
+	syncData := model.SyncData{
+		ProjectsToBeUpdated: []model.Project{deletedProject},
+	}
+
+	err := usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 3: Verify project is marked as deleted
+	projectFromDb, err := usecaseTest.SyncUsecase.GetProjectById(project.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, projectFromDb)
+	assert.Equal(t, "Deleted Project", projectFromDb.Name)
+	assert.True(t, projectFromDb.Deleted, "Project should be marked as deleted from incoming entry")
+
+	// Step 4: Update project from tracking app with deleted=false (resurrection)
+	resurrectedProject := project
+	resurrectedProject.Name = "Resurrected Project"
+	resurrectedProject.Color = "#00FF00"
+	resurrectedProject.Deleted = false
+
+	syncData2 := model.SyncData{
+		ProjectsToBeUpdated: []model.Project{resurrectedProject},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData2, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 5: Verify project is resurrected
+	finalProject, err := usecaseTest.SyncUsecase.GetProjectById(project.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, finalProject)
+	assert.Equal(t, "Resurrected Project", finalProject.Name)
+	assert.Equal(t, "#00FF00", finalProject.Color)
+	assert.False(t, finalProject.Deleted, "Project should be resurrected (not deleted)")
 }

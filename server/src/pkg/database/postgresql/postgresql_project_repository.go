@@ -123,8 +123,9 @@ func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project, t
 			hourly_rate = $5,
 			time_budget = $6,
 			deadline = $7,
-			is_active = $8
-		WHERE id = $9 AND deleted = false
+			is_active = $8,
+			deleted = $9
+		WHERE id = $10
 	`
 
 	var teamID *uuid.UUID
@@ -149,6 +150,7 @@ func (repo *postgresqlProjectRepository) UpdateProject(project *model.Project, t
 		project.TimeBudget,
 		deadline,
 		project.IsActive,
+		project.Deleted,
 		project.ID,
 	)
 
