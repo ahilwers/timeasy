@@ -7,7 +7,7 @@ volumes:
 
 services:
   database:
-    image: "postgres"
+    image: "postgres:17.6"
     container_name: "timeasy-postgresql-dev"
     env_file:
       - database.env
