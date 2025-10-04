@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 	"timeasy-server/pkg/domain/model"
 	"timeasy-server/pkg/domain/repository"
 
@@ -99,9 +100,31 @@ func (usecase *syncUsecase) processProjectCreations(projects []model.Project, us
 	slog.Debug("Processing project creations", "count", len(projects), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range projects {
 		project := &projects[i]
-		err := usecase.projectRepository.AddProject(project, tx)
-		if err != nil {
+
+		// Check if project already exists (including deleted ones)
+		existingProject, err := usecase.syncRepository.GetProjectById(project.ID)
+		if err != nil && !errors.Is(err, repository.ErrEntityNotFound) {
 			return err
+		}
+
+		if existingProject != nil {
+			// Project exists, update it (this will resurrect if deleted)
+			slog.Debug("Project creation found existing project, updating instead",
+				"project_id", project.ID,
+				"user_id", userId,
+				"client_id", clientId,
+				"method", "sync",
+			)
+			err = usecase.projectRepository.UpdateProject(project, tx)
+			if err != nil {
+				return err
+			}
+		} else {
+			// Project doesn't exist, create it
+			err = usecase.projectRepository.AddProject(project, tx)
+			if err != nil {
+				return err
+			}
 		}
 
 		changelogEntry := &model.ChangelogEntry{
@@ -239,14 +262,24 @@ func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEn
 				"error", err)
 		}
 
-		// Check if this is an open time entry (no end time)
-		if timeEntry.EndTime.IsZero() {
-			err := usecase.mergeOpenTimeEntriesIfNeeded(timeEntry, userId, clientId, tx)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := usecase.timeEntryRepository.AddTimeEntry(timeEntry, tx)
+		// Check if an entry with this ID already exists (including deleted ones)
+		existingEntry, err := usecase.syncRepository.GetTimeEntryById(timeEntry.ID)
+		if err != nil {
+			return err
+		}
+
+		if existingEntry != nil {
+			// Entry exists - treat this as an update instead of create
+			slog.Debug("Time entry with ID already exists, treating CREATE as UPDATE",
+				"time_entry_id", timeEntry.ID,
+				"existing_deleted", existingEntry.Deleted,
+				"incoming_deleted", timeEntry.Deleted,
+				"user_id", userId,
+				"client_id", clientId,
+				"method", "sync")
+
+			// Update the existing entry with data from the incoming entry
+			err = usecase.timeEntryRepository.UpdateTimeEntry(timeEntry, tx)
 			if err != nil {
 				return err
 			}
@@ -254,13 +287,39 @@ func (usecase *syncUsecase) processTimeEntryCreations(timeEntries []model.TimeEn
 			changelogEntry := &model.ChangelogEntry{
 				EntityType:      model.EntityTypeTimeEntry,
 				EntityID:        timeEntry.ID,
-				Operation:       model.OperationCreated,
+				Operation:       model.OperationUpdated,
 				ChangedByUser:   userId,
 				ChangedByClient: clientId,
 			}
 			err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
 			if err != nil {
 				return err
+			}
+		} else {
+			// No existing entry - proceed with normal creation flow
+			// Check if this is an open time entry (no end time)
+			if timeEntry.EndTime.IsZero() {
+				err := usecase.mergeOpenTimeEntriesIfNeeded(timeEntry, userId, clientId, tx)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := usecase.timeEntryRepository.AddTimeEntry(timeEntry, tx)
+				if err != nil {
+					return err
+				}
+
+				changelogEntry := &model.ChangelogEntry{
+					EntityType:      model.EntityTypeTimeEntry,
+					EntityID:        timeEntry.ID,
+					Operation:       model.OperationCreated,
+					ChangedByUser:   userId,
+					ChangedByClient: clientId,
+				}
+				err = usecase.changelogRepository.AddChangelogEntry(changelogEntry, tx)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -437,7 +496,7 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 	var entriesToDelete []model.TimeEntry
 
 	for _, existingEntry := range existingOpenEntries {
-		if existingEntry.StartTime.After(latestStartTime) {
+		if existingEntry.StartTime.Truncate(time.Second).After(latestStartTime.Truncate(time.Second)) {
 			// Use the existing entry if it's more recent
 			latestStartTime = existingEntry.StartTime
 			entryToKeep = &existingEntry
@@ -458,6 +517,11 @@ func (usecase *syncUsecase) mergeOpenTimeEntriesIfNeeded(newTimeEntry *model.Tim
 
 	// Keep the start time of the most recent entry
 	entryToKeep.StartTime = latestStartTime
+
+	// If we're keeping an existing entry, respect the deleted flag from the incoming entry
+	if entryToKeep != newTimeEntry {
+		entryToKeep.Deleted = newTimeEntry.Deleted
+	}
 
 	// Combine descriptions if they exist and are different
 	var descriptions []string

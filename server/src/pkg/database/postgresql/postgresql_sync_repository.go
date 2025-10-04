@@ -368,7 +368,7 @@ func (repo *postgresqlSyncRepository) GetUpdatedProjectsOfUser(userId uuid.UUID,
 // GetProjectById retrieves a project by its ID
 func (repo *postgresqlSyncRepository) GetProjectById(id uuid.UUID) (*model.Project, error) {
 	query := `
-		SELECT id, name, user_id, team_id, color, deadline::date, hourly_rate, time_budget, is_active
+		SELECT id, name, user_id, team_id, color, deadline::date, hourly_rate, time_budget, is_active, deleted
 		FROM projects
 		WHERE id = $1
 	`
@@ -383,7 +383,7 @@ func (repo *postgresqlSyncRepository) GetProjectById(id uuid.UUID) (*model.Proje
 
 	err := repo.db.QueryRow(query, id).Scan(
 		&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
-		&hourlyRate, &timeBudget, &isActive,
+		&hourlyRate, &timeBudget, &isActive, &project.Deleted,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -423,7 +423,7 @@ func (repo *postgresqlSyncRepository) GetProjectById(id uuid.UUID) (*model.Proje
 // GetTimeEntryById retrieves a time entry by its ID
 func (repo *postgresqlSyncRepository) GetTimeEntryById(id uuid.UUID) (*model.TimeEntry, error) {
 	query := `
-		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description,
+		SELECT te.id, te.user_id, te.project_id, te.start_time, te.end_time, te.description, te.deleted,
 			   p.id as project_id, p.name as project_name, p.user_id as project_user_id,
 			   p.team_id as project_team_id, p.color as project_color, p.deadline::date as project_deadline,
 			   p.hourly_rate as project_hourly_rate, p.time_budget as project_time_budget,
@@ -443,7 +443,7 @@ func (repo *postgresqlSyncRepository) GetTimeEntryById(id uuid.UUID) (*model.Tim
 	var color sql.NullString
 
 	err := repo.db.QueryRow(query, id).Scan(
-		&entry.ID, &entry.UserId, &entry.ProjectId, &entry.StartTime, &entry.EndTime, &entry.Description,
+		&entry.ID, &entry.UserId, &entry.ProjectId, &entry.StartTime, &entry.EndTime, &entry.Description, &entry.Deleted,
 		&project.ID, &project.Name, &project.UserId, &teamID, &color, &deadline,
 		&hourlyRate, &timeBudget, &isActive,
 	)

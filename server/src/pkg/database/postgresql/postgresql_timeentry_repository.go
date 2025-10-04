@@ -117,8 +117,9 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntr
 			end_time = $4,
 			description = $5,
 			external_issue_id = $6,
-			pending_external_ref = $7
-		WHERE id = $8
+			pending_external_ref = $7,
+			deleted = $8
+		WHERE id = $9
 	`
 
 	result, err := sqlTx.Exec(
@@ -130,6 +131,7 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntry(entry *model.TimeEntr
 		entry.Description,
 		entry.ExternalIssueID,
 		entry.PendingExternalRef,
+		entry.Deleted,
 		entry.ID,
 	)
 
@@ -163,8 +165,9 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.T
 			end_time = $4,
 			description = $5,
 			external_issue_id = $6,
-			pending_external_ref = $7
-		WHERE id = $8
+			pending_external_ref = $7,
+			deleted = $8
+		WHERE id = $9
 	`
 
 	for _, entry := range entries {
@@ -177,6 +180,7 @@ func (repo *postgresqlTimeEntryRepository) UpdateTimeEntryList(entries []model.T
 			entry.Description,
 			entry.ExternalIssueID,
 			entry.PendingExternalRef,
+			entry.Deleted,
 			entry.ID,
 		)
 
