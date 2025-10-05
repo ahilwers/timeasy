@@ -278,5 +278,11 @@ func (handler *syncHandler) createTimeEntryFromDto(timeEntryDto ChangedTimeEntry
 		}
 		timeEntry.EndTime = endTime
 	}
+
+	// Update deleted field if provided in DTO
+	if timeEntryDto.Deleted != nil {
+		timeEntry.Deleted = *timeEntryDto.Deleted
+	}
+
 	return timeEntry, nil
 }

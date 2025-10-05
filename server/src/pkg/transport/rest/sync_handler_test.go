@@ -592,6 +592,260 @@ func Test_syncHandler_SendUpdatedLocalProjects_ShouldNotUpdateMissingFields(t *t
 	assert.Equal(t, "#ff0000", projects[0].Color)
 }
 
+func Test_syncHandler_SendUpdatedLocalTimeEntries_WithDeletedFlag(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	clientId := "test_client_id"
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+	endTime := time.Date(2023, 1, 28, 11, 1, 0, 0, time.UTC)
+
+	// Create a time entry:
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		EndTime:     endTime,
+		ProjectId:   project.ID,
+		UserId:      userId,
+		Deleted:     false, // Initially not deleted
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+
+	// Simulate the time entry being marked as deleted on the server
+	// (this mimics the original problem scenario)
+	timeEntry.Deleted = true
+	err = handlerTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+
+	// Verify it's deleted
+	entries, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entries)) // GetAllTimeEntriesOfUser filters out deleted entries
+
+	// Now let's update the time entry from client with deleted=false:
+	changeTime := time.Now().Add(time.Hour).UTC()
+	description := "updatedTimeEntry"
+	deletedFlag := false
+	updatedTimeEntry := ChangedTimeEntryDto{
+		Id:              timeEntry.ID,
+		Description:     description,
+		StartTime:       startTime.Format(time.RFC3339),
+		EndTime:         endTime.Format(time.RFC3339),
+		ProjectId:       project.ID,
+		ChangeType:      CHANGED,
+		ChangeTimestamp: changeTime.Format(time.RFC3339),
+		Deleted:         &deletedFlag, // Explicitly setting deleted=false
+	}
+
+	syncEntries := SyncEntries{
+		TimeEntries: []ChangedTimeEntryDto{updatedTimeEntry},
+	}
+	entryJson, err := json.Marshal(syncEntries)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+
+	entryReader := bytes.NewReader(entryJson)
+	req, _ := http.NewRequest("POST", "/api/v1/sync/changed", entryReader)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	// Verify the entry is now undeleted and updated
+	entries, err = handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(entries))
+	assert.Equal(t, timeEntry.ID, entries[0].ID)
+	assert.Equal(t, "updatedTimeEntry", entries[0].Description)
+	assert.Equal(t, false, entries[0].Deleted) // The key assertion - should now be false
+	assert.Equal(t, startTime, entries[0].StartTime)
+	assert.Equal(t, endTime, entries[0].EndTime)
+	assert.Equal(t, project.ID, entries[0].ProjectId)
+}
+
+func Test_syncHandler_SendUpdatedLocalTimeEntries_WithDeletedFlagTrue(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	clientId := "test_client_id"
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+	endTime := time.Date(2023, 1, 28, 11, 1, 0, 0, time.UTC)
+
+	// Create a time entry:
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		EndTime:     endTime,
+		ProjectId:   project.ID,
+		UserId:      userId,
+		Deleted:     false, // Initially not deleted
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+
+	// Now let's update the time entry from client with deleted=true:
+	changeTime := time.Now().Add(time.Hour).UTC()
+	description := "updatedTimeEntry"
+	deletedFlag := true
+	updatedTimeEntry := ChangedTimeEntryDto{
+		Id:              timeEntry.ID,
+		Description:     description,
+		StartTime:       startTime.Format(time.RFC3339),
+		EndTime:         endTime.Format(time.RFC3339),
+		ProjectId:       project.ID,
+		ChangeType:      CHANGED,
+		ChangeTimestamp: changeTime.Format(time.RFC3339),
+		Deleted:         &deletedFlag, // Explicitly setting deleted=true
+	}
+
+	syncEntries := SyncEntries{
+		TimeEntries: []ChangedTimeEntryDto{updatedTimeEntry},
+	}
+	entryJson, err := json.Marshal(syncEntries)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+
+	entryReader := bytes.NewReader(entryJson)
+	req, _ := http.NewRequest("POST", "/api/v1/sync/changed", entryReader)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	// Verify the entry is now deleted and updated
+	entries, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entries)) // GetAllTimeEntriesOfUser filters out deleted entries
+
+	// But verify it exists in the database with deleted=true by fetching directly
+	foundEntry, err := handlerTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, foundEntry)
+	assert.Equal(t, "updatedTimeEntry", foundEntry.Description)
+	assert.Equal(t, true, foundEntry.Deleted) // Should be true
+}
+
+func Test_syncHandler_SendUpdatedLocalTimeEntries_WithoutDeletedFlag(t *testing.T) {
+	userId, err := uuid.NewV4()
+	assert.Nil(t, err)
+	token := authTokenMock{}
+	token.On("GetUserId").Return(userId, nil)
+	token.On("HasRole", model.RoleUser).Return(true, nil)
+	token.On("HasRole", model.RoleAdmin).Return(false, nil)
+
+	verifier := tokenVerifierMock{}
+	verifier.On("VerifyToken", mock.Anything).Return(&token, nil)
+
+	handlerTest := NewHandlerTest(&verifier)
+	teardownTest := handlerTest.SetupTest(t)
+	defer teardownTest(t)
+
+	clientId := "test_client_id"
+
+	project := model.Project{
+		Name:   "project",
+		UserId: userId,
+	}
+	err = handlerTest.ProjectUsecase.AddProject(&project, userId, clientId)
+	assert.Nil(t, err)
+
+	startTime := time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC)
+	endTime := time.Date(2023, 1, 28, 11, 1, 0, 0, time.UTC)
+
+	// Create a time entry:
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   startTime,
+		EndTime:     endTime,
+		ProjectId:   project.ID,
+		UserId:      userId,
+		Deleted:     false,
+	}
+	err = handlerTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+
+	// Mark it as deleted
+	timeEntry.Deleted = true
+	err = handlerTest.TimeEntryUsecase.UpdateTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+
+	// Now let's update the time entry from client WITHOUT the deleted flag:
+	changeTime := time.Now().Add(time.Hour).UTC()
+	description := "updatedTimeEntry"
+	updatedTimeEntry := ChangedTimeEntryDto{
+		Id:              timeEntry.ID,
+		Description:     description,
+		StartTime:       startTime.Format(time.RFC3339),
+		EndTime:         endTime.Format(time.RFC3339),
+		ProjectId:       project.ID,
+		ChangeType:      CHANGED,
+		ChangeTimestamp: changeTime.Format(time.RFC3339),
+		Deleted:         nil, // No deleted flag provided
+	}
+
+	syncEntries := SyncEntries{
+		TimeEntries: []ChangedTimeEntryDto{updatedTimeEntry},
+	}
+	entryJson, err := json.Marshal(syncEntries)
+	assert.Nil(t, err)
+
+	w := httptest.NewRecorder()
+
+	entryReader := bytes.NewReader(entryJson)
+	req, _ := http.NewRequest("POST", "/api/v1/sync/changed", entryReader)
+	handlerTest.Router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+
+	// Verify the entry remains deleted (preserves existing deleted status)
+	entries, err := handlerTest.TimeEntryUsecase.GetAllTimeEntriesOfUser(userId)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(entries)) // Still filtered out
+
+	// Verify it exists in the database but still deleted=true
+	foundEntry, err := handlerTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, foundEntry)
+	assert.Equal(t, "updatedTimeEntry", foundEntry.Description) // Description updated
+	assert.Equal(t, true, foundEntry.Deleted) // Should remain true when no deleted flag provided
+}
+
 func stringToTime(timeString string) time.Time {
 	t, _ := time.Parse(time.RFC3339, timeString)
 	return t

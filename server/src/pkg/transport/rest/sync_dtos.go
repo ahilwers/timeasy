@@ -74,6 +74,7 @@ type ChangedTimeEntryDto struct {
     ChangeType      ChangeType `json:"changeType" binding:"required"`
     ChangeTimestamp string     `json:"changeTimestamp"`
     ChangeLogId     int64      `json:"changeLogId,omitempty"`
+    Deleted         *bool      `json:"deleted,omitempty"`
 }
 
 type ChangedProjectDto struct {
