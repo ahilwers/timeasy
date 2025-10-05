@@ -177,6 +177,7 @@ class SyncDataSender {
         startTime: timeEntry?.startTime ?? DateTime.now(),
         endTime: timeEntry?.endTime,
         changeType: changelogEntry.changeType,
+        deleted: timeEntry?.deleted,
       );
     }
     return null;

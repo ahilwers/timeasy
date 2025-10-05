@@ -11,6 +11,7 @@ class TimeEntrySyncData {
   final ChangeType changeType;
   final DateTime? changeTimestamp; // Provided by server for ordering/metadata
   final int? changeLogId; // Server change_log id (optional)
+  final bool? deleted; // Optional deleted flag
 
   TimeEntrySyncData({
     required this.id,
@@ -21,6 +22,7 @@ class TimeEntrySyncData {
     required this.changeType,
     this.changeTimestamp,
     this.changeLogId,
+    this.deleted,
   });
 
   factory TimeEntrySyncData.fromJson(Map<String, dynamic> json) {
@@ -46,11 +48,12 @@ class TimeEntrySyncData {
           ? DateTime.parse(json['changeTimestamp'] as String).toUtc()
           : null,
       changeLogId: json['changeLogId'] as int?,
+      deleted: json['deleted'] as bool?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    Map<String, dynamic> json = {
       'id': id,
       'description': description,
       'startTime': startTime.toUtc().toIso8601String(),
@@ -58,6 +61,13 @@ class TimeEntrySyncData {
       'projectId': projectId,
       'changeType': ChangeTypeHelper.convertToString(changeType),
     };
+
+    // Only include deleted field if it's not null
+    if (deleted != null) {
+      json['deleted'] = deleted;
+    }
+
+    return json;
   }
 
   static List<TimeEntrySyncData> listFromJson(String jsonString) {

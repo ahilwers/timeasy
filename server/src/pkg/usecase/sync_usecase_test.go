@@ -1344,3 +1344,194 @@ func Test_syncUsecase_ProjectUpdateWithDeletedFlagFromIncomingEntry(t *testing.T
 	assert.Equal(t, "#00FF00", finalProject.Color)
 	assert.False(t, finalProject.Deleted, "Project should be resurrected (not deleted)")
 }
+
+func Test_syncUsecase_UpdateTimeEntryCanResurrectDeletedEntry(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Step 1: Create a time entry
+	timeEntryId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	timeEntry := model.TimeEntry{
+		ID:          timeEntryId,
+		Description: "Test Entry",
+		StartTime:   time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC),
+		EndTime:     time.Date(2023, 1, 28, 12, 0, 0, 0, time.UTC),
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false,
+	}
+
+	syncData1 := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{timeEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData1, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 2: Mark it as deleted
+	deletedTimeEntry := timeEntry
+	deletedTimeEntry.Deleted = true
+
+	syncData2 := model.SyncData{
+		TimeEntriesToBeDeleted: []model.TimeEntry{deletedTimeEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData2, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 3: Verify it's deleted
+	foundEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, foundEntry)
+	assert.True(t, foundEntry.Deleted, "Time entry should be deleted")
+
+	// Step 4: Update the deleted time entry to resurrect it (this mimics the original bug scenario)
+	resurrectedTimeEntry := timeEntry
+	resurrectedTimeEntry.Description = "Resurrected Entry"
+	resurrectedTimeEntry.Deleted = false
+
+	syncData3 := model.SyncData{
+		TimeEntriesToBeUpdated: []model.TimeEntry{resurrectedTimeEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData3, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 5: Verify time entry is resurrected
+	finalEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, finalEntry)
+	assert.Equal(t, "Resurrected Entry", finalEntry.Description)
+	assert.False(t, finalEntry.Deleted, "Time entry should be resurrected (not deleted)")
+}
+
+func Test_syncUsecase_UpdateTimeEntryCanResurrectDeletedEntryViaExplicitFlag(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Step 1: Create a time entry
+	timeEntryId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	timeEntry := model.TimeEntry{
+		ID:          timeEntryId,
+		Description: "Test Entry",
+		StartTime:   time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC),
+		EndTime:     time.Date(2023, 1, 28, 12, 0, 0, 0, time.UTC),
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false,
+	}
+
+	syncData1 := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{timeEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData1, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 2: Mark it as deleted (simulating server-side deletion)
+	err = usecaseTest.TimeEntryUsecase.DeleteTimeEntry(timeEntry.ID, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 3: Verify it's deleted
+	foundEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, foundEntry)
+	assert.True(t, foundEntry.Deleted, "Time entry should be deleted")
+
+	// Step 4: Update description but preserve existing deleted status
+	// This tests that when deleted field is not explicitly provided via sync,
+	// the existing database value should be preserved
+	updateEntry := model.TimeEntry{
+		ID:          timeEntry.ID,
+		Description: "Updated Description",
+		StartTime:   timeEntry.StartTime,
+		EndTime:     timeEntry.EndTime,
+		UserId:      timeEntry.UserId,
+		ProjectId:   timeEntry.ProjectId,
+		Deleted:     false, // This simulates that the client didn't send deleted flag (defaults to false)
+	}
+
+	syncData2 := model.SyncData{
+		TimeEntriesToBeUpdated: []model.TimeEntry{updateEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData2, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 5: Verify description updated and deleted status set to false (as explicitly provided)
+	finalEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, finalEntry)
+	assert.Equal(t, "Updated Description", finalEntry.Description)
+	assert.False(t, finalEntry.Deleted, "Time entry should be undeleted when client sends deleted=false")
+}
+
+func Test_syncUsecase_UpdateTimeEntryCanSetDeletedToTrue(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "test project", userId)
+	clientId := GetTestClientId(t)
+
+	// Step 1: Create a time entry
+	timeEntryId, err := uuid.NewV4()
+	assert.Nil(t, err)
+
+	timeEntry := model.TimeEntry{
+		ID:          timeEntryId,
+		Description: "Test Entry",
+		StartTime:   time.Date(2023, 1, 28, 11, 0, 0, 0, time.UTC),
+		EndTime:     time.Date(2023, 1, 28, 12, 0, 0, 0, time.UTC),
+		UserId:      userId,
+		ProjectId:   project.ID,
+		Deleted:     false,
+	}
+
+	syncData1 := model.SyncData{
+		TimeEntriesToBeCreated: []model.TimeEntry{timeEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData1, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 2: Verify it's not deleted
+	foundEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, foundEntry)
+	assert.False(t, foundEntry.Deleted, "Time entry should not be deleted initially")
+
+	// Step 3: Update the time entry to set deleted=true (soft delete via update)
+	deletedTimeEntry := timeEntry
+	deletedTimeEntry.Description = "Updated and Deleted Entry"
+	deletedTimeEntry.Deleted = true
+
+	syncData2 := model.SyncData{
+		TimeEntriesToBeUpdated: []model.TimeEntry{deletedTimeEntry},
+	}
+
+	err = usecaseTest.SyncUsecase.UpdateAndDeleteData(syncData2, userId, clientId)
+	assert.Nil(t, err)
+
+	// Step 4: Verify time entry is now deleted and description updated
+	finalEntry, err := usecaseTest.SyncUsecase.GetTimeEntryById(timeEntry.ID)
+	assert.Nil(t, err)
+	assert.NotNil(t, finalEntry)
+	assert.Equal(t, "Updated and Deleted Entry", finalEntry.Description)
+	assert.True(t, finalEntry.Deleted, "Time entry should be deleted via update")
+}
