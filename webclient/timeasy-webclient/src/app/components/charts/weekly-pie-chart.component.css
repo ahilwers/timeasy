@@ -2,3 +2,7 @@
   display: block;
   height: 100%;
 }
+
+:host ::ng-deep canvas {
+  background-color: transparent;
+}

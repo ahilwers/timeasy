@@ -71,7 +71,7 @@ export const appConfig: ApplicationConfig = {
       theme: {
         preset: ColorPreset,
         options: {
-          darkModeSelector: false || 'none' // Remove this to enable dark mode
+          darkModeSelector: 'system'
         }
       },
       ripple: true
