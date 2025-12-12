@@ -16,7 +16,7 @@
   align-items: center;
   gap: 0.25rem;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
 }
 
 .resolved-issue,

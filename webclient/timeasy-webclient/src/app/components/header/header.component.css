@@ -14,11 +14,19 @@
    display: flex;
    align-items: center;
    gap: 8px;
+   color: var(--logo-color, var(--p-text-color));
  }
+
+.logo-container svg {
+  display: block;
+  color: inherit;
+}
 
 .logo-text {
   font-size: 1.5rem;
+  color: inherit;
 }
+
 
 /* Header Right Section */
 .header-right {

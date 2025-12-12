@@ -64,7 +64,7 @@ export class WeeklyPieChartComponent implements OnInit {
 
   initChart() {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color');
+    const textColor = documentStyle.getPropertyValue('--p-text-color').trim() || '#495057';
     this.data = this.buildChartData();
 
     this.options = {

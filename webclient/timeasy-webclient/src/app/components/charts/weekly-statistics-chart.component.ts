@@ -67,9 +67,9 @@ export class WeeklyStatisticsChartComponent implements OnInit {
 
   initChart() {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--p-text-color');
-    const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color');
-    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
+    const textColor = documentStyle.getPropertyValue('--p-text-color').trim() || '#495057';
+    const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color').trim() || '#6c757d';
+    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color').trim() || '#dfe7ef';
 
     this.data = {
       labels: [

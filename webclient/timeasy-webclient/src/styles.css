@@ -9,6 +9,15 @@
 body, html {
   height: 100%;
   font-family: Arial, sans-serif;
+  background-color: var(--p-surface-ground);
+  color: var(--p-text-color);
+}
+
+input::selection,
+textarea::selection,
+.p-inputtext::selection {
+  background-color: var(--p-primary-color);
+  color: var(--p-primary-contrast-color, #ffffff);
 }
 
 .form-container {
@@ -71,4 +80,3 @@ body, html {
 .header-container button {
   margin-left: auto;
 }
-
