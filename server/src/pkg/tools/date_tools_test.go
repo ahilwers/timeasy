@@ -26,6 +26,7 @@ func TestFirstDayOfFirstWeek(t *testing.T) {
 	assertFirstDayOfFirstWeek(t, 2023, 2023, 1, 2)
 	assertFirstDayOfFirstWeek(t, 2024, 2024, 1, 1)
 	assertFirstDayOfFirstWeek(t, 2025, 2024, 12, 30)
+	assertFirstDayOfFirstWeek(t, 2026, 2025, 12, 29)
 }
 
 func assertFirstDayOfFirstWeek(t *testing.T, year int, expectedYear int, expectedMonth time.Month, expectedDay int) {
@@ -42,6 +43,8 @@ func TestFirstDayOfWeek(t *testing.T) {
 	assertFirstDayOfWeek(t, 52, 2007, 2007, 12, 24)
 	assertFirstDayOfWeek(t, 43, 2022, 2022, 10, 24)
 	assertFirstDayOfWeek(t, 1, 2025, 2024, 12, 30)
+	assertFirstDayOfWeek(t, 1, 2026, 2025, 12, 29)
+	assertFirstDayOfWeek(t, 2, 2026, 2026, 1, 5)
 }
 
 func assertFirstDayOfWeek(t *testing.T, weekNumber int, year int, expectedYear int, expectedMonth time.Month, expectedDay int) {

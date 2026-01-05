@@ -37,13 +37,24 @@ func SetupDatabase() (*dockertest.Pool, *dockertest.Resource) {
 		config.RestartPolicy = docker.RestartPolicy{
 			Name: "no",
 		}
+		// Ensure port bindings are set
+		config.PortBindings = map[docker.Port][]docker.PortBinding{
+			"5432/tcp": {{HostIP: "", HostPort: ""}},
+		}
 	})
 	if err != nil {
 		log.Fatalf("Could not start resource: %s", err)
 	}
-	log.Printf("Port: %s\n", resource.GetPort("5432/tcp"))
+	hostAndPort := resource.GetHostPort("5432/tcp")
+	port := resource.GetPort("5432/tcp")
+	log.Printf("Host and Port: %s, Port: %s\n", hostAndPort, port)
 
-	connectionString := fmt.Sprintf("host=localhost user=dbuser password=dbpassword dbname=timeasy_test port=%v sslmode=disable", resource.GetPort("5432/tcp"))
+	// Replace localhost with 127.0.0.1 to force IPv4 on macOS
+	if port == "" {
+		log.Fatal("Could not get port from docker resource - port bindings may not be configured correctly")
+	}
+	hostAndPort = fmt.Sprintf("127.0.0.1:%s", port)
+	connectionString := fmt.Sprintf("postgres://dbuser:dbpassword@%s/timeasy_test?sslmode=disable", hostAndPort)
 	// retry until db server is ready
 	err = pool.Retry(func() error {
 		return connectSqlDb(connectionString)
