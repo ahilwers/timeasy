@@ -29,9 +29,12 @@ func GetFirstDayOfWeek(weekNumber int, year int) time.Time {
 
 func GetFirstDayOfFirstWeek(year int) time.Time {
 	december28 := time.Date(year-1, time.December, 28, 0, 0, 0, 0, time.UTC)
+	// As december 28th is always in the last week of the last year, a day one week later must be in the first week of the next year:
 	firstDay := december28.AddDate(0, 0, 7)
+	// If this day is not a monday, the first day of the week must be in the last year:
 	if firstDay.Weekday() != time.Monday {
-		firstDay = firstDay.AddDate(0, 0, -int(firstDay.Weekday())+1)
+		daysFromMonday := (int(firstDay.Weekday()) - int(time.Monday) + 7) % 7
+		firstDay = firstDay.AddDate(0, 0, -daysFromMonday)
 	}
 	return firstDay
 }
