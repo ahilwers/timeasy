@@ -23,9 +23,13 @@ type Configuration struct {
 	SyncRecentInterval  int    // Minutes - sync interval for recently active projects
 	SyncDormantInterval int    // Minutes - sync interval for dormant projects
 	SyncMaxConcurrent   int    // Maximum concurrent sync operations
-	LokiEndpoint        string // Loki server endpoint for logging
-	LokiBearerToken     string // Bearer token for Loki authentication
-	LogLevel            string // Log level: DEBUG, INFO, WARN, ERROR
+	LokiEndpoint              string // Loki server endpoint for logging
+	LokiBearerToken           string // Bearer token for Loki authentication
+	LogLevel                  string // Log level: DEBUG, INFO, WARN, ERROR
+	LicenseManagerHost         string // License Manager host URL
+	LicenseManagerClientId     string // License Manager client ID
+	LicenseManagerClientSecret string // License Manager client secret
+	LicenseManagerProductId    string // License Manager product ID
 }
 
 func GetConfiguration() (Configuration, error) {
@@ -42,9 +46,13 @@ func GetConfiguration() (Configuration, error) {
 		syncRecentInterval  = fs.String("sync-recent-interval", "60", "Sync interval for recently active projects (minutes)")
 		syncDormantInterval = fs.String("sync-dormant-interval", "1440", "Sync interval for dormant projects (minutes)")
 		syncMaxConcurrent   = fs.String("sync-max-concurrent", "3", "Maximum concurrent sync operations")
-		lokiEndpoint        = fs.String("loki-endpoint", "", "Loki server endpoint for logging (e.g., https://loki.example.com/loki/api/v1/push)")
-		lokiBearerToken     = fs.String("loki-bearer-token", "", "Bearer token for Loki authentication")
-		logLevel            = fs.String("log-level", "INFO", "Log level: DEBUG, INFO, WARN, ERROR")
+		lokiEndpoint              = fs.String("loki-endpoint", "", "Loki server endpoint for logging (e.g., https://loki.example.com/loki/api/v1/push)")
+		lokiBearerToken           = fs.String("loki-bearer-token", "", "Bearer token for Loki authentication")
+		logLevel                  = fs.String("log-level", "INFO", "Log level: DEBUG, INFO, WARN, ERROR")
+		licenseManagerHost         = fs.String("license-manager-host", "", "License Manager host URL")
+		licenseManagerClientId     = fs.String("license-manager-client-id", "", "License Manager client ID")
+		licenseManagerClientSecret = fs.String("license-manager-client-secret", "", "License Manager client secret")
+		licenseManagerProductId    = fs.String("license-manager-product-id", "", "License Manager product ID")
 
 		_ = fs.String("config", "", "config file (optional)")
 	)
@@ -95,6 +103,10 @@ func GetConfiguration() (Configuration, error) {
 	configuration.LokiEndpoint = *lokiEndpoint
 	configuration.LokiBearerToken = *lokiBearerToken
 	configuration.LogLevel = *logLevel
+	configuration.LicenseManagerHost = *licenseManagerHost
+	configuration.LicenseManagerClientId = *licenseManagerClientId
+	configuration.LicenseManagerClientSecret = *licenseManagerClientSecret
+	configuration.LicenseManagerProductId = *licenseManagerProductId
 
 	return configuration, nil
 }
