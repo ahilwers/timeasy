@@ -1,82 +1,134 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:http/http.dart' as http;
-import 'package:openid_client/openid_client.dart';
-import 'package:openid_client/openid_client_io.dart' as io;
 import 'package:timeasy/models/api_credentials.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:timeasy/utils/app_logger.dart';
 
 class OpenIdAuthenticationService {
-  final scopes = ['profile', 'offline_access'];
-  final clientId = 'timeasy-tracking-app';
+  final List<String> scopes = ['openid', 'profile', 'offline_access'];
+  final String clientId = 'timeasy-tracking-app';
   final String keycloakUri;
+  final String redirectUri = 'org.timeasy.app://callback';
+  final FlutterAppAuth _appAuth = FlutterAppAuth();
 
-  OpenIdAuthenticationService(this.keycloakUri) {}
+  OpenIdAuthenticationService(this.keycloakUri);
+
+  String get _issuer => keycloakUri;
 
   Future<ApiCredentials?> authenticate() async {
-    var client = await getClient();
-    var authenticator = io.Authenticator(client,
-        scopes: scopes, port: 4000, urlLancher: _urlLauncher);
-    var c = await authenticator.authorize();
-    _closeWebView();
+    const method = 'OpenIdAuthenticationService.authenticate';
+    AppLogger.i('Starting authentication flow', method: method);
+    AppLogger.d('Issuer: $_issuer, RedirectUri: $redirectUri', method: method);
 
-    var token = await c.getTokenResponse();
-    var userInformation = await c.getUserInfo();
+    try {
+      AppLogger.d('Calling authorizeAndExchangeCode', method: method);
+      final AuthorizationTokenResponse? result =
+          await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          clientId,
+          redirectUri,
+          issuer: _issuer,
+          scopes: scopes,
+          preferEphemeralSession: true,
+        ),
+      );
 
-    var apiCredential = ApiCredentials();
-    apiCredential.accessToken = token.accessToken;
-    apiCredential.refreshToken = token.refreshToken;
-    apiCredential.logoutUrl = c.generateLogoutUrl()?.toString();
-    apiCredential.email = userInformation.email;
-    apiCredential.username = userInformation.preferredUsername;
-    apiCredential.name = userInformation.name;
-    apiCredential.credentialJson = json.encode(c.toJson());
-    return apiCredential;
+      if (result == null) {
+        AppLogger.w('Authentication returned null result', method: method);
+        return null;
+      }
+
+      AppLogger.i('Authentication successful, processing tokens', method: method);
+      AppLogger.d(
+          'Access token received: ${result.accessToken != null}, '
+          'Refresh token received: ${result.refreshToken != null}, '
+          'ID token received: ${result.idToken != null}',
+          method: method);
+
+      var apiCredential = ApiCredentials();
+      apiCredential.accessToken = result.accessToken;
+      apiCredential.refreshToken = result.refreshToken;
+      apiCredential.logoutUrl = _buildLogoutUrl(result.idToken);
+
+      // Decode user info from ID token
+      if (result.idToken != null) {
+        final idTokenPayload = _decodeIdToken(result.idToken!);
+        apiCredential.email = idTokenPayload['email'];
+        apiCredential.username = idTokenPayload['preferred_username'];
+        apiCredential.name = idTokenPayload['name'];
+        AppLogger.d(
+            'User info decoded: username=${apiCredential.username}, '
+            'email=${apiCredential.email}',
+            method: method);
+      }
+
+      // Store token info for refresh
+      apiCredential.credentialJson = json.encode({
+        'accessToken': result.accessToken,
+        'refreshToken': result.refreshToken,
+        'idToken': result.idToken,
+        'accessTokenExpirationDateTime':
+            result.accessTokenExpirationDateTime?.toIso8601String(),
+      });
+
+      AppLogger.i(
+          'Authentication completed successfully for user: ${apiCredential.username}',
+          method: method);
+      return apiCredential;
+    } catch (e, stackTrace) {
+      AppLogger.e('Authentication failed',
+          error: e, stackTrace: stackTrace, method: method);
+      rethrow;
+    }
   }
 
   Future<void> logout(ApiCredentials apiCredential) async {
-    print('Starting logout process...');
-    print('Logout URL: ${apiCredential.logoutUrl}');
-    print('Access Token: ${apiCredential.accessToken?.substring(0, 20)}...');
-    
+    const method = 'OpenIdAuthenticationService.logout';
+    AppLogger.i('Starting logout process', method: method);
+    AppLogger.d('Logout URL: ${apiCredential.logoutUrl}', method: method);
+
     if (apiCredential.logoutUrl != null) {
       try {
-        // Try different logout approaches
         await _performKeycloakLogout(apiCredential);
-      } catch (e) {
-        print('All logout attempts failed: $e');
+        AppLogger.i('Logout completed successfully', method: method);
+      } catch (e, stackTrace) {
+        AppLogger.e('All logout attempts failed',
+            error: e, stackTrace: stackTrace, method: method);
       }
     } else {
-      print('No logout URL available');
+      AppLogger.w('No logout URL available', method: method);
     }
   }
 
   Future<void> _performKeycloakLogout(ApiCredentials apiCredential) async {
+    const method = 'OpenIdAuthenticationService._performKeycloakLogout';
     final logoutUrl = apiCredential.logoutUrl!;
-    print('Attempting logout with URL: $logoutUrl');
-    
+    AppLogger.d('Attempting logout with URL: $logoutUrl', method: method);
+
     // Method 1: Try GET request first
     try {
-      print('Trying GET request to logout URL...');
+      AppLogger.d('Trying GET request to logout URL', method: method);
       final response = await http.get(Uri.parse(logoutUrl));
-      print('GET Logout response status: ${response.statusCode}');
-      print('GET Logout response body: ${response.body}');
-      
+      AppLogger.d('GET Logout response status: ${response.statusCode}',
+          method: method);
+
       if (response.statusCode >= 200 && response.statusCode < 400) {
-        print('Successfully logged out from Keycloak via GET');
+        AppLogger.i('Successfully logged out from Keycloak via GET',
+            method: method);
         return;
       }
     } catch (e) {
-      print('GET logout failed: $e');
+      AppLogger.d('GET logout failed: $e', method: method);
     }
-    
+
     // Method 2: Try POST request with refresh token
     try {
-      print('Trying POST request to logout endpoint...');
+      AppLogger.d('Trying POST request to logout endpoint', method: method);
       final uri = Uri.parse(logoutUrl);
-      final logoutEndpoint = '${uri.scheme}://${uri.host}:${uri.port}/realms/${_extractRealm(logoutUrl)}/protocol/openid-connect/logout';
-      
+      final logoutEndpoint =
+          '${uri.scheme}://${uri.host}:${uri.port}/realms/${_extractRealm(logoutUrl)}/protocol/openid-connect/logout';
+
       final response = await http.post(
         Uri.parse(logoutEndpoint),
         headers: {
@@ -87,81 +139,94 @@ class OpenIdAuthenticationService {
           'refresh_token': apiCredential.refreshToken ?? '',
         },
       );
-      
-      print('POST Logout response status: ${response.statusCode}');
-      print('POST Logout response body: ${response.body}');
-      
+
+      AppLogger.d('POST Logout response status: ${response.statusCode}',
+          method: method);
+
       if (response.statusCode >= 200 && response.statusCode < 400) {
-        print('Successfully logged out from Keycloak via POST');
+        AppLogger.i('Successfully logged out from Keycloak via POST',
+            method: method);
         return;
       }
     } catch (e) {
-      print('POST logout failed: $e');
+      AppLogger.d('POST logout failed: $e', method: method);
     }
-    
-    // Method 3: Fallback to opening URL in browser
-    try {
-      print('Falling back to opening logout URL in browser...');
-      await _urlLauncher(logoutUrl);
-      await Future.delayed(Duration(seconds: 3)); // Give time for browser logout
-      print('Opened logout URL in browser');
-    } catch (urlError) {
-      print('Could not open logout URL: $urlError');
-      throw Exception('All logout methods failed');
-    }
+
+    AppLogger.w('Logout completed with best effort', method: method);
   }
-  
+
   String _extractRealm(String logoutUrl) {
-    // Extract realm from logout URL like: http://localhost:8080/realms/timeasy/protocol/openid-connect/logout
     final uri = Uri.parse(logoutUrl);
     final pathSegments = uri.pathSegments;
     final realmIndex = pathSegments.indexOf('realms');
     if (realmIndex != -1 && realmIndex + 1 < pathSegments.length) {
       return pathSegments[realmIndex + 1];
     }
-    return 'timeasy'; // Default realm
+    return 'timeasy';
   }
 
   Future<bool> refreshToken(ApiCredentials apiCredential) async {
-    if (apiCredential.credentialJson == null) {
+    const method = 'OpenIdAuthenticationService.refreshToken';
+    AppLogger.d('Starting token refresh', method: method);
+
+    if (apiCredential.refreshToken == null) {
+      AppLogger.w('No refresh token available', method: method);
       return false;
     }
-    var credential =
-        Credential.fromJson(json.decode(apiCredential.credentialJson!));
-    var token = await credential.getTokenResponse();
-    if (token.accessToken == null) {
+
+    try {
+      final TokenResponse? result = await _appAuth.token(
+        TokenRequest(
+          clientId,
+          redirectUri,
+          issuer: _issuer,
+          refreshToken: apiCredential.refreshToken,
+          scopes: scopes,
+        ),
+      );
+
+      if (result == null || result.accessToken == null) {
+        AppLogger.w('Token refresh returned null or no access token',
+            method: method);
+        apiCredential.clear();
+        return false;
+      }
+
+      apiCredential.accessToken = result.accessToken;
+      apiCredential.refreshToken = result.refreshToken;
+      apiCredential.credentialJson = json.encode({
+        'accessToken': result.accessToken,
+        'refreshToken': result.refreshToken,
+        'idToken': result.idToken,
+        'accessTokenExpirationDateTime':
+            result.accessTokenExpirationDateTime?.toIso8601String(),
+      });
+
+      AppLogger.i('Token refresh successful', method: method);
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.e('Token refresh failed',
+          error: e, stackTrace: stackTrace, method: method);
       apiCredential.clear();
       return false;
     }
-    apiCredential.accessToken = token.accessToken;
-    apiCredential.refreshToken = token.refreshToken;
-    apiCredential.credentialJson = json.encode(credential.toJson());
-    return true;
   }
 
-  _urlLauncher(String url) async {
-    var uri = Uri.parse(url);
-    if (await canLaunchUrl(uri) || Platform.isAndroid) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $url';
+  String? _buildLogoutUrl(String? idToken) {
+    if (idToken == null) return null;
+    final logoutEndpoint = '$_issuer/protocol/openid-connect/logout';
+    return '$logoutEndpoint?id_token_hint=$idToken&post_logout_redirect_uri=$redirectUri';
+  }
+
+  Map<String, dynamic> _decodeIdToken(String idToken) {
+    final parts = idToken.split('.');
+    if (parts.length != 3) {
+      return {};
     }
-  }
 
-  void _closeWebView() {
-    if (Platform.isAndroid || Platform.isIOS) {
-      closeInAppWebView();
-    }
-  }
-
-  Future<Client> getClient() async {
-    var uri = Uri.parse(keycloakUri);
-    var issuer = await Issuer.discover(uri);
-    return Client(issuer, clientId);
-  }
-
-  Future<Credential?> getRedirectResult(Client client,
-      {List<String> scopes = const []}) async {
-    return null;
+    final payload = parts[1];
+    final normalized = base64Url.normalize(payload);
+    final decoded = utf8.decode(base64Url.decode(normalized));
+    return json.decode(decoded);
   }
 }
