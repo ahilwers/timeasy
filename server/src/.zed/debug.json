@@ -1,0 +1,32 @@
+[
+  {
+    "adapter": "Delve",
+    "label": "Launch Service (No License Manager)",
+    "request": "launch",
+    "mode": "debug",
+    "program": "${ZED_WORKTREE_ROOT}/cmd/service/main.go",
+    "cwd": "${ZED_WORKTREE_ROOT}",
+    "args": [],
+    "buildFlags": ["-gcflags=all=-N -l"],
+    "env": {
+      "TIMEASY_SERVER_PORT": "8090",
+    },
+  },
+  {
+    "adapter": "Delve",
+    "label": "Launch Service (With License Manager)",
+    "request": "launch",
+    "mode": "debug",
+    "program": "${ZED_WORKTREE_ROOT}/cmd/service/main.go",
+    "cwd": "${ZED_WORKTREE_ROOT}",
+    "args": [],
+    "buildFlags": ["-gcflags=all=-N -l"],
+    "env": {
+      "TIMEASY_SERVER_PORT": "8090",
+      "TIMEASY_LICENSE_MANAGER_HOST": "http://localhost:8080",
+      "TIMEASY_LICENSE_MANAGER_CLIENT_ID": "confidential",
+      "TIMEASY_LICENSE_MANAGER_CLIENT_SECRET": "laOND6osc4o3KwMjCkzjG5oKCM3qE3VF",
+      "TIMEASY_LICENSE_MANAGER_PRODUCT_ID": "6916f6b31017b4db6367f77b",
+    },
+  },
+]

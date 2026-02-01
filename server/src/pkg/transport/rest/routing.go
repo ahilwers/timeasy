@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, licenseMiddleware LicenseMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
 	// Set Gin to release mode to disable debug logging
 	gin.SetMode(gin.ReleaseMode)
 
@@ -20,6 +20,7 @@ func SetupRouter(authMiddleware AuthMiddleware, logger *slog.Logger, teamHandler
 
 	protectedGroup := router.Group("/api/v1")
 	protectedGroup.Use(authMiddleware.HandlerFunc())
+	protectedGroup.Use(licenseMiddleware.HandlerFunc())
 	protectedGroup.GET("/projects", projectHandler.GetAllProjects)
 	protectedGroup.POST("/projects", projectHandler.AddProject)
 	protectedGroup.GET("/projects/:id", projectHandler.GetProjectById)

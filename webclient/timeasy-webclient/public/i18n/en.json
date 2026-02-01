@@ -227,6 +227,13 @@
             "permission2": "<strong>Project access</strong> - You must have at least \"Browse Projects\" permission in the Jira projects you want to integrate"
         }
     },
+    "license": {
+        "noLicense": {
+            "title": "License Required",
+            "message": "Your subscription is not active.",
+            "description": "Please check your license subscription to continue using timeasy. Contact your administrator if you believe this is an error."
+        }
+    },
     "common": {
         "loading": "Loading...",
         "save": "Save",

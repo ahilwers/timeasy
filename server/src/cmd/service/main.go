@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,6 +13,7 @@ import (
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/external"
+	"timeasy-server/pkg/license"
 	"timeasy-server/pkg/logging"
 	"timeasy-server/pkg/sync"
 	"timeasy-server/pkg/transport/rest"
@@ -76,6 +78,20 @@ func main() {
 
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
+
+	// Setup license manager client and middleware
+	licenseClient := license.NewLicenseManagerClient(
+		configuration.LicenseManagerHost,
+		configuration.LicenseManagerClientId,
+		configuration.LicenseManagerClientSecret,
+		configuration.LicenseManagerProductId,
+	)
+	licenseMiddleware := rest.NewLicenseCheckMiddleware(licenseClient)
+	if licenseClient.IsConfigured() {
+		slog.Info("License manager configured", "host", configuration.LicenseManagerHost)
+	} else {
+		slog.Warn("License manager not configured, license checking is disabled")
+	}
 
 	changelogRepository := postgresql.NewPostgreSQLChangelogRepository(databaseService.Database.DB)
 
@@ -159,11 +175,11 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	router := rest.SetupRouter(authMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
+	router := rest.SetupRouter(authMiddleware, licenseMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
 
 	go func() {
-		slog.Info("Starting HTTP server", "port", "8080")
-		router.Run()
+		slog.Info("Starting HTTP server", "port", configuration.ServerPort)
+		router.Run(fmt.Sprintf(":%d", configuration.ServerPort))
 	}()
 
 	// Wait for interrupt signal

@@ -3,6 +3,7 @@ import {canActivateAuth} from './guards/auth.guard';
 
 const routes: Routes = [
   { path: 'forbidden', loadComponent: () => import('./components/forbidden/forbidden.component').then(m => m.ForbiddenComponent) },
+  { path: 'no-license', loadComponent: () => import('./components/no-license/no-license.component').then(m => m.NoLicenseComponent) },
   {
     path: '',
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
