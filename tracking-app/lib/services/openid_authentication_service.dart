@@ -207,7 +207,10 @@ class OpenIdAuthenticationService {
     } catch (e, stackTrace) {
       AppLogger.e('Token refresh failed',
           error: e, stackTrace: stackTrace, method: method);
-      apiCredential.clear();
+      // Don't clear credentials on transient errors (network issues, timeouts).
+      // The refresh token may still be valid and can be retried later.
+      // Returning false without clearing allows the bloc to keep the user
+      // authenticated with the existing tokens.
       return false;
     }
   }
