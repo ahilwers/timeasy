@@ -21,3 +21,5 @@ class AuthenticationErrorEvent extends AuthenticationEvent {
 
   AuthenticationErrorEvent(this.message);
 }
+
+class SubscriptionExpiredEvent extends AuthenticationEvent {}

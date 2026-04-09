@@ -88,5 +88,6 @@
     "projectActive": "Aktiv",
     "pending": "ausstehend",
     "resolvingIssue": "Issue wird aufgelöst...",
-    "issueResolved": "Issue aufgelöst"
+    "issueResolved": "Issue aufgelöst",
+    "subscriptionExpiredMessage": "Dein Abonnement ist nicht mehr aktiv. Bitte erneuere dein Abonnement unter timeasy.org."
 }

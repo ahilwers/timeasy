@@ -16,6 +16,7 @@ class AuthenticationBloc
     on<LoginEvent>(_onLogin);
     on<LogoutEvent>(_onLogout);
     on<RefreshTokenEvent>(_onRefreshToken);
+    on<SubscriptionExpiredEvent>(_onSubscriptionExpired);
     on<SetAuthenticationEvent>((event, emit) {
       emit(AuthenticationAuthenticated(event.credentials));
     });
@@ -104,5 +105,17 @@ class AuthenticationBloc
       // Don't log out on transient errors — keep existing auth state.
       AppLogger.e('Token refresh error: $e');
     }
+  }
+
+  FutureOr<void> _onSubscriptionExpired(
+      SubscriptionExpiredEvent event, Emitter<AuthenticationState> emit) async {
+    try {
+      // Logout user (same logic as _onLogout)
+      await _logout();
+    } catch (e) {
+      // Even if logout fails, state should still be set
+      // (e.g. when user is no longer considered Authenticated)
+    }
+    emit(AuthenticationSubscriptionExpired());
   }
 }

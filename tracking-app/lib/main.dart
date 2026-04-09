@@ -214,6 +214,22 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
             backgroundSyncService.updateToken(state.credentials.accessToken!);
             backgroundSyncService.startSync();
             eventSyncService.updateToken(state.credentials.accessToken!);
+          } else if (state is AuthenticationSubscriptionExpired) {
+            // Stop background sync on subscription expiry
+            backgroundSyncService.stopSync();
+            // Show SnackBar with subscription expired message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  AppLocalizations.of(context)?.subscriptionExpiredMessage ??
+                      'Your subscription is not active. Please renew your subscription.',
+                ),
+                duration: const Duration(seconds: 5),
+                backgroundColor: Colors.red.shade700,
+              ),
+            );
+            // Navigation happens automatically since _logout() is called in AuthBloc
+            // which will trigger AuthenticationInitial state
           } else {
             // Stop background sync on logout (AuthenticationInitial) or error
             backgroundSyncService.stopSync();

@@ -15,3 +15,5 @@ class AuthenticationError extends AuthenticationState {
 
   AuthenticationError(this.message);
 }
+
+class AuthenticationSubscriptionExpired extends AuthenticationState {}

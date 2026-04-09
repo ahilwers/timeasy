@@ -225,5 +225,9 @@
     "issueResolved": "Issue resolved",
     "@issueResolved": {
         "description": "Status message when an issue is successfully resolved"
+    },
+    "subscriptionExpiredMessage": "Your subscription is no longer active. Please renew your subscription at timeasy.org.",
+    "@subscriptionExpiredMessage": {
+        "description": "Message shown when user's subscription has expired"
     }
 }
