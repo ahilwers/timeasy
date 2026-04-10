@@ -55,6 +55,15 @@ func (t *authTokenMock) HasRole(role string) (bool, error) {
 	return args.Get(0).(bool), args.Error(1)
 }
 
+type licenseMiddlewareMock struct {
+	mock.Mock
+}
+
+func (m *licenseMiddlewareMock) HandlerFunc() gin.HandlerFunc {
+	args := m.Called()
+	return args.Get(0).(gin.HandlerFunc)
+}
+
 type HandlerTest struct {
 	ProjectUsecase          usecase.ProjectUsecase
 	TimeEntryUsecase        usecase.TimeEntryUsecase
@@ -150,8 +159,15 @@ func (t *HandlerTest) initHandlers() {
 	externalIntegrationHandler := NewExternalIntegrationHandler(t.tokenVerifier, externalIntegrationUsecase)
 	userExternalAccountHandler := NewUserExternalAccountHandler(t.tokenVerifier, userExternalAccountUsecase)
 
+	// Create a mock license middleware that allows all requests to pass through
+	licenseMiddleware := &licenseMiddlewareMock{}
+	passThroughHandler := gin.HandlerFunc(func(c *gin.Context) {
+		c.Next() // Pass through without blocking
+	})
+	licenseMiddleware.On("HandlerFunc").Return(passThroughHandler)
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	t.Router = SetupRouter(authMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
+	t.Router = SetupRouter(authMiddleware, licenseMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {
