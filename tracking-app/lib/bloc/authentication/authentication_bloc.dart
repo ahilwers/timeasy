@@ -5,6 +5,7 @@ import 'package:timeasy/environment.dart';
 import 'package:timeasy/models/api_credentials.dart';
 import 'package:timeasy/repositories/api_credentials_repository.dart';
 import 'package:timeasy/services/openid_authentication_service.dart';
+import 'package:timeasy/utils/app_logger.dart';
 
 import 'authentication_event.dart';
 import 'authentication_state.dart';
@@ -87,13 +88,21 @@ class AuthenticationBloc
       var authenticator = _createAuthenticator();
       if (await authenticator.refreshToken(credentials)) {
         emit(AuthenticationAuthenticated(credentials));
+        repository.saveApiCredentials(credentials);
+      } else if (credentials.refreshToken != null) {
+        // Refresh failed but we still have a refresh token (transient error).
+        // Keep the user authenticated so we can retry later.
+        if (state is! AuthenticationAuthenticated) {
+          emit(AuthenticationAuthenticated(credentials));
+        }
       } else {
+        // No refresh token left — credentials were explicitly invalidated.
         emit(AuthenticationInitial());
+        repository.saveApiCredentials(credentials);
       }
-      repository.saveApiCredentials(credentials);
     } catch (e) {
-      emit(AuthenticationError(e.toString()));
-      emit(AuthenticationInitial());
+      // Don't log out on transient errors — keep existing auth state.
+      AppLogger.e('Token refresh error: $e');
     }
   }
 }
