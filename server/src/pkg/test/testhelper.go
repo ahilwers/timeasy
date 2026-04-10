@@ -100,12 +100,12 @@ func TeardownDatabase(pool *dockertest.Pool, resource *dockertest.Resource) {
 func SetupTest(tb testing.TB) func(tb testing.TB) {
 	err := deleteAllEntities(Database.DB)
 	if err != nil {
-		tb.Errorf(err.Error())
+		tb.Errorf("Test setup error: %v", err)
 	}
 	return func(tb testing.TB) {
 		err := deleteAllEntities(Database.DB)
 		if err != nil {
-			tb.Errorf(err.Error())
+			tb.Errorf("Test cleanup error: %v", err)
 		}
 	}
 }
