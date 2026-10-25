@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,8 +12,8 @@ import (
 	"timeasy-server/pkg/database"
 	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/external"
-	"timeasy-server/pkg/license"
 	"timeasy-server/pkg/logging"
+	"timeasy-server/pkg/subscription"
 	"timeasy-server/pkg/sync"
 	"timeasy-server/pkg/transport/rest"
 	"timeasy-server/pkg/usecase"
@@ -74,24 +73,30 @@ func main() {
 
 	slog.Info("Authentication server configured", "keycloak_host", configuration.KeycloakHost)
 
-	flag.Parse()
-
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
-	// Setup license manager client and middleware
-	licenseClient := license.NewLicenseManagerClient(
-		configuration.LicenseManagerHost,
-		configuration.LicenseManagerClientId,
-		configuration.LicenseManagerClientSecret,
-		configuration.LicenseManagerProductId,
-	)
-	licenseMiddleware := rest.NewLicenseCheckMiddleware(licenseClient)
-	if licenseClient.IsConfigured() {
-		slog.Info("License manager configured", "host", configuration.LicenseManagerHost)
+	// Setup subscription checker (Polar) and middleware.
+	// Without Polar configuration (self-hosted instances) subscription
+	// checking is disabled and all requests are allowed.
+	var subscriptionChecker subscription.Checker
+	if configuration.PolarAccessToken != "" {
+		subscriptionChecker = subscription.NewPolarChecker(subscription.PolarConfig{
+			Env:            configuration.PolarEnv,
+			OrganizationID: configuration.PolarOrganizationID,
+			ProductID:      configuration.PolarProductID,
+			AccessToken:    configuration.PolarAccessToken,
+			CacheTTL:       time.Duration(configuration.SubscriptionCacheTTLMinutes) * time.Minute,
+		})
+		slog.Info("Polar billing enabled",
+			"env", configuration.PolarEnv,
+			"cache_ttl_minutes", configuration.SubscriptionCacheTTLMinutes)
 	} else {
-		slog.Warn("License manager not configured, license checking is disabled")
+		subscriptionChecker = subscription.NewNoopChecker()
+		slog.Info("Billing disabled (self-hosted mode): subscription checking is off")
 	}
+	subscriptionMiddleware := rest.NewSubscriptionCheckMiddleware(subscriptionChecker)
+	billingHandler := rest.NewBillingHandler(subscriptionChecker, configuration.WebclientURL)
 
 	changelogRepository := postgresql.NewPostgreSQLChangelogRepository(databaseService.Database.DB)
 
@@ -175,14 +180,20 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	router := rest.SetupRouter(authMiddleware, licenseMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
+	router := rest.SetupRouter(authMiddleware, subscriptionMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler, billingHandler)
 
 	go func() {
 		slog.Info("Starting HTTP server", "port", configuration.ServerPort)
-		router.Run(fmt.Sprintf(":%d", configuration.ServerPort))
+		if err := router.Run(fmt.Sprintf(":%d", configuration.ServerPort)); err != nil {
+			// This usually means the port is already in use (e.g. an older
+			// instance is still running). Log loudly and trigger shutdown so
+			// the failure is visible instead of silently serving nothing.
+			slog.Error("HTTP server failed", "error", err, "port", configuration.ServerPort)
+			c <- syscall.SIGTERM
+		}
 	}()
 
-	// Wait for interrupt signal
-	<-c
-	slog.Info("Shutting down gracefully...")
+	// Wait for interrupt signal or a fatal server error
+	sig := <-c
+	slog.Info("Shutting down gracefully...", "signal", sig.String())
 }

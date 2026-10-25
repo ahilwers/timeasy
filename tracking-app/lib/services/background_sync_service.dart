@@ -5,6 +5,7 @@ import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
+import 'package:timeasy/services/subscription_required_exception.dart';
 import 'package:timeasy/services/synchronization_service.dart';
 
 class BackgroundSyncService {
@@ -55,6 +56,8 @@ class BackgroundSyncService {
     try {
       var retrieveResult = await _syncService.synchronize();
       _synchronizationBloc.add(SynchronizationSuccessEvent(retrieveResult));
+    } on SubscriptionRequiredException {
+      _synchronizationBloc.add(SynchronizationSubscriptionRequiredEvent());
     } catch (e) {
       _synchronizationBloc.add(SynchronizationErrorEvent(e.toString()));
     }

@@ -1,0 +1,45 @@
+.upgrade-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.upgrade-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.upgrade-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.upgrade-icon {
+  color: var(--p-primary-color, #3b82f6);
+}
+
+.upgrade-message {
+  font-size: 1.1rem;
+  color: var(--p-text-color);
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.upgrade-error {
+  font-size: 0.95rem;
+  color: var(--p-red-500, #ef4444);
+  max-width: 420px;
+}
+
+.upgrade-hint {
+  font-size: 0.9rem;
+  color: var(--p-text-muted-color, #6b7280);
+}

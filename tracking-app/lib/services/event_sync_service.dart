@@ -5,6 +5,7 @@ import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
+import 'package:timeasy/services/subscription_required_exception.dart';
 import 'package:timeasy/services/synchronization_service.dart';
 import 'package:timeasy/tools/retrieve_changes_result.dart';
 import 'package:timeasy/utils/app_logger.dart';
@@ -80,6 +81,8 @@ class EventSyncService {
     try {
       var retrieveResult = await _syncService!.synchronize();
       _syncBloc!.add(SynchronizationSuccessEvent(retrieveResult));
+    } on SubscriptionRequiredException {
+      _syncBloc!.add(SynchronizationSubscriptionRequiredEvent());
     } catch (e) {
       _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
     }
@@ -106,6 +109,10 @@ class EventSyncService {
       // For send-only, we create a minimal success result since we didn't retrieve anything
       _syncBloc!.add(
           SynchronizationSuccessEvent(RetrieveChangesResult(false, false)));
+    } on SubscriptionRequiredException {
+      AppLogger.w('EventSyncService: Send-only sync blocked - subscription required',
+          method: 'sync');
+      _syncBloc!.add(SynchronizationSubscriptionRequiredEvent());
     } catch (e) {
       AppLogger.e('EventSyncService: Send-only sync failed',
           error: e, method: 'sync');

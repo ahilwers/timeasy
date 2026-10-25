@@ -3,4 +3,7 @@
 desktop-app/node_modules/
 desktop-app/
 server/src/service
+server/src/config.txt
+server/src/config.txt.local
+server/src/.env
 .zed

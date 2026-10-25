@@ -13,10 +13,11 @@ Monorepo: Flutter mobile app (production, App Store), Go REST API (WIP), Angular
 
 ## Go server (`server/src`)
 - `make -C server/src build|run|test`; `make richtest` needs `richgo` installed.
+- Local dev config: `server/src/config.txt` (gitignored, `flag-name value` pairs for ff.PlainParser) → `./bin/timeasy-server -config config.txt`. Priority: CLI flags > config file > `TIMEASY_*` env vars.
 - Tests REQUIRE Docker: `pkg/test/testhelper.go` starts a disposable PostgreSQL 15 container via dockertest. Without Docker, `go test ./...` dies with a fatal log. Keep `-p=1` (set by `make test`) to avoid parallel containers.
 - New handlers/usecases/repositories are wired manually in `cmd/service/main.go` — unwired code is unreachable.
-- Config: `peterbourgon/ff` — flags (e.g. `--database-host`) or env vars with `TIMEASY_` prefix (`TIMEASY_DATABASE_HOST`, `TIMEASY_KEYCLOAK_HOST`, `TIMEASY_LICENSE_MANAGER_HOST`, ...). Secrets stay out of source control (`.env` / secret manager, never committed). Subscription check (`pkg/license`, `LicenseCheckMiddleware`) is silently disabled when the license-manager vars are unset.
-- Subscription validation calls the separate `licensemanager` service: `GET {TIMEASY_LICENSE_MANAGER_HOST}/api/v1/subscriptions/check?userId={keycloakUserId}&productId={TIMEASY_LICENSE_MANAGER_PRODUCT_ID}`; `{"active": false}` → 402.
+- Config: `peterbourgon/ff` — flags (e.g. `--database-host`) or env vars with `TIMEASY_` prefix (`TIMEASY_DATABASE_HOST`, `TIMEASY_KEYCLOAK_HOST`, `TIMEASY_POLAR_ACCESS_TOKEN`, ...). Secrets stay out of source control (`.env` / secret manager, never committed). Subscription check (`pkg/subscription`, `SubscriptionCheckMiddleware`) is disabled when `TIMEASY_POLAR_ACCESS_TOKEN` is unset — self-hosted instances run without billing and never return 402.
+- Subscription validation calls Polar directly: customer linked to Keycloak user via `external_customer_id` (= JWT `sub`, set when the server creates the checkout); check = `GET {polar}/v1/customers/external/{sub}` → `GET .../{id}/state` → `active_subscriptions`; in-memory TTL cache (~15 min, no webhooks, single-flight collapses concurrent checks); email-match fallback backfills the external ID. Billing endpoints (`/api/v1/billing/status`, `/api/v1/upgrade`, `/api/v1/subscription/status`, `/api/v1/billing/portal`) are auth'd but intentionally NOT behind the subscription middleware (a user without a subscription must be able to upgrade).
 - PostgreSQL migrations (golang-migrate) in `pkg/database/postgresql/migrations`, paired up/down files, run automatically on server startup.
 - Dev infra: `docker compose -f server/postgresql/development/docker-compose.yaml up -d` (app DB), `-f server/keycloak/development/docker-compose.yaml up -d` (Keycloak on localhost:8180, realm `timeasy`, admin/admin; import `server/keycloak/realm-export.json` and add users manually). `server/docker/docker-compose.yaml` is the full prod-like stack.
 - Manual API testing: `server/service-testing/login.sh` (httpie) fetches a Keycloak token into `$TOKEN`.
@@ -25,6 +26,7 @@ Monorepo: Flutter mobile app (production, App Store), Go REST API (WIP), Angular
 - Run `flutter gen-l10n` BEFORE the first build/run/test (translations come from `lib/l10n/app_*.arb`; CI does this too).
 - Lint is `flutter analyze`. Android release builds need a keystore + `android/key.properties` (see `tracking-app/README.md`).
 - BLoC pattern only (flutter_bloc) — no setState for stateful flows. SQLite via sqflite + `sqflite_migration`; offline-first: local writes → `ChangelogEntry` changelog → bidirectional sync when online.
+- Store compliance: app-store builds must NOT link to external purchase flows (Apple 3.1.1 / Play billing rules). The 402 paywall dialog is information-only in store builds; the "Subscribe" CTA that opens the web client exists only in dev builds. Subscriptions are purchased on timeasy.org in the browser — Polar does not process store receipts.
 
 ## Web client (`webclient/timeasy-webclient`)
 - `npm start` (dev server), `npm run lint`, and `npm run test -- --watch=false --browsers=ChromeHeadless` — plain `npm test` hangs in watch mode.
@@ -36,5 +38,5 @@ Monorepo: Flutter mobile app (production, App Store), Go REST API (WIP), Angular
 - Branching: `feature/*` → `develop` (PR) → `main`.
 
 ## Current priorities
-- Flutter 402 Payment Required handling is NOT implemented (webclient is): during sync show toast + logout; during login check subscription and show upgrade prompt (CTA → `https://timeasy.app/signup?programId=timeasy-prod`).
-- Go server subscription validation is DONE (`pkg/license` + `LicenseCheckMiddleware`); licensemanager env vars are `TIMEASY_LICENSE_MANAGER_*`.
+- Polar subscription integration is implemented end-to-end (server `pkg/subscription` + webclient billing funnel + Flutter 402 paywall); remaining: sandbox verification with a real Polar org (product ID, access token, webhook-free TTL flow), then `TIMEASY_POLAR_ENV=production` go-live.
+- The old `licensemanager` service is fully removed from this repo; its own repo/deployment still needs decommissioning.

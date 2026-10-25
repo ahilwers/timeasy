@@ -8,6 +8,7 @@ import (
 	"testing"
 	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/external"
+	"timeasy-server/pkg/subscription"
 	"timeasy-server/pkg/test"
 	"timeasy-server/pkg/usecase"
 
@@ -45,6 +46,14 @@ func (t *authTokenMock) GetUserId() (uuid.UUID, error) {
 	return args.Get(0).(uuid.UUID), args.Error(1)
 }
 
+func (t *authTokenMock) GetEmail() (string, error) {
+	args := t.Called()
+	if email := args.Get(0); email != nil {
+		return email.(string), args.Error(1)
+	}
+	return "", args.Error(1)
+}
+
 func (t *authTokenMock) GetRoles() ([]string, error) {
 	args := t.Called()
 	return args.Get(0).([]string), args.Error(1)
@@ -53,15 +62,6 @@ func (t *authTokenMock) GetRoles() ([]string, error) {
 func (t *authTokenMock) HasRole(role string) (bool, error) {
 	args := t.Called(role)
 	return args.Get(0).(bool), args.Error(1)
-}
-
-type licenseMiddlewareMock struct {
-	mock.Mock
-}
-
-func (m *licenseMiddlewareMock) HandlerFunc() gin.HandlerFunc {
-	args := m.Called()
-	return args.Get(0).(gin.HandlerFunc)
 }
 
 type HandlerTest struct {
@@ -159,15 +159,12 @@ func (t *HandlerTest) initHandlers() {
 	externalIntegrationHandler := NewExternalIntegrationHandler(t.tokenVerifier, externalIntegrationUsecase)
 	userExternalAccountHandler := NewUserExternalAccountHandler(t.tokenVerifier, userExternalAccountUsecase)
 
-	// Create a mock license middleware that allows all requests to pass through
-	licenseMiddleware := &licenseMiddlewareMock{}
-	passThroughHandler := gin.HandlerFunc(func(c *gin.Context) {
-		c.Next() // Pass through without blocking
-	})
-	licenseMiddleware.On("HandlerFunc").Return(passThroughHandler)
+	// Use the noop subscription checker in tests (allows all requests)
+	subscriptionMiddleware := NewSubscriptionCheckMiddleware(subscription.NewNoopChecker())
+	billingHandler := NewBillingHandler(subscription.NewNoopChecker(), "")
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	t.Router = SetupRouter(authMiddleware, licenseMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
+	t.Router = SetupRouter(authMiddleware, subscriptionMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler, billingHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {

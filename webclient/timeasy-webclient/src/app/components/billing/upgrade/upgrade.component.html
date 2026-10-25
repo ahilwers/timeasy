@@ -1,0 +1,33 @@
+<div class="upgrade-container">
+  @if (isLoading()) {
+  <div class="upgrade-loading">
+    <p-progressSpinner [style]="{width: '50px', height: '50px'}"></p-progressSpinner>
+    <p>{{ 'common.loading' | translate }}</p>
+  </div>
+  } @else {
+  <app-card [header]="('license.upgrade.title' | translate)">
+    @if (!billingEnabled()) {
+    <div class="upgrade-content">
+      <p class="upgrade-message">{{ 'license.upgrade.billingDisabled' | translate }}</p>
+    </div>
+    } @else {
+    <div class="upgrade-content">
+      <div class="upgrade-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <p class="upgrade-message">{{ 'license.upgrade.message' | translate }}</p>
+      @if (errorKey(); as errKey) {
+      <p class="upgrade-error">{{ errKey | translate }}</p>
+      }
+      <p-button label="{{ 'license.upgrade.subscribe' | translate }}" (onClick)="startCheckout()"
+                [loading]="isStartingCheckout()" icon="pi pi-credit-card"></p-button>
+      @if (isStartingCheckout()) {
+      <p class="upgrade-hint">{{ 'license.upgrade.startingCheckout' | translate }}</p>
+      }
+    </div>
+    }
+  </app-card>
+  }
+</div>

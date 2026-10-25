@@ -23,6 +23,19 @@ func (v *keycloakToken) GetUserId() (uuid.UUID, error) {
 	return uuid.FromString(idStr)
 }
 
+// GetEmail returns the user's email claim from the token, if present.
+func (v *keycloakToken) GetEmail() (string, error) {
+	email, ok := v.token.PrivateClaims()["email"]
+	if !ok {
+		return "", fmt.Errorf("token does not contain an email claim")
+	}
+	emailStr, ok := email.(string)
+	if !ok {
+		return "", fmt.Errorf("email claim is not a string")
+	}
+	return emailStr, nil
+}
+
 func (v *keycloakToken) HasRole(role string) (bool, error) {
 	roles, err := v.GetRoles()
 	if err != nil {

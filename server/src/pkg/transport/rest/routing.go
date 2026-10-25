@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, licenseMiddleware LicenseMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, subscriptionMiddleware SubscriptionMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler, billingHandler *BillingHandler) *gin.Engine {
 	// Set Gin to release mode to disable debug logging
 	gin.SetMode(gin.ReleaseMode)
 
@@ -18,9 +18,19 @@ func SetupRouter(authMiddleware AuthMiddleware, licenseMiddleware LicenseMiddlew
 	router.Use(SlogRecoveryMiddleware(logger))
 	router.Use(corsMiddleware())
 
+	// Billing endpoints. These are deliberately NOT behind the subscription
+	// check middleware: a user without an active subscription must still be
+	// able to start the upgrade flow or check their subscription status.
+	router.GET("/api/v1/billing/status", billingHandler.GetBillingStatus)
+	billingGroup := router.Group("/api/v1")
+	billingGroup.Use(authMiddleware.HandlerFunc())
+	billingGroup.POST("/upgrade", billingHandler.StartUpgrade)
+	billingGroup.GET("/subscription/status", billingHandler.GetSubscriptionStatus)
+	billingGroup.POST("/billing/portal", billingHandler.CreatePortalSession)
+
 	protectedGroup := router.Group("/api/v1")
 	protectedGroup.Use(authMiddleware.HandlerFunc())
-	protectedGroup.Use(licenseMiddleware.HandlerFunc())
+	protectedGroup.Use(subscriptionMiddleware.HandlerFunc())
 	protectedGroup.GET("/projects", projectHandler.GetAllProjects)
 	protectedGroup.POST("/projects", projectHandler.AddProject)
 	protectedGroup.GET("/projects/:id", projectHandler.GetProjectById)

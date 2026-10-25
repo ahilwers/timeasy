@@ -10,6 +10,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { Router } from '@angular/router';
 import { UserProfile } from '../../interfaces/auth-provider.interface';
+import { BillingService } from '../../services/billing.service';
 
 @Component({
     selector: 'app-user-profile',
@@ -29,9 +30,13 @@ export class UserProfileComponent implements OnInit {
     private readonly messageService = inject(MessageService);
     private readonly keycloak = inject(Keycloak);
     private readonly translateService = inject(TranslateService);
+    private readonly billingService = inject(BillingService);
 
     user = signal<UserProfile | null>(null);
     isLoading = signal(false);
+    isPortalLoading = signal(false);
+    /** Exposed for the template: billing UI (manage subscription) only shows when enabled. */
+    readonly billingEnabled = this.billingService.billingEnabled;
 
     availableLanguages = [
         { code: 'en', name: 'English' },
@@ -51,6 +56,31 @@ export class UserProfileComponent implements OnInit {
 
     async ngOnInit() {
         await this.loadUserProfile();
+        this.billingService.loadBillingStatus().subscribe();
+    }
+
+    openSubscriptionPortal() {
+        if (!this.keycloak.authenticated) {
+            this.showError('user.profile.errors.authenticationRequired');
+            return;
+        }
+        this.isPortalLoading.set(true);
+        this.billingService.createPortalSession().subscribe({
+            next: (response) => {
+                this.isPortalLoading.set(false);
+                if (response.url) {
+                    // Short-lived portal session URL — generated fresh per click.
+                    window.location.href = response.url;
+                } else {
+                    // No Polar customer yet (never paid) — offer the upgrade flow.
+                    this.router.navigate(['/upgrade']);
+                }
+            },
+            error: () => {
+                this.isPortalLoading.set(false);
+                this.showError('license.portalError');
+            }
+        });
     }
 
     private async loadUserProfile() {

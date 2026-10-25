@@ -3,31 +3,31 @@ package rest
 import (
 	"log/slog"
 	"net/http"
-	"timeasy-server/pkg/license"
+	"timeasy-server/pkg/subscription"
 
 	"github.com/gin-gonic/gin"
 )
 
-type licenseCheckMiddleware struct {
-	licenseClient *license.LicenseManagerClient
-}
-
-// LicenseMiddleware defines the interface for license checking middleware
-type LicenseMiddleware interface {
+// SubscriptionMiddleware defines the interface for subscription checking middleware.
+type SubscriptionMiddleware interface {
 	HandlerFunc() gin.HandlerFunc
 }
 
-// NewLicenseCheckMiddleware creates a new license check middleware
-func NewLicenseCheckMiddleware(licenseClient *license.LicenseManagerClient) LicenseMiddleware {
-	return &licenseCheckMiddleware{
-		licenseClient: licenseClient,
+type subscriptionCheckMiddleware struct {
+	checker subscription.Checker
+}
+
+// NewSubscriptionCheckMiddleware creates a new subscription check middleware.
+func NewSubscriptionCheckMiddleware(checker subscription.Checker) SubscriptionMiddleware {
+	return &subscriptionCheckMiddleware{
+		checker: checker,
 	}
 }
 
-func (mw *licenseCheckMiddleware) HandlerFunc() gin.HandlerFunc {
+func (mw *subscriptionCheckMiddleware) HandlerFunc() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Skip license check if license manager is not configured
-		if !mw.licenseClient.IsConfigured() {
+		// Self-hosted instances without billing configuration allow everything.
+		if !mw.checker.IsEnabled() {
 			c.Next()
 			return
 		}
@@ -35,7 +35,7 @@ func (mw *licenseCheckMiddleware) HandlerFunc() gin.HandlerFunc {
 		// Get the auth token from context (set by JWT middleware)
 		authToken, ok := GetAuthTokenFromContext(c)
 		if !ok {
-			slog.Error("Auth token not found in context for license check",
+			slog.Error("Auth token not found in context for subscription check",
 				"path", c.Request.URL.Path,
 				"method", c.Request.Method)
 			c.String(http.StatusUnauthorized, "Unauthorized")
@@ -55,16 +55,19 @@ func (mw *licenseCheckMiddleware) HandlerFunc() gin.HandlerFunc {
 			return
 		}
 
+		// Email is optional (used as fallback for Polar customer matching)
+		email, _ := authToken.GetEmail()
+
 		// Check subscription status
-		active, err := mw.licenseClient.CheckSubscription(userID.String())
+		active, err := mw.checker.CheckSubscription(c.Request.Context(), userID.String(), email)
 		if err != nil {
 			slog.Error("Failed to check subscription",
 				"error", err,
 				"userID", userID.String(),
 				"path", c.Request.URL.Path,
 				"method", c.Request.Method)
-			// On error, allow access but log the issue
-			// This prevents license manager outages from blocking all users
+			// On transient errors, allow access but log the issue
+			// This prevents billing provider outages from blocking all users
 			c.Next()
 			return
 		}
@@ -76,7 +79,7 @@ func (mw *licenseCheckMiddleware) HandlerFunc() gin.HandlerFunc {
 				"method", c.Request.Method)
 			c.JSON(http.StatusPaymentRequired, gin.H{
 				"error":   "subscription_inactive",
-				"message": "Your subscription is not active. Please check your license.",
+				"message": "Your subscription is not active. Please subscribe to timeasy Pro.",
 			})
 			c.Abort()
 			return

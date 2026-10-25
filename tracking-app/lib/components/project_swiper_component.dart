@@ -19,6 +19,7 @@ import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
 import 'package:timeasy/views/settings/settings_view.dart';
+import 'package:timeasy/views/subscription/subscription_required_view.dart';
 
 // Helper function to convert hex color string to Color
 Color hexToColor(String hexString) {
@@ -52,6 +53,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
   AppState _currentState = AppState.STOPPED;
   Timer? _debounceTimer;
   TimeEntry? _currentOpenTimeEntry;
+  bool _isSubscriptionDialogShowing = false;
 
   @override
   void initState() {
@@ -224,6 +226,19 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     });
   }
 
+  /// Shows the subscription paywall when the server responds with 402 during
+  /// sync. The dialog is deduplicated because the background sync re-emits the
+  /// state periodically until the user subscribes.
+  void _showSubscriptionRequiredPaywall() {
+    if (_isSubscriptionDialogShowing || !mounted) {
+      return;
+    }
+    _isSubscriptionDialogShowing = true;
+    showSubscriptionRequiredDialog(context).whenComplete(() {
+      _isSubscriptionDialogShowing = false;
+    });
+  }
+
   void _checkTimingStatus() {
     if (_projects.isEmpty || _currentPage >= _projects.length) {
       return;
@@ -360,6 +375,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
               } else if (state.retrieveChangesResult.timeEntriesChanged) {
                 _checkTimingStatus();
               }
+            } else if (state is SynchronizationSubscriptionRequired) {
+              _showSubscriptionRequiredPaywall();
             }
           },
           child: Column(

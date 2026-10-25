@@ -13,6 +13,8 @@ class SynchronizationApiService extends ApiService {
       url += '?clientId=${clientId}';
     }
 
+    // 402 responses throw a SubscriptionRequiredException (central check in
+    // the ApiService base class).
     var response = await get(url);
     if (isSuccessStatusCode(response.statusCode)) {
       return SyncData.fromJson(response.body);
