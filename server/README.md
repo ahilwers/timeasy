@@ -50,6 +50,10 @@ Note: `customer_portal:write` is **not** required — the server creates a custo
 
 The hosted **customer portal** is English-only regardless — it has no locale parameter and is rendered with `lang="en"`, independent of the customer's `locale` and the browser language.
 
+### Free accounts for the owner/testers
+
+Keycloak user IDs listed in `TIMEASY_SUBSCRIPTION_ALLOWLIST` (comma-separated) get **full access without a subscription** — no checkout, no Polar API calls, and no customer portal (they have no Polar customer; the "manage subscription" flow redirects them to the dashboard). Configure them in `config.txt` via `subscription-allowlist <id1>,<id2>` and restart the server. You can find a user's ID in the Keycloak admin console (Users → select user → copy ID) or in the `sub` claim of their access token.
+
 How it works: the server links each Keycloak user to a Polar customer via `external_customer_id` when it creates the hosted checkout (`POST /api/v1/upgrade`). Subscription checks resolve the customer by that external ID and read the customer state (`active_subscriptions`). Results are cached in memory for the configured TTL; cancellations take effect within that window. Users who purchased outside the app are matched by email once and their external ID is backfilled.
 
 ### Local config file

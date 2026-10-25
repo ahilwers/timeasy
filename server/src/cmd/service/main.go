@@ -95,6 +95,10 @@ func main() {
 		subscriptionChecker = subscription.NewNoopChecker()
 		slog.Info("Billing disabled (self-hosted mode): subscription checking is off")
 	}
+	if len(configuration.SubscriptionAllowlist) > 0 {
+		subscriptionChecker = subscription.NewAllowlistChecker(subscriptionChecker, configuration.SubscriptionAllowlist)
+		slog.Info("Subscription allowlist active", "users", len(configuration.SubscriptionAllowlist))
+	}
 	subscriptionMiddleware := rest.NewSubscriptionCheckMiddleware(subscriptionChecker)
 	billingHandler := rest.NewBillingHandler(subscriptionChecker, configuration.WebclientURL)
 

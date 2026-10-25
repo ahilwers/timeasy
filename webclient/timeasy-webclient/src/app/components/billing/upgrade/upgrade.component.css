@@ -26,6 +26,11 @@
   color: var(--p-primary-color, #3b82f6);
 }
 
+.upgrade-icon .pi {
+  font-size: 4rem;
+  line-height: 1;
+}
+
 .upgrade-message {
   font-size: 1.1rem;
   color: var(--p-text-color);
