@@ -1,6 +1,9 @@
 # AGENTS.md — timeasy
 
-Monorepo: Flutter mobile app (production, App Store), Go REST API (WIP), Angular web client (WIP). More context: `CLAUDE.md` (architecture, TODOs), `cicd.md` (branching), `server/README.md` (Keycloak setup).
+Monorepo: Flutter mobile app (production, App Store), Go REST API (WIP), Angular web client (WIP). More context: `cicd.md` (branching), `server/README.md` (Keycloak setup).
+
+## Git rule
+- NEVER commit or push unless the user explicitly asks. The user reviews changes and commits themselves.
 
 ## Layout
 - `tracking-app/` — Flutter app (module `timeasy`). Production. Layers: `lib/models/ → repositories/ → services/ → bloc/ → views/`.
@@ -12,7 +15,8 @@ Monorepo: Flutter mobile app (production, App Store), Go REST API (WIP), Angular
 - `make -C server/src build|run|test`; `make richtest` needs `richgo` installed.
 - Tests REQUIRE Docker: `pkg/test/testhelper.go` starts a disposable PostgreSQL 15 container via dockertest. Without Docker, `go test ./...` dies with a fatal log. Keep `-p=1` (set by `make test`) to avoid parallel containers.
 - New handlers/usecases/repositories are wired manually in `cmd/service/main.go` — unwired code is unreachable.
-- Config: `peterbourgon/ff` — flags (e.g. `--database-host`) or env vars with `TIMEASY_` prefix (`TIMEASY_DATABASE_HOST`, `TIMEASY_KEYCLOAK_HOST`, `TIMEASY_LICENSE_MANAGER_HOST`, ...). Subscription check (`pkg/license`, `LicenseCheckMiddleware`) is silently disabled when the license-manager vars are unset.
+- Config: `peterbourgon/ff` — flags (e.g. `--database-host`) or env vars with `TIMEASY_` prefix (`TIMEASY_DATABASE_HOST`, `TIMEASY_KEYCLOAK_HOST`, `TIMEASY_LICENSE_MANAGER_HOST`, ...). Secrets stay out of source control (`.env` / secret manager, never committed). Subscription check (`pkg/license`, `LicenseCheckMiddleware`) is silently disabled when the license-manager vars are unset.
+- Subscription validation calls the separate `licensemanager` service: `GET {TIMEASY_LICENSE_MANAGER_HOST}/api/v1/subscriptions/check?userId={keycloakUserId}&productId={TIMEASY_LICENSE_MANAGER_PRODUCT_ID}`; `{"active": false}` → 402.
 - PostgreSQL migrations (golang-migrate) in `pkg/database/postgresql/migrations`, paired up/down files, run automatically on server startup.
 - Dev infra: `docker compose -f server/postgresql/development/docker-compose.yaml up -d` (app DB), `-f server/keycloak/development/docker-compose.yaml up -d` (Keycloak on localhost:8180, realm `timeasy`, admin/admin; import `server/keycloak/realm-export.json` and add users manually). `server/docker/docker-compose.yaml` is the full prod-like stack.
 - Manual API testing: `server/service-testing/login.sh` (httpie) fetches a Keycloak token into `$TOKEN`.
@@ -32,5 +36,5 @@ Monorepo: Flutter mobile app (production, App Store), Go REST API (WIP), Angular
 - Branching: `feature/*` → `develop` (PR) → `main`.
 
 ## Current priorities
-- Flutter 402 Payment Required handling is NOT implemented (webclient is): during sync show toast + logout; during login check subscription and show upgrade prompt.
+- Flutter 402 Payment Required handling is NOT implemented (webclient is): during sync show toast + logout; during login check subscription and show upgrade prompt (CTA → `https://timeasy.app/signup?programId=timeasy-prod`).
 - Go server subscription validation is DONE (`pkg/license` + `LicenseCheckMiddleware`); licensemanager env vars are `TIMEASY_LICENSE_MANAGER_*`.
