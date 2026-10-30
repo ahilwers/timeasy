@@ -21,13 +21,45 @@ class SettingsView extends StatefulWidget {
   }
 }
 
-class SettingsViewState extends State<SettingsView> {
-  late final Future<PurchaseOrigin> _purchaseOrigin;
+class SettingsViewState extends State<SettingsView>
+    with WidgetsBindingObserver {
+  PurchaseOrigin _origin = PurchaseOrigin.none;
+  bool _originLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _purchaseOrigin = BillingService().activePurchaseOrigin();
+    WidgetsBinding.instance.addObserver(this);
+    _loadPurchaseOrigin();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Coming back from the store's subscription management may have changed
+    // the subscription, so refresh the status.
+    if (state == AppLifecycleState.resumed) {
+      _loadPurchaseOrigin();
+    }
+  }
+
+  Future<void> _loadPurchaseOrigin() async {
+    setState(() {
+      _originLoading = true;
+    });
+    final origin = await BillingService().activePurchaseOrigin();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _origin = origin;
+      _originLoading = false;
+    });
   }
 
   @override
@@ -38,18 +70,32 @@ class SettingsViewState extends State<SettingsView> {
       appBar: AppBar(
         title: Text(localizations.settings),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: <Widget>[
-          BlocBuilder<AuthenticationBloc, AuthenticationState>(
-            builder: (context, state) {
-              if (state is AuthenticationAuthenticated) {
-                return _buildAuthenticated(context, localizations, state);
-              }
-              return _buildLoggedOut(context, localizations);
-            },
+      body: BlocListener<SynchronizationBloc, SynchronizationState>(
+        // The sync runs right after a purchase/restore; refresh the
+        // subscription status when it succeeds so the card does not keep
+        // showing a stale "no active subscription".
+        listener: (context, state) {
+          if (state is SynchronizationSuccess) {
+            _loadPurchaseOrigin();
+          }
+        },
+        child: RefreshIndicator(
+          onRefresh: _loadPurchaseOrigin,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: <Widget>[
+              BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                builder: (context, state) {
+                  if (state is AuthenticationAuthenticated) {
+                    return _buildAuthenticated(context, localizations, state);
+                  }
+                  return _buildLoggedOut(context, localizations);
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -97,78 +143,77 @@ class SettingsViewState extends State<SettingsView> {
         ),
         _SettingsCard(
           title: localizations.subscriptionSection,
-          child: FutureBuilder<PurchaseOrigin>(
-            future: _purchaseOrigin,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Row(
-                  children: <Widget>[
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      localizations.lastSyncLoading,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                );
-              }
-              final origin = snapshot.data ?? PurchaseOrigin.none;
-              // Store compliance: only store-managed subscriptions may be
-              // managed through a link from the app. Web purchases (Paddle on
-              // timeasy.org) are valid but must only be described, never
-              // linked (Apple 3.1.1 / Google Play payments policy).
-              if (origin == PurchaseOrigin.store) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    _InfoRow(
-                      icon: Icons.verified,
-                      color: Colors.green,
-                      text: localizations.subscriptionActiveStore,
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _openSubscriptionManagement,
-                        icon: const Icon(Icons.open_in_new, size: 18),
-                        label: Text(localizations.manageSubscription),
-                      ),
-                    ),
-                  ],
-                );
-              }
-              if (origin == PurchaseOrigin.testStore) {
-                // Simulated store from test builds: show the status, but there
-                // is no real store management to link to.
-                return _InfoRow(
-                  icon: Icons.verified,
-                  color: Colors.green,
-                  text: localizations.subscriptionActiveStore,
-                );
-              }
-              if (origin == PurchaseOrigin.web) {
-                return _InfoRow(
-                  icon: Icons.language,
-                  text: localizations.subscriptionManagedOnWeb,
-                );
-              }
-              return _InfoRow(
-                icon: Icons.info_outline,
-                text: localizations.subscriptionInactive,
-              );
-            },
-          ),
+          child: _buildSubscriptionStatus(context, localizations),
         ),
         _SettingsCard(
           title: localizations.syncSection,
           child: _buildSyncStatus(context, localizations),
         ),
       ],
+    );
+  }
+
+  Widget _buildSubscriptionStatus(
+      BuildContext context, AppLocalizations localizations) {
+    if (_originLoading) {
+      return Row(
+        children: <Widget>[
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            localizations.lastSyncLoading,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      );
+    }
+    // Store compliance: only store-managed subscriptions may be managed
+    // through a link from the app. Web purchases (Paddle on timeasy.org) are
+    // valid but must only be described, never linked (Apple 3.1.1 / Google
+    // Play payments policy).
+    if (_origin == PurchaseOrigin.store) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _InfoRow(
+            icon: Icons.verified,
+            color: Colors.green,
+            text: localizations.subscriptionActiveStore,
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _openSubscriptionManagement,
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: Text(localizations.manageSubscription),
+            ),
+          ),
+        ],
+      );
+    }
+    if (_origin == PurchaseOrigin.testStore) {
+      // Simulated store from test builds: show the status, but there is no
+      // real store management to link to.
+      return _InfoRow(
+        icon: Icons.verified,
+        color: Colors.green,
+        text: localizations.subscriptionActiveStore,
+      );
+    }
+    if (_origin == PurchaseOrigin.web) {
+      return _InfoRow(
+        icon: Icons.language,
+        text: localizations.subscriptionManagedOnWeb,
+      );
+    }
+    return _InfoRow(
+      icon: Icons.info_outline,
+      text: localizations.subscriptionInactive,
     );
   }
 

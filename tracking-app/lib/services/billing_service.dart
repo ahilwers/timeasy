@@ -314,6 +314,10 @@ class BillingService {
       return PurchaseOrigin.none;
     }
     try {
+      // Bypass the SDK cache: right after a purchase it can still hold the
+      // pre-purchase customer info, which made the settings screen show "no
+      // subscription" until it was reopened.
+      await Purchases.invalidateCustomerInfoCache();
       final customerInfo = await Purchases.getCustomerInfo();
       final origin = _originOf(customerInfo);
       AppLogger.d('Active purchase origin: $origin');
