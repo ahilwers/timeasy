@@ -10,6 +10,7 @@ import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
+import 'package:timeasy/services/billing_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsView extends StatefulWidget {
@@ -21,6 +22,13 @@ class SettingsView extends StatefulWidget {
 
 class SettingsViewState extends State<SettingsView> {
   Locale? _locale;
+  late final Future<bool> _billingEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _billingEnabled = BillingService().isBillingEnabled();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +67,18 @@ class SettingsViewState extends State<SettingsView> {
                                 horizontal: 30, vertical: 15),
                             textStyle: TextStyle(fontSize: 16),
                           ),
+                        ),
+                        FutureBuilder<bool>(
+                          future: _billingEnabled,
+                          builder: (context, snapshot) {
+                            if (snapshot.data != true) {
+                              return const SizedBox.shrink();
+                            }
+                            return TextButton(
+                              onPressed: _openSubscriptionManagement,
+                              child: Text(localizations.manageSubscription),
+                            );
+                          },
                         ),
                         SizedBox(height: 20),
                         BlocBuilder<InternetConnectionBloc,
@@ -194,6 +214,29 @@ class SettingsViewState extends State<SettingsView> {
 
   void _logout() {
     context.read<AuthenticationBloc>().add(LogoutEvent());
+  }
+
+  Future<void> _openSubscriptionManagement() async {
+    final localizations = AppLocalizations.of(context)!;
+    final url = await BillingService().managementUrl();
+    if (!mounted) {
+      return;
+    }
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizations.noActiveSubscription)),
+      );
+      return;
+    }
+    if (!await launchUrl(Uri.parse(url),
+        mode: LaunchMode.externalApplication)) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizations.noActiveSubscription)),
+      );
+    }
   }
 
   void _launchWebsite() async {

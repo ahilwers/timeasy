@@ -1,27 +1,59 @@
 package rest
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"timeasy-server/pkg/subscription"
 )
 
-func Test_localeFromAcceptLanguage(t *testing.T) {
-	tests := []struct {
-		name   string
-		header string
-		want   string
-	}{
-		{name: "empty", header: "", want: ""},
-		{name: "simple", header: "de", want: "de"},
-		{name: "with region and weights", header: "de-DE,de;q=0.9,en;q=0.8", want: "de-DE"},
-		{name: "wildcard only", header: "*", want: ""},
-		{name: "spaces", header: "  en-US , en;q=0.5", want: "en-US"},
-	}
+type enabledChecker struct{}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, localeFromAcceptLanguage(tt.header))
-		})
-	}
+func (enabledChecker) IsEnabled() bool { return true }
+
+func (enabledChecker) CheckSubscription(context.Context, string) (bool, error) { return true, nil }
+
+func (enabledChecker) RefreshSubscription(context.Context, string) (bool, error) {
+	return true, nil
+}
+
+func getBillingStatus(t *testing.T, checker subscription.Checker, webAPIKey string) map[string]any {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	handler := NewBillingHandler(checker, webAPIKey)
+	router.GET("/api/v1/billing/status", handler.GetBillingStatus)
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/billing/status", nil)
+	router.ServeHTTP(response, request)
+
+	require.Equal(t, http.StatusOK, response.Code)
+	var body map[string]any
+	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &body))
+	return body
+}
+
+func TestGetBillingStatus_IncludesWebAPIKeyWhenEnabled(t *testing.T) {
+	body := getBillingStatus(t, enabledChecker{}, "public-web-key")
+	assert.Equal(t, true, body["enabled"])
+	assert.Equal(t, "public-web-key", body["webApiKey"])
+}
+
+func TestGetBillingStatus_OmitsWebAPIKeyWithoutConfig(t *testing.T) {
+	body := getBillingStatus(t, enabledChecker{}, "")
+	assert.Equal(t, true, body["enabled"])
+	assert.NotContains(t, body, "webApiKey")
+}
+
+func TestGetBillingStatus_OmitsWebAPIKeyWhenBillingDisabled(t *testing.T) {
+	body := getBillingStatus(t, subscription.NewNoopChecker(), "public-web-key")
+	assert.Equal(t, false, body["enabled"])
+	assert.NotContains(t, body, "webApiKey")
 }

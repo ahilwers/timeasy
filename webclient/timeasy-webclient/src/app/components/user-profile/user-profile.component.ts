@@ -65,14 +65,15 @@ export class UserProfileComponent implements OnInit {
             return;
         }
         this.isPortalLoading.set(true);
-        this.billingService.createPortalSession().subscribe({
-            next: (response) => {
+        this.billingService.getManagementURL().subscribe({
+            next: (url) => {
                 this.isPortalLoading.set(false);
-                if (response.url) {
-                    // Short-lived portal session URL — generated fresh per click.
-                    window.location.href = response.url;
+                if (url) {
+                    // Paddle customer portal for web purchases, App Store /
+                    // Play Store management for mobile purchases.
+                    window.location.href = url;
                 } else {
-                    // No Polar customer yet (never paid) — offer the upgrade flow.
+                    // No active subscription yet — offer the upgrade flow.
                     this.router.navigate(['/upgrade']);
                 }
             },

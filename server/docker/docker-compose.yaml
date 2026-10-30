@@ -39,13 +39,12 @@ services:
       - TIMEASY_DATABASE_USER=dbuser
       - TIMEASY_DATABASE_PASSWORD=dbpassword
       - TIMEASY_KEYCLOAK_HOST=https://auth.timeasy.org
-      # Billing is optional: self-hosted instances run without Polar config.
-      # Uncomment to enable subscription checking via Polar.
-      # - TIMEASY_POLAR_ACCESS_TOKEN=
-      # - TIMEASY_POLAR_ORGANIZATION_ID=
-      # - TIMEASY_POLAR_PRODUCT_ID=
-      # - TIMEASY_POLAR_ENV=production
-      # - TIMEASY_WEBCLIENT_URL=https://timeasy.org
+      # Billing is optional: self-hosted instances run without RevenueCat config.
+      # Uncomment to enable subscription checking via RevenueCat (v2).
+      # - TIMEASY_REVENUECAT_API_KEY=
+      # - TIMEASY_REVENUECAT_WEB_API_KEY=
+      # - TIMEASY_REVENUECAT_PROJECT_ID=
+      # - TIMEASY_REVENUECAT_ENTITLEMENT_ID=
     networks:
       - timeasy
 

@@ -14,7 +14,9 @@ describe('UpgradeComponent', () => {
       billingEnabled: signal(true),
       loadBillingStatus: () => of({ enabled: true }),
       getSubscriptionStatus: () => of({ enabled: true, active }),
-      startUpgrade: () => of({ enabled: true, url: null })
+      getPackages: () => Promise.resolve({ monthly: null, annual: null }),
+      purchase: jasmine.createSpy('purchase').and.returnValue(Promise.resolve()),
+      isUserCancelled: () => false
     };
 
     TestBed.configureTestingModule({

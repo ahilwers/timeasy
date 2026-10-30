@@ -78,3 +78,14 @@ flutter build apk \
 The telemetry logger will only initialize Loki logging if LOKI_ENDPOINT is provided and non-empty. If not provided, it falls
 back to local console logging only.
 
+## In-app purchases (RevenueCat)
+
+Subscriptions are sold through RevenueCat (App Store / Google Play). Pass the public API key of the matching RevenueCat app when building:
+
+```
+flutter build apk --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
+flutter build ios --dart-define=REVENUECAT_IOS_API_KEY=appl_xxx
+```
+
+The keys are public (they identify the app, not the user) and come from the RevenueCat project. Without them the app still builds and runs; the paywall then reports that subscriptions are unavailable. The app uses the Keycloak user ID as RevenueCat App User ID, and the server checks the `timeasy_pro` entitlement. `purchases_flutter` requires iOS 13.0 (configured in `ios/Podfile`).
+

@@ -76,21 +76,25 @@ func main() {
 	tokenVerifier := rest.NewKeycloakTokenVerifier(configuration.KeycloakHost, configuration.KeycloakRealm)
 	authMiddleware := rest.NewJwtAuthMiddleware(tokenVerifier)
 
-	// Setup subscription checker (Polar) and middleware.
-	// Without Polar configuration (self-hosted instances) subscription
+	// Setup subscription checker (RevenueCat) and middleware.
+	// Without RevenueCat configuration (self-hosted instances) subscription
 	// checking is disabled and all requests are allowed.
 	var subscriptionChecker subscription.Checker
-	if configuration.PolarAccessToken != "" {
-		subscriptionChecker = subscription.NewPolarChecker(subscription.PolarConfig{
-			Env:            configuration.PolarEnv,
-			OrganizationID: configuration.PolarOrganizationID,
-			ProductID:      configuration.PolarProductID,
-			AccessToken:    configuration.PolarAccessToken,
-			CacheTTL:       time.Duration(configuration.SubscriptionCacheTTLMinutes) * time.Minute,
+	if configuration.RevenueCatAPIKey != "" {
+		subscriptionChecker = subscription.NewRevenueCatChecker(subscription.RevenueCatConfig{
+			APIKey:        configuration.RevenueCatAPIKey,
+			ProjectID:     configuration.RevenueCatProjectID,
+			EntitlementID: configuration.RevenueCatEntitlementID,
+			CacheTTL:      time.Duration(configuration.SubscriptionCacheTTLMinutes) * time.Minute,
 		})
-		slog.Info("Polar billing enabled",
-			"env", configuration.PolarEnv,
+		slog.Info("RevenueCat billing enabled",
+			"project_id", configuration.RevenueCatProjectID,
+			"entitlement_id", configuration.RevenueCatEntitlementID,
+			"web_billing_configured", configuration.RevenueCatWebAPIKey != "",
 			"cache_ttl_minutes", configuration.SubscriptionCacheTTLMinutes)
+		if configuration.RevenueCatWebAPIKey == "" {
+			slog.Warn("No public RevenueCat web API key configured: web purchases will be unavailable (mobile purchases still work)")
+		}
 	} else {
 		subscriptionChecker = subscription.NewNoopChecker()
 		slog.Info("Billing disabled (self-hosted mode): subscription checking is off")
@@ -100,7 +104,7 @@ func main() {
 		slog.Info("Subscription allowlist active", "users", len(configuration.SubscriptionAllowlist))
 	}
 	subscriptionMiddleware := rest.NewSubscriptionCheckMiddleware(subscriptionChecker)
-	billingHandler := rest.NewBillingHandler(subscriptionChecker, configuration.WebclientURL)
+	billingHandler := rest.NewBillingHandler(subscriptionChecker, configuration.RevenueCatWebAPIKey)
 
 	changelogRepository := postgresql.NewPostgreSQLChangelogRepository(databaseService.Database.DB)
 

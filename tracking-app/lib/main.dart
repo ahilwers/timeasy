@@ -18,6 +18,7 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
+import 'package:timeasy/services/billing_service.dart';
 import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/services/internet_connection_service.dart';
 import 'package:timeasy/utils/app_logger.dart';
@@ -214,9 +215,13 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
             backgroundSyncService.updateToken(state.credentials.accessToken!);
             backgroundSyncService.startSync();
             eventSyncService.updateToken(state.credentials.accessToken!);
+            // Configure RevenueCat (no-op on self-hosted instances without
+            // billing) so in-app purchases unlock the same account.
+            BillingService().login(state.credentials.userId);
           } else {
             // Stop background sync on logout (AuthenticationInitial) or error
             backgroundSyncService.stopSync();
+            BillingService().logout();
           }
         },
         child: Center(

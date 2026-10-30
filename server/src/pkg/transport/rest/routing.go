@@ -20,13 +20,14 @@ func SetupRouter(authMiddleware AuthMiddleware, subscriptionMiddleware Subscript
 
 	// Billing endpoints. These are deliberately NOT behind the subscription
 	// check middleware: a user without an active subscription must still be
-	// able to start the upgrade flow or check their subscription status.
+	// able to check their subscription status, and every client polls the
+	// public status endpoint to decide whether billing UI is shown at all.
+	// Checkout and subscription management happen in the clients via the
+	// RevenueCat SDKs, so no server-side billing action endpoints are needed.
 	router.GET("/api/v1/billing/status", billingHandler.GetBillingStatus)
 	billingGroup := router.Group("/api/v1")
 	billingGroup.Use(authMiddleware.HandlerFunc())
-	billingGroup.POST("/upgrade", billingHandler.StartUpgrade)
 	billingGroup.GET("/subscription/status", billingHandler.GetSubscriptionStatus)
-	billingGroup.POST("/billing/portal", billingHandler.CreatePortalSession)
 
 	protectedGroup := router.Group("/api/v1")
 	protectedGroup.Use(authMiddleware.HandlerFunc())

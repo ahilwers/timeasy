@@ -16,6 +16,7 @@ import 'package:timeasy/models/project.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
+import 'package:timeasy/services/background_sync_service.dart';
 import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
 import 'package:timeasy/views/settings/settings_view.dart';
@@ -98,7 +99,8 @@ class _ProjectSwiperState extends State<ProjectSwiper>
         _currentOpenTimeEntry!.description = description;
         await _timeEntryRepository.updateTimeEntry(_currentOpenTimeEntry!);
         // Try to sync in background - don't block local functionality
-        if (EventSyncService().isInitialized() && EventSyncService().canSync()) {
+        if (EventSyncService().isInitialized() &&
+            EventSyncService().canSync()) {
           EventSyncService().sendDataToServer();
         }
       }
@@ -234,8 +236,13 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       return;
     }
     _isSubscriptionDialogShowing = true;
-    showSubscriptionRequiredDialog(context).whenComplete(() {
+    showSubscriptionRequiredDialog(context).then((subscribed) {
       _isSubscriptionDialogShowing = false;
+      // After a successful purchase/restore, retry the sync right away instead
+      // of waiting for the next background sync interval.
+      if (subscribed && mounted) {
+        context.read<BackgroundSyncService>().synchronize();
+      }
     });
   }
 

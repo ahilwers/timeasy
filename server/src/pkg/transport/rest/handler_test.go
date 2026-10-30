@@ -46,14 +46,6 @@ func (t *authTokenMock) GetUserId() (uuid.UUID, error) {
 	return args.Get(0).(uuid.UUID), args.Error(1)
 }
 
-func (t *authTokenMock) GetEmail() (string, error) {
-	args := t.Called()
-	if email := args.Get(0); email != nil {
-		return email.(string), args.Error(1)
-	}
-	return "", args.Error(1)
-}
-
 func (t *authTokenMock) GetRoles() ([]string, error) {
 	args := t.Called()
 	return args.Get(0).([]string), args.Error(1)

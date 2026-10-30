@@ -19,10 +19,22 @@
       @if (errorKey(); as errKey) {
       <p class="upgrade-error">{{ errKey | translate }}</p>
       }
-      <p-button label="{{ 'license.upgrade.subscribe' | translate }}" (onClick)="startCheckout()"
-                [loading]="isStartingCheckout()" icon="pi pi-credit-card"></p-button>
-      @if (isStartingCheckout()) {
-      <p class="upgrade-hint">{{ 'license.upgrade.startingCheckout' | translate }}</p>
+      <div class="upgrade-buttons">
+        <p-button
+          [label]="('license.upgrade.monthly' | translate) + (monthlyPrice() ? ' · ' + monthlyPrice() : '')"
+          (onClick)="startCheckout('monthly')"
+          [loading]="purchasingInterval() === 'monthly'"
+          [disabled]="purchasingInterval() !== null"
+          icon="pi pi-calendar"></p-button>
+        <p-button
+          [label]="('license.upgrade.annual' | translate) + (annualPrice() ? ' · ' + annualPrice() : '')"
+          (onClick)="startCheckout('annual')"
+          [loading]="purchasingInterval() === 'annual'"
+          [disabled]="purchasingInterval() !== null"
+          icon="pi pi-star" severity="secondary"></p-button>
+      </div>
+      @if (purchasingInterval()) {
+      <p class="upgrade-hint">{{ 'license.upgrade.openingCheckout' | translate }}</p>
       }
     </div>
     }

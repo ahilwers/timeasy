@@ -4,7 +4,7 @@ import {TranslateModule, TranslateService} from '@ngx-translate/core';
 import {ButtonModule} from 'primeng/button';
 import {ProgressSpinnerModule} from 'primeng/progressspinner';
 import {catchError, forkJoin, of} from 'rxjs';
-import {BillingService} from '../../../services/billing.service';
+import {BillingInterval, BillingService} from '../../../services/billing.service';
 import {CardComponent} from '../../card/card.component';
 
 @Component({
@@ -21,7 +21,9 @@ export class UpgradeComponent implements OnInit {
 
   billingEnabled = computed(() => this.billingService.billingEnabled());
   isLoading = signal(true);
-  isStartingCheckout = signal(false);
+  purchasingInterval = signal<BillingInterval | null>(null);
+  monthlyPrice = signal<string | null>(null);
+  annualPrice = signal<string | null>(null);
   errorKey = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -30,7 +32,7 @@ export class UpgradeComponent implements OnInit {
       billing: this.billingService.loadBillingStatus(),
       // Errors are treated as "not subscribed" so the paywall still renders.
       subscription: this.billingService.getSubscriptionStatus().pipe(catchError(() => of(null)))
-    }).subscribe(({subscription}) => {
+    }).subscribe(({billing, subscription}) => {
       // Users who already have an active subscription (including self-hosted
       // instances, where every user counts as active) must not see the paywall.
       // This happens e.g. after logging out of an unsubscribed account and back
@@ -40,32 +42,35 @@ export class UpgradeComponent implements OnInit {
         return;
       }
       this.isLoading.set(false);
+      if (billing.enabled) {
+        this.loadPrices();
+      }
     });
   }
 
-  startCheckout(): void {
-    this.isStartingCheckout.set(true);
+  startCheckout(interval: BillingInterval): void {
+    this.purchasingInterval.set(interval);
     this.errorKey.set(null);
-    // Pass the active UI language so the Polar checkout is localized (Polar
-    // falls back to English for unsupported locales).
-    this.billingService.startUpgrade(this.translateService.currentLang).subscribe({
-      next: (response) => {
-        if (!response.enabled) {
-          // Self-hosted instance without billing — nothing to upgrade.
-          this.router.navigate(['/']);
-          return;
-        }
-        if (response.url) {
-          window.location.href = response.url;
-          return;
-        }
-        this.isStartingCheckout.set(false);
-        this.errorKey.set('license.upgrade.checkoutError');
-      },
-      error: () => {
-        this.isStartingCheckout.set(false);
-        this.errorKey.set('license.upgrade.checkoutError');
+    // Pass the active UI language so the checkout is localized (Paddle falls
+    // back to its default for unsupported locales).
+    this.billingService.purchase(interval, this.translateService.currentLang).then(() => {
+      this.router.navigate(['/upgrade/success']);
+    }).catch((error) => {
+      this.purchasingInterval.set(null);
+      if (this.billingService.isUserCancelled(error)) {
+        return;
       }
+      this.errorKey.set('license.upgrade.checkoutError');
+    });
+  }
+
+  private loadPrices(): void {
+    this.billingService.getPackages().then(({monthly, annual}) => {
+      this.monthlyPrice.set(monthly?.webBillingProduct.price.formattedPrice ?? null);
+      this.annualPrice.set(annual?.webBillingProduct.price.formattedPrice ?? null);
+    }).catch(() => {
+      // Prices are cosmetic; purchasing surfaces a real error if the offering
+      // cannot be loaded.
     });
   }
 }

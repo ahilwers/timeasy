@@ -15,7 +15,7 @@ import {CardComponent} from '../../card/card.component';
 export class UpgradeSuccessComponent implements OnInit, OnDestroy {
   private readonly billingService = inject(BillingService);
 
-  private static readonly MAX_CHECK_ATTEMPTS = 5;
+  private static readonly MAX_CHECK_ATTEMPTS = 10;
   private static readonly CHECK_INTERVAL_MS = 3000;
 
   isLoading = signal(true);

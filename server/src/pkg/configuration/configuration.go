@@ -3,13 +3,11 @@ package configuration
 import (
 	"flag"
 	"fmt"
+	"github.com/peterbourgon/ff"
 	"log/slog"
 	"os"
 	"strconv"
 	"strings"
-	"timeasy-server/pkg/subscription"
-
-	"github.com/peterbourgon/ff"
 )
 
 type Configuration struct {
@@ -28,40 +26,38 @@ type Configuration struct {
 	LokiEndpoint                string   // Loki server endpoint for logging
 	LokiBearerToken             string   // Bearer token for Loki authentication
 	LogLevel                    string   // Log level: DEBUG, INFO, WARN, ERROR
-	PolarAccessToken            string   // Polar organization access token (empty = billing disabled, self-hosted mode)
-	PolarOrganizationID         string   // Polar organization ID
-	PolarProductID              string   // Polar subscription product users must have active
-	PolarEnv                    string   // Polar environment: "sandbox" or "production"
+	RevenueCatAPIKey            string   // RevenueCat v2 secret API key (empty = billing disabled, self-hosted mode)
+	RevenueCatWebAPIKey         string   // Public RevenueCat Web Billing SDK key, served to the web client
+	RevenueCatProjectID         string   // RevenueCat project ID for v2 customer lookup
+	RevenueCatEntitlementID     string   // RevenueCat entitlement ID (entl...) that grants access
 	SubscriptionCacheTTLMinutes int      // Minutes a subscription check result is cached
 	SubscriptionAllowlist       []string // Keycloak user IDs with full access without a subscription (owner/testers)
-	WebclientURL                string   // Base URL of the web client, used for checkout success redirects
 }
 
 func GetConfiguration() (Configuration, error) {
 	fs := flag.NewFlagSet("timeasy", flag.ContinueOnError)
 	var (
-		serverPort            = fs.String("server-port", "8080", "HTTP server port")
-		dbHost                = fs.String("database-host", "localhost", "database host")
-		dbPort                = fs.String("database-port", "5432", "database port")
-		dbName                = fs.String("database-name", "timeasy", "database name")
-		dbUser                = fs.String("database-user", "dbuser", "database user")
-		dbPassword            = fs.String("database-password", "dbpassword", "database password")
-		keycloakHost          = fs.String("keycloak-host", "http://localhost:8180", "keycloak host")
-		keycloakRealm         = fs.String("keycloak-realm", "timeasy", "keycloak realm")
-		syncActiveInterval    = fs.String("sync-active-interval", "15", "Sync interval for active projects (minutes)")
-		syncRecentInterval    = fs.String("sync-recent-interval", "60", "Sync interval for recently active projects (minutes)")
-		syncDormantInterval   = fs.String("sync-dormant-interval", "1440", "Sync interval for dormant projects (minutes)")
-		syncMaxConcurrent     = fs.String("sync-max-concurrent", "3", "Maximum concurrent sync operations")
-		lokiEndpoint          = fs.String("loki-endpoint", "", "Loki server endpoint for logging (e.g., https://loki.example.com/loki/api/v1/push)")
-		lokiBearerToken       = fs.String("loki-bearer-token", "", "Bearer token for Loki authentication")
-		logLevel              = fs.String("log-level", "INFO", "Log level: DEBUG, INFO, WARN, ERROR")
-		polarAccessToken      = fs.String("polar-access-token", "", "Polar organization access token (empty = billing disabled, self-hosted mode)")
-		polarOrganizationID   = fs.String("polar-organization-id", "", "Polar organization ID")
-		polarProductID        = fs.String("polar-product-id", "", "Polar subscription product users must have active")
-		polarEnv              = fs.String("polar-env", subscription.PolarEnvSandbox, "Polar environment: sandbox or production")
-		subscriptionCacheTTL  = fs.String("subscription-cache-ttl-minutes", "15", "Minutes a subscription check result is cached")
-		subscriptionAllowlist = fs.String("subscription-allowlist", "", "Comma-separated Keycloak user IDs that get full access without a subscription (owner/testers)")
-		webclientURL          = fs.String("webclient-url", "", "Base URL of the web client, used for checkout success redirects")
+		serverPort              = fs.String("server-port", "8080", "HTTP server port")
+		dbHost                  = fs.String("database-host", "localhost", "database host")
+		dbPort                  = fs.String("database-port", "5432", "database port")
+		dbName                  = fs.String("database-name", "timeasy", "database name")
+		dbUser                  = fs.String("database-user", "dbuser", "database user")
+		dbPassword              = fs.String("database-password", "dbpassword", "database password")
+		keycloakHost            = fs.String("keycloak-host", "http://localhost:8180", "keycloak host")
+		keycloakRealm           = fs.String("keycloak-realm", "timeasy", "keycloak realm")
+		syncActiveInterval      = fs.String("sync-active-interval", "15", "Sync interval for active projects (minutes)")
+		syncRecentInterval      = fs.String("sync-recent-interval", "60", "Sync interval for recently active projects (minutes)")
+		syncDormantInterval     = fs.String("sync-dormant-interval", "1440", "Sync interval for dormant projects (minutes)")
+		syncMaxConcurrent       = fs.String("sync-max-concurrent", "3", "Maximum concurrent sync operations")
+		lokiEndpoint            = fs.String("loki-endpoint", "", "Loki server endpoint for logging (e.g., https://loki.example.com/loki/api/v1/push)")
+		lokiBearerToken         = fs.String("loki-bearer-token", "", "Bearer token for Loki authentication")
+		logLevel                = fs.String("log-level", "INFO", "Log level: DEBUG, INFO, WARN, ERROR")
+		revenueCatAPIKey        = fs.String("revenuecat-api-key", "", "RevenueCat v2 secret API key (empty = billing disabled, self-hosted mode)")
+		revenueCatWebAPIKey     = fs.String("revenuecat-web-api-key", "", "Public RevenueCat Web Billing SDK key served to the web client")
+		revenueCatProjectID     = fs.String("revenuecat-project-id", "", "RevenueCat project ID required when billing is enabled")
+		revenueCatEntitlementID = fs.String("revenuecat-entitlement-id", "", "RevenueCat entitlement ID (entl...) required when billing is enabled")
+		subscriptionCacheTTL    = fs.String("subscription-cache-ttl-minutes", "15", "Minutes a subscription check result is cached")
+		subscriptionAllowlist   = fs.String("subscription-allowlist", "", "Comma-separated Keycloak user IDs that get full access without a subscription (owner/testers)")
 
 		_ = fs.String("config", "", "config file (optional)")
 	)
@@ -120,11 +116,13 @@ func GetConfiguration() (Configuration, error) {
 	configuration.LokiEndpoint = *lokiEndpoint
 	configuration.LokiBearerToken = *lokiBearerToken
 	configuration.LogLevel = *logLevel
-	configuration.PolarAccessToken = *polarAccessToken
-	configuration.PolarOrganizationID = *polarOrganizationID
-	configuration.PolarProductID = *polarProductID
-	configuration.PolarEnv = *polarEnv
-	configuration.WebclientURL = *webclientURL
+	configuration.RevenueCatAPIKey = *revenueCatAPIKey
+	configuration.RevenueCatWebAPIKey = strings.TrimSpace(*revenueCatWebAPIKey)
+	configuration.RevenueCatProjectID = strings.TrimSpace(*revenueCatProjectID)
+	configuration.RevenueCatEntitlementID = strings.TrimSpace(*revenueCatEntitlementID)
+	if err := validateRevenueCatConfiguration(configuration); err != nil {
+		return configuration, err
+	}
 
 	subscriptionCacheTTLMinutes, err := strconv.Atoi(*subscriptionCacheTTL)
 	if err != nil {
@@ -134,6 +132,22 @@ func GetConfiguration() (Configuration, error) {
 	configuration.SubscriptionAllowlist = parseAllowlist(*subscriptionAllowlist)
 
 	return configuration, nil
+}
+
+// validateRevenueCatConfiguration ensures all identifiers needed for v2
+// customer lookups are provided when billing is enabled. With no API key,
+// RevenueCat configuration is optional for self-hosted instances.
+func validateRevenueCatConfiguration(configuration Configuration) error {
+	if configuration.RevenueCatAPIKey == "" {
+		return nil
+	}
+	if configuration.RevenueCatProjectID == "" {
+		return fmt.Errorf("revenuecat-project-id is required when revenuecat-api-key is set")
+	}
+	if configuration.RevenueCatEntitlementID == "" {
+		return fmt.Errorf("revenuecat-entitlement-id is required when revenuecat-api-key is set")
+	}
+	return nil
 }
 
 // parseAllowlist splits a comma-separated list of user IDs, trimming

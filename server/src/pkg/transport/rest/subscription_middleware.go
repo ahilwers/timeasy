@@ -55,11 +55,8 @@ func (mw *subscriptionCheckMiddleware) HandlerFunc() gin.HandlerFunc {
 			return
 		}
 
-		// Email is optional (used as fallback for Polar customer matching)
-		email, _ := authToken.GetEmail()
-
 		// Check subscription status
-		active, err := mw.checker.CheckSubscription(c.Request.Context(), userID.String(), email)
+		active, err := mw.checker.CheckSubscription(c.Request.Context(), userID.String())
 		if err != nil {
 			slog.Error("Failed to check subscription",
 				"error", err,

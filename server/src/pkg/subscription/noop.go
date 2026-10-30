@@ -15,14 +15,10 @@ func (c *NoopChecker) IsEnabled() bool {
 	return false
 }
 
-func (c *NoopChecker) CheckSubscription(ctx context.Context, userID, email string) (bool, error) {
+func (c *NoopChecker) CheckSubscription(ctx context.Context, userID string) (bool, error) {
 	return true, nil
 }
 
-func (c *NoopChecker) RefreshSubscription(ctx context.Context, userID, email string) (bool, error) {
+func (c *NoopChecker) RefreshSubscription(ctx context.Context, userID string) (bool, error) {
 	return true, nil
-}
-
-func (c *NoopChecker) GetPolarCustomerID(ctx context.Context, userID, email string) (string, error) {
-	return "", nil
 }

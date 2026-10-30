@@ -9,7 +9,7 @@ export const licenseErrorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 402) {
-        // Payment Required - redirect to the upgrade page (Polar checkout)
+        // Payment Required - redirect to the upgrade page (RevenueCat checkout)
         router.navigate(['/upgrade']);
       }
       return throwError(() => error);

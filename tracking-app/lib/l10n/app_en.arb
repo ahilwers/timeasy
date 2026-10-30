@@ -202,17 +202,45 @@
     "@subscriptionRequiredMessage": {
         "description": "Message of the paywall dialog shown when the server responds with 402 during sync"
     },
-    "subscriptionRequiredSubscribe": "Subscribe now",
-    "@subscriptionRequiredSubscribe": {
-        "description": "Button in the paywall dialog that opens the web app upgrade page (dev builds only, store builds must not link to external purchase)"
+    "subscriptionMonthly": "Monthly",
+    "@subscriptionMonthly": {
+        "description": "Monthly subscription button in the paywall dialog"
     },
-    "subscriptionManagedExternally": "Subscriptions are managed at timeasy.org. Please subscribe there to enable sync.",
-    "@subscriptionManagedExternally": {
-        "description": "Info text in the paywall dialog of store builds, where linking to an external purchase flow is not allowed"
+    "subscriptionYearly": "Yearly",
+    "@subscriptionYearly": {
+        "description": "Yearly subscription button in the paywall dialog"
+    },
+    "subscriptionRestore": "Restore purchases",
+    "@subscriptionRestore": {
+        "description": "Button to restore previous in-app purchases (required by the App Store)"
+    },
+    "subscriptionNoOfferings": "Subscriptions are currently unavailable. Please try again later.",
+    "@subscriptionNoOfferings": {
+        "description": "Shown in the paywall dialog when no subscription offers can be loaded"
+    },
+    "subscriptionPurchaseFailed": "The purchase could not be completed. Please try again.",
+    "@subscriptionPurchaseFailed": {
+        "description": "Error shown in the paywall dialog when a purchase fails"
+    },
+    "subscriptionRestoreFailed": "No active subscription was found for your account.",
+    "@subscriptionRestoreFailed": {
+        "description": "Error shown when restoring purchases did not find an active subscription"
+    },
+    "subscriptionAutoRenewNote": "The subscription renews automatically until you cancel it in the store.",
+    "@subscriptionAutoRenewNote": {
+        "description": "Auto-renewal note in the paywall dialog (store compliance)"
     },
     "subscriptionRequiredLater": "Maybe later",
     "@subscriptionRequiredLater": {
         "description": "Button to dismiss the paywall dialog"
+    },
+    "manageSubscription": "Manage subscription",
+    "@manageSubscription": {
+        "description": "Button in the settings view that opens the store's subscription management"
+    },
+    "noActiveSubscription": "No active subscription found.",
+    "@noActiveSubscription": {
+        "description": "Shown when no subscription management URL is available"
     },
     "signInPromo": "Sign in and unlock the full power of timeasy!",
     "@signInPromo": {

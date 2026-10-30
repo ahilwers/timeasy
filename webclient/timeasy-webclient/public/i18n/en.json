@@ -236,10 +236,11 @@
         "upgrade": {
             "title": "timeasy Pro",
             "message": "Subscribe to timeasy Pro to get automatic sync across devices, exports and more.",
-            "subscribe": "Subscribe now",
-            "startingCheckout": "Redirecting to checkout...",
+            "monthly": "Monthly",
+            "annual": "Yearly",
+            "openingCheckout": "Opening checkout...",
             "billingDisabled": "This timeasy instance does not use subscriptions.",
-            "checkoutError": "Could not start the upgrade flow. Please try again later."
+            "checkoutError": "The checkout could not be opened. Please try again later."
         },
         "success": {
             "title": "Thank you for subscribing!",
@@ -250,7 +251,7 @@
             "openApp": "You can now open the timeasy app."
         },
         "manageSubscription": "Manage subscription",
-        "portalError": "Could not open the subscription portal. Please try again later."
+        "portalError": "Could not open subscription management. Please try again later."
     },
     "common": {
         "loading": "Loading...",

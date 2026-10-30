@@ -236,10 +236,11 @@
         "upgrade": {
             "title": "timeasy Pro",
             "message": "Abonniere timeasy Pro für automatische Synchronisation über Geräte hinweg, Exporte und mehr.",
-            "subscribe": "Jetzt abonnieren",
-            "startingCheckout": "Weiterleitung zur Kasse...",
+            "monthly": "Monatlich",
+            "annual": "Jährlich",
+            "openingCheckout": "Checkout wird geöffnet...",
             "billingDisabled": "Diese timeasy-Instanz nutzt keine Abonnements.",
-            "checkoutError": "Der Upgrade-Vorgang konnte nicht gestartet werden. Bitte versuche es später erneut."
+            "checkoutError": "Der Checkout konnte nicht geöffnet werden. Bitte versuche es später erneut."
         },
         "success": {
             "title": "Danke für dein Abo!",
@@ -250,7 +251,7 @@
             "openApp": "Du kannst die timeasy-App jetzt öffnen."
         },
         "manageSubscription": "Abo verwalten",
-        "portalError": "Das Abo-Portal konnte nicht geöffnet werden. Bitte versuche es später erneut."
+        "portalError": "Die Abo-Verwaltung konnte nicht geöffnet werden. Bitte versuche es später erneut."
     },
     "common": {
         "loading": "Laden...",

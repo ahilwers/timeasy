@@ -38,6 +38,13 @@
   line-height: 1.5;
 }
 
+.upgrade-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 260px;
+}
+
 .upgrade-error {
   font-size: 0.95rem;
   color: var(--p-red-500, #ef4444);

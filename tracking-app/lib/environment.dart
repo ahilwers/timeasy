@@ -8,7 +8,6 @@ class Environment {
 
   static late final apiBaseUrl = _getApiBaseUrl();
   static late final authUrl = _getAuthUrl();
-  static late final webBaseUrl = _getWebBaseUrl();
 
   static String _getApiBaseUrl() {
     if (_ENVIRONMENT == DEV_ENVIRONMENT) {
@@ -32,20 +31,12 @@ class Environment {
     return _productionConfig["authUrl"];
   }
 
-  static String _getWebBaseUrl() {
-    if (_ENVIRONMENT == DEV_ENVIRONMENT) {
-      return "http://localhost:4200";
-    }
-    return _productionConfig["webBaseUrl"];
-  }
-
   static String getEnvironment() {
     return _ENVIRONMENT;
   }
 
   static const Map<String, dynamic> _productionConfig = {
     "apiBaseUrl": "https://api.timeasy.org/api/v1",
-    "authUrl": "https://auth.timeasy.org/realms/timeasy",
-    "webBaseUrl": "https://timeasy.org"
+    "authUrl": "https://auth.timeasy.org/realms/timeasy"
   };
 }
