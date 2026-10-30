@@ -13,6 +13,7 @@ import 'package:timeasy/bloc/selected_project/selected_project_bloc.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_event.dart';
 import 'package:timeasy/bloc/selected_project/selected_project_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
+import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/components/project_swiper_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
@@ -109,11 +110,15 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   late InternetConnectionService _internetConnectionService;
   Project? _currentProject;
   bool _hasProjects = false;
+  String? _lastUserId;
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting();
+    // Initialize the date symbols for every supported locale, otherwise
+    // German dates fall back to the US format.
+    initializeDateFormatting('en');
+    initializeDateFormatting('de');
     WidgetsBinding.instance.addObserver(this);
 
     // Initialize the EventSyncService with the available blocs
@@ -207,25 +212,58 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocListener<AuthenticationBloc, AuthenticationState>(
+      body: BlocListener<SynchronizationBloc, SynchronizationState>(
+        // Keep the navigation gating (_hasProjects) in sync with the local
+        // database, so the projects tab unlocks right after the first sync.
         listener: (context, state) {
-          final backgroundSyncService = context.read<BackgroundSyncService>();
-          final eventSyncService = EventSyncService();
-          if (state is AuthenticationAuthenticated) {
-            backgroundSyncService.updateToken(state.credentials.accessToken!);
-            backgroundSyncService.startSync();
-            eventSyncService.updateToken(state.credentials.accessToken!);
-            // Configure RevenueCat (no-op on self-hosted instances without
-            // billing) so in-app purchases unlock the same account.
-            BillingService().login(state.credentials.userId);
-          } else {
-            // Stop background sync on logout (AuthenticationInitial) or error
-            backgroundSyncService.stopSync();
-            BillingService().logout();
+          if (state is SynchronizationSuccess) {
+            _loadProjects();
           }
         },
-        child: Center(
-          child: _getCurrentView(),
+        child: BlocListener<AuthenticationBloc, AuthenticationState>(
+          listener: (context, state) {
+            final backgroundSyncService =
+                context.read<BackgroundSyncService>();
+            final eventSyncService = EventSyncService();
+            if (state is AuthenticationAuthenticated) {
+              final userId = state.credentials.userId;
+              if (_lastUserId != null && _lastUserId != userId) {
+                // A different account signed in on this device: drop the
+                // previous account's project selection.
+                context
+                    .read<SelectedProjectBloc>()
+                    .add(ClearSelectedProjectEvent());
+              }
+              _lastUserId = userId;
+              backgroundSyncService
+                  .updateToken(state.credentials.accessToken!);
+              backgroundSyncService.startSync();
+              eventSyncService.updateToken(state.credentials.accessToken!);
+              // Configure RevenueCat (no-op on self-hosted instances without
+              // billing) so in-app purchases unlock the same account. The
+              // email/name are stored as customer attributes so RevenueCat
+              // shows a readable customer instead of the Keycloak user ID.
+              BillingService().login(
+                state.credentials.userId,
+                email: state.credentials.email,
+                displayName: state.credentials.name,
+              );
+            } else {
+              // Stop background sync on logout (AuthenticationInitial) or
+              // error.
+              _lastUserId = null;
+              backgroundSyncService.stopSync();
+              BillingService().logout();
+              context
+                  .read<SelectedProjectBloc>()
+                  .add(ClearSelectedProjectEvent());
+              _currentProject = null;
+              _loadProjects();
+            }
+          },
+          child: Center(
+            child: _getCurrentView(),
+          ),
         ),
       ),
       bottomNavigationBar: _getNavigationBar(),
@@ -305,7 +343,17 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   }
 
   Widget _playButtonView() {
-    return ProjectSwiper();
+    // Recreate the swiper when the signed-in account changes so it reloads the
+    // local data from scratch instead of keeping the previous account's
+    // projects in memory.
+    return BlocBuilder<AuthenticationBloc, AuthenticationState>(
+      builder: (context, state) {
+        final userId = state is AuthenticationAuthenticated
+            ? state.credentials.userId
+            : null;
+        return ProjectSwiper(key: ValueKey(userId ?? 'signed-out'));
+      },
+    );
   }
 
   _loadProjects() {

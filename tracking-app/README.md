@@ -80,12 +80,66 @@ back to local console logging only.
 
 ## In-app purchases (RevenueCat)
 
-Subscriptions are sold through RevenueCat (App Store / Google Play). Pass the public API key of the matching RevenueCat app when building:
+Subscriptions inside the app are sold exclusively through the App Store and
+Google Play (StoreKit / Play Billing via RevenueCat). The web client sells the
+same subscription through Paddle on timeasy.org — all channels unlock the same
+`timeasy_pro` entitlement, and the app never links to the web checkout.
+
+### Prerequisites
+
+Billing must be enabled on **both** sides:
+
+- **Server:** set `revenuecat-api-key`, `revenuecat-project-id` and
+  `revenuecat-entitlement-id` (see `server/README.md`). Without them
+  `GET /api/v1/billing/status` reports `enabled: false` and the app never
+  configures RevenueCat — even when the API key below is passed at build time.
+- **App:** pass the public RevenueCat API key of the matching platform app at
+  build time via `--dart-define`. The keys are public (they identify the app,
+  not the user) and come from the RevenueCat project. Without them the app
+  still builds and runs, but the paywall reports that subscriptions are
+  unavailable.
+
+### Building with in-app purchases
+
+Development (`flutter run`):
 
 ```
-flutter build apk --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
-flutter build ios --dart-define=REVENUECAT_IOS_API_KEY=appl_xxx
+flutter run --dart-define=REVENUECAT_IOS_API_KEY=appl_xxx
+flutter run --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
 ```
 
-The keys are public (they identify the app, not the user) and come from the RevenueCat project. Without them the app still builds and runs; the paywall then reports that subscriptions are unavailable. The app uses the Keycloak user ID as RevenueCat App User ID, and the server checks the `timeasy_pro` entitlement. `purchases_flutter` requires iOS 13.0 (configured in `ios/Podfile`).
+Release:
+
+```
+flutter build ipa --dart-define=REVENUECAT_IOS_API_KEY=appl_xxx
+flutter build appbundle --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
+```
+
+The defines combine with the other build variables. Both keys can be passed in
+one command — the app uses the key matching the running platform:
+
+```
+flutter build appbundle \
+  --dart-define=ENVIRONMENT=production \
+  --dart-define=LOKI_ENDPOINT=https://your-loki-instance.com/loki/api/v1/push \
+  --dart-define=LOKI_BEARER_TOKEN=your_bearer_token_here \
+  --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
+```
+
+The keys are compiled into the binary; there is no runtime configuration.
+
+### Store requirements for testing
+
+- **Android:** Play Billing only works for builds distributed through Google
+  Play. Upload the AAB to an internal testing track, register as a license
+  tester and install the app from the Play Store. Sideloaded debug builds never
+  load subscription offers.
+- **iOS:** purchases run through StoreKit. Use a sandbox tester account on a
+  real device (App Store Connect → Users and Access → Sandbox → Testers); in
+  the simulator, test with a StoreKit configuration file in Xcode.
+- `purchases_flutter` requires iOS 13.0 (configured in `ios/Podfile`).
+
+The app uses the Keycloak user ID (JWT `sub`) as RevenueCat App User ID, so a
+subscription purchased on any platform — including Paddle on the web — applies
+to the same account. The server validates the `timeasy_pro` entitlement.
 

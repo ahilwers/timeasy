@@ -26,6 +26,10 @@ class BackgroundSyncService {
   }
 
   void startSync() {
+    // startSync can be called again on token refresh; keep a single timer.
+    _timer?.cancel();
+    // Sync right away so a freshly signed-in user sees their data immediately
+    // instead of waiting for the first periodic run.
     synchronize();
     _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
       if (!isSyncing()) {

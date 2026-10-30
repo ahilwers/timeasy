@@ -34,7 +34,7 @@ Color hexToColor(String hexString) {
 enum AppState { RUNNING, STOPPED }
 
 class ProjectSwiper extends StatefulWidget {
-  const ProjectSwiper();
+  const ProjectSwiper({Key? key}) : super(key: key);
 
   @override
   State<ProjectSwiper> createState() => _ProjectSwiperState();
@@ -69,7 +69,17 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     _loadProjects();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
       EventSyncService().synchronizeOnEvent();
+      // The sync triggered right after login can finish before this widget is
+      // created (e.g. while the auth browser is still closing). In that case
+      // the BlocListener below never sees the state change, so pick up an
+      // already successful sync here instead of waiting for the next interval.
+      if (context.read<SynchronizationBloc>().state is SynchronizationSuccess) {
+        _loadProjects();
+      }
     });
   }
 
@@ -140,6 +150,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     var allProjects = await _projectRepository.getAllProjects();
     var projects = allProjects.where((project) => project.isActive).toList();
 
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       _projects = projects;
       _isLoading = false;
@@ -148,7 +162,7 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       if (_projects.isEmpty) {
         // We need to use a small delay to ensure the PageView is built
         Future.delayed(Duration(milliseconds: 100), () {
-          if (_controller.hasClients) {
+          if (mounted && _controller.hasClients) {
             _controller
                 .jumpToPage(0); // The "add new project" page will be at index 0
           }
@@ -223,6 +237,9 @@ class _ProjectSwiperState extends State<ProjectSwiper>
   void _loadSuggestions(String projectId) async {
     final suggestions =
         await _timeEntryRepository.getLastUniqueDescriptions(projectId);
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _suggestions = suggestions;
     });
@@ -291,6 +308,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
     final timeEntry = await _timeEntryRepository.startTimingWithConflictCheck(
         currentProject.id, _descriptionController.text.trim());
 
+    if (!mounted) {
+      return;
+    }
+
     _currentOpenTimeEntry = timeEntry;
 
     setState(() {
@@ -308,6 +329,10 @@ class _ProjectSwiperState extends State<ProjectSwiper>
 
     final currentProject = _projects[_currentPage];
     await _timeEntryRepository.stopTimingWithConflictCheck(currentProject.id);
+
+    if (!mounted) {
+      return;
+    }
 
     _currentOpenTimeEntry = null;
 
@@ -340,8 +365,16 @@ class _ProjectSwiperState extends State<ProjectSwiper>
       ),
     );
 
+    if (!mounted) {
+      return;
+    }
+
     if (result != null && result is Project) {
       await _loadProjects();
+
+      if (!mounted) {
+        return;
+      }
 
       // Explicitly set the newly created project in the SelectedProjectBloc
       context.read<SelectedProjectBloc>().add(
@@ -463,41 +496,6 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                            ),
-                            BlocBuilder<AuthenticationBloc,
-                                AuthenticationState>(
-                              builder: (context, authState) {
-                                // Only show if not authenticated and there are no projects
-                                if (authState is! AuthenticationAuthenticated &&
-                                    _projects.isEmpty) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                SettingsView(),
-                                            fullscreenDialog: true,
-                                          ),
-                                        );
-                                      },
-                                      child: Text(
-                                        localizations.orLogin,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Theme.of(context).primaryColor,
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return const SizedBox
-                                    .shrink(); // Return empty widget if logged in or has projects
-                              },
                             ),
                           ],
                         ),
@@ -669,17 +667,18 @@ class _ProjectSwiperState extends State<ProjectSwiper>
                   // Only show the login reminder if the user is not authenticated
                   if (state is! AuthenticationAuthenticated) {
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      padding: const EdgeInsets.only(
+                          left: 40, right: 40, bottom: 16.0),
+                      child: Column(
                         children: [
                           Text(
-                            localizations.notLoggedIn,
+                            localizations.loginHint,
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               color: isDark ? Colors.white70 : Colors.black54,
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(height: 4),
                           GestureDetector(
                             onTap: () {
                               Navigator.push(

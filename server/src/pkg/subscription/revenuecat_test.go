@@ -194,6 +194,32 @@ func TestRevenueCatChecker_UnknownUserIsInactiveAndCached(t *testing.T) {
 	assert.Equal(t, requestsBefore, fake.requestCount.Load())
 }
 
+// A negative result must expire quickly: right after a purchase the app must
+// not be locked out by a stale "no subscription" answer from the cache.
+func TestRevenueCatChecker_NegativeResultExpiresQuickly(t *testing.T) {
+	fake := newFakeRevenueCat(t, func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusNotFound, map[string]any{"type": "resource_missing"})
+	})
+	clock := newFakeClock()
+	checker := newTestChecker(fake.baseURL(), clock)
+
+	active, err := checker.CheckSubscription(context.Background(), testUserID)
+	require.NoError(t, err)
+	assert.False(t, active)
+
+	// Still cached directly after the check.
+	requestsBefore := fake.requestCount.Load()
+	_, err = checker.CheckSubscription(context.Background(), testUserID)
+	require.NoError(t, err)
+	assert.Equal(t, requestsBefore, fake.requestCount.Load())
+
+	// After the negative TTL the check asks RevenueCat again.
+	clock.advance(DefaultNegativeCacheTTL + time.Second)
+	_, err = checker.CheckSubscription(context.Background(), testUserID)
+	require.NoError(t, err)
+	assert.Greater(t, fake.requestCount.Load(), requestsBefore)
+}
+
 func TestRevenueCatChecker_TransientErrorIsNotCached(t *testing.T) {
 	var fail atomic.Bool
 	fail.Store(true)

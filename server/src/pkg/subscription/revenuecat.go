@@ -17,9 +17,13 @@ import (
 const (
 	// revenueCatBaseURL is the base URL of the RevenueCat REST API v2.
 	revenueCatBaseURL = "https://api.revenuecat.com/v2"
-	// DefaultCacheTTL is the default duration a subscription check result
-	// stays valid.
+	// DefaultCacheTTL is the default duration a positive subscription check
+	// result stays valid.
 	DefaultCacheTTL = 15 * time.Minute
+	// DefaultNegativeCacheTTL is how long a "no active subscription" answer is
+	// cached. Deliberately short: after a purchase the app must not be rejected
+	// with a stale 402 from the cache, so a fresh check happens quickly.
+	DefaultNegativeCacheTTL = time.Minute
 )
 
 // RevenueCatConfig holds the configuration for the RevenueCatChecker.
@@ -33,9 +37,12 @@ type RevenueCatConfig struct {
 	// EntitlementID is the RevenueCat entitlement ID (the entl... identifier,
 	// not its lookup key) that grants access.
 	EntitlementID string
-	// CacheTTL is how long a check result is cached. Defaults to
+	// CacheTTL is how long a positive check result is cached. Defaults to
 	// DefaultCacheTTL.
 	CacheTTL time.Duration
+	// NegativeCacheTTL is how long a negative check result is cached.
+	// Defaults to DefaultNegativeCacheTTL.
+	NegativeCacheTTL time.Duration
 	// BaseURL overrides the RevenueCat API base URL. Used in tests.
 	BaseURL string
 }
@@ -59,9 +66,10 @@ type RevenueCatChecker struct {
 	apiKey        string
 	projectID     string
 	entitlementID string
-	httpClient    *http.Client
-	cacheTTL      time.Duration
-	now           func() time.Time
+	httpClient       *http.Client
+	cacheTTL         time.Duration
+	negativeCacheTTL time.Duration
+	now              func() time.Time
 
 	inFlight singleflight.Group
 
@@ -74,19 +82,27 @@ func NewRevenueCatChecker(cfg RevenueCatConfig) *RevenueCatChecker {
 	if ttl <= 0 {
 		ttl = DefaultCacheTTL
 	}
+	negativeTTL := cfg.NegativeCacheTTL
+	if negativeTTL <= 0 {
+		negativeTTL = DefaultNegativeCacheTTL
+	}
+	if negativeTTL > ttl {
+		negativeTTL = ttl
+	}
 	baseURL := cfg.BaseURL
 	if baseURL == "" {
 		baseURL = revenueCatBaseURL
 	}
 	return &RevenueCatChecker{
-		baseURL:       baseURL,
-		apiKey:        cfg.APIKey,
-		projectID:     cfg.ProjectID,
-		entitlementID: cfg.EntitlementID,
-		httpClient:    &http.Client{Timeout: 10 * time.Second},
-		cacheTTL:      ttl,
-		now:           time.Now,
-		cache:         make(map[string]cacheEntry),
+		baseURL:          baseURL,
+		apiKey:           cfg.APIKey,
+		projectID:        cfg.ProjectID,
+		entitlementID:    cfg.EntitlementID,
+		httpClient:       &http.Client{Timeout: 10 * time.Second},
+		cacheTTL:         ttl,
+		negativeCacheTTL: negativeTTL,
+		now:              time.Now,
+		cache:            make(map[string]cacheEntry),
 	}
 }
 
@@ -150,19 +166,19 @@ func (c *RevenueCatChecker) resolveAndCache(ctx context.Context, userID string) 
 	switch status {
 	case http.StatusOK:
 		entry = cacheEntry{
-			active:    c.hasActiveEntitlement(response.Customer.ActiveEntitlements.Items),
-			expiresAt: c.now().Add(c.cacheTTL),
+			active: c.hasActiveEntitlement(response.Customer.ActiveEntitlements.Items),
 		}
 		slog.Info("RevenueCat subscription check completed", "userID", userID, "active", entry.active)
 		slog.Debug("RevenueCat active entitlements", "userID", userID, "entitlement_ids", activeEntitlementIDs(response.Customer.ActiveEntitlements.Items))
 	case http.StatusNotFound:
 		// RevenueCat has never seen this user: no purchase, definitive answer.
-		entry = cacheEntry{active: false, expiresAt: c.now().Add(c.cacheTTL)}
+		entry = cacheEntry{active: false}
 		slog.Info("No RevenueCat customer found for user, subscription inactive", "userID", userID)
 	default:
 		return cacheEntry{}, fmt.Errorf("revenuecat customer lookup failed with status %d", status)
 	}
 
+	entry.expiresAt = c.now().Add(c.cacheTTLFor(entry.active))
 	c.cacheUser(userID, entry)
 	return entry, nil
 }
@@ -195,6 +211,16 @@ func activeEntitlementIDs(entitlements []revenueCatActiveEntitlement) []string {
 		ids = append(ids, entitlement.EntitlementID)
 	}
 	return ids
+}
+
+// cacheTTLFor returns the cache duration for a check result. Negative results
+// expire much faster so a just-purchased subscription is not blocked by a
+// stale 402.
+func (c *RevenueCatChecker) cacheTTLFor(active bool) time.Duration {
+	if active {
+		return c.cacheTTL
+	}
+	return c.negativeCacheTTL
 }
 
 func (c *RevenueCatChecker) getCached(userID string) (cacheEntry, bool) {
