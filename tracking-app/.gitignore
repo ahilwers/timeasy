@@ -23,6 +23,7 @@
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
+**/ios/Flutter/ephemeral/
 .packages
 .pub-cache/
 .pub/

@@ -22,7 +22,7 @@ class OpenIdAuthenticationService {
       redirectUri,
       issuer: _issuer,
       scopes: scopes,
-      preferEphemeralSession: true,
+      externalUserAgent: ExternalUserAgent.ephemeralAsWebAuthenticationSession,
     );
   }
 
@@ -41,7 +41,7 @@ class OpenIdAuthenticationService {
         tokenEndpoint: '$_issuer/protocol/openid-connect/token',
       ),
       scopes: scopes,
-      preferEphemeralSession: true,
+      externalUserAgent: ExternalUserAgent.ephemeralAsWebAuthenticationSession,
     );
   }
 

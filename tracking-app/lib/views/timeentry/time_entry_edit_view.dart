@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:timeasy/l10n/app_localizations.dart';
 import 'package:timeasy/components/custom_datetime_picker.dart';
 import 'package:timeasy/components/enhanced_description_input.dart';
 import 'package:timeasy/models/time_entry.dart';
@@ -49,7 +49,7 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
     super.initState();
     if (_timeEntryId != null) {
       _timeEntryRepository
-          .getTimeEntryById(_timeEntryId!)
+          .getTimeEntryById(_timeEntryId)
           .then((TimeEntry? timeEntryFromDb) {
         setState(() {
           _timeEntry = timeEntryFromDb;

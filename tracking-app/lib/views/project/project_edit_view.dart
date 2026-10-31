@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:timeasy/l10n/app_localizations.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
 import 'package:timeasy/services/event_sync_service.dart';
@@ -218,7 +218,7 @@ class _ProjectEditWidgetState extends State<ProjectEditWidget> {
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
-                  value: _getColorKeyFromHex(_project!.color),
+                  initialValue: _getColorKeyFromHex(_project!.color),
                   items: colors.map((color) {
                     return DropdownMenuItem<String>(
                       value: color['name'],

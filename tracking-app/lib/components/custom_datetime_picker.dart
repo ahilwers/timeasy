@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:timeasy/l10n/app_localizations.dart';
 
 class CustomDateTimePicker extends StatelessWidget {
   final DateTime? dateTime;
@@ -129,7 +129,7 @@ class CustomDateTimePicker extends StatelessWidget {
             right: showRightBorder ? Radius.circular(4) : Radius.zero,
           ),
           border: Border.all(
-            color: borderColor ?? primaryColor.withOpacity(0.3),
+            color: borderColor ?? primaryColor.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

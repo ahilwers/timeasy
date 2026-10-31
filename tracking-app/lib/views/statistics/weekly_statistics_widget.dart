@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timeasy/tools/duration_formatter.dart';
 
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:timeasy/l10n/app_localizations.dart';
 
 import 'package:timeasy/tools/weekly_statistics_builder.dart';
 import 'package:timeasy/tools/weekly_statistics.dart';

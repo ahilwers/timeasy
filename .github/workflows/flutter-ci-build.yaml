@@ -20,7 +20,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           cache: true
 
       - name: Setup Java 17
@@ -34,7 +34,7 @@ jobs:
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: true
-          packages: platforms;android-35 build-tools;35.0.0 platform-tools ndk;26.1.10909125
+          packages: platforms;android-36 build-tools;36.0.0 platform-tools ndk;28.2.13676358
 
       - name: Get dependencies
         run: flutter pub get
@@ -77,7 +77,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           cache: true
 
       - name: Get dependencies

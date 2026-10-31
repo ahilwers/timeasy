@@ -107,7 +107,7 @@ class _WeeklyViewState extends State<WeeklyViewWidget> {
                 dotWidth: 10,
                 dotHeight: 8,
                 activeDotColor: Theme.of(context).colorScheme.primary,
-                dotColor: Colors.grey.withOpacity(0.5),
+                dotColor: Colors.grey.withValues(alpha: 0.5),
                 spacing: 8,
                 radius: 4,
               ),
