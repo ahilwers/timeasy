@@ -39,6 +39,14 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "primeng"
         update-types: ["version-update:semver-major"]
+      # Tied to the Angular major version: keycloak-angular tracks Angular,
+      # @angular/build requires TypeScript <6.0 and Vitest ^4.
+      - dependency-name: "keycloak-angular"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
 
   - package-ecosystem: "pub"
