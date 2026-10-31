@@ -1,4 +1,5 @@
 import 'package:timeasy/environment.dart';
+import 'package:timeasy/models/settings.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/sync_data_retriever.dart';
 import 'package:timeasy/services/sync_data_sender.dart';
@@ -27,7 +28,7 @@ class SynchronizationService {
     // Then retrieve remote changes
     var dataRetriever = new SyncDataRetriever(_apiService);
     var result = await dataRetriever.retrieveNewestEntries(
-        settings.latestRemoteChangelogId, settings.clientId);
+        settings.latestRemoteChangelogId, _excludeClientId(settings));
 
     await _updateLastSyncTimeSettings();
     
@@ -47,9 +48,21 @@ class SynchronizationService {
     var settings = await _settingsRepository.getSettings();
     var dataRetriever = new SyncDataRetriever(_apiService);
     var result = await dataRetriever.retrieveNewestEntries(
-        settings.latestRemoteChangelogId, settings.clientId);
+        settings.latestRemoteChangelogId, _excludeClientId(settings));
     await _updateLastSyncTimeSettings();
     return result;
+  }
+
+  /// On a full resync (cursor 0, e.g. after a fresh install or an account
+  /// switch that wiped the local data) the server must not exclude this
+  /// client's own changelog entries — otherwise the user's own projects never
+  /// come back, because this device no longer holds the data it created.
+  String? _excludeClientId(Settings settings) {
+    final cursor = settings.latestRemoteChangelogId;
+    if (cursor == null || cursor == 0) {
+      return null;
+    }
+    return settings.clientId;
   }
 
   Future<void> sendChangesToServer() async {
