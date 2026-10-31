@@ -28,7 +28,7 @@ dependencies:
   uuid: ^4.1.0
   intl: ^0.20.3
   shared_preferences: ^2.0.7
-  flex_color_scheme: ^8.4.0
+  flex_color_scheme: ">=8.4.0 <10.0.0"
   package_info_plus: ^10.2.2
   fluttertoast: ^10.0.2
   flutter_appauth: ^13.0.0
