@@ -1,6 +1,6 @@
-import { CommonModule } from '@angular/common';
+
 import { HttpClient } from '@angular/common/http';
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -15,7 +15,7 @@ import { UserExternalAccountService } from '../../../services/user-external-acco
 // PrimeNG imports
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -25,20 +25,20 @@ import { ToastModule } from 'primeng/toast';
     selector: 'app-external-integration',
     standalone: true,
     imports: [
-        CommonModule,
-        RouterLink,
-        ReactiveFormsModule,
-        TranslatePipe,
-        DropdownModule,
-        InputText,
-        Button,
-        Card,
-        Message,
-        ProgressSpinner,
-        ToastModule
-    ],
+    RouterLink,
+    ReactiveFormsModule,
+    TranslatePipe,
+    SelectModule,
+    InputText,
+    Button,
+    Card,
+    Message,
+    ProgressSpinner,
+    ToastModule
+],
     providers: [MessageService],
     templateUrl: './external-integration.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './external-integration.component.css'
 })
 export class ExternalIntegrationComponent implements OnInit {

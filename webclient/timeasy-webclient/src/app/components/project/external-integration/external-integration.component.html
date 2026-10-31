@@ -28,7 +28,7 @@
         <form [formGroup]="connectionForm" (ngSubmit)="connect()">
             <div class="form-field">
                 <label for="userAccountId">{{ 'projects.external.account' | translate }}</label>
-                <p-dropdown id="userAccountId" formControlName="userAccountId" [options]="getAccountOptions()"
+                <p-select id="userAccountId" formControlName="userAccountId" [options]="getAccountOptions()"
                     optionLabel="label" optionValue="value"
                     [placeholder]="'projects.external.selectAccount' | translate" styleClass="w-full">
                     <ng-template let-account pTemplate="item">
@@ -37,7 +37,7 @@
                             <span>{{ account.accountName }} ({{ getProviderDisplayName(account.provider) }})</span>
                         </div>
                     </ng-template>
-                </p-dropdown>
+                </p-select>
             </div>
 
             <div class="form-field">

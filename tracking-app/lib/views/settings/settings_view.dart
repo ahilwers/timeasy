@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:timeasy/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:timeasy/bloc/authentication/authentication_bloc.dart';
 import 'package:timeasy/bloc/authentication/authentication_event.dart';
@@ -508,7 +508,7 @@ class _SettingsCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.dividerColor.withOpacity(0.4)),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.4)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),

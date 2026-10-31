@@ -7,6 +7,9 @@ on:
       - ".github/workflows/flutter-ci-build.yaml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,26 +18,26 @@ jobs:
         working-directory: ./tracking-app
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           cache: true
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: "temurin"
           java-version: "17"
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: true
-          packages: platforms;android-35 build-tools;35.0.0 platform-tools ndk;26.1.10909125
+          packages: platforms;android-36 build-tools;36.0.0 platform-tools ndk;28.2.13676358
 
       - name: Get dependencies
         run: flutter pub get
@@ -59,7 +62,7 @@ jobs:
           LOKI_BEARER_TOKEN: ${{ secrets.LOKI_BEARER_TOKEN }}
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: timeasy-apk-${{ github.sha }}
           path: tracking-app/build/app/outputs/flutter-apk/app-release.apk
@@ -72,12 +75,12 @@ jobs:
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           cache: true
 
       - name: Get dependencies
@@ -97,7 +100,7 @@ jobs:
           LOKI_BEARER_TOKEN: ${{ secrets.LOKI_BEARER_TOKEN }}
 
       - name: Upload iOS artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: timeasy-ios-${{ github.sha }}
           path: tracking-app/build/ios/iphoneos/Runner.app

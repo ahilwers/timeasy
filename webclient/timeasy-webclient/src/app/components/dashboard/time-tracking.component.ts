@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnInit, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Button } from 'primeng/button';
@@ -15,6 +15,7 @@ import { DescriptionAutocompleteComponent } from '../shared/description-autocomp
     standalone: true,
     templateUrl: './time-tracking.component.html',
     styleUrls: ['./time-tracking.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         Button,
         Select,

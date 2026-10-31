@@ -1,6 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 import { UserExternalAccountService } from '../../../services/user-external-account.service';
 import { UserExternalAccount, UserExternalAccountRequest } from '../../../models/user-external-account.model';
 import { MessageService } from 'primeng/api';
@@ -11,7 +11,7 @@ import { Card } from 'primeng/card';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
@@ -24,23 +24,23 @@ import { TokenDocumentationComponent } from './token-documentation/token-documen
   selector: 'app-external-accounts',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
     Card,
     Button,
     Dialog,
     InputText,
-    DropdownModule,
+    SelectModule,
     TableModule,
     ConfirmDialog,
     ToastModule,
     ProgressSpinner,
     TooltipModule,
     TokenDocumentationComponent
-  ],
+],
   providers: [MessageService, ConfirmationService],
   templateUrl: './external-accounts.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './external-accounts.component.css'
 })
 export class ExternalAccountsComponent implements OnInit {

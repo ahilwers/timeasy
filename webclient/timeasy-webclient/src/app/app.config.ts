@@ -1,5 +1,5 @@
 import {ApplicationConfig, LOCALE_ID} from '@angular/core';
-import {HttpClient, provideHttpClient, withInterceptors} from '@angular/common/http';
+import {provideHttpClient, withInterceptors} from '@angular/common/http';
 import {appRoutes} from './app.routes';
 import {
   AutoRefreshTokenService,
@@ -17,7 +17,7 @@ import {ColorPreset} from './color.preset';
 import localeDe from '@angular/common/locales/de';
 import {registerLocaleData} from '@angular/common';
 import {provideTranslateService, TranslateLoader} from '@ngx-translate/core';
-import {TranslateHttpLoader} from '@ngx-translate/http-loader';
+import {TranslateHttpLoader, TRANSLATE_HTTP_LOADER_CONFIG} from '@ngx-translate/http-loader';
 import {MessageService} from 'primeng/api';
 import { environment } from '../environments/environment';
 import { licenseErrorInterceptor } from './interceptors/license-error.interceptor';
@@ -54,8 +54,6 @@ const supportedLocales = ['en-US', 'de-DE'];
 const userLocale = navigator.language;
 const locale = supportedLocales.includes(userLocale) ? userLocale : 'en-US';
 
-const httpLoaderFactory: (http: HttpClient) => TranslateHttpLoader = (http: HttpClient) =>
-  new TranslateHttpLoader(http, './i18n/', '.json');
 
 
 export const appConfig: ApplicationConfig = {
@@ -79,12 +77,14 @@ export const appConfig: ApplicationConfig = {
     }),
     { provide: LOCALE_ID, useValue: locale },
     provideTranslateService({
+      lang: 'en',
+      fallbackLang: 'en',
       loader: {
         provide: TranslateLoader,
-        useFactory: httpLoaderFactory,
-        deps: [HttpClient],
+        useClass: TranslateHttpLoader,
       },
     }),
+    { provide: TRANSLATE_HTTP_LOADER_CONFIG, useValue: { resources: [{ prefix: './i18n/', suffix: '.json' }] } },
     MessageService
   ],
 };

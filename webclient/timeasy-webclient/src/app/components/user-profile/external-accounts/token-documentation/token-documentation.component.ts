@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+
 import { TranslatePipe } from '@ngx-translate/core';
 
 // PrimeNG imports
@@ -11,13 +11,13 @@ import { Divider } from 'primeng/divider';
   selector: 'app-token-documentation',
   standalone: true,
   imports: [
-    CommonModule,
     TranslatePipe,
     Dialog,
     Button,
     Divider
-  ],
+],
   templateUrl: './token-documentation.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './token-documentation.component.css'
 })
 export class TokenDocumentationComponent {

@@ -12,7 +12,6 @@ export class LanguageService {
 
   async initializeLanguage(): Promise<void> {
     this.translateService.addLangs(this.supportedLanguages);
-    this.translateService.setDefaultLang('en');
 
     const language = await this.getPreferredLanguage();
     this.translateService.use(language);

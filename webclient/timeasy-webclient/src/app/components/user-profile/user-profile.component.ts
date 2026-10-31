@@ -1,6 +1,6 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import Keycloak from 'keycloak-js';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -16,14 +16,14 @@ import { BillingService } from '../../services/billing.service';
     selector: 'app-user-profile',
     standalone: true,
     imports: [
-        CommonModule,
-        CardModule,
-        ButtonModule,
-        ToastModule,
-        ProgressSpinnerModule,
-        TranslateModule
-    ],
+    CardModule,
+    ButtonModule,
+    ToastModule,
+    ProgressSpinnerModule,
+    TranslatePipe
+],
     templateUrl: './user-profile.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './user-profile.component.css'
 })
 export class UserProfileComponent implements OnInit {

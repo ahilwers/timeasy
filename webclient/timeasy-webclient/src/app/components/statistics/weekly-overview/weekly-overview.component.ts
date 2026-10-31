@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit, signal} from '@angular/core';
+import {Component, effect, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {WeeklyStatisticsService} from '../../../services/weekly-statistcs.service';
 import {TranslatePipe} from '@ngx-translate/core';
 import {Toast} from 'primeng/toast';
@@ -29,6 +29,7 @@ import {ProjectService} from '../../../services/project.service';
   ],
   providers: [MessageService],
   templateUrl: './weekly-overview.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './weekly-overview.component.css'
 })
 

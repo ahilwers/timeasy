@@ -68,10 +68,10 @@
             <div class="form-grid">
                 <div class="form-field">
                     <label for="provider">{{ 'user.externalAccounts.provider' | translate }}</label>
-                    <p-dropdown id="provider" formControlName="provider" [options]="providerOptions" optionLabel="label"
+                    <p-select id="provider" formControlName="provider" [options]="providerOptions" optionLabel="label"
                         optionValue="value" [placeholder]="'user.externalAccounts.selectProvider' | translate"
                         styleClass="w-full">
-                    </p-dropdown>
+                    </p-select>
                 </div>
 
                 <div class="form-field">

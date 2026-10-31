@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit, signal} from '@angular/core';
+import {Component, effect, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {Project} from '../../../models/project.model';
 import {ProjectService} from '../../../services/project.service';
 import {Button} from 'primeng/button';
@@ -19,6 +19,7 @@ import {DateOnly} from '../../../models/date_only';
   imports: [Button, TableModule, ConfirmDialog, Toast, TranslatePipe, DateOnlyPipe, MoneyPipe, NgClass],
   providers: [ConfirmationService, MessageService],
   templateUrl: './project-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './project-list.component.css'
 })
 export class ProjectListComponent implements OnInit {
