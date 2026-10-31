@@ -40,6 +40,7 @@ dependencies:
   logging: ^1.2.0
   http: ^1.1.0
   purchases_flutter: ^10.18.1
+  in_app_review: ^2.0.12
 
 dev_dependencies:
   flutter_test:

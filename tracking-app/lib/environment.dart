@@ -20,6 +20,11 @@ class Environment {
   /// subscriptions; linking to legal pages is always allowed).
   static const String privacyPolicyUrl = "https://timeasy.org/privacy";
 
+  /// Numeric App Store ID of timeasy (the part after `id` in the store URL).
+  /// Required by `in_app_review` to open the App Store review page; Android
+  /// derives the listing from the package name.
+  static const String appStoreId = "1620757668";
+
   /// Terms of use, linked from the paywall. There is no own terms page yet,
   /// so iOS falls back to Apple's standard EULA (accepted for auto-renewable
   /// subscriptions). Google Play does not require it — replace this with the

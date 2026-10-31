@@ -12,6 +12,7 @@ import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
 import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/background_sync_service.dart';
 import 'package:timeasy/services/billing_service.dart';
+import 'package:timeasy/services/review_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsView extends StatefulWidget {
@@ -92,6 +93,12 @@ class SettingsViewState extends State<SettingsView>
                   }
                   return _buildLoggedOut(context, localizations);
                 },
+              ),
+              // Rating is independent of the account, so it is shown in both
+              // states.
+              _SettingsCard(
+                title: localizations.aboutSection,
+                child: _buildRateAppRow(context, localizations),
               ),
             ],
           ),
@@ -366,6 +373,48 @@ class SettingsViewState extends State<SettingsView>
 
   void _syncNow() {
     context.read<BackgroundSyncService>().synchronize();
+  }
+
+  void _rateApp() {
+    ReviewService().openStoreListing();
+  }
+
+  Widget _buildRateAppRow(
+      BuildContext context, AppLocalizations localizations) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: _rateApp,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.star_outline, size: 22, color: theme.colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    localizations.rateApp,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    localizations.rateAppDescription,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _openSubscriptionManagement() async {

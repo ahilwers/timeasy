@@ -367,6 +367,18 @@
     "@syncing": {
         "description": "Shown while a synchronization is running"
     },
+    "aboutSection": "About timeasy",
+    "@aboutSection": {
+        "description": "Settings section with app related actions"
+    },
+    "rateApp": "Rate timeasy",
+    "@rateApp": {
+        "description": "Settings entry that opens the store page to rate the app"
+    },
+    "rateAppDescription": "Your rating helps others discover timeasy.",
+    "@rateAppDescription": {
+        "description": "Explanation below the rate app entry"
+    },
     "subscriptionInactive": "No active subscription",
     "@subscriptionInactive": {
         "description": "Subscription status when no subscription is active"
