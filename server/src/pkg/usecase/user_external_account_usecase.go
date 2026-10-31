@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -184,6 +185,16 @@ func (uc *UserExternalAccountUseCase) validateProviderConnectionWithAccountName(
 		return fmt.Errorf("base URL required for Jira")
 	}
 
+	// GitLab and Jira requests are sent to a user supplied base URL, so it
+	// must be validated before it is used for outbound requests.
+	if providerType == "gitlab" || providerType == "jira" {
+		validatedBaseURL, err := validateExternalBaseURL(ctx, baseURL)
+		if err != nil {
+			return err
+		}
+		baseURL = validatedBaseURL
+	}
+
 	// Test the actual connection by making a simple API call
 	switch providerType {
 	case "github":
@@ -206,7 +217,7 @@ func (uc *UserExternalAccountUseCase) validateGitHubConnection(ctx context.Conte
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := newExternalHTTPClient(10 * time.Second)
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("GitHub API connection failed: %w", err)
@@ -228,7 +239,10 @@ func (uc *UserExternalAccountUseCase) validateGitLabConnection(ctx context.Conte
 		baseURL = "https://gitlab.com"
 	}
 
-	apiURL := baseURL + "/api/v4/user"
+	apiURL, err := url.JoinPath(baseURL, "api/v4/user")
+	if err != nil {
+		return fmt.Errorf("failed to build GitLab API URL: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -236,8 +250,7 @@ func (uc *UserExternalAccountUseCase) validateGitLabConnection(ctx context.Conte
 
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := newExternalHTTPClient(10 * time.Second).Do(req) // codeql[go/request-forgery]
 	if err != nil {
 		return fmt.Errorf("GitLab API connection failed: %w", err)
 	}
@@ -261,7 +274,10 @@ func (uc *UserExternalAccountUseCase) validateJiraConnection(ctx context.Context
 
 func (uc *UserExternalAccountUseCase) validateJiraConnectionWithEmail(ctx context.Context, email string, token string, baseURL string) error {
 	// Try the older API version first as it might be more compatible
-	apiURL := baseURL + "/rest/api/2/myself"
+	apiURL, err := url.JoinPath(baseURL, "rest/api/2/myself")
+	if err != nil {
+		return fmt.Errorf("failed to build Jira API URL: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -286,8 +302,8 @@ func (uc *UserExternalAccountUseCase) validateJiraConnectionWithEmail(ctx contex
 	}
 	req.Header.Set("Accept", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	client := newExternalHTTPClient(10 * time.Second)
+	resp, err := client.Do(req) // codeql[go/request-forgery]
 	if err != nil {
 		return fmt.Errorf("Jira API connection failed: %w", err)
 	}
@@ -303,13 +319,30 @@ func (uc *UserExternalAccountUseCase) validateJiraConnectionWithEmail(ctx contex
 		return fmt.Errorf("Jira authentication failed: Invalid email or API token")
 	}
 	if resp.StatusCode != http.StatusOK {
-		// Read response body for more detailed error
+		// Read the response body for logging only. It is not returned to the
+		// caller to avoid leaking content of internal services.
 		body := make([]byte, 1024)
 		n, _ := resp.Body.Read(body)
-		bodyStr := string(body[:n])
-		slog.Debug("Jira error response", "body", bodyStr)
-		return fmt.Errorf("Jira API error: status %d - %s", resp.StatusCode, bodyStr)
+		slog.Debug("Jira error response", "body", string(body[:n]))
+		return fmt.Errorf("Jira API error: status %d", resp.StatusCode)
 	}
 
 	return nil
+}
+
+// newExternalHTTPClient creates an HTTP client for outbound requests to
+// external services. Redirects are only followed within the same host.
+func newExternalHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{
+		Timeout: timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return fmt.Errorf("too many redirects")
+			}
+			if req.URL.Hostname() != via[0].URL.Hostname() {
+				return fmt.Errorf("redirect to a different host is not allowed")
+			}
+			return nil
+		},
+	}
 }

@@ -3,7 +3,7 @@ package configuration
 import (
 	"flag"
 	"fmt"
-	"github.com/peterbourgon/ff"
+	"github.com/peterbourgon/ff/v3"
 	"log/slog"
 	"os"
 	"strconv"
@@ -62,11 +62,13 @@ func GetConfiguration() (Configuration, error) {
 		_ = fs.String("config", "", "config file (optional)")
 	)
 
-	ff.Parse(fs, os.Args[1:],
+	if err := ff.Parse(fs, os.Args[1:],
 		ff.WithEnvVarPrefix("TIMEASY"),
 		ff.WithConfigFileFlag("config"),
 		ff.WithConfigFileParser(ff.PlainParser),
-	)
+	); err != nil {
+		return Configuration{}, fmt.Errorf("failed to parse configuration: %w", err)
+	}
 
 	var configuration Configuration
 
