@@ -250,8 +250,9 @@ func (uc *UserExternalAccountUseCase) validateGitLabConnection(ctx context.Conte
 
 	req.Header.Set("Authorization", "Bearer "+token)
 
+	client := newExternalHTTPClient(10 * time.Second)
 	// codeql[go/request-forgery] The base URL is validated by validateExternalBaseURL above.
-	resp, err := newExternalHTTPClient(10 * time.Second).Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("GitLab API connection failed: %w", err)
 	}
