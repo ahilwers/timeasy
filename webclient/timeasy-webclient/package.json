@@ -25,7 +25,7 @@
     "@primeng/themes": "^21.0.4",
     "@revenuecat/purchases-js": "^1.73.2",
     "chart.js": "^4.6.1",
-    "keycloak-angular": "^21.0.0",
+    "keycloak-angular": "^22.0.0",
     "keycloak-js": "^26.2.5",
     "primeicons": "^8.0.2",
     "primeng": "^21.1.10",
