@@ -31,6 +31,14 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # We stay on the Angular 21 / PrimeNG 21 (MIT) stack; PrimeNG 22 and the
+      # matching Angular 22 require the commercial PrimeUI license. Migrate
+      # deliberately instead of pulling in major updates that break the build.
+      - dependency-name: "@angular/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "primeng"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
 
   - package-ecosystem: "pub"
@@ -42,6 +50,11 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # flex_color_scheme 9 returns ThemeData from the material_ui package
+      # instead of Flutter's ThemeData. Migrate deliberately.
+      - dependency-name: "flex_color_scheme"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
 
   - package-ecosystem: "docker"
@@ -54,4 +67,10 @@ updates:
     directory: "/webclient/timeasy-webclient"
     schedule:
       interval: "weekly"
+    ignore:
+      # Stay on the Node LTS series (22); Angular 21 does not support
+      # odd/current Node releases such as 25. Move deliberately with the
+      # next Angular migration.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
