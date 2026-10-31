@@ -81,4 +81,12 @@ updates:
       # next Angular migration.
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
+      # Stay on the nginx stable branch (even minor versions). Dependabot
+      # cannot distinguish nginx stable from mainline releases, so all
+      # nginx updates are handled deliberately.
+      - dependency-name: "nginx"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
     open-pull-requests-limit: 5
