@@ -6,7 +6,8 @@ import {
   inject,
   LOCALE_ID,
   OnInit,
-  signal
+  signal,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import {ChartModule} from 'primeng/chart';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
@@ -22,6 +23,7 @@ import {TranslatePipe} from '@ngx-translate/core';
     ChartModule,
     TranslatePipe,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./weekly-pie-chart.component.css']
 })
 

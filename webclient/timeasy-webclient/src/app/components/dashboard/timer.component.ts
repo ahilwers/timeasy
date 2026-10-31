@@ -1,9 +1,10 @@
-import { Component, signal, effect } from '@angular/core';
+import { Component, signal, effect, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-timer',
   standalone: true,
   templateUrl: './timer.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./timer.component.css']
 })
 export class TimerComponent {

@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit, OnDestroy} from '@angular/core';
+import {Component, effect, inject, OnInit, OnDestroy, ChangeDetectionStrategy} from '@angular/core';
 import Keycloak, {KeycloakProfile} from 'keycloak-js';
 import {KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs} from 'keycloak-angular';
 import {Menu} from 'primeng/menu';
@@ -11,6 +11,7 @@ import {Subscription} from 'rxjs';
   standalone: true,
   imports: [Menu],
   templateUrl: './menu.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './menu.component.css'
 })
 

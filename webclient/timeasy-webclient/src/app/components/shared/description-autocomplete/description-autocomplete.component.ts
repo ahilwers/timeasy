@@ -1,6 +1,6 @@
-import { Component, Input, Output, EventEmitter, forwardRef, inject, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, inject, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 import { InputText } from 'primeng/inputtext';
 import { ExternalIntegrationService } from '../../../services/external-integration.service';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
@@ -9,11 +9,11 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs
   selector: 'app-description-autocomplete',
   standalone: true,
   imports: [
-    CommonModule,
     InputText
-  ],
+],
   templateUrl: './description-autocomplete.component.html',
   styleUrl: './description-autocomplete.component.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

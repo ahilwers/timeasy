@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
@@ -30,6 +30,7 @@ import { PrimeNGLocaleService } from '../../../services/primeng-locale.service';
   ],
   providers: [MessageService],
   templateUrl: './time-entry-form.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './time-entry-form.component.css'
 })
 

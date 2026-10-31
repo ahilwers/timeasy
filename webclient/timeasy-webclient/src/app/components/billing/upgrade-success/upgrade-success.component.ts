@@ -1,5 +1,5 @@
-import {Component, OnDestroy, OnInit, inject, signal} from '@angular/core';
-import {TranslateModule} from '@ngx-translate/core';
+import {Component, OnDestroy, OnInit, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+import {TranslatePipe} from '@ngx-translate/core';
 import {ButtonModule} from 'primeng/button';
 import {ProgressSpinnerModule} from 'primeng/progressspinner';
 import {BillingService} from '../../../services/billing.service';
@@ -8,8 +8,9 @@ import {CardComponent} from '../../card/card.component';
 @Component({
   selector: 'app-upgrade-success',
   standalone: true,
-  imports: [TranslateModule, CardComponent, ButtonModule, ProgressSpinnerModule],
+  imports: [TranslatePipe, CardComponent, ButtonModule, ProgressSpinnerModule],
   templateUrl: './upgrade-success.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './upgrade-success.component.css'
 })
 export class UpgradeSuccessComponent implements OnInit, OnDestroy {

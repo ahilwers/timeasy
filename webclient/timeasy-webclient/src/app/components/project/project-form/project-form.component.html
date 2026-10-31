@@ -16,7 +16,7 @@
 
     <div class="form-field">
         <label for="color">{{ 'projects.color' | translate }}</label>
-        <p-dropdown id="color" formControlName="color" [options]="colors" optionLabel="name" optionValue="hex"
+        <p-select id="color" formControlName="color" [options]="colors" optionLabel="name" optionValue="hex"
             placeholder="{{ 'projects.selectColor' | translate }}" [virtualScroll]="false">
             <ng-template let-color pTemplate="item">
                 <div style="display: flex; align-items: center;">
@@ -34,7 +34,7 @@
                     <span>{{ color?.name }}</span>
                 </div>
             </ng-template>
-        </p-dropdown>
+        </p-select>
     </div>
 
     <div class="form-field">

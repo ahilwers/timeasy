@@ -6,7 +6,8 @@ import {
   inject,
   LOCALE_ID,
   OnInit,
-  signal
+  signal,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import {UIChart} from 'primeng/chart';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
@@ -22,6 +23,7 @@ import {formatSecondsToReadableTime} from '../../utils/time-utils';
     UIChart,
     TranslatePipe
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./weekly-statistics-chart.component.css']
 })
 

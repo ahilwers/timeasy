@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {MenuComponent} from './components/menu/menu.component';
 import {HeaderComponent} from './components/header/header.component';
@@ -11,6 +11,7 @@ import { DynamicLocaleService } from './services/dynamic-locale.service';
   standalone: true,
   imports: [MenuComponent, RouterOutlet, HeaderComponent, FooterComponent],
   templateUrl: './app.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.component.css'
 })
 

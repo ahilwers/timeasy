@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit, signal} from '@angular/core';
+import {Component, effect, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 import {UtcToLocalTimePipe} from '../../../pipes/utc-to-local-time.pipe';
 import {Button} from 'primeng/button';
@@ -37,6 +37,7 @@ import {SplitButton} from 'primeng/splitbutton';
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './time-entry-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './time-entry-list.component.css'
 })
 

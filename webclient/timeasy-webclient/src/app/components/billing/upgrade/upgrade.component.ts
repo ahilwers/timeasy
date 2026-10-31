@@ -1,6 +1,6 @@
-import {Component, OnInit, computed, inject, signal} from '@angular/core';
+import {Component, OnInit, computed, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {Router} from '@angular/router';
-import {TranslateModule, TranslateService} from '@ngx-translate/core';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {ButtonModule} from 'primeng/button';
 import {ProgressSpinnerModule} from 'primeng/progressspinner';
 import {catchError, forkJoin, of} from 'rxjs';
@@ -10,8 +10,9 @@ import {CardComponent} from '../../card/card.component';
 @Component({
   selector: 'app-upgrade',
   standalone: true,
-  imports: [TranslateModule, CardComponent, ButtonModule, ProgressSpinnerModule],
+  imports: [TranslatePipe, CardComponent, ButtonModule, ProgressSpinnerModule],
   templateUrl: './upgrade.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './upgrade.component.css'
 })
 export class UpgradeComponent implements OnInit {
@@ -53,7 +54,7 @@ export class UpgradeComponent implements OnInit {
     this.errorKey.set(null);
     // Pass the active UI language so the checkout is localized (Paddle falls
     // back to its default for unsupported locales).
-    this.billingService.purchase(interval, this.translateService.currentLang).then(() => {
+    this.billingService.purchase(interval, this.translateService.currentLang() ?? undefined).then(() => {
       this.router.navigate(['/upgrade/success']);
     }).catch((error) => {
       this.purchasingInterval.set(null);

@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: "./webclient/timeasy-webclient/package-lock.json"
 
@@ -29,7 +29,7 @@ jobs:
         continue-on-error: true
 
       - name: Test
-        run: npm run test -- --watch=false --browsers=ChromeHeadless
+        run: npm run test -- --watch=false
 
       - name: Build
         run: npm run build
