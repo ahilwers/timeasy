@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'package:timeasy/tools/jwt_tools.dart';
 
 class ApiCredentials {
   static final String tableName = "ApiCredentials";
@@ -23,6 +24,18 @@ class ApiCredentials {
   ApiCredentials() {
     var uuid = new Uuid();
     id = uuid.v4();
+  }
+
+  /// The Keycloak user ID (JWT `sub` claim). It is used as the RevenueCat App
+  /// User ID on every platform, so purchases and server-side entitlement
+  /// checks refer to the same account. Null when no valid access token exists.
+  String? get userId {
+    final token = accessToken;
+    if (token == null || token.isEmpty) {
+      return null;
+    }
+    final subject = decodeJwtPayload(token)['sub'];
+    return subject is String && subject.isNotEmpty ? subject : null;
   }
 
   void clear() {

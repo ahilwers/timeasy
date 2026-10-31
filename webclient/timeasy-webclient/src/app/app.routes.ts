@@ -3,6 +3,18 @@ import {canActivateAuth} from './guards/auth.guard';
 
 const routes: Routes = [
   { path: 'forbidden', loadComponent: () => import('./components/forbidden/forbidden.component').then(m => m.ForbiddenComponent) },
+  // Old paywall route kept as a redirect so existing bookmarks/links keep working
+  { path: 'no-license', redirectTo: '/upgrade' },
+  {
+    path: 'upgrade',
+    loadComponent: () => import('./components/billing/upgrade/upgrade.component').then(m => m.UpgradeComponent),
+    canActivate: [canActivateAuth],
+  },
+  {
+    path: 'upgrade/success',
+    loadComponent: () => import('./components/billing/upgrade-success/upgrade-success.component').then(m => m.UpgradeSuccessComponent),
+    canActivate: [canActivateAuth],
+  },
   {
     path: '',
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),

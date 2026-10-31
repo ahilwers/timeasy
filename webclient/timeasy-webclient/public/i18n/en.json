@@ -227,6 +227,32 @@
             "permission2": "<strong>Project access</strong> - You must have at least \"Browse Projects\" permission in the Jira projects you want to integrate"
         }
     },
+    "license": {
+        "noLicense": {
+            "title": "License Required",
+            "message": "Your subscription is not active.",
+            "description": "Please check your license subscription to continue using timeasy. Contact your administrator if you believe this is an error."
+        },
+        "upgrade": {
+            "title": "timeasy Pro",
+            "message": "Subscribe to timeasy Pro to get automatic sync across devices, exports and more.",
+            "monthly": "Monthly",
+            "annual": "Yearly",
+            "openingCheckout": "Opening checkout...",
+            "billingDisabled": "This timeasy instance does not use subscriptions.",
+            "checkoutError": "The checkout could not be opened. Please try again later."
+        },
+        "success": {
+            "title": "Thank you for subscribing!",
+            "verifying": "Verifying your subscription...",
+            "active": "Your subscription is active. You can now use the timeasy app.",
+            "notActive": "We could not verify your subscription yet. If you just subscribed, this can take a moment.",
+            "retry": "Check again",
+            "openApp": "You can now open the timeasy app."
+        },
+        "manageSubscription": "Manage subscription",
+        "portalError": "Could not open subscription management. Please try again later."
+    },
     "common": {
         "loading": "Loading...",
         "save": "Save",

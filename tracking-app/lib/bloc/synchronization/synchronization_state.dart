@@ -17,3 +17,6 @@ class SynchronizationError extends SynchronizationState {
 
   SynchronizationError(this.message);
 }
+
+/// The server requires a paid subscription for sync (402 Payment Required).
+class SynchronizationSubscriptionRequired extends SynchronizationState {}

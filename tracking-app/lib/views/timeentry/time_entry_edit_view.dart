@@ -5,6 +5,7 @@ import 'package:timeasy/components/enhanced_description_input.dart';
 import 'package:timeasy/models/time_entry.dart';
 import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/event_sync_service.dart';
+import 'package:timeasy/services/review_service.dart';
 
 enum ConfirmAction { CANCEL, ACCEPT }
 
@@ -243,6 +244,9 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       _timeEntryRepository.updateTimeEntry(_timeEntry!);
     } else {
       _timeEntryRepository.addTimeEntry(_timeEntry!);
+      // Only new entries count as usage; a review prompt while the user is
+      // still editing existing data would be premature.
+      ReviewService().registerSavedTimeEntry();
     }
 
     // Trigger synchronization after saving a time entry

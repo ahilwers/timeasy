@@ -7,10 +7,22 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 To start a local development server, run:
 
 ```bash
-ng serve
+npm start
 ```
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+
+## RevenueCat web billing key
+
+The web client does **not** contain a RevenueCat key. When billing is enabled, the server's public `GET /api/v1/billing/status` response includes the instance's **public** RevenueCat Web Billing API key (`webApiKey`), and the client uses it to configure `purchases-js`.
+
+That means:
+
+- the Docker image is environment-neutral — no key is baked in, and self-hosted instances are not tied to the hosted instance's RevenueCat project;
+- self-hosters who enable billing set `TIMEASY_REVENUECAT_WEB_API_KEY` on the **server** (see `server/README.md`) instead of rebuilding the web client;
+- without billing enabled on the server, the billing UI stays hidden.
+
+> The web key is public by design (it is part of the browser bundle at runtime). Never store a RevenueCat **secret** API key (`sk_...` / `rcsk_...`) in the web client; secret keys belong on the Go server.
 
 ## Code scaffolding
 

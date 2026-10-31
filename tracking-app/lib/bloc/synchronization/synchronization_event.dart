@@ -15,3 +15,7 @@ class SynchronizationErrorEvent extends SynchronizationEvent {
 }
 
 class SynchonizationStartEvent extends SynchronizationEvent {}
+
+/// Emitted when the server responds with 402 Payment Required during sync,
+/// i.e. the user has no active subscription for the hosted service.
+class SynchronizationSubscriptionRequiredEvent extends SynchronizationEvent {}

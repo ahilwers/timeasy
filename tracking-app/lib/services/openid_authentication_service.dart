@@ -16,22 +16,48 @@ class OpenIdAuthenticationService {
 
   String get _issuer => keycloakUri;
 
-  Future<ApiCredentials?> authenticate() async {
+  AuthorizationTokenRequest _loginRequest() {
+    return AuthorizationTokenRequest(
+      clientId,
+      redirectUri,
+      issuer: _issuer,
+      scopes: scopes,
+      preferEphemeralSession: true,
+    );
+  }
+
+  /// Keycloak serves the registration form at the dedicated `/registrations`
+  /// endpoint, which runs inside the authorization code flow and redirects
+  /// back with an authorization code exactly like the login endpoint. Unlike
+  /// `prompt=create`, this works with every Keycloak version — older versions
+  /// ignore that parameter and show the login page instead.
+  AuthorizationTokenRequest _registrationRequest() {
+    return AuthorizationTokenRequest(
+      clientId,
+      redirectUri,
+      serviceConfiguration: AuthorizationServiceConfiguration(
+        authorizationEndpoint:
+            '$_issuer/protocol/openid-connect/registrations',
+        tokenEndpoint: '$_issuer/protocol/openid-connect/token',
+      ),
+      scopes: scopes,
+      preferEphemeralSession: true,
+    );
+  }
+
+  /// Runs the Keycloak authorization code flow. With [register] set, Keycloak
+  /// shows its registration page instead of the login form.
+  Future<ApiCredentials?> authenticate({bool register = false}) async {
     const method = 'OpenIdAuthenticationService.authenticate';
-    AppLogger.i('Starting authentication flow', method: method);
+    AppLogger.i('Starting authentication flow (register: $register)',
+        method: method);
     AppLogger.d('Issuer: $_issuer, RedirectUri: $redirectUri', method: method);
 
     try {
       AppLogger.d('Calling authorizeAndExchangeCode', method: method);
       final AuthorizationTokenResponse? result =
           await _appAuth.authorizeAndExchangeCode(
-        AuthorizationTokenRequest(
-          clientId,
-          redirectUri,
-          issuer: _issuer,
-          scopes: scopes,
-          preferEphemeralSession: true,
-        ),
+        register ? _registrationRequest() : _loginRequest(),
       );
 
       if (result == null) {

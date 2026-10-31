@@ -8,6 +8,7 @@ import (
 	"testing"
 	"timeasy-server/pkg/database/postgresql"
 	"timeasy-server/pkg/external"
+	"timeasy-server/pkg/subscription"
 	"timeasy-server/pkg/test"
 	"timeasy-server/pkg/usecase"
 
@@ -150,8 +151,12 @@ func (t *HandlerTest) initHandlers() {
 	externalIntegrationHandler := NewExternalIntegrationHandler(t.tokenVerifier, externalIntegrationUsecase)
 	userExternalAccountHandler := NewUserExternalAccountHandler(t.tokenVerifier, userExternalAccountUsecase)
 
+	// Use the noop subscription checker in tests (allows all requests)
+	subscriptionMiddleware := NewSubscriptionCheckMiddleware(subscription.NewNoopChecker())
+	billingHandler := NewBillingHandler(subscription.NewNoopChecker(), "")
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	t.Router = SetupRouter(authMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler)
+	t.Router = SetupRouter(authMiddleware, subscriptionMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler, billingHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {

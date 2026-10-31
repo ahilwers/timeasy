@@ -5,6 +5,7 @@ import 'package:timeasy/bloc/authentication/authentication_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
+import 'package:timeasy/services/subscription_required_exception.dart';
 import 'package:timeasy/services/synchronization_service.dart';
 
 class BackgroundSyncService {
@@ -25,6 +26,10 @@ class BackgroundSyncService {
   }
 
   void startSync() {
+    // startSync can be called again on token refresh; keep a single timer.
+    _timer?.cancel();
+    // Sync right away so a freshly signed-in user sees their data immediately
+    // instead of waiting for the first periodic run.
     synchronize();
     _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
       if (!isSyncing()) {
@@ -55,6 +60,8 @@ class BackgroundSyncService {
     try {
       var retrieveResult = await _syncService.synchronize();
       _synchronizationBloc.add(SynchronizationSuccessEvent(retrieveResult));
+    } on SubscriptionRequiredException {
+      _synchronizationBloc.add(SynchronizationSubscriptionRequiredEvent());
     } catch (e) {
       _synchronizationBloc.add(SynchronizationErrorEvent(e.toString()));
     }

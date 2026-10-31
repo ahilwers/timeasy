@@ -227,6 +227,32 @@
             "permission2": "<strong>Projektzugriff</strong> - Du benötigst mindestens \"Browse Projects\" Berechtigung in den Jira-Projekten, die du integrieren möchtest"
         }
     },
+    "license": {
+        "noLicense": {
+            "title": "Lizenz erforderlich",
+            "message": "Dein Abonnement ist nicht aktiv.",
+            "description": "Bitte überprüfe dein Lizenz-Abonnement, um timeasy weiter nutzen zu können. Wende dich an deinen Administrator, wenn du glaubst, dass dies ein Fehler ist."
+        },
+        "upgrade": {
+            "title": "timeasy Pro",
+            "message": "Abonniere timeasy Pro für automatische Synchronisation über Geräte hinweg, Exporte und mehr.",
+            "monthly": "Monatlich",
+            "annual": "Jährlich",
+            "openingCheckout": "Checkout wird geöffnet...",
+            "billingDisabled": "Diese timeasy-Instanz nutzt keine Abonnements.",
+            "checkoutError": "Der Checkout konnte nicht geöffnet werden. Bitte versuche es später erneut."
+        },
+        "success": {
+            "title": "Danke für dein Abo!",
+            "verifying": "Dein Abonnement wird überprüft...",
+            "active": "Dein Abonnement ist aktiv. Du kannst die timeasy-App jetzt nutzen.",
+            "notActive": "Dein Abonnement konnte noch nicht bestätigt werden. Wenn du gerade erst abonniert hast, kann das einen Moment dauern.",
+            "retry": "Erneut prüfen",
+            "openApp": "Du kannst die timeasy-App jetzt öffnen."
+        },
+        "manageSubscription": "Abo verwalten",
+        "portalError": "Die Abo-Verwaltung konnte nicht geöffnet werden. Bitte versuche es später erneut."
+    },
     "common": {
         "loading": "Laden...",
         "save": "Speichern",

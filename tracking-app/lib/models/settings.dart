@@ -7,12 +7,17 @@ class Settings {
   static final String latestRemoteChangelogIdColumn = "latestRemoteChangelogId";
   static final String latestLocalChangelogIdColumn = "latestLocalChangelogId";
   static final String clientIdColumn = "clientId";
+  static final String ownerUserIdColumn = "ownerUserId";
 
   late String id;
   DateTime? lastSyncTime;
   int? latestRemoteChangelogId;
   int? latestLocalChangelogId;
   String? clientId;
+
+  /// Keycloak user ID that owns the locally cached data. Used to detect an
+  /// account switch so one user's projects never leak into another account.
+  String? ownerUserId;
 
   Settings() {
     var uuid = new Uuid();
@@ -37,6 +42,7 @@ class Settings {
     latestRemoteChangelogId = map[latestRemoteChangelogIdColumn];
     latestLocalChangelogId = map[latestLocalChangelogIdColumn];
     clientId = map[clientIdColumn];
+    ownerUserId = map[ownerUserIdColumn];
     if (clientId == null) {
       var uuid = new Uuid();
       clientId = uuid.v4();
@@ -49,7 +55,8 @@ class Settings {
       lastSyncTimeColumn: lastSyncTime?.millisecondsSinceEpoch ?? 0,
       latestRemoteChangelogIdColumn: latestRemoteChangelogId ?? 0,
       latestLocalChangelogIdColumn: latestLocalChangelogId ?? 0,
-      clientIdColumn: clientId
+      clientIdColumn: clientId,
+      ownerUserIdColumn: ownerUserId
     };
     return map;
   }

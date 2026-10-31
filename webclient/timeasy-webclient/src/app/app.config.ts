@@ -20,6 +20,7 @@ import {provideTranslateService, TranslateLoader} from '@ngx-translate/core';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
 import {MessageService} from 'primeng/api';
 import { environment } from '../environments/environment';
+import { licenseErrorInterceptor } from './interceptors/license-error.interceptor';
 
 export const provideKeycloakAngular = () =>
   provideKeycloak({
@@ -64,7 +65,7 @@ export const appConfig: ApplicationConfig = {
       provide: INCLUDE_BEARER_TOKEN_INTERCEPTOR_CONFIG,
       useValue: [urlCondition]
     },
-    provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
+    provideHttpClient(withInterceptors([includeBearerTokenInterceptor, licenseErrorInterceptor])),
     provideKeycloakAngular(),
     provideAnimationsAsync(),
     providePrimeNG({

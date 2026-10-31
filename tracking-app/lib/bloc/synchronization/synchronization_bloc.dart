@@ -11,5 +11,7 @@ class SynchronizationBloc
         emit(SynchronizationSuccess(event.retrieveChangesResult)));
     on<SynchronizationErrorEvent>(
         (event, emit) => emit(SynchronizationError(event.message)));
+    on<SynchronizationSubscriptionRequiredEvent>(
+        (event, emit) => emit(SynchronizationSubscriptionRequired()));
   }
 }

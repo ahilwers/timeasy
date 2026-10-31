@@ -1,0 +1,43 @@
+<div class="upgrade-container">
+  @if (isLoading()) {
+  <div class="upgrade-loading">
+    <p-progressSpinner [style]="{width: '50px', height: '50px'}"></p-progressSpinner>
+    <p>{{ 'common.loading' | translate }}</p>
+  </div>
+  } @else {
+  <app-card [header]="('license.upgrade.title' | translate)">
+    @if (!billingEnabled()) {
+    <div class="upgrade-content">
+      <p class="upgrade-message">{{ 'license.upgrade.billingDisabled' | translate }}</p>
+    </div>
+    } @else {
+    <div class="upgrade-content">
+      <div class="upgrade-icon">
+        <i class="pi pi-star"></i>
+      </div>
+      <p class="upgrade-message">{{ 'license.upgrade.message' | translate }}</p>
+      @if (errorKey(); as errKey) {
+      <p class="upgrade-error">{{ errKey | translate }}</p>
+      }
+      <div class="upgrade-buttons">
+        <p-button
+          [label]="('license.upgrade.monthly' | translate) + (monthlyPrice() ? ' · ' + monthlyPrice() : '')"
+          (onClick)="startCheckout('monthly')"
+          [loading]="purchasingInterval() === 'monthly'"
+          [disabled]="purchasingInterval() !== null"
+          icon="pi pi-calendar"></p-button>
+        <p-button
+          [label]="('license.upgrade.annual' | translate) + (annualPrice() ? ' · ' + annualPrice() : '')"
+          (onClick)="startCheckout('annual')"
+          [loading]="purchasingInterval() === 'annual'"
+          [disabled]="purchasingInterval() !== null"
+          icon="pi pi-star" severity="secondary"></p-button>
+      </div>
+      @if (purchasingInterval()) {
+      <p class="upgrade-hint">{{ 'license.upgrade.openingCheckout' | translate }}</p>
+      }
+    </div>
+    }
+  </app-card>
+  }
+</div>

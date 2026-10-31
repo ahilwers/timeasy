@@ -37,6 +37,9 @@ yarn-error.log
 testem.log
 /typings
 
+# Local secrets (not used by the app; ignored to prevent accidental commits)
+/.env.local
+
 # System files
 .DS_Store
 Thumbs.db

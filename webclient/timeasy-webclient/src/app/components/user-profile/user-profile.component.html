@@ -43,6 +43,11 @@
                     [disabled]="isLoading()" icon="pi pi-external-link"></p-button>
                 <p-button label="{{'user.profile.changePassword' | translate}}" (onClick)="openPasswordManagement()"
                     [disabled]="isLoading()" icon="pi pi-key" severity="secondary"></p-button>
+                @if (billingEnabled()) {
+                <p-button label="{{'license.manageSubscription' | translate}}" (onClick)="openSubscriptionPortal()"
+                    [disabled]="isLoading()" [loading]="isPortalLoading()" icon="pi pi-credit-card"
+                    severity="secondary"></p-button>
+                }
             </div>
         </ng-template>
     </p-card>

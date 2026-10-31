@@ -102,6 +102,9 @@ class DBProvider {
     ''',
     '''
       ALTER TABLE Projects ADD COLUMN isActive INTEGER DEFAULT 1;
+    ''',
+    '''
+      ALTER TABLE Settings ADD COLUMN ownerUserId TEXT;
     '''
   ];
 
@@ -119,5 +122,26 @@ class DBProvider {
     final migrationConfig = MigrationConfig(
         initializationScript: initScript, migrationScripts: migrations);
     return await openDatabaseWithMigration(path, migrationConfig);
+  }
+
+  /// Deletes all locally cached data of the signed-in account (projects, time
+  /// entries, pending changelog entries) and resets the sync cursors, so data
+  /// of one account never leaks into the next account on the same device.
+  /// The client ID in Settings is kept for logging.
+  ///
+  /// Called on logout and whenever a different Keycloak account signs in.
+  Future<void> clearUserData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // Delete time entries first (foreign key to Projects).
+      await txn.delete('Changelog');
+      await txn.delete('TimeEntries');
+      await txn.delete('Projects');
+      await txn.update('Settings', {
+        'lastSyncTime': 0,
+        'latestRemoteChangelogId': 0,
+        'latestLocalChangelogId': 0,
+      });
+    });
   }
 }

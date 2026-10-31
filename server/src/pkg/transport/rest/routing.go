@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, subscriptionMiddleware SubscriptionMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler, billingHandler *BillingHandler) *gin.Engine {
 	// Set Gin to release mode to disable debug logging
 	gin.SetMode(gin.ReleaseMode)
 
@@ -18,8 +18,20 @@ func SetupRouter(authMiddleware AuthMiddleware, logger *slog.Logger, teamHandler
 	router.Use(SlogRecoveryMiddleware(logger))
 	router.Use(corsMiddleware())
 
+	// Billing endpoints. These are deliberately NOT behind the subscription
+	// check middleware: a user without an active subscription must still be
+	// able to check their subscription status, and every client polls the
+	// public status endpoint to decide whether billing UI is shown at all.
+	// Checkout and subscription management happen in the clients via the
+	// RevenueCat SDKs, so no server-side billing action endpoints are needed.
+	router.GET("/api/v1/billing/status", billingHandler.GetBillingStatus)
+	billingGroup := router.Group("/api/v1")
+	billingGroup.Use(authMiddleware.HandlerFunc())
+	billingGroup.GET("/subscription/status", billingHandler.GetSubscriptionStatus)
+
 	protectedGroup := router.Group("/api/v1")
 	protectedGroup.Use(authMiddleware.HandlerFunc())
+	protectedGroup.Use(subscriptionMiddleware.HandlerFunc())
 	protectedGroup.GET("/projects", projectHandler.GetAllProjects)
 	protectedGroup.POST("/projects", projectHandler.AddProject)
 	protectedGroup.GET("/projects/:id", projectHandler.GetProjectById)

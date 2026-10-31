@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:timeasy/dataaccess/database.dart';
 import 'package:timeasy/environment.dart';
 import 'package:timeasy/models/api_credentials.dart';
 import 'package:timeasy/repositories/api_credentials_repository.dart';
+import 'package:timeasy/repositories/settings_repository.dart';
 import 'package:timeasy/services/openid_authentication_service.dart';
 import 'package:timeasy/utils/app_logger.dart';
 
@@ -14,6 +16,7 @@ class AuthenticationBloc
     extends Bloc<AuthenticationEvent, AuthenticationState> {
   AuthenticationBloc() : super(AuthenticationInitial()) {
     on<LoginEvent>(_onLogin);
+    on<RegisterEvent>(_onRegister);
     on<LogoutEvent>(_onLogout);
     on<RefreshTokenEvent>(_onRefreshToken);
     on<SetAuthenticationEvent>((event, emit) {
@@ -31,9 +34,36 @@ class AuthenticationBloc
 
   FutureOr<void> _onLogin(
       LoginEvent event, Emitter<AuthenticationState> emit) async {
+    await _authenticateAndEmit(emit);
+  }
+
+  FutureOr<void> _onRegister(
+      RegisterEvent event, Emitter<AuthenticationState> emit) async {
+    await _authenticateAndEmit(emit, register: true);
+  }
+
+  Future<void> _authenticateAndEmit(Emitter<AuthenticationState> emit,
+      {bool register = false}) async {
     try {
-      var apiCredential = await _authenticate();
+      final settingsRepository = SettingsRepository();
+      final settings = await settingsRepository.getSettings();
+      final storedUserId =
+          (await ApiCredentialsRepository().getApiCredentials()).userId;
+      // The owner is persisted separately from the credentials so an expired
+      // session still protects the data when another account signs in.
+      final previousUserId = settings.ownerUserId ?? storedUserId;
+      var apiCredential = await _authenticate(register: register);
       if (apiCredential != null) {
+        final newUserId = apiCredential.userId;
+        if (previousUserId != null &&
+            newUserId != null &&
+            previousUserId != newUserId) {
+          // A different account signed in on this device — never keep another
+          // user's local projects and time entries.
+          await DBProvider.dbProvider.clearUserData();
+        }
+        settings.ownerUserId = newUserId;
+        await settingsRepository.saveSettings(settings);
         emit(AuthenticationAuthenticated(apiCredential));
       } else {
         emit(AuthenticationError("error during login: credential is null"));
@@ -53,9 +83,9 @@ class AuthenticationBloc
     }
   }
 
-  Future<ApiCredentials?> _authenticate() async {
+  Future<ApiCredentials?> _authenticate({bool register = false}) async {
     var authenticator = _createAuthenticator();
-    var credentials = await authenticator.authenticate();
+    var credentials = await authenticator.authenticate(register: register);
     if (credentials != null) {
       var repository = new ApiCredentialsRepository();
       await repository.saveApiCredentials(credentials);
@@ -70,6 +100,13 @@ class AuthenticationBloc
       await authenticator.logout(credentials);
       var repository = new ApiCredentialsRepository();
       await repository.deleteApiCredentials();
+      // Remove locally cached projects and time entries so the next account
+      // on this device starts clean.
+      await DBProvider.dbProvider.clearUserData();
+      var settingsRepository = new SettingsRepository();
+      var settings = await settingsRepository.getSettings();
+      settings.ownerUserId = null;
+      await settingsRepository.saveSettings(settings);
     } else {
       throw Exception("logout failed, access token not available");
     }

@@ -1,0 +1,27 @@
+<div class="upgrade-success-container">
+  <app-card [header]="('license.success.title' | translate)">
+    <div class="upgrade-success-content">
+      @if (isLoading()) {
+      <div class="upgrade-success-loading">
+        <p-progressSpinner [style]="{width: '50px', height: '50px'}"></p-progressSpinner>
+        <p>{{ 'license.success.verifying' | translate }}</p>
+      </div>
+      } @else if (isActive()) {
+      <div class="upgrade-success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <p class="upgrade-success-message">{{ 'license.success.active' | translate }}</p>
+      } @else {
+      <p class="upgrade-success-message">{{ 'license.success.notActive' | translate }}</p>
+      @if (checkFailed()) {
+      <p-button label="{{ 'license.success.retry' | translate }}" (onClick)="checkSubscription()"
+                icon="pi pi-refresh" severity="secondary"></p-button>
+      }
+      }
+      <p class="upgrade-success-hint">{{ 'license.success.openApp' | translate }}</p>
+    </div>
+  </app-card>
+</div>

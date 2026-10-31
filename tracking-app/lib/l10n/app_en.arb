@@ -170,17 +170,13 @@
     "@projectDeleted": {
         "description": "Message shown when a project is deleted"
     },
-    "notLoggedIn": "You are not logged in.",
-    "@notLoggedIn": {
-        "description": "Message shown when the user is not logged in"
+    "loginHint": "You can use timeasy without an account. Sign in to sync your data across devices.",
+    "@loginHint": {
+        "description": "Hint shown on the home screen when the user is not logged in: local use is possible, an account enables sync"
     },
-    "loginNow": "Login now",
+    "loginNow": "Sign in",
     "@loginNow": {
         "description": "Text for the login link"
-    },
-    "orLogin": "or login",
-    "@orLogin": {
-        "description": "Text for the login link when there are no projects"
     },
     "freeUseHeading": "Use timeasy for free – no sign-up needed.",
     "@freeUseHeading": {
@@ -194,21 +190,206 @@
     "@subscriptionBenefits": {
         "description": "Description of subscription benefits in settings view"
     },
+    "subscriptionRequiredTitle": "Subscription required",
+    "@subscriptionRequiredTitle": {
+        "description": "Title of the paywall dialog when sync requires a subscription"
+    },
+    "subscriptionRequiredMessage": "Syncing across devices is part of timeasy Pro. Your data stays on this device — subscribe to timeasy Pro to enable sync.",
+    "@subscriptionRequiredMessage": {
+        "description": "Message of the paywall dialog shown when the server responds with 402 during sync"
+    },
+    "subscriptionPriceMonthly": "{price} / month",
+    "@subscriptionPriceMonthly": {
+        "description": "Monthly subscription button in the paywall dialog including the localized price",
+        "placeholders": {
+            "price": {
+                "type": "String"
+            }
+        }
+    },
+    "subscriptionPriceYearly": "{price} / year",
+    "@subscriptionPriceYearly": {
+        "description": "Yearly subscription button in the paywall dialog including the localized price",
+        "placeholders": {
+            "price": {
+                "type": "String"
+            }
+        }
+    },
+    "subscriptionRestore": "Restore purchases",
+    "@subscriptionRestore": {
+        "description": "Button to restore previous in-app purchases (required by the App Store)"
+    },
+    "subscriptionNoOfferings": "Subscriptions are currently unavailable. Please try again later.",
+    "@subscriptionNoOfferings": {
+        "description": "Shown in the paywall dialog when no subscription offers can be loaded"
+    },
+    "subscriptionRetry": "Try again",
+    "@subscriptionRetry": {
+        "description": "Button in the paywall dialog that reloads the subscription offers"
+    },
+    "subscriptionProcessing": "Processing purchase…",
+    "@subscriptionProcessing": {
+        "description": "Shown in the paywall dialog while the store transaction is processed"
+    },
+    "subscriptionProcessingHint": "This can take a few seconds. Please keep the app open.",
+    "@subscriptionProcessingHint": {
+        "description": "Hint below the spinner while a purchase is processed"
+    },
+    "subscriptionPurchaseTimeout": "The purchase is taking longer than expected. Please check again in a moment with \"Restore purchases\".",
+    "@subscriptionPurchaseTimeout": {
+        "description": "Shown in the paywall dialog when the purchase exceeds the timeout"
+    },
+    "subscriptionPurchaseFailed": "The purchase could not be completed. Please try again.",
+    "@subscriptionPurchaseFailed": {
+        "description": "Error shown in the paywall dialog when a purchase fails"
+    },
+    "subscriptionPurchasePending": "Your purchase is pending. timeasy Pro will be activated as soon as the payment is completed.",
+    "@subscriptionPurchasePending": {
+        "description": "Shown in the paywall dialog when a purchase is pending (e.g. cash payment methods on Google Play)"
+    },
+    "subscriptionRestoreFailed": "No active subscription was found for your account.",
+    "@subscriptionRestoreFailed": {
+        "description": "Error shown when restoring purchases did not find an active subscription"
+    },
+    "subscriptionAutoRenewNote": "The subscription renews automatically until you cancel it in the store.",
+    "@subscriptionAutoRenewNote": {
+        "description": "Auto-renewal note in the paywall dialog (store compliance)"
+    },
+    "subscriptionRequiredLater": "Maybe later",
+    "@subscriptionRequiredLater": {
+        "description": "Button to dismiss the paywall dialog"
+    },
+    "manageSubscription": "Manage subscription",
+    "@manageSubscription": {
+        "description": "Button in the settings view that opens the store's subscription management"
+    },
+    "noActiveSubscription": "No active subscription found.",
+    "@noActiveSubscription": {
+        "description": "Shown when no subscription management URL is available"
+    },
+    "subscriptionManagedOnWeb": "Your subscription was purchased on the timeasy website and is managed there.",
+    "@subscriptionManagedOnWeb": {
+        "description": "Neutral note in the settings view for subscriptions purchased on timeasy.org; deliberately without a link (store compliance)"
+    },
+    "subscriptionTerms": "Terms of Use",
+    "@subscriptionTerms": {
+        "description": "Link to the terms of use in the paywall dialog"
+    },
+    "subscriptionPrivacy": "Privacy Policy",
+    "@subscriptionPrivacy": {
+        "description": "Link to the privacy policy in the paywall dialog"
+    },
     "signInPromo": "Sign in and unlock the full power of timeasy!",
     "@signInPromo": {
         "description": "Call to action for signing in"
     },
-    "alreadyHaveAccount": "Already have an account?",
-    "@alreadyHaveAccount": {
-        "description": "Text for users who already have an account"
+    "signIn": "Sign in",
+    "@signIn": {
+        "description": "Button that opens the login flow for existing users"
     },
-    "signInHere": "Sign in here",
-    "@signInHere": {
-        "description": "Link text for signing in"
+    "register": "Create account",
+    "@register": {
+        "description": "Button that opens the Keycloak registration flow for new users; an account is required before an in-app purchase can be made"
     },
     "settings": "Settings",
     "@settings": {
         "description": "Title for the settings screen"
+    },
+    "accountSection": "Account",
+    "@accountSection": {
+        "description": "Title of the account card in the settings screen"
+    },
+    "subscriptionSection": "Subscription",
+    "@subscriptionSection": {
+        "description": "Title of the subscription card in the settings screen"
+    },
+    "syncSection": "Synchronization",
+    "@syncSection": {
+        "description": "Title of the synchronization card in the settings screen"
+    },
+    "greeting": "Hello, {name}!",
+    "@greeting": {
+        "description": "Greeting of the signed-in user",
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "logout": "Log out",
+    "@logout": {
+        "description": "Button that signs the user out"
+    },
+    "internetConnected": "Online",
+    "@internetConnected": {
+        "description": "Shown when the device has an internet connection"
+    },
+    "internetDisconnected": "Offline",
+    "@internetDisconnected": {
+        "description": "Shown when the device has no internet connection"
+    },
+    "lastSyncLabel": "Last sync: {date}",
+    "@lastSyncLabel": {
+        "description": "Last successful synchronization including the formatted date",
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "lastSyncNever": "Never",
+    "@lastSyncNever": {
+        "description": "Shown when the account has never been synchronized"
+    },
+    "lastSyncLoading": "Loading…",
+    "@lastSyncLoading": {
+        "description": "Shown while the last sync time is loaded"
+    },
+    "lastSyncError": "Could not load the last sync time",
+    "@lastSyncError": {
+        "description": "Shown when the last sync time cannot be read"
+    },
+    "syncError": "Sync failed: {message}",
+    "@syncError": {
+        "description": "Shown when the last synchronization failed",
+        "placeholders": {
+            "message": {
+                "type": "String"
+            }
+        }
+    },
+    "syncNow": "Sync now",
+    "@syncNow": {
+        "description": "Button that triggers a synchronization immediately"
+    },
+    "syncing": "Syncing…",
+    "@syncing": {
+        "description": "Shown while a synchronization is running"
+    },
+    "aboutSection": "About timeasy",
+    "@aboutSection": {
+        "description": "Settings section with app related actions"
+    },
+    "rateApp": "Rate timeasy",
+    "@rateApp": {
+        "description": "Settings entry that opens the store page to rate the app"
+    },
+    "rateAppDescription": "Your rating helps others discover timeasy.",
+    "@rateAppDescription": {
+        "description": "Explanation below the rate app entry"
+    },
+    "subscriptionInactive": "No active subscription",
+    "@subscriptionInactive": {
+        "description": "Subscription status when no subscription is active"
+    },
+    "subscriptionActive": "timeasy Pro is active.",
+    "@subscriptionActive": {
+        "description": "Subscription status when the subscription is active but its purchase origin is unknown"
+    },
+    "subscriptionActiveStore": "timeasy Pro is active. The subscription is managed by the store you purchased it from.",
+    "@subscriptionActiveStore": {
+        "description": "Subscription status for subscriptions purchased through the App Store or Google Play"
     },
     "projectActive": "Active",
     "@projectActive": {
