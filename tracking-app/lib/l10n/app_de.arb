@@ -122,6 +122,7 @@
     "rateApp": "timeasy bewerten",
     "rateAppDescription": "Deine Bewertung hilft anderen, timeasy zu finden.",
     "subscriptionInactive": "Kein aktives Abo",
+    "subscriptionActive": "Dein timeasy-Pro-Abo ist aktiv.",
     "subscriptionActiveStore": "Dein timeasy-Pro-Abo ist aktiv und wird über den Store verwaltet, in dem du es abgeschlossen hast.",
     "projectActive": "Aktiv",
     "pending": "ausstehend",

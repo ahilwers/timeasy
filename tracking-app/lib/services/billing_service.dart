@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -15,8 +16,9 @@ import 'package:timeasy/utils/app_logger.dart';
 /// Web purchases (Paddle on timeasy.org) are equally valid subscriptions and
 /// unlock Pro the same way, but their management lives outside the stores, so
 /// the app never links to it. [testStore] is RevenueCat's simulated store and
-/// only occurs in test builds.
-enum PurchaseOrigin { store, web, testStore, none }
+/// only occurs in test builds. [server] means the server confirmed an active
+/// subscription but the SDK could not tell where it was bought.
+enum PurchaseOrigin { store, web, testStore, server, none }
 
 /// RevenueCat-based billing: Paddle powers web purchases, the App Store and
 /// Google Play power in-app purchases. The Go server checks the same RevenueCat
@@ -47,8 +49,17 @@ class BillingService {
   String? _pendingEmail;
   String? _pendingDisplayName;
   Future<void>? _pendingLogin;
+  final StreamController<PurchaseOrigin> _originUpdates =
+      StreamController<PurchaseOrigin>.broadcast();
+  CustomerInfoUpdateListener? _customerInfoListener;
 
   bool get isConfigured => _configured;
+
+  /// Emits the current purchase origin whenever RevenueCat reports changed
+  /// customer info (login, purchase, restore, renewal, expiry) and after
+  /// logout. The settings view listens to this instead of polling, so the
+  /// subscription card never keeps a stale state.
+  Stream<PurchaseOrigin> get purchaseOriginUpdates => _originUpdates.stream;
 
   /// Whether the server has billing enabled. Failures are not cached so the
   /// check is retried on the next call.
@@ -114,12 +125,19 @@ class BillingService {
           ..appUserID = userId;
         await Purchases.configure(configuration);
         _configured = true;
+        // Registered once, even if a failed configuration is retried later,
+        // so updates are never delivered twice.
+        if (_customerInfoListener == null) {
+          _customerInfoListener = _onCustomerInfoUpdated;
+          Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
+        }
       } else {
         await Purchases.logIn(userId);
       }
       _userId = userId;
       await _applyCustomerAttributes();
       final customerInfo = await Purchases.getCustomerInfo();
+      _originUpdates.add(_originOf(customerInfo));
       final entitlements = customerInfo.entitlements.active;
       AppLogger.i(
           'RevenueCat configured for user $userId (active entitlements: '
@@ -179,6 +197,7 @@ class BillingService {
       AppLogger.w('RevenueCat logout failed', error: e);
     }
     _userId = null;
+    _originUpdates.add(PurchaseOrigin.none);
   }
 
   /// Loads the current offering including localized prices. Returns null when
@@ -266,16 +285,29 @@ class BillingService {
   /// after paying can still be rejected with a cached 402, which made the
   /// paywall pop up again immediately.
   Future<void> _refreshServerSubscription() async {
+    await _serverSubscriptionActive();
+  }
+
+  /// Asks the server whether the current user has an active subscription.
+  /// Returns false when billing is disabled on this instance (self-hosted
+  /// without RevenueCat), because then there is no subscription to show.
+  Future<bool> _serverSubscriptionActive() async {
     try {
       final credentials = await ApiCredentialsRepository().getApiCredentials();
       final token = credentials.accessToken;
       if (token == null || token.isEmpty) {
-        return;
+        return false;
       }
       final api = ApiService(baseUrl: Environment.apiBaseUrl, token: token);
-      await api.get('/subscription/status');
+      final response = await api.get('/subscription/status');
+      if (!api.isSuccessStatusCode(response.statusCode)) {
+        return false;
+      }
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return body['enabled'] == true && body['active'] == true;
     } catch (e) {
-      AppLogger.w('Could not refresh server subscription status', error: e);
+      AppLogger.w('Could not read server subscription status', error: e);
+      return false;
     }
   }
 
@@ -306,7 +338,29 @@ class BillingService {
   /// How the active `timeasy_pro` entitlement was purchased, or
   /// [PurchaseOrigin.none] when there is none or billing is unavailable.
   /// Used by the settings view to decide what may be shown and linked.
+  ///
+  /// The RevenueCat SDK is asked first because only it knows the store, which
+  /// decides whether a management link may be shown. When the SDK cannot see
+  /// the entitlement (no API key in this build, SDK not configured, or the
+  /// dashboard's entitlement identifier differs from [entitlementId]), the
+  /// server is asked instead. The server is the source of truth for
+  /// subscription gating, so an active subscription must never be displayed
+  /// as inactive.
   Future<PurchaseOrigin> activePurchaseOrigin() async {
+    final sdkOrigin = await _sdkPurchaseOrigin();
+    if (sdkOrigin != PurchaseOrigin.none) {
+      return sdkOrigin;
+    }
+    if (await _serverSubscriptionActive()) {
+      return PurchaseOrigin.server;
+    }
+    return PurchaseOrigin.none;
+  }
+
+  /// Store of the active entitlement according to the RevenueCat SDK, or
+  /// [PurchaseOrigin.none] when the SDK is not configured or has no active
+  /// entitlement for the current user.
+  Future<PurchaseOrigin> _sdkPurchaseOrigin() async {
     if (!_configured) {
       await _ensureConfigured();
     }
@@ -350,6 +404,14 @@ class BillingService {
 
   bool _hasActiveEntitlement(CustomerInfo customerInfo) {
     return customerInfo.entitlements.active.containsKey(entitlementId);
+  }
+
+  /// Forwards RevenueCat's customer info updates to [purchaseOriginUpdates].
+  /// This is what makes the subscription card react to changes the app did
+  /// not initiate itself (entitlement granted by the store, renewal, expiry,
+  /// restore on another device).
+  void _onCustomerInfoUpdated(CustomerInfo customerInfo) {
+    _originUpdates.add(_originOf(customerInfo));
   }
 
   PurchaseOrigin _originOf(CustomerInfo customerInfo) {

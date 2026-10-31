@@ -383,6 +383,10 @@
     "@subscriptionInactive": {
         "description": "Subscription status when no subscription is active"
     },
+    "subscriptionActive": "timeasy Pro is active.",
+    "@subscriptionActive": {
+        "description": "Subscription status when the subscription is active but its purchase origin is unknown"
+    },
     "subscriptionActiveStore": "timeasy Pro is active. The subscription is managed by the store you purchased it from.",
     "@subscriptionActiveStore": {
         "description": "Subscription status for subscriptions purchased through the App Store or Google Play"

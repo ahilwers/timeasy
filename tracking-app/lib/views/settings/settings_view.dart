@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -26,16 +28,37 @@ class SettingsViewState extends State<SettingsView>
     with WidgetsBindingObserver {
   PurchaseOrigin _origin = PurchaseOrigin.none;
   bool _originLoading = true;
+  StreamSubscription<PurchaseOrigin>? _originUpdates;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // RevenueCat pushes the customer info whenever the entitlement changes
+    // (login, purchase, restore, renewal, expiry). Apply it directly instead
+    // of polling, so the card cannot keep showing a stale status.
+    _originUpdates = BillingService().purchaseOriginUpdates.listen((origin) {
+      if (!mounted) {
+        return;
+      }
+      if (origin == PurchaseOrigin.none) {
+        // The SDK reports no entitlement. The server is the source of truth
+        // for gating, so let it confirm before showing "No active
+        // subscription" (e.g. accounts granted access without RevenueCat).
+        _loadPurchaseOrigin();
+        return;
+      }
+      setState(() {
+        _origin = origin;
+        _originLoading = false;
+      });
+    });
     _loadPurchaseOrigin();
   }
 
   @override
   void dispose() {
+    _originUpdates?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -63,6 +86,12 @@ class SettingsViewState extends State<SettingsView>
     });
   }
 
+  static String? _userIdOf(AuthenticationState state) {
+    return state is AuthenticationAuthenticated
+        ? state.credentials.userId
+        : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -71,14 +100,13 @@ class SettingsViewState extends State<SettingsView>
       appBar: AppBar(
         title: Text(localizations.settings),
       ),
-      body: BlocListener<SynchronizationBloc, SynchronizationState>(
-        // The sync runs right after a purchase/restore; refresh the
-        // subscription status when it succeeds so the card does not keep
-        // showing a stale "no active subscription".
+      body: BlocListener<AuthenticationBloc, AuthenticationState>(
+        // Logging in or out changes whose subscription is shown; reload the
+        // status so the card never keeps the previous state.
+        listenWhen: (previous, current) =>
+            _userIdOf(previous) != _userIdOf(current),
         listener: (context, state) {
-          if (state is SynchronizationSuccess) {
-            _loadPurchaseOrigin();
-          }
+          _loadPurchaseOrigin();
         },
         child: RefreshIndicator(
           onRefresh: _loadPurchaseOrigin,
@@ -216,6 +244,16 @@ class SettingsViewState extends State<SettingsView>
       return _InfoRow(
         icon: Icons.language,
         text: localizations.subscriptionManagedOnWeb,
+      );
+    }
+    if (_origin == PurchaseOrigin.server) {
+      // The server confirmed an active subscription, but the RevenueCat SDK
+      // could not tell which store it was bought from. Show the status
+      // without a management link, which is safe for store compliance.
+      return _InfoRow(
+        icon: Icons.verified,
+        color: Colors.green,
+        text: localizations.subscriptionActive,
       );
     }
     return _InfoRow(
