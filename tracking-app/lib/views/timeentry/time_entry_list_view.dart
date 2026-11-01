@@ -16,8 +16,10 @@ import 'package:timeasy/views/timeentry/time_entry_edit_view.dart';
 
 class TimeEntryListView extends StatelessWidget {
   final Project _project;
+  final DateTime? _initialDay;
 
-  TimeEntryListView(this._project);
+  TimeEntryListView(this._project, {DateTime? initialDay})
+      : _initialDay = initialDay;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +32,7 @@ class TimeEntryListView extends StatelessWidget {
             projectToUse = state.project!;
           }
 
-          return DataList(projectToUse);
+          return DataList(projectToUse, initialDay: _initialDay);
         },
       ),
     );
@@ -39,12 +41,15 @@ class TimeEntryListView extends StatelessWidget {
 
 class DataList extends StatefulWidget {
   final Project _project;
+  final DateTime? _initialDay;
 
-  DataList(this._project, {Key? key}) : super(key: key);
+  DataList(this._project, {DateTime? initialDay, Key? key})
+      : _initialDay = initialDay,
+        super(key: key);
 
   @override
   _DataListState createState() {
-    return new _DataListState(_project);
+    return new _DataListState(_project, _initialDay);
   }
 }
 
@@ -52,12 +57,16 @@ class _DataListState extends State<DataList> {
   List<TimeEntry>? timeEntries;
   DateTimeRange? _currentDateRange;
   final Project _project;
+  // When the view was opened for a fixed day (e.g. from the weekly view),
+  // only the time entries of that day are shown:
+  DateTime? _selectedDay;
   Locale? locale;
 
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final DurationFormatter _durationFormatter = new DurationFormatter();
 
-  _DataListState(this._project);
+  _DataListState(this._project, DateTime? initialDay)
+      : _selectedDay = initialDay;
 
   @override
   void initState() {
@@ -102,7 +111,8 @@ class _DataListState extends State<DataList> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                    onPressed: _selectDateRange,
+                    onPressed:
+                        _isDayFilterActive() ? _selectDate : _selectDateRange,
                     child: Row(
                       children: [
                         Icon(Icons.date_range),
@@ -158,9 +168,17 @@ class _DataListState extends State<DataList> {
     }
   }
 
+  // Whether the list is filtered to a single day instead of a date range.
+  bool _isDayFilterActive() {
+    return widget._initialDay != null;
+  }
+
   _getCurrentDateRangeText() {
     var dateRange = _currentDateRange ?? _getInitialDateRange();
     var formatter = new DateFormat.yMd(locale.toString());
+    if (_isDayFilterActive()) {
+      return formatter.format(dateRange.start);
+    }
     return formatter.format(dateRange.start) +
         " - " +
         formatter.format(dateRange.end);
@@ -400,7 +418,8 @@ class _DataListState extends State<DataList> {
     Navigator.of(context)
         .push(
       MaterialPageRoute(
-        builder: (context) => TimeEntryEditView(_project.id, timeEntryIdToEdit),
+        builder: (context) =>
+            TimeEntryEditView(_project.id, timeEntryIdToEdit, _selectedDay),
         fullscreenDialog: true,
       ),
     )
@@ -435,6 +454,11 @@ class _DataListState extends State<DataList> {
   }
 
   DateTimeRange _getInitialDateRange() {
+    if (_selectedDay != null) {
+      // The repository pads the end date by one day, so a range consisting of
+      // a single day returns exactly the time entries of that day:
+      return DateTimeRange(start: _selectedDay!, end: _selectedDay!);
+    }
     var dateTools = DateTools();
     var year = DateTime.now().year;
     var weekNumber = dateTools.getWeekNumber(DateTime.now());
@@ -451,6 +475,33 @@ class _DataListState extends State<DataList> {
       firstDate: DateTime.fromMillisecondsSinceEpoch(0),
       lastDate: dateRange.end,
     ).then((value) => _loadTimeEntries(value ?? dateRange));
+  }
+
+  void _selectDate() {
+    var dateRange = _currentDateRange ?? _getInitialDateRange();
+    var dateTools = DateTools();
+    var now = DateTime.now();
+    // Consistent with the date range view, days can be selected up to the end
+    // of the current week. If a later day is already shown (e.g. when the
+    // view was opened from a future week), that day is the upper bound:
+    var endOfCurrentWeek =
+        dateTools.getLastDayOfWeek(dateTools.getWeekNumber(now), now.year);
+    var lastDate = dateRange.start.isAfter(endOfCurrentWeek)
+        ? dateRange.start
+        : endOfCurrentWeek;
+    showDatePicker(
+      context: context,
+      initialDate: dateRange.start,
+      firstDate: DateTime.fromMillisecondsSinceEpoch(0),
+      lastDate: lastDate,
+    ).then((value) {
+      if (value != null) {
+        setState(() {
+          _selectedDay = value;
+        });
+        _loadTimeEntries(DateTimeRange(start: value, end: value));
+      }
+    });
   }
 
   String _calculateTotalHours() {
