@@ -53,9 +53,9 @@ func (t *timeEntryExportToCsvUsecase) ExportTimeEntries(timeEntries []model.Time
 			endTime = entry.EndTime.Format(time.RFC3339)
 		}
 		record := []string{
-			fmt.Sprintf(`"%s"`, entry.StartTime.Format(time.RFC3339)),
-			fmt.Sprintf(`"%s"`, endTime),
-			fmt.Sprintf(`"%s"`, entry.Description),
+			entry.StartTime.Format(time.RFC3339),
+			endTime,
+			entry.Description,
 		}
 
 		if err := writer.Write(record); err != nil {
