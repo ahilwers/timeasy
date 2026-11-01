@@ -1,7 +1,7 @@
 import {Component, OnDestroy, OnInit, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {TranslatePipe} from '@ngx-translate/core';
-import {ButtonModule} from 'primeng/button';
-import {ProgressSpinnerModule} from 'primeng/progressspinner';
+import {ButtonModule} from '@openng/optimus-ui/button';
+import {ProgressSpinnerModule} from '@openng/optimus-ui/progressspinner';
 import {BillingService} from '../../../services/billing.service';
 import {CardComponent} from '../../card/card.component';
 

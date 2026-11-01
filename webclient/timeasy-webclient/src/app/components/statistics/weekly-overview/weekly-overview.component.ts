@@ -1,15 +1,15 @@
 import {Component, effect, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {WeeklyStatisticsService} from '../../../services/weekly-statistcs.service';
 import {TranslatePipe} from '@ngx-translate/core';
-import {Toast} from 'primeng/toast';
-import {TableModule} from 'primeng/table';
-import {MessageService} from 'primeng/api';
+import {Toast} from '@openng/optimus-ui/toast';
+import {TableModule} from '@openng/optimus-ui/table';
+import {MessageService} from '@openng/optimus-ui/api';
 import {SecondsToTimePipe} from '../../../pipes/seconds-to-time.pipe';
-import {Button} from 'primeng/button';
+import {Button} from '@openng/optimus-ui/button';
 import {TranslateWeekdayPipe} from '../../../pipes/translate-weekday.pipe';
 import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {Select} from 'primeng/select';
+import {Select} from '@openng/optimus-ui/select';
 import {ProjectService} from '../../../services/project.service';
 
 @Component({

@@ -4,7 +4,7 @@ import { Component, Input, OnInit, inject, signal, ChangeDetectionStrategy } fro
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 import { environment } from '../../../../environments/environment';
 import { ConnectProjectToAccountRequest } from '../../../models/external-connection.model';
 import { Project } from '../../../models/project.model';
@@ -13,13 +13,13 @@ import { ExternalIntegrationService } from '../../../services/external-integrati
 import { UserExternalAccountService } from '../../../services/user-external-account.service';
 
 // PrimeNG imports
-import { Button } from 'primeng/button';
-import { Card } from 'primeng/card';
-import { SelectModule } from 'primeng/select';
-import { InputText } from 'primeng/inputtext';
-import { Message } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
-import { ToastModule } from 'primeng/toast';
+import { Button } from '@openng/optimus-ui/button';
+import { Card } from '@openng/optimus-ui/card';
+import { SelectModule } from '@openng/optimus-ui/select';
+import { InputText } from '@openng/optimus-ui/inputtext';
+import { Message } from '@openng/optimus-ui/message';
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner';
+import { ToastModule } from '@openng/optimus-ui/toast';
 
 @Component({
     selector: 'app-external-integration',

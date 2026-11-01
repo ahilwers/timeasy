@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { PrimeNG } from 'primeng/config';
+import { Optimus } from '@openng/optimus-ui/config';
 import { DynamicLocaleService } from './dynamic-locale.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PrimeNGLocaleService {
-  private readonly primeConfig = inject(PrimeNG);
+  private readonly primeConfig = inject(Optimus);
   private readonly dynamicLocaleService = inject(DynamicLocaleService);
 
   setLocaleForPrimeNG(): void {

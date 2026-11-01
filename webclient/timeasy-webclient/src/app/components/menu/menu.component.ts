@@ -1,8 +1,8 @@
 import {Component, effect, inject, OnInit, OnDestroy, ChangeDetectionStrategy} from '@angular/core';
 import Keycloak, {KeycloakProfile} from 'keycloak-js';
 import {KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs} from 'keycloak-angular';
-import {Menu} from 'primeng/menu';
-import {MenuItem} from 'primeng/api';
+import {Menu} from '@openng/optimus-ui/menu';
+import {MenuItem} from '@openng/optimus-ui/api';
 import {TranslateService} from '@ngx-translate/core';
 import {Subscription} from 'rxjs';
 

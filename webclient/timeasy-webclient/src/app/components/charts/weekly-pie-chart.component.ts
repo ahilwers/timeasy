@@ -9,7 +9,7 @@ import {
   signal,
   ChangeDetectionStrategy
 } from '@angular/core';
-import {ChartModule} from 'primeng/chart';
+import {ChartModule} from '@openng/optimus-ui/chart';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 import {TooltipItem} from 'chart.js';
 import {formatSecondsToReadableTime} from '../../utils/time-utils';

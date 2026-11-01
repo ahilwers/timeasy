@@ -48,7 +48,7 @@
     <div class="form-field">
         <label for="description">{{ 'timeEntries.description' | translate }}</label>
         <app-description-autocomplete formControlName="description"
-            [projectId]="timeEntryForm.get('project')?.value?.id"
+            [projectId]="$safeNavigationMigration(timeEntryForm.get('project')?.value?.id)"
             placeholder="Enter description or reference issues like #123">
         </app-description-autocomplete>
     </div>

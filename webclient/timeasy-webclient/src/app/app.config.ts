@@ -1,5 +1,5 @@
 import {ApplicationConfig, LOCALE_ID} from '@angular/core';
-import {provideHttpClient, withInterceptors} from '@angular/common/http';
+import {provideHttpClient, withInterceptors, withXhr} from '@angular/common/http';
 import {appRoutes} from './app.routes';
 import {
   AutoRefreshTokenService,
@@ -12,13 +12,13 @@ import {
   withAutoRefreshToken
 } from 'keycloak-angular';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
-import {providePrimeNG} from 'primeng/config';
+import {provideOptimus} from '@openng/optimus-ui/config';
 import {ColorPreset} from './color.preset';
 import localeDe from '@angular/common/locales/de';
 import {registerLocaleData} from '@angular/common';
 import {provideTranslateService, TranslateLoader} from '@ngx-translate/core';
 import {TranslateHttpLoader, TRANSLATE_HTTP_LOADER_CONFIG} from '@ngx-translate/http-loader';
-import {MessageService} from 'primeng/api';
+import {MessageService} from '@openng/optimus-ui/api';
 import { environment } from '../environments/environment';
 import { licenseErrorInterceptor } from './interceptors/license-error.interceptor';
 
@@ -63,10 +63,10 @@ export const appConfig: ApplicationConfig = {
       provide: INCLUDE_BEARER_TOKEN_INTERCEPTOR_CONFIG,
       useValue: [urlCondition]
     },
-    provideHttpClient(withInterceptors([includeBearerTokenInterceptor, licenseErrorInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([includeBearerTokenInterceptor, licenseErrorInterceptor])),
     provideKeycloakAngular(),
     provideAnimationsAsync(),
-    providePrimeNG({
+    provideOptimus({
       theme: {
         preset: ColorPreset,
         options: {

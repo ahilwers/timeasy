@@ -3,10 +3,10 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { KEYCLOAK_EVENT_SIGNAL, KeycloakEventType, ReadyArgs, typeEventArgs } from 'keycloak-angular';
 import Keycloak, { KeycloakProfile } from 'keycloak-js';
-import { MenuItem } from 'primeng/api';
-import { Button } from 'primeng/button';
-import { Menu } from 'primeng/menu';
-import { Popover } from 'primeng/popover';
+import { MenuItem } from '@openng/optimus-ui/api';
+import { Button } from '@openng/optimus-ui/button';
+import { Menu } from '@openng/optimus-ui/menu';
+import { Popover } from '@openng/optimus-ui/popover';
 
 @Component({
     selector: 'app-header',

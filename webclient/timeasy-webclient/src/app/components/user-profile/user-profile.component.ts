@@ -2,11 +2,11 @@
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import Keycloak from 'keycloak-js';
-import { MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ToastModule } from 'primeng/toast';
+import { MessageService } from '@openng/optimus-ui/api';
+import { ButtonModule } from '@openng/optimus-ui/button';
+import { CardModule } from '@openng/optimus-ui/card';
+import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
+import { ToastModule } from '@openng/optimus-ui/toast';
 
 import { Router } from '@angular/router';
 import { UserProfile } from '../../interfaces/auth-provider.interface';

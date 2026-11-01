@@ -9,7 +9,7 @@ import {
   signal,
   ChangeDetectionStrategy
 } from '@angular/core';
-import {UIChart} from 'primeng/chart';
+import {UIChart} from '@openng/optimus-ui/chart';
 import {WeeklyStatisticsService} from '../../services/weekly-statistcs.service';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {TooltipItem} from 'chart.js';
