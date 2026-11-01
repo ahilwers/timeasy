@@ -1,23 +1,23 @@
 import {Component, effect, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 import {UtcToLocalTimePipe} from '../../../pipes/utc-to-local-time.pipe';
-import {Button} from 'primeng/button';
-import {TableModule} from 'primeng/table';
+import {Button} from '@openng/optimus-ui/button';
+import {TableModule} from '@openng/optimus-ui/table';
 import {TimeEntry} from '../../../models/timeentry.model';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {Router} from '@angular/router';
-import {ConfirmationService, MenuItem, MessageService} from 'primeng/api';
+import {ConfirmationService, MenuItem, MessageService} from '@openng/optimus-ui/api';
 import {TimeEntryExportFomat, TimeEntryService} from '../../../services/time-entry.service';
-import {ConfirmDialog} from 'primeng/confirmdialog';
-import {Toast} from 'primeng/toast';
+import {ConfirmDialog} from '@openng/optimus-ui/confirmdialog';
+import {Toast} from '@openng/optimus-ui/toast';
 import {ProjectService} from '../../../services/project.service';
 import {Project} from '../../../models/project.model';
 import {ExternalIntegrationService} from '../../../services/external-integration.service';
 import {ExternalIssue} from '../../../models/external-issue.model';
-import {Select} from 'primeng/select';
+import {Select} from '@openng/optimus-ui/select';
 import {FormsModule} from '@angular/forms';
-import {DatePicker} from 'primeng/datepicker';
-import {SplitButton} from 'primeng/splitbutton';
+import {DatePicker} from '@openng/optimus-ui/datepicker';
+import {SplitButton} from '@openng/optimus-ui/splitbutton';
 
 @Component({
   selector: 'app-time-entry-list',

@@ -7,10 +7,10 @@ import { IssueResolveResult } from '../../../models/external-issue.model';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 // PrimeNG imports
-import { InputText } from 'primeng/inputtext';
-import { AutoComplete } from 'primeng/autocomplete';
-import { Chip } from 'primeng/chip';
-import { ProgressSpinner } from 'primeng/progressspinner';
+import { InputText } from '@openng/optimus-ui/inputtext';
+import { AutoComplete } from '@openng/optimus-ui/autocomplete';
+import { Chip } from '@openng/optimus-ui/chip';
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner';
 
 @Component({
   selector: 'app-description-input',

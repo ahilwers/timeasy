@@ -58,13 +58,30 @@ ng test
 
 ## Running end-to-end tests
 
-For end-to-end (e2e) testing, run:
+End-to-end tests use [Playwright](https://playwright.dev/) and live in `e2e/`.
+There are two modes, controlled by `E2E_MODE`:
+
+- **mock** (default, CI-safe): the Go API and Keycloak are intercepted inside the
+  browser context (`e2e/support/`). No backend, database, Keycloak or Docker is
+  required, and no real data is written.
+- **live**: runs against the real Go API on `http://localhost:8080` and Keycloak
+  on `http://localhost:8180` (realm `timeasy`). Login/logout UI tests only run
+  in this mode.
 
 ```bash
-ng e2e
+npx playwright install chromium   # once
+
+npm run e2e          # mock mode, desktop Chromium (fast local loop)
+npm run e2e:all      # mock mode, desktop + mobile (what CI runs)
+npm run e2e:mobile   # mock mode, mobile viewport only
+npm run e2e:live     # live mode against local API + Keycloak
+npm run e2e:headed   # mock mode with a visible browser
+npm run e2e:report   # open the last HTML report
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The Angular dev server is started automatically by Playwright. Pass `E2E_REUSE=1`
+to reuse an already running `ng serve`. Videos are disabled by default; set
+`PW_VIDEO=1` to record them for debugging.
 
 ## Additional Resources
 

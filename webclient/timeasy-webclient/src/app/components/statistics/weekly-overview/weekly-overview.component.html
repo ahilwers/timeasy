@@ -1,6 +1,6 @@
 <div class="header-container">
   <h1>{{ 'weeklyOverview.headline' | translate}} {{this.selectedWeekNumber()}}/{{this.selectedYear()}}</h1>
-  <p>{{ weeklyStatistics()?.firstDay! | utcToLocalDate }} - {{ weeklyStatistics()?.lastDay! | utcToLocalDate }}</p>
+  <p>{{ $safeNavigationMigration(weeklyStatistics()?.firstDay)! | utcToLocalDate }} - {{ $safeNavigationMigration(weeklyStatistics()?.lastDay)! | utcToLocalDate }}</p>
 </div>
 
 <p-toast></p-toast>

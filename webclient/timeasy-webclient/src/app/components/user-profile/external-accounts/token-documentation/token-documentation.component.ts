@@ -3,9 +3,9 @@ import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from 
 import { TranslatePipe } from '@ngx-translate/core';
 
 // PrimeNG imports
-import { Dialog } from 'primeng/dialog';
-import { Button } from 'primeng/button';
-import { Divider } from 'primeng/divider';
+import { Dialog } from '@openng/optimus-ui/dialog';
+import { Button } from '@openng/optimus-ui/button';
+import { Divider } from '@openng/optimus-ui/divider';
 
 @Component({
   selector: 'app-token-documentation',

@@ -3,21 +3,21 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { UserExternalAccountService } from '../../../services/user-external-account.service';
 import { UserExternalAccount, UserExternalAccountRequest } from '../../../models/user-external-account.model';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 // PrimeNG imports
-import { Card } from 'primeng/card';
-import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { TableModule } from 'primeng/table';
-import { ConfirmDialog } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
-import { ProgressSpinner } from 'primeng/progressspinner';
-import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationService } from 'primeng/api';
+import { Card } from '@openng/optimus-ui/card';
+import { Button } from '@openng/optimus-ui/button';
+import { Dialog } from '@openng/optimus-ui/dialog';
+import { InputText } from '@openng/optimus-ui/inputtext';
+import { SelectModule } from '@openng/optimus-ui/select';
+import { TableModule } from '@openng/optimus-ui/table';
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog';
+import { ToastModule } from '@openng/optimus-ui/toast';
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner';
+import { TooltipModule } from '@openng/optimus-ui/tooltip';
+import { ConfirmationService } from '@openng/optimus-ui/api';
 import { TokenDocumentationComponent } from './token-documentation/token-documentation.component';
 
 @Component({

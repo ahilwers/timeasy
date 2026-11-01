@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TRANSLATE_HTTP_LOADER_CONFIG, TranslateHttpLoader } from '@ngx-translate/http-loader';
 
@@ -7,7 +7,7 @@ describe('TranslateHttpLoader', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         TranslateHttpLoader,
         {
@@ -36,7 +36,7 @@ describe('TranslateHttpLoader', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         TranslateHttpLoader,
         { provide: TRANSLATE_HTTP_LOADER_CONFIG, useValue: {} },

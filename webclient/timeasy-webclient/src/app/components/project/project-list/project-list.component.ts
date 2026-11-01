@@ -1,12 +1,12 @@
 import {Component, effect, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {Project} from '../../../models/project.model';
 import {ProjectService} from '../../../services/project.service';
-import {Button} from 'primeng/button';
-import {TableModule} from 'primeng/table';
+import {Button} from '@openng/optimus-ui/button';
+import {TableModule} from '@openng/optimus-ui/table';
 import {Router} from '@angular/router';
-import {ConfirmationService, MessageService} from 'primeng/api';
-import {ConfirmDialog} from 'primeng/confirmdialog';
-import {Toast} from 'primeng/toast';
+import {ConfirmationService, MessageService} from '@openng/optimus-ui/api';
+import {ConfirmDialog} from '@openng/optimus-ui/confirmdialog';
+import {Toast} from '@openng/optimus-ui/toast';
 import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import {DateOnlyPipe} from '../../../pipes/dateonly.pipe';
 import {MoneyPipe} from '../../../pipes/money.pipe';

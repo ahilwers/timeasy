@@ -6,7 +6,7 @@
     <app-description-autocomplete
       [ngModel]="description()" 
       (ngModelChange)="onDescriptionChanged($event)"
-      [projectId]="selectedProject?.id"
+      [projectId]="$safeNavigationMigration(selectedProject?.id)"
       [placeholder]="'timeTracking.whatAreYouWorkingOn' | translate">
     </app-description-autocomplete>
   </div>
