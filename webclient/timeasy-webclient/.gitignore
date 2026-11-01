@@ -43,3 +43,9 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Playwright E2E artifacts
+/test-results/
+/playwright-report/
+/playwright/.auth/
+/blob-report/

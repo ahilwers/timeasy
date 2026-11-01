@@ -7,7 +7,14 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "e2e": "playwright test --project=chromium",
+    "e2e:all": "playwright test",
+    "e2e:mobile": "playwright test --project=mobile-chrome",
+    "e2e:live": "E2E_MODE=live playwright test",
+    "e2e:headed": "playwright test --project=chromium --headed",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
   "private": true,
   "dependencies": {
