@@ -5,6 +5,7 @@ import 'package:timeasy/bloc/internetconnection/internet_connection_state.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_bloc.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_event.dart';
 import 'package:timeasy/bloc/synchronization/synchronization_state.dart';
+import 'package:timeasy/services/rate_limited_exception.dart';
 import 'package:timeasy/services/subscription_required_exception.dart';
 import 'package:timeasy/services/synchronization_service.dart';
 import 'package:timeasy/tools/retrieve_changes_result.dart';
@@ -83,6 +84,8 @@ class EventSyncService {
       _syncBloc!.add(SynchronizationSuccessEvent(retrieveResult));
     } on SubscriptionRequiredException {
       _syncBloc!.add(SynchronizationSubscriptionRequiredEvent());
+    } on RateLimitedException catch (e) {
+      _handleRateLimited(e);
     } catch (e) {
       _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
     }
@@ -113,11 +116,22 @@ class EventSyncService {
       AppLogger.w('EventSyncService: Send-only sync blocked - subscription required',
           method: 'sync');
       _syncBloc!.add(SynchronizationSubscriptionRequiredEvent());
+    } on RateLimitedException catch (e) {
+      _handleRateLimited(e);
     } catch (e) {
       AppLogger.e('EventSyncService: Send-only sync failed',
           error: e, method: 'sync');
       _syncBloc!.add(SynchronizationErrorEvent(e.toString()));
     }
+  }
+
+  /// Rate limiting is transient: keep the local changes in the offline outbox
+  /// and let the periodic background sync retry instead of showing an error.
+  void _handleRateLimited(RateLimitedException e) {
+    AppLogger.w('EventSyncService: Rate limited by server - skipping this sync',
+        error: e, method: 'sync');
+    _syncBloc!.add(
+        SynchronizationSuccessEvent(RetrieveChangesResult(false, false)));
   }
 
   bool canSync() {
