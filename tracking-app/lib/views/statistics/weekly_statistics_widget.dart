@@ -8,6 +8,7 @@ import 'package:timeasy/tools/weekly_statistics_builder.dart';
 import 'package:timeasy/tools/weekly_statistics.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/tools/date_tools.dart';
+import 'package:timeasy/views/timeentry/time_entry_list_view.dart';
 
 class WeeklyStatisticsWidget extends StatefulWidget {
   final int _calendarWeek;
@@ -87,7 +88,31 @@ class _WeeklyStatisticsState extends State<WeeklyStatisticsWidget> {
   _buildDayEntry(int weekday) {
     return ListTile(
       title: Text(_getNameOfDay(weekday)),
-      trailing: Text(_getHoursAsString(weekday)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(_getHoursAsString(weekday)),
+          Icon(
+            Icons.chevron_right,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ],
+      ),
+      onTap: () => _openDayEntries(weekday),
+    );
+  }
+
+  void _openDayEntries(int weekday) {
+    var dateTools = new DateTools();
+    // The weekdays are counted from Monday, which is the first day of the
+    // week returned by getFirstDayOfWeek:
+    var day = dateTools
+        .getFirstDayOfWeek(_calendarWeek, _year)
+        .add(new Duration(days: weekday - 1));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TimeEntryListView(_project, initialDay: day),
+      ),
     );
   }
 

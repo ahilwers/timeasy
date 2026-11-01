@@ -12,24 +12,28 @@ enum ConfirmAction { CANCEL, ACCEPT }
 class TimeEntryEditView extends StatelessWidget {
   final String? _timeEntryId;
   final String _projectId;
+  final DateTime? _initialDay;
 
-  TimeEntryEditView(this._projectId, [this._timeEntryId]);
+  TimeEntryEditView(this._projectId, [this._timeEntryId, this._initialDay]);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: new TimeEntryEditWidget(_projectId, _timeEntryId));
+    return Scaffold(
+        body:
+            new TimeEntryEditWidget(_projectId, _timeEntryId, _initialDay));
   }
 }
 
 class TimeEntryEditWidget extends StatefulWidget {
   final String? _timeEntryId;
   final String _projectId;
+  final DateTime? _initialDay;
 
-  TimeEntryEditWidget(this._projectId, this._timeEntryId);
+  TimeEntryEditWidget(this._projectId, this._timeEntryId, this._initialDay);
 
   @override
   _TimeEntryEditWidgetState createState() {
-    return new _TimeEntryEditWidgetState(_projectId, _timeEntryId);
+    return new _TimeEntryEditWidgetState(_projectId, _timeEntryId, _initialDay);
   }
 }
 
@@ -38,11 +42,12 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
   bool _endTimeWasEmpty = false;
   final String? _timeEntryId;
   final String _projectId;
+  final DateTime? _initialDay;
   final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
   final _formEditTimeEntryKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
 
-  _TimeEntryEditWidgetState(this._projectId, this._timeEntryId);
+  _TimeEntryEditWidgetState(this._projectId, this._timeEntryId, this._initialDay);
 
   @override
   void initState() {
@@ -60,6 +65,16 @@ class _TimeEntryEditWidgetState extends State<TimeEntryEditWidget> {
       });
     } else {
       _timeEntry = new TimeEntry(_projectId);
+      if (_initialDay != null) {
+        // When the edit view was opened for a specific day (e.g. from the
+        // weekly view), new entries should start on that day while keeping
+        // the current time of day:
+        var now = DateTime.now();
+        var day = _initialDay;
+        _timeEntry!.startTime =
+            DateTime(day.year, day.month, day.day, now.hour, now.minute)
+                .toUtc();
+      }
       _descriptionController.text = '';
     }
   }

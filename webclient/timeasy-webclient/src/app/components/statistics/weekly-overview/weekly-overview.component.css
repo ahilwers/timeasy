@@ -3,3 +3,11 @@
   justify-content: space-between;
   margin-top: 1rem;
 }
+
+.day-row {
+  cursor: pointer;
+}
+
+.day-row:hover {
+  background-color: var(--p-highlight-background);
+}
