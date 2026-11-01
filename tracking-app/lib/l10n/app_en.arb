@@ -163,6 +163,8 @@
         "description": "Message shown when there are no time entries for a selected period"
     },
     "deleteProjectConfirmation": "Are you sure you want to delete this project?",
+    "deleteProjectHasTimeEntries": "This project cannot be deleted because there are still time entries assigned to it.",
+    "ok": "OK",
     "@deleteProjectConfirmation": {
         "description": "Confirmation message for deleting a project"
     },

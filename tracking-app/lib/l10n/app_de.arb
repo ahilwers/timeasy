@@ -74,6 +74,8 @@
     "undo": "Rückgängig",
     "noTimeEntries": "Keine Zeiteinträge für diesen Zeitraum gefunden",
     "deleteProjectConfirmation": "Bist du sicher, dass du dieses Projekt löschen möchtest?",
+    "deleteProjectHasTimeEntries": "Dieses Projekt kann nicht gelöscht werden, da es noch Zeiteinträge gibt.",
+    "ok": "OK",
     "projectDeleted": "Projekt gelöscht",
     "loginHint": "Du kannst timeasy auch ohne Konto nutzen. Melde dich an, um deine Daten geräteübergreifend zu synchronisieren.",
     "loginNow": "Anmelden",
