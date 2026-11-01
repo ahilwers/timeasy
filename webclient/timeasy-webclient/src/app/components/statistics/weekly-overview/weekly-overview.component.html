@@ -11,7 +11,7 @@
 @if (weeklyStatistics()) {
   <p-table [value]="weeklyStatistics()!.days" [tableStyle]="{ 'min-width': '20rem' }">
     <ng-template #body let-day>
-      <tr>
+      <tr class="day-row" tabindex="0" (click)="openDay(day)" (keydown.enter)="openDay(day)">
         <td style="text-align: left; width: auto;">{{ day.weekday | translateWeekday }}</td>
         <td style="text-align: right; width: 100px;">{{ day.timeInSeconds | secondsToTime }}</td>
       </tr>

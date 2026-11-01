@@ -90,12 +90,13 @@ export class TimeEntryFormComponent implements OnInit {
 
   ngOnInit() {
     this.primeNGLocaleService.setLocaleForPrimeNG();
-    
+
     this.projectService.loadProjects();
+    const initialStartTime = this.getInitialStartTime();
     this.timeEntryForm = this.formBuilder.group({
       project: new FormControl<Project | null>(this.selectedProject(), [Validators.required]),
-      startTime: [new Date(), [Validators.required]],
-      startDate: [new Date(), [Validators.required]],
+      startTime: [initialStartTime, [Validators.required]],
+      startDate: [initialStartTime, [Validators.required]],
       endDate: ['', []],
       endTime: ['', []],
       description: ['', []]
@@ -107,6 +108,21 @@ export class TimeEntryFormComponent implements OnInit {
     if (!this.isNew()) {
       this.timeEntryService.loadTimeEntry(this.timeEntryId);
     }
+  }
+
+  private getInitialStartTime(): Date {
+    // When the form was opened for a specific day (e.g. from the weekly
+    // overview), new entries should start on that day while keeping the
+    // current time of day:
+    const dateParam = this.route.snapshot.queryParamMap.get('date');
+    if (dateParam) {
+      const [year, month, day] = dateParam.split('-').map(Number);
+      if (year && month && day) {
+        const now = new Date();
+        return new Date(year, month - 1, day, now.getHours(), now.getMinutes());
+      }
+    }
+    return new Date();
   }
 
 

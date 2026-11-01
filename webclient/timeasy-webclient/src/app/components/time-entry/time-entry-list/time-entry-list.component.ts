@@ -127,7 +127,16 @@ export class TimeEntryListComponent implements OnInit {
   }
 
   addTimeEntry() {
-    this.router.navigate(['/timeentries/add']);
+    const range = this.selectedDateRange();
+    if (range && range[0].getTime() === range[1].getTime()) {
+      // When the list is filtered to a single day (e.g. opened from the
+      // weekly overview), new entries should default to that day:
+      this.router.navigate(['/timeentries/add'], {
+        queryParams: { date: this.timeEntryService.formatDateToRFC3339(range[0]) }
+      });
+    } else {
+      this.router.navigate(['/timeentries/add']);
+    }
   }
 
   deleteTimeEntryRequest(timeEntry: TimeEntry) {

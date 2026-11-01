@@ -1,5 +1,7 @@
 import {Component, effect, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
+import {Router} from '@angular/router';
 import {WeeklyStatisticsService} from '../../../services/weekly-statistcs.service';
+import {TimeEntryService} from '../../../services/time-entry.service';
 import {TranslatePipe} from '@ngx-translate/core';
 import {Toast} from '@openng/optimus-ui/toast';
 import {TableModule} from '@openng/optimus-ui/table';
@@ -11,6 +13,7 @@ import {UtcToLocalDatePipe} from '../../../pipes/utc-to-local-date.pipe';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Select} from '@openng/optimus-ui/select';
 import {ProjectService} from '../../../services/project.service';
+import {DailyStatistics} from '../../../models/weekly-statistics.model';
 
 @Component({
   selector: 'app-weekly-overview',
@@ -36,6 +39,8 @@ import {ProjectService} from '../../../services/project.service';
 export class WeeklyOverviewComponent implements OnInit
 {
   private readonly weeklyStatisticsService = inject(WeeklyStatisticsService);
+  private readonly timeEntryService = inject(TimeEntryService);
+  private readonly router = inject(Router);
   private readonly projectService = inject(ProjectService);
 
   currentWeekNumber = this.weeklyStatisticsService.currentWeekNumber();
@@ -95,5 +100,28 @@ export class WeeklyOverviewComponent implements OnInit
       this.selectedProjectId.set(undefined);
     }
 
+  }
+
+  openDay(day: DailyStatistics) {
+    const index = this.weeklyStatistics()!.days.indexOf(day);
+    if (index < 0) {
+      return;
+    }
+    const date = this.getDateForDayIndex(index);
+    // Reuse the time entry list with a single day filter. The project filter
+    // is synced as well so the list shows the same data as the weekly view:
+    this.timeEntryService.selectDateRange([date, date]);
+    this.timeEntryService.selectProject(this.selectedProjectId());
+    this.router.navigate(['/timeentries']);
+  }
+
+  getDateForDayIndex(index: number): Date {
+    // The server sends the days starting with Monday and the first day of the
+    // week as UTC midnight. Derive the calendar day in UTC so it cannot be
+    // shifted by the browser's timezone, then build a local date from it that
+    // matches the local date formatting used for the time entry filter:
+    const day = new Date(this.weeklyStatistics()!.firstDay);
+    day.setUTCDate(day.getUTCDate() + index);
+    return new Date(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate());
   }
 }
