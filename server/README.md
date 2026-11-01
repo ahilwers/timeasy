@@ -67,3 +67,27 @@ cp config.txt config.txt.local   # optional: keep a template
 ```
 
 Format: one `<flag-name> <value>` pair per line (space-separated, **no `=`**), `#` starts a comment. Use the flag names without the `TIMEASY_` prefix, e.g. `revenuecat-api-key sk_xxx`. Priority: command-line flags > config file > `TIMEASY_*` environment variables. `server/src/config.txt` is gitignored because it contains secrets.
+
+## Rate limiting
+
+The server applies IP-based rate limiting to **every** route, including the public billing status endpoint. Each client IP gets its own token bucket; requests above the limit are answered with `429 Too Many Requests`, a `Retry-After` header and `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset` headers.
+
+```bash
+TIMEASY_RATE_LIMIT_ENABLED=true                       # default; set to false to disable entirely
+TIMEASY_RATE_LIMIT_REQUESTS_PER_MINUTE=300            # sustained requests per client IP
+TIMEASY_RATE_LIMIT_BURST=100                          # allowed short-term spike above that rate
+TIMEASY_RATE_LIMIT_TRUSTED_PROXIES=0.0.0.0/0,::/0     # CIDRs allowed to set X-Forwarded-For
+```
+
+Limits apply per server instance and reset on restart. The default of 300 requests/minute leaves plenty of headroom for the mobile app, which polls the sync endpoint about twice a minute; as a rule of thumb one public IP (office, NAT) can serve roughly 100 active clients. Increase the value if many users share an IP.
+
+**Behind a reverse proxy** the server can only apply per-client limits if it trusts the proxy to set `X-Forwarded-For`. Narrow `TIMEASY_RATE_LIMIT_TRUSTED_PROXIES` to your proxy's IP/CIDR; otherwise every request appears to come from the proxy and all users share one bucket. Trusting all proxies (`0.0.0.0/0`, the default) keeps self-hosted setups working but allows clients to spoof their IP by sending the header themselves. The `client_ip` field of the HTTP request logs shows what the server actually sees — verify it after changing the setting.
+
+`config.txt` alternative:
+
+```
+rate-limit-enabled true
+rate-limit-requests-per-minute 300
+rate-limit-burst 100
+rate-limit-trusted-proxies 10.0.0.0/8
+```
