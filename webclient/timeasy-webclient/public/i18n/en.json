@@ -49,6 +49,7 @@
         "errorLoadingProjects": "Failed to load projects.",
         "errorUpdatingProject": "Failed to update project.",
         "errorDeletingProject": "Failed to delete project.",
+        "errorProjectHasTimeEntries": "The project cannot be deleted because there are still time entries assigned to it.",
         "errorAddingProject": "Failed to add project.",
         "color": "Color",
         "selectColor": "Please select a color",
