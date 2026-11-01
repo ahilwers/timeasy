@@ -19,16 +19,18 @@ type ProjectUsecase interface {
 }
 
 type projectUsecase struct {
-	repo          repository.ProjectRepository
-	changelogRepo repository.ChangelogRepository
-	teamUsecase   TeamUsecase
+	repo               repository.ProjectRepository
+	changelogRepo      repository.ChangelogRepository
+	timeEntryRepo      repository.TimeEntryRepository
+	teamUsecase        TeamUsecase
 }
 
-func NewProjectUsecase(repo repository.ProjectRepository, teamUsecase TeamUsecase, changelogRepo repository.ChangelogRepository) ProjectUsecase {
+func NewProjectUsecase(repo repository.ProjectRepository, teamUsecase TeamUsecase, changelogRepo repository.ChangelogRepository, timeEntryRepo repository.TimeEntryRepository) ProjectUsecase {
 	return &projectUsecase{
-		repo:          repo,
-		changelogRepo: changelogRepo,
-		teamUsecase:   teamUsecase,
+		repo:               repo,
+		changelogRepo:      changelogRepo,
+		timeEntryRepo:      timeEntryRepo,
+		teamUsecase:        teamUsecase,
 	}
 }
 
@@ -102,6 +104,16 @@ func (pu *projectUsecase) DeleteProject(id uuid.UUID, userId uuid.UUID, clientId
 	if err != nil {
 		return pu.getError(err)
 	}
+
+	// A project must not be deleted while there are still time entries assigned to it
+	hasTimeEntries, err := pu.timeEntryRepo.HasTimeEntriesForProject(project.ID)
+	if err != nil {
+		return err
+	}
+	if hasTimeEntries {
+		return NewProjectHasTimeEntriesError(id)
+	}
+
 	tx, err := pu.repo.BeginTransaction()
 	if err != nil {
 		return err

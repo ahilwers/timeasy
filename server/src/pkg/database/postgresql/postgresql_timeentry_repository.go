@@ -480,6 +480,26 @@ func (repo *postgresqlTimeEntryRepository) queryTimeEntries(query string, args .
 	return entries, nil
 }
 
+// HasTimeEntriesForProject returns true if at least one non-deleted time entry
+// is assigned to the given project
+func (repo *postgresqlTimeEntryRepository) HasTimeEntriesForProject(projectId uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1
+			FROM time_entries
+			WHERE project_id = $1 AND deleted = false
+		)
+	`
+
+	var exists bool
+	err := repo.db.QueryRow(query, projectId).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // GetLastActivityTimeForProject returns the most recent activity time for a project
 func (repo *postgresqlTimeEntryRepository) GetLastActivityTimeForProject(projectId uuid.UUID) (time.Time, error) {
 	query := `

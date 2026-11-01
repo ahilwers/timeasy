@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -217,6 +218,11 @@ func (handler *projectHandler) DeleteProject(context *gin.Context) {
 	err = handler.usecase.DeleteProject(projectId, userId, clientId)
 	if err != nil {
 		LogHandlerError("DeleteProject", err, "failed to delete project")
+		var projectHasTimeEntriesErr *usecase.ProjectHasTimeEntriesError
+		if errors.As(err, &projectHasTimeEntriesErr) {
+			context.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

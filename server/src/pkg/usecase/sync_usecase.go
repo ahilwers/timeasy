@@ -197,7 +197,24 @@ func (usecase *syncUsecase) processProjectDeletions(projects []model.Project, us
 	slog.Debug("Processing project deletions", "count", len(projects), "user_id", userId, "client_id", clientId, "method", "sync")
 	for i := range projects {
 		project := &projects[i]
-		err := usecase.projectRepository.DeleteProject(project, tx)
+
+		// A project must not be deleted while there are still time entries assigned to it
+		hasTimeEntries, err := usecase.timeEntryRepository.HasTimeEntriesForProject(project.ID)
+		if err != nil {
+			return err
+		}
+		if hasTimeEntries {
+			slog.Warn("Project to be deleted has time entries, skipping deletion",
+				"project_id", project.ID,
+				"user_id", userId,
+				"project_name", project.Name,
+				"client_id", clientId,
+				"method", "sync",
+			)
+			continue
+		}
+
+		err = usecase.projectRepository.DeleteProject(project, tx)
 		if err != nil {
 			if errors.Is(err, repository.ErrEntityNotFound) {
 				slog.Warn("Project to be deleted not found, skipping",

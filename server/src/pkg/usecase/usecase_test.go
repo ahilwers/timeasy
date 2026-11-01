@@ -49,9 +49,8 @@ func (u *UsecaseTest) initUsecases() {
 	u.TeamUsecase = NewTeamUsecase(u.TeamRepository, u.ChangelogRepository)
 
 	u.ProjectRepository = postgresql.NewPostgreSQLProjectRepository(test.Database.DB, u.TeamRepository)
-	u.ProjectUsecase = NewProjectUsecase(u.ProjectRepository, u.TeamUsecase, u.ChangelogRepository)
-
 	u.TimeEntryRepository = postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
+	u.ProjectUsecase = NewProjectUsecase(u.ProjectRepository, u.TeamUsecase, u.ChangelogRepository, u.TimeEntryRepository)
 	
 	// Create external integration usecase for testing
 	externalIntegrationUsecase := NewExternalIntegrationUseCase(

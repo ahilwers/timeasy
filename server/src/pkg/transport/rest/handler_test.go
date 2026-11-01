@@ -95,9 +95,8 @@ func (t *HandlerTest) initUsecases() {
 	t.TeamUsecase = usecase.NewTeamUsecase(teamRepo, changelogRepo)
 
 	projectRepo := postgresql.NewPostgreSQLProjectRepository(test.Database.DB, teamRepo)
-	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase, changelogRepo)
-
 	timeEntryRepo := postgresql.NewPostgreSQLTimeEntryRepository(test.Database.DB)
+	t.ProjectUsecase = usecase.NewProjectUsecase(projectRepo, t.TeamUsecase, changelogRepo, timeEntryRepo)
 
 	// Create external integration usecase for testing
 	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(

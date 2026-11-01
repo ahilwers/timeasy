@@ -75,3 +75,17 @@ func NewEntityIncompleteError(msg string) *EntityIncompleteError {
 		Msg: msg,
 	}
 }
+
+type ProjectHasTimeEntriesError struct {
+	Msg string
+}
+
+func (e *ProjectHasTimeEntriesError) Error() string {
+	return e.Msg
+}
+
+func NewProjectHasTimeEntriesError(projectId uuid.UUID) *ProjectHasTimeEntriesError {
+	return &ProjectHasTimeEntriesError{
+		Msg: fmt.Sprintf("project with id %v has time entries and cannot be deleted", projectId),
+	}
+}
