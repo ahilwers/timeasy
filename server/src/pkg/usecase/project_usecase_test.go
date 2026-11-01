@@ -241,6 +241,34 @@ func Test_projectUsecase_DeleteProjectFailsIfItDoesNotExist(t *testing.T) {
 	assert.True(t, errors.As(err, &entityNotFoundError))
 }
 
+func Test_projectUsecase_DeleteProjectFailsIfItHasTimeEntries(t *testing.T) {
+	usecaseTest := NewUsecaseTest()
+	teardownTest := usecaseTest.SetupTest(t)
+	defer teardownTest(t)
+
+	userId := GetTestUserId(t)
+	clientId := GetTestClientId(t)
+	project := addProject(t, usecaseTest.ProjectUsecase, "Testproject", userId)
+
+	timeEntry := model.TimeEntry{
+		Description: "timeentry",
+		StartTime:   time.Now(),
+		UserId:      userId,
+		ProjectId:   project.ID,
+	}
+	err := usecaseTest.TimeEntryUsecase.AddTimeEntry(&timeEntry, userId, clientId)
+	assert.Nil(t, err)
+
+	err = usecaseTest.ProjectUsecase.DeleteProject(project.ID, userId, clientId)
+	assert.NotNil(t, err)
+	var projectHasTimeEntriesErr *ProjectHasTimeEntriesError
+	assert.True(t, errors.As(err, &projectHasTimeEntriesErr))
+
+	// The project must still exist
+	_, err = usecaseTest.ProjectUsecase.GetProjectById(project.ID)
+	assert.Nil(t, err)
+}
+
 func Test_projectUsecase_CanProjectBeAssignedToATeam(t *testing.T) {
 	usecaseTest := NewUsecaseTest()
 	teardownTest := usecaseTest.SetupTest(t)

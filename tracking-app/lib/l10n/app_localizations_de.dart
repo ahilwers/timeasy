@@ -243,6 +243,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Bist du sicher, dass du dieses Projekt löschen möchtest?';
 
   @override
+  String get deleteProjectHasTimeEntries =>
+      'Dieses Projekt kann nicht gelöscht werden, da es noch Zeiteinträge gibt.';
+
+  @override
+  String get ok => 'OK';
+
+  @override
   String get projectDeleted => 'Projekt gelöscht';
 
   @override

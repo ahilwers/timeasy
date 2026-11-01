@@ -548,6 +548,18 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete this project?'**
   String get deleteProjectConfirmation;
 
+  /// No description provided for @deleteProjectHasTimeEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'This project cannot be deleted because there are still time entries assigned to it.'**
+  String get deleteProjectHasTimeEntries;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
   /// Message shown when a project is deleted
   ///
   /// In en, this message translates to:

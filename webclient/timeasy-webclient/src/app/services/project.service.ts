@@ -109,7 +109,11 @@ export class ProjectService {
         this.state.updateSuccessful.set(true);
       }),
       catchError((err) => {
-        const errorMessage = err.error?.message || this.translateService.instant('projects.errorDeletingProject');
+        let errorMessage = err.error?.message || err.error?.error || this.translateService.instant('projects.errorDeletingProject');
+        // The server rejects the deletion of a project that still has time entries (HTTP 409).
+        if (err.status === 409) {
+          errorMessage = this.translateService.instant('projects.errorProjectHasTimeEntries');
+        }
         this.state.error.set(errorMessage);
         this.state.updateSuccessful.set(false);
         return of(null as unknown as Project);

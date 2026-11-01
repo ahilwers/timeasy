@@ -113,7 +113,8 @@ func main() {
 	teamHandler := rest.NewTeamHandler(tokenVerifier, teamUsecase)
 
 	projectRepository := postgresql.NewPostgreSQLProjectRepository(databaseService.Database.DB, teamRepository)
-	projectUsecase := usecase.NewProjectUsecase(projectRepository, teamUsecase, changelogRepository)
+	timeEntryRepository := postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB)
+	projectUsecase := usecase.NewProjectUsecase(projectRepository, teamUsecase, changelogRepository, timeEntryRepository)
 
 	externalConnectionRepository := postgresql.NewPostgreSQLExternalConnectionRepository(databaseService.Database.DB)
 
@@ -128,8 +129,6 @@ func main() {
 		providerFactory,
 	)
 	userExternalAccountHandler := rest.NewUserExternalAccountHandler(tokenVerifier, userExternalAccountUsecase)
-
-	timeEntryRepository := postgresql.NewPostgreSQLTimeEntryRepository(databaseService.Database.DB)
 
 	externalIntegrationUsecase := usecase.NewExternalIntegrationUseCase(
 		externalConnectionRepository,

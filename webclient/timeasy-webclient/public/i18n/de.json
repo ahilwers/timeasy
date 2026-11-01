@@ -49,6 +49,7 @@
         "errorLoadingProjects": "Die Projekte konnten nicht geladen werden.",
         "errorUpdatingProject": "Das Projekt konnte nicht gespeichert werden.",
         "errorDeletingProject": "Das Projekt konnte nicht gelöscht werden.",
+        "errorProjectHasTimeEntries": "Das Projekt kann nicht gelöscht werden, da es noch Zeiteinträge gibt.",
         "errorAddingProject": "Das Projekt konnte nicht erstellt werden.",
         "color": "Farbe",
         "selectColor": "Bitte wähle eine Farbe aus",

@@ -3,6 +3,7 @@ import 'package:timeasy/l10n/app_localizations.dart';
 import 'package:timeasy/components/project_header_component.dart';
 import 'package:timeasy/models/project.dart';
 import 'package:timeasy/repositories/project_repository.dart';
+import 'package:timeasy/repositories/time_entry_repository.dart';
 import 'package:timeasy/services/event_sync_service.dart';
 import 'package:timeasy/views/project/project_edit_view.dart';
 
@@ -56,6 +57,7 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
   List<Project>? projects;
 
   final ProjectRepository _projectRepository = new ProjectRepository();
+  final TimeEntryRepository _timeEntryRepository = new TimeEntryRepository();
 
   @override
   void initState() {
@@ -112,6 +114,29 @@ class _ProjectListWidgetState extends State<ProjectListWidget> {
           confirmDismiss: (direction) async {
             if (direction == DismissDirection.endToStart) {
               // Delete action
+              // A project with time entries must not be deleted (#85).
+              final bool hasTimeEntries = await _timeEntryRepository
+                  .hasTimeEntriesForProject(project.id);
+              if (hasTimeEntries) {
+                if (!context.mounted) return false;
+                await showDialog<void>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text(AppLocalizations.of(context)!.delete),
+                      content: Text(AppLocalizations.of(context)!
+                          .deleteProjectHasTimeEntries),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(AppLocalizations.of(context)!.ok),
+                        ),
+                      ],
+                    );
+                  },
+                );
+                return false;
+              }
               final bool? result = await showDialog<bool>(
                 context: context,
                 builder: (BuildContext context) {

@@ -170,6 +170,17 @@ class TimeEntryRepository {
     return queryResult.isNotEmpty ? TimeEntry.fromMap(queryResult.first) : null;
   }
 
+  /// Returns true if the project has at least one non-deleted time entry.
+  Future<bool> hasTimeEntriesForProject(String projectId) async {
+    final db = await DBProvider.dbProvider.database;
+    var queryResult = await db.query(TimeEntry.tableName,
+        columns: [TimeEntry.idColumn],
+        where: "${TimeEntry.projectIdColumn} = ? AND DELETED = 0",
+        whereArgs: [projectId],
+        limit: 1);
+    return queryResult.isNotEmpty;
+  }
+
   Future<List<TimeEntry>> getAllTimeEntries(String projectId) async {
     final db = await DBProvider.dbProvider.database;
     var queryResult = await db.query(TimeEntry.tableName,
