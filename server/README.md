@@ -1,32 +1,50 @@
 # timeasy-server
 
-This is the server component of timeasy. The server is not completed yet and isn't currently used at all.
+This is the timeasy REST API. The server and web client are works in progress.
+
+## Self-hosting
+
+See the [self-hosting guide](docker/README.md) and the linked [example Compose file](docker/docker-compose.yaml). The example needs changes before use: it does not include Keycloak or TLS, and the web client's production API and authentication URLs are embedded at build time. Rebuild the web image for your own browser-reachable URLs; a server environment change alone does not reconfigure it.
 
 ## Development
 
-### Authentication
+The [development PostgreSQL](postgresql/development/docker-compose.yaml) and [Keycloak](keycloak/development/docker-compose.yaml) Compose files use development credentials and are not production configurations. Import [realm-export.json](keycloak/realm-export.json), review the clients and add users. The mobile app's callback is `org.timeasy.app://callback`, which must be added to the tracking client's valid redirect and post-logout redirect URIs; the export currently contains `http://localhost:4000/` instead.
 
-The authentication is handled by Keycloak. To start Keycloak, just use the docker-compose.yaml in the "keycloak" directory. There's also a realm export file named realm-export.json in this directory that you can use to import the timeasy realm into Keycloak. Keep in mind that even after importing the realm you'll need to add users to your realm.
+From the repository root, build or test the Go server with:
 
-### Service-Testing
-
-In the directory "service-testing" you'll find a script named "login.sh" that helps you authenticating with Keycloak. It uses [httpie](https://httpie.io/) to contact the Keycloak service and spawns a shell where the shell variable "TOKEN" is filled with the token Keycloak returned during login. You can then use this token for your REST calls:
-
-```
-http localhost:8080/api/v1/projects "Authorization:Bearer $TOKEN" < project.json
+```bash
+make -C server/src build
+make -C server/src test
 ```
 
-## Database-Migration
+Tests require Docker: the test helper starts disposable PostgreSQL containers. `make test` runs them with `-p=1`. The [service-testing](service-testing/) scripts are development helpers; `login.sh` contains a hardcoded client secret and prints the supplied password and token. Do not use it with production credentials or share its output.
 
-The project ist using golang-migrate (https://github.com/golang-migrate) for migrations. To install the CLI tool to create migrations follow these instructions: https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
+### Database migrations
+
+The server applies embedded [golang-migrate](https://github.com/golang-migrate/migrate) migrations automatically at startup. The account needs schema permissions; back up before upgrading. For creating migrations, see the [migrate CLI instructions](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate).
+
+## Server configuration
+
+Settings can be supplied as `TIMEASY_*` environment variables, command-line flags or a [local config file](#local-config-file). The Compose example overrides some development-oriented defaults:
+
+| Environment variable | Server default | Purpose |
+| --- | --- | --- |
+| `TIMEASY_SERVER_PORT` | `8080` | HTTP listen port |
+| `TIMEASY_DATABASE_HOST` / `TIMEASY_DATABASE_PORT` | `localhost` / `5432` | PostgreSQL address from the server's network |
+| `TIMEASY_DATABASE_NAME` / `TIMEASY_DATABASE_USER` / `TIMEASY_DATABASE_PASSWORD` | `timeasy` / `dbuser` / `dbpassword` | Database and credentials; change for deployment |
+| `TIMEASY_KEYCLOAK_HOST` / `TIMEASY_KEYCLOAK_REALM` | `http://localhost:8180` / `timeasy` | Keycloak base URL and realm used to fetch signing keys |
+| `TIMEASY_LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARN`, or `ERROR` |
+| `TIMEASY_LOKI_ENDPOINT` / `TIMEASY_LOKI_BEARER_TOKEN` | empty | Optional Loki export; both are needed |
+
+See [configuration.go](src/pkg/configuration/configuration.go) for all flags and defaults, including sync scheduler settings. Billing and rate-limit settings are described below. In Compose, `localhost` inside the API container refers to that container, not the host or another service.
 
 ## Billing (optional)
 
-timeasy can run as a fully functional self-hosted instance without any billing configuration — by default, subscription checking is disabled and no endpoint returns 402.
+Billing is optional. When `TIMEASY_REVENUECAT_API_KEY` is unset, subscription checking is disabled and the subscription middleware does not return 402. Authentication and the other deployment requirements still apply.
 
 To monetize a hosted instance, subscription entitlements are checked against [RevenueCat](https://www.revenuecat.com). Purchases can come from the web client (Paddle as merchant of record) or from in-app purchases (App Store / Google Play). All products are attached to the same RevenueCat entitlement, and every platform uses the Keycloak user ID as RevenueCat App User ID — so one subscription unlocks the web client and the mobile apps alike.
 
-```bash
+```text
 TIMEASY_REVENUECAT_API_KEY=<V2 secret API key>     # setting this enables billing
 TIMEASY_REVENUECAT_WEB_API_KEY=<public web SDK key> # optional; enables web purchases
 TIMEASY_REVENUECAT_PROJECT_ID=<project ID>         # required when billing is enabled
@@ -36,14 +54,14 @@ TIMEASY_SUBSCRIPTION_CACHE_TTL_MINUTES=15          # how long subscription state
 
 **RevenueCat setup:**
 1. Create a project and add a **Web** config for **Paddle** (sandbox first). Paste a Paddle API key with the permissions RevenueCat asks for — including `Customer portal sessions (write)`, which RevenueCat needs for the "manage subscription" links. Keep "Automatic purchase tracking" and "Autogenerated user IDs" enabled.
-2. Create the products/prices in Paddle (e.g. monthly and yearly), import the prices into RevenueCat, and attach both to the entitlement `timeasy_pro`.
-3. Connect the App Store and Google Play apps in the same project and attach their subscription products to the same entitlement.
+2. Create the products/prices in Paddle (e.g. monthly and yearly), import the prices into RevenueCat, and attach both to your chosen entitlement (for example, `timeasy_pro`). The server requires its internal `entl...` ID, not that lookup name.
+3. Connect the App Store and Google Play apps in the same project and attach their subscription products to the same entitlement. The current Flutter client expects the lookup key `timeasy_pro`; use that key with the unmodified app, while configuring its corresponding internal `entl...` ID on the server.
 4. Create a **V2 Secret API Key** (Project settings → API keys) for the server. Grant only **Customer information → Customers → Read**. The server's v2 customer lookup includes `active_entitlements`, so it does not need separate Subscriptions or Purchases access.
 5. Configure all three values on the server: secret API key, Project ID (Project settings → General), and the entitlement's internal `entl...` ID (Product catalog → Entitlements). These identifiers are required when billing is enabled and are not hardcoded; without the API key, self-hosted mode remains unchanged.
 
-**Web purchases:** set `TIMEASY_REVENUECAT_WEB_API_KEY` to the **public** Web Billing SDK key from the RevenueCat web config. The server returns it in `GET /api/v1/billing/status`, so the web client needs no key in its build and self-hosted instances are not tied to another instance's RevenueCat project. Without it, mobile purchases still work but the web upgrade page reports that purchases are unavailable.
+**Web purchases:** set `TIMEASY_REVENUECAT_WEB_API_KEY` to the **public** Web Billing SDK key from the RevenueCat web config. When billing is enabled, the server returns it in `GET /api/v1/billing/status`; the billing key does not need to be baked into the web build. The API and authentication URLs are different: those are embedded in the web build and must be customized for self-hosting. Without the public billing key, web purchases are unavailable; mobile purchases require their own configured public SDK keys.
 
-The server checks `GET https://api.revenuecat.com/v2/projects/{project_id}/customers/{keycloak-sub}` and looks for the configured entitlement ID in `active_entitlements`. Results are cached in memory for `TIMEASY_SUBSCRIPTION_CACHE_TTL_MINUTES`; cancellations and refunds take effect within that window. Transient RevenueCat failures fail open (no 402), so a provider outage never locks users out.
+The server checks `GET https://api.revenuecat.com/v2/projects/{project_id}/customers/{keycloak-sub}` and looks for the configured entitlement ID in `active_entitlements`. Active results are cached in memory per server instance for `TIMEASY_SUBSCRIPTION_CACHE_TTL_MINUTES` (15 minutes by default); inactive results are cached for at most one minute. Provider updates, including cancellations and refunds, may not be reflected until the cache expires. RevenueCat lookup errors cause the subscription middleware to **fail open** (allow access and log the error), including configuration or provider errors; a customer-not-found response is treated as inactive. The force-refresh status endpoint instead returns 502 on lookup errors.
 
 **Checkout and subscription management live in the clients, not on the server:**
 - Web: `@revenuecat/purchases-js` with the RevenueCat **Web Billing public key** opens the embedded Paddle checkout. "Manage subscription" opens `CustomerInfo.managementURL` (Paddle customer portal).
@@ -55,22 +73,21 @@ The server therefore only exposes `GET /api/v1/billing/status` (public) and `GET
 
 ### Free accounts for the owner/testers
 
-Keycloak user IDs listed in `TIMEASY_SUBSCRIPTION_ALLOWLIST` (comma-separated) get **full access without a subscription** — no RevenueCat API calls, no checkout, and no management URL (the flows report "no active subscription"). Configure them in `config.txt` via `subscription-allowlist <id1>,<id2>` and restart the server. You can find a user's ID in the Keycloak admin console (Users → select user → copy ID) or in the `sub` claim of their access token.
+Keycloak user IDs listed in `TIMEASY_SUBSCRIPTION_ALLOWLIST` (comma-separated) bypass subscription checks without RevenueCat API calls. This does not create a subscription or management URL. Alternatively, set `subscription-allowlist <id1>,<id2>` in `config.txt` and restart the server. You can find a user's ID in the Keycloak admin console (Users → select user → copy ID) or in the `sub` claim of their access token.
 
 ### Local config file
 
-Instead of exporting environment variables, you can put the settings into a local config file and start the server with it:
+Instead of exporting environment variables, create `server/src/config.txt` with your local settings and start the built server from `server/src`:
 
 ```bash
-cp config.txt config.txt.local   # optional: keep a template
 ./bin/timeasy-server -config config.txt
 ```
 
-Format: one `<flag-name> <value>` pair per line (space-separated, **no `=`**), `#` starts a comment. Use the flag names without the `TIMEASY_` prefix, e.g. `revenuecat-api-key sk_xxx`. Priority: command-line flags > config file > `TIMEASY_*` environment variables. `server/src/config.txt` is gitignored because it contains secrets.
+Format: one `<flag-name> <value>` pair per line (space-separated, **no `=`**); lines starting with `#` are comments. Use flag names without the `TIMEASY_` prefix, e.g. `revenuecat-api-key sk_xxx`. Priority in the current `ff/v3` parser: command-line flags > non-empty `TIMEASY_*` environment variables > config file > defaults. Empty environment values are ignored; use an explicit command-line value to clear a non-empty default. `server/src/config.txt` is gitignored; restrict access and keep any secrets out of version control. Passing `-config config.txt` is needed to load it; Compose's example uses environment variables instead.
 
 ## Rate limiting
 
-The server applies IP-based rate limiting to **every** route, including the public billing status endpoint. Each client IP gets its own token bucket; requests above the limit are answered with `429 Too Many Requests`, a `Retry-After` header and `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset` headers.
+The server applies IP-based rate limiting to routes including the public billing status endpoint; CORS preflight requests are handled before the limiter. Each client IP gets its own token bucket; requests above the limit are answered with `429 Too Many Requests`, a `Retry-After` header and `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset` headers.
 
 ```bash
 TIMEASY_RATE_LIMIT_ENABLED=true                       # default; set to false to disable entirely
@@ -79,7 +96,7 @@ TIMEASY_RATE_LIMIT_BURST=100                          # allowed short-term spike
 TIMEASY_RATE_LIMIT_TRUSTED_PROXIES=0.0.0.0/0,::/0     # CIDRs allowed to set X-Forwarded-For
 ```
 
-Limits apply per server instance and reset on restart. The default of 300 requests/minute leaves plenty of headroom for the mobile app, which polls the sync endpoint about twice a minute; as a rule of thumb one public IP (office, NAT) can serve roughly 100 active clients. Increase the value if many users share an IP.
+Limits apply per server instance and reset on restart. Clients behind the same NAT may share a bucket; monitor usage and adjust the limits for your traffic.
 
 **Behind a reverse proxy** the server can only apply per-client limits if it trusts the proxy to set `X-Forwarded-For`. Narrow `TIMEASY_RATE_LIMIT_TRUSTED_PROXIES` to your proxy's IP/CIDR; otherwise every request appears to come from the proxy and all users share one bucket. Trusting all proxies (`0.0.0.0/0`, the default) keeps self-hosted setups working but allows clients to spoof their IP by sending the header themselves. The `client_ip` field of the HTTP request logs shows what the server actually sees — verify it after changing the setting.
 

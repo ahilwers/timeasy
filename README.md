@@ -1,69 +1,78 @@
 # timeasy
 
-A time tracker application that ist build for simplicity.
+timeasy is a time tracker designed for simplicity, particularly for freelance software developers. Track time against projects, review your work and export entries without making time tracking the focus of your day.
 
-The software is still work in progress - only the standalone iOS app is usable at the moment.
+Choose between **running timeasy yourself** and a **hosted timeasy subscription**. To use the hosted service rather than maintain your own installation, see [timeasy.org](https://timeasy.org) for the offer and current availability.
 
-Visit the timeasy website: <https://timeasy.org>
+> **Project status:** The server and web client are under development. The updated, connected mobile app has not yet been released to the app stores; the older store version is not compatible with this setup. Features, deployment instructions and billing integrations may change.
 
-<p>
-    <a href="https://apps.apple.com/us/app/timeasy-time-tracking/id1620757668?itsct=apps_box_badge&amp;itscg=30200">
-      <img src="tracking-app/assets-readme/appstore_logo.png" alt="Download on the App Store"/>
-    </a>
-</p>
-<!--
-<p>
-    <a href="https://play.google.com/store/apps/details?id=com.hilwerssoftware.timeasy">
-        <img src="tracking-app/assets-readme/google_play_logo.png" alt="Get it on Google Play" />
-    </a>
-</p>
--->
+## What you can do
 
-# Repository structure
+- Start and stop time entries and organize them by project.
+- Review recorded time, including weekly statistics, and export entries as CSV or Excel files.
+- Connect timeasy projects to GitHub repositories, GitLab projects or Jira projects, then track time against individual issues within them.
+- Use the Flutter mobile app with local storage and synchronization when connected to a server.
+- Run your own server and web client, or use the hosted service instead.
 
-This repository currently consists of two applications. 
+Availability and behavior can differ between clients and deployments. Issue integrations associate timeasy entries with issues; do not assume they create work logs in the external service.
 
-The simple time tracking app can be found in the directory "tracking-app". The app can be installed from the app store of your mobile platform with the links above.
+## Getting started
 
-The second app is the timeasy server that can be found in the directory "server". The server is not completed yet and it's currently not used by the app.
+### Hosted timeasy
 
-## CI/CD and Docker Images
+If you prefer not to operate the infrastructure yourself, visit [timeasy.org](https://timeasy.org) for information about the hosted subscription, features and availability. The hosted service is separate from the software you can run from this repository.
 
-This project uses GitHub Actions for continuous integration and deployment. Docker images are automatically built and pushed to Docker Hub for both the server and web client components.
+### Self-hosting
 
-### Automated Builds
+The server uses PostgreSQL for application data and Keycloak for authentication. The web client connects to both the API and Keycloak. You will need Docker and Docker Compose, a Keycloak installation, persistent storage and appropriate network, domain and TLS configuration.
 
-**Server** (`ahilwers/timeasy-server`):
-- Builds on changes to `server/**` directory
-- Runs Go tests and builds the application
-- Creates Docker images for production deployment
+1. Read the [self-hosting and deployment guide](server/docker/README.md).
+2. Use the [example Docker Compose file](server/docker/docker-compose.yaml) as a starting point, adapting the images, credentials and URLs for your environment. **It is an example, not a ready-to-use production installation:** it references local image names, does not include Keycloak, exposes ports and contains development credentials.
+3. Configure Keycloak, the server and the web client consistently. The web client's API and authentication URLs are compiled into its image and default to timeasy.org; rebuild it with your own URLs. Start the stack and verify login and API access as described in the guide.
+4. Before exposing the installation, secure it and set up backups and updates. Billing is optional: without a RevenueCat secret API key, the self-hosted server does not enforce subscriptions.
 
-**Web Client** (`ahilwers/timeasy-webclient`):
-- Builds on changes to `webclient/**` directory  
-- Runs Angular tests, linting, and builds the application
-- Creates Docker images for web deployment
+The mobile app can also be built from source; see the [mobile documentation](tracking-app/README.md). For security and data-loss considerations, follow the deployment guide rather than exposing the example configuration as-is.
 
-### Docker Image Tagging
+## Repository and documentation
 
-Images are automatically tagged based on the build context:
+| Component | Description | Documentation |
+| --- | --- | --- |
+| `server/src/` | Go REST API, PostgreSQL persistence and synchronization | [Server README](server/README.md) |
+| `server/docker/` | Example server, database and web client deployment | [Self-hosting guide](server/docker/README.md) · [Compose example](server/docker/docker-compose.yaml) |
+| `server/keycloak/` | Realm export and local Keycloak setup | [Development Keycloak README](server/keycloak/development/README.md) |
+| `server/service-testing/` | Manual API testing examples | [API testing README](server/service-testing/README.md) |
+| `webclient/timeasy-webclient/` | Angular web client | [Web client README](webclient/timeasy-webclient/README.md) |
+| `tracking-app/` | Flutter mobile app | [Mobile app README](tracking-app/README.md) |
 
-**Development builds** (on branch pushes):
-- `develop`, `main` - Latest development versions
-- `feature-branch-name` - Feature branch testing
-- `branch-abc123` - Branch with commit hash for traceability
+## Contributing
 
-**Release builds** (on git tags):
-- `1.2.3` - Exact version from git tag `v1.2.3`
-- `1.2` - Major.minor version
-- `latest` - Latest stable release (main/develop only)
+Contributions, bug reports and suggestions are welcome. Start with the [contribution guide](CONTRIBUTING.md) for local setup, coding and testing guidelines, and the pull request workflow. For an issue, include the affected component, steps to reproduce and relevant logs with credentials and personal information removed.
 
-### Creating a Release
+The main development tools are Go, Node.js/npm, Flutter and Docker; which ones you need depends on the component. The component READMEs describe the required versions and commands. Server integration tests use disposable PostgreSQL containers and require a working Docker daemon.
 
-To create a new release with versioned Docker images:
+## CI and container images
+
+The development and release flow is `feature/*` → `develop` → `main` → `vX.Y.Z`. GitHub Actions builds and tests the components using the workflows in [`.github/workflows/`](.github/workflows/).
+
+- **Server and web client:** build on every push, without path filters. Docker publishing is restricted to `develop`, `main` and `v*` tags; feature branches do not publish images.
+- **Flutter:** push builds are path-filtered for app/workflow changes (path filters do not apply to tag pushes). CI generates localizations, analyzes, tests and uploads an APK; unsigned iOS builds run only on `develop` and `main`. There is no automatic store submission.
+- **Manual builds:** all three workflows support `workflow_dispatch`. They do not currently run on `pull_request` events.
+
+Published images are [`ahilwers/timeasy-server`](https://hub.docker.com/r/ahilwers/timeasy-server) and [`ahilwers/timeasy-webclient`](https://hub.docker.com/r/ahilwers/timeasy-webclient). Branch builds publish branch and short-SHA tags; a stable Git tag such as `v1.2.3` publishes `1.2.3`, `1.2` and `latest`. Default-branch builds can also update `latest`, so use a verified exact version or digest for deployments.
+
+### Creating a release
+
+After merging and verifying the intended release commit on `main`, maintainers create and push a new version tag, for example:
 
 ```bash
-git tag v1.2.3
+git tag -a v1.2.3 -m "Release v1.2.3"
 git push origin v1.2.3
 ```
 
-This will trigger the CI pipeline to build and push Docker images with proper version tags to Docker Hub.
+This triggers the server and web image builds, not an automatic deployment or GitHub Release. Check the complete tag workflows before announcing a release: web image publishing does not wait for the separate E2E job.
+
+See **[CI/CD and releases](cicd.md)** for the full release checklist, trigger strategy, job dependencies, image tagging rules, prerequisites and verification steps.
+
+## License
+
+The repository is licensed under the [GNU Affero General Public License, version 3](LICENSE). Review the license when modifying or operating the software, including its terms for network use of modified versions.

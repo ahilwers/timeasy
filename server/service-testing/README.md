@@ -1,23 +1,23 @@
-# Service testing
+# Manual API testing
 
-To test the service I added some scripts that user httpie (https://httpie.io/) for accessing the service.
+These files are development aids for trying the REST API. Start the server, PostgreSQL and Keycloak as described in the [server README](../README.md); create a test user and obtain a Keycloak access token for that user. The examples below require [HTTPie](https://httpie.io/) and assume the API is listening on `localhost:8080`.
 
-## Login
+Set `TOKEN` in your shell to the access token using a secure method; do not commit it or share it in logs. Then, for example:
 
-To login on KeyCloak you can just user the login.sh script and pass the user and the password as argument
+```bash
+http GET localhost:8080/api/v1/billing/status
+http GET localhost:8080/api/v1/projects "Authorization:Bearer $TOKEN"
+http GET localhost:8080/api/v1/timeentries "Authorization:Bearer $TOKEN"
+```
 
-    ./login.sh user password
+The billing-status endpoint is public; projects and time entries require a valid token and, if subscription checks are enabled, an active entitlement or an allowlisted user. Tokens expire; obtain a new one if authentication fails.
 
-This script sets the enironment variable *TOKEN* and opens a new fish shell where this variable is available. From now on you can fire your requests against the serice using the token.
+[`project.json`](project.json) and [`timeentry.json`](timeentry.json) are sample request bodies. Projects require a `name` and `color`; time entries require a `projectId` and RFC 3339 `startTime` (with optional `endTime`). Before posting a time entry, replace the example `projectId` with an existing project's ID; the sample timestamps are fixed example values. For example, from this directory:
 
-If you want to login in with another user please exit (with the *exit* command) from the new shell before using the login script again.
+```bash
+http POST localhost:8080/api/v1/projects "Authorization:Bearer $TOKEN" < project.json
+```
 
-## HTTP-Requests
+## Legacy login helper
 
-To send a HTTP-request to the service with the token you can do it like so:
-
-    http localhost:8080/api/admin "Authorization:Bearer $TOKEN"
-
-To send a POST-Request you can just add the file to POST via pipe:
-
-    http localhost:8080/api/v1/timeentries "Authorization:Bearer $TOKEN" < timeentry.json
+[`login.sh`](login.sh) is an old local-testing helper, not a secure authentication workflow. It contains a hard-coded development client secret, sends a password grant to `localhost:8180`, prints the username, password and token, and starts a new Bash shell. The credentials may be visible in terminal output, process listings and shell history. The secret may not match your Keycloak setup. Do not use this script with real credentials or production systems; obtain a token through your configured authentication flow instead.

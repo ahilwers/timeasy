@@ -1,88 +1,65 @@
-# TimeasyWebclient
+# timeasy web client
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.7.
+The Angular web client provides a browser interface for timeasy projects, time entries, and statistics. It requires the Go API and Keycloak for normal authenticated use; unlike the mobile app, it is not an offline-first client. The web client and server are works in progress. See the [repository overview](../../README.md), [server instructions](../../server/README.md), [mobile app](../../tracking-app/README.md), and [contribution guide](../../CONTRIBUTING.md).
 
-## Development server
+> **Self-hosters:** The production Docker image compiles `apiUrl` and `authUrl` from `src/environments/environment.ts`, currently pointing to the hosted timeasy.org services. Configure URLs reachable by your users' browsers and rebuild the image for your instance. Of these settings, only the public RevenueCat web billing key is supplied at runtime by the server. See [endpoint configuration](#endpoint-configuration).
 
-To start a local development server, run:
+## Prerequisites and development
+
+Use Node.js and npm versions satisfying `package.json` (`node >=24.15.0`, `npm >=11`); CI uses Node 24. From `webclient/timeasy-webclient/`:
 
 ```bash
+npm ci
 npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4200/`. The development server reloads as source files change. To use the application, start the API, PostgreSQL, and Keycloak, import the `timeasy` realm, and create a user as described in the [server setup](../../server/README.md). Keycloak uses the `timeasy-webclient` public client. Ensure its allowed redirect URIs, web origins, and logout redirects match the browser's URL; the imported realm includes localhost:4200. The browser must be able to reach both the API and Keycloak, with suitable CORS and authentication configuration.
 
-## RevenueCat web billing key
+## Endpoint configuration
 
-The web client does **not** contain a RevenueCat key. When billing is enabled, the server's public `GET /api/v1/billing/status` response includes the instance's **public** RevenueCat Web Billing API key (`webApiKey`), and the client uses it to configure `purchases-js`.
+Endpoints are compiled into the client from `src/environments/`:
 
-That means:
+| Configuration | API | Keycloak |
+| --- | --- | --- |
+| Development (`npm start`) | `http://localhost:8080/api/v1` | `http://localhost:8180` |
+| Production (`npm run build`) | `https://api.timeasy.org/api/v1` | `https://auth.timeasy.org` |
 
-- the Docker image is environment-neutral — no key is baked in, and self-hosted instances are not tied to the hosted instance's RevenueCat project;
-- self-hosters who enable billing set `TIMEASY_REVENUECAT_WEB_API_KEY` on the **server** (see `server/README.md`) instead of rebuilding the web client;
-- without billing enabled on the server, the billing UI stays hidden.
+`angular.json` replaces `environment.ts` with `environment.development.ts` for the development configuration. For a different deployment, set the appropriate URLs in these files and rebuild; they are not runtime environment variables. `localhost` refers to the browser's machine, not the server or container. If using another host or port, also configure the corresponding Keycloak client origins and redirects.
 
-> The web key is public by design (it is part of the browser bundle at runtime). Never store a RevenueCat **secret** API key (`sk_...` / `rcsk_...`) in the web client; secret keys belong on the Go server.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Build and checks
 
 ```bash
-ng generate component component-name
+npm run lint
+npm run test -- --watch=false
+npm run build
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Unit tests use Angular's Vitest runner; `npm test` without the watch option runs in watch mode. The default build is optimized for production and outputs to `dist/timeasy-webclient/`. The included `Dockerfile` builds the client and serves it with nginx; `nginx.conf` falls back to `index.html` for application routes. Other static hosting must also support client-side route fallback. The image embeds the production API and auth URLs, even though the web billing key is obtained at runtime.
+
+## End-to-end tests
+
+Playwright tests in `e2e/` start the Angular development server automatically. Install Chromium once, then run:
 
 ```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-End-to-end tests use [Playwright](https://playwright.dev/) and live in `e2e/`.
-There are two modes, controlled by `E2E_MODE`:
-
-- **mock** (default, CI-safe): the Go API and Keycloak are intercepted inside the
-  browser context (`e2e/support/`). No backend, database, Keycloak or Docker is
-  required, and no real data is written.
-- **live**: runs against the real Go API on `http://localhost:8080` and Keycloak
-  on `http://localhost:8180` (realm `timeasy`). Login/logout UI tests only run
-  in this mode.
-
-```bash
-npx playwright install chromium   # once
-
-npm run e2e          # mock mode, desktop Chromium (fast local loop)
-npm run e2e:all      # mock mode, desktop + mobile (what CI runs)
-npm run e2e:mobile   # mock mode, mobile viewport only
-npm run e2e:live     # live mode against local API + Keycloak
-npm run e2e:headed   # mock mode with a visible browser
+npx playwright install chromium
+npm run e2e          # mocked API and authentication, desktop Chromium
+npm run e2e:all      # mocked API and authentication, desktop and mobile viewport
+npm run e2e:mobile   # mocked, mobile viewport
+npm run e2e:headed   # mocked, visible browser
+npm run e2e:live     # real local API and Keycloak
 npm run e2e:report   # open the last HTML report
 ```
 
-The Angular dev server is started automatically by Playwright. Pass `E2E_REUSE=1`
-to reuse an already running `ng serve`. Videos are disabled by default; set
-`PW_VIDEO=1` to record them for debugging.
+Mock mode is the default and needs no backend, database, Keycloak, or Docker. CI runs both desktop and mobile mocked projects. Set `E2E_REUSE=1` to reuse an existing dev server, `E2E_PORT` to change its port, or `PW_VIDEO=1` to retain video on failure.
 
-## Additional Resources
+Live mode requires the API at `localhost:8080`, Keycloak at `localhost:8180`, realm `timeasy`, the dev server at `localhost:4200`, and the local test account expected by [`e2e/auth.setup.ts`](e2e/auth.setup.ts) and [`e2e/login.spec.ts`](e2e/login.spec.ts). Its setup uses a direct-access token grant. **Use a disposable local account and dataset:** live tests write real data, and setup stops/deletes an open timer and deletes projects and entries named `e2e-*`. The stored browser session in `playwright/.auth/` contains authentication state and must not be shared or committed.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Localization
+
+Translations use `@ngx-translate` and are loaded from `public/i18n/en.json` and `public/i18n/de.json`. Keep keys in both files aligned. The app prefers the authenticated Keycloak profile locale, then the browser language, with English as fallback. Date/number formatting also uses browser locale settings. No Flutter localization generation step is needed for this client.
+
+## Optional billing
+
+Billing is disabled by default on the server. When enabled, the server's public `GET /api/v1/billing/status` returns the public RevenueCat Web Billing SDK key as `webApiKey` when configured. Set `TIMEASY_REVENUECAT_WEB_API_KEY` **on the server**, not in the Angular build. Without the public web key, web checkout is unavailable even if server subscription checking is enabled. The server's RevenueCat secret key must never be placed in browser code or client configuration.
+
+The client uses `@revenuecat/purchases-js` for embedded Paddle checkout and the returned management URL for subscriptions. A `402` response redirects to `/upgrade`. The authenticated Keycloak user ID is the RevenueCat App User ID shared with the mobile clients; cross-platform access requires correctly configured products and a common entitlement. Mobile purchases use the native stores, not Paddle. See [server billing setup](../../server/README.md#billing-optional) and the [mobile billing instructions](../../tracking-app/README.md#billing-and-logging).

@@ -1,145 +1,75 @@
-# timeasy
+# timeasy mobile app
 
-A time tracker application that ist build for simplicity.
+The Flutter mobile client tracks projects and time entries locally and can synchronize them with a timeasy server. Local tracking works without signing in; synchronization requires a reachable server and a Keycloak account. The updated, server-connected app is not yet released to the App Store or Google Play. The server and web client are still under development. See the [repository overview](../README.md), [server instructions](../server/README.md), and [contribution guide](../CONTRIBUTING.md).
 
-Visit the timeasy website: <https://timeasy.org>
+## Prerequisites
 
-<p>
-    <a href="https://apps.apple.com/us/app/timeasy-time-tracking/id1620757668?itsct=apps_box_badge&amp;itscg=30200">
-      <img src="assets-readme/appstore_logo.png" alt="Download on the App Store"/>
-    </a>
-</p>
-<p>
-    <a href="https://play.google.com/store/apps/details?id=com.hilwerssoftware.timeasy">
-        <img src="assets-readme/google_play_logo.png" alt="Get it on Google Play" />
-    </a>
-</p>
+- Flutter with Dart compatible with `pubspec.yaml` (Dart `^3.13.0`); CI uses Flutter 3.47.x.
+- For Android, the Android SDK and Java 17. For iOS, macOS and Xcode; the Xcode project targets iOS 15 or later. See the [Flutter setup guide](https://docs.flutter.dev/get-started/install) for platform-specific tools and device setup.
+- A simulator, emulator, or physical device. A Go server, PostgreSQL, and Keycloak are needed for sign-in and synchronization, but not for local-only tracking.
 
-![](assets-readme/screenshot_01.png)
-![](assets-readme/screenshot_02.png)
-![](assets-readme/screenshot_03.png)
+Run all commands below from `tracking-app/`:
 
-## Getting Started
-
-### Keystore
-
-In order to compile for Android the app needs to be signed with an appropriate key. To create a keystore and reference it please refer to the flutter documentation: https://docs.flutter.dev/deployment/android
-
-After generating the keystore create a file named "key.properties" in the "android"-folder:
-
-    storePassword=<password for your keystore>
-    keyPassword=<password for your key>
-    keyAlias=upload
-    storeFile=<location of the key store file, such as /home/<user name>/keystore.jks>
-
-### Translations
-
-Before you begin you must generate the translation files. Otherwise the project will not be compilable:
-
-    flutter gen-l10n
-
-### Application icon
-
-For setting the application icon the package "flutter_launcher_icons"
-(https://pub.dev/packages/flutter_launcher_icons) is used. The configuration can be found in the
-pubspec.yaml.
-
-Just place your icon in the path configured in the pubspec.yaml and run
-
-flutter pub run flutter_launcher_icons:main
-
-## Using OpenTelemetry for Logging
-
-### For Development (flutter run)
-
-flutter run --dart-define=LOKI_ENDPOINT=<your-loki-endpoint> --dart-define=LOKI_BEARER_TOKEN=<your-bearer-token>
-
-### For Production Builds
-
-#### Android APK:
-
-flutter build apk --dart-define=LOKI_ENDPOINT=<your-loki-endpoint> --dart-define=LOKI_BEARER_TOKEN=<your-bearer-token>
-
-#### iOS:
-
-flutter build ios --dart-define=LOKI_ENDPOINT=<your-loki-endpoint> --dart-define=LOKI_BEARER_TOKEN=<your-bearer-token>
-
-### Additional Environment Variables
-
-You can also optionally set these additional variables:
-- ENVIRONMENT (defaults to 'development')
-
-Example with all variables:
-flutter build apk \
---dart-define=LOKI_ENDPOINT=https://your-loki-instance.com/loki/api/v1/push \
---dart-define=LOKI_BEARER_TOKEN=your_bearer_token_here \
---dart-define=ENVIRONMENT=production \
-
-The telemetry logger will only initialize Loki logging if LOKI_ENDPOINT is provided and non-empty. If not provided, it falls
-back to local console logging only.
-
-## In-app purchases (RevenueCat)
-
-Subscriptions inside the app are sold exclusively through the App Store and
-Google Play (StoreKit / Play Billing via RevenueCat). The web client sells the
-same subscription through Paddle on timeasy.org — all channels unlock the same
-`timeasy_pro` entitlement, and the app never links to the web checkout.
-
-### Prerequisites
-
-Billing must be enabled on **both** sides:
-
-- **Server:** set `revenuecat-api-key`, `revenuecat-project-id` and
-  `revenuecat-entitlement-id` (see `server/README.md`). Without them
-  `GET /api/v1/billing/status` reports `enabled: false` and the app never
-  configures RevenueCat — even when the API key below is passed at build time.
-- **App:** pass the public RevenueCat API key of the matching platform app at
-  build time via `--dart-define`. The keys are public (they identify the app,
-  not the user) and come from the RevenueCat project. Without them the app
-  still builds and runs, but the paywall reports that subscriptions are
-  unavailable.
-
-### Building with in-app purchases
-
-Development (`flutter run`):
-
-```
-flutter run --dart-define=REVENUECAT_IOS_API_KEY=appl_xxx
-flutter run --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
+```bash
+flutter pub get
+flutter gen-l10n
+flutter devices
+flutter run
 ```
 
-Release:
+Select a device with `flutter run -d <device-id>` if needed. Generate localizations before the first build, run, or test and whenever translations change.
 
+## Server connectivity and configuration
+
+`lib/environment.dart` selects endpoints at **build time** using `--dart-define=ENVIRONMENT=...`. The default is `dev`, including for release builds:
+
+| Environment | API | Keycloak realm |
+| --- | --- | --- |
+| `dev`, Android emulator | `http://10.0.2.2:8080/api/v1` | `http://10.0.2.2:8180/realms/timeasy` |
+| `dev`, other platforms | `http://localhost:8080/api/v1` | `http://localhost:8180/realms/timeasy` |
+| Any value other than `dev` | `https://api.timeasy.org/api/v1` | `https://auth.timeasy.org/realms/timeasy` |
+
+For example, `flutter run --dart-define=ENVIRONMENT=production` selects the hosted endpoints. These URLs are not independently configurable via Dart defines; a different server requires changing `lib/environment.dart` and rebuilding. `localhost` on a physical device refers to that device, and `10.0.2.2` is an Android emulator host alias, not a physical-device address. Use addresses reachable by the device and configure Keycloak's issuer, HTTP/TLS settings, and redirect URIs accordingly.
+
+For a local backend, follow the [server setup](../server/README.md): start PostgreSQL and Keycloak, import `server/keycloak/realm-export.json`, create a user, and run the API. The mobile app uses Keycloak client `timeasy-tracking-app` and redirect URI `org.timeasy.app://callback`. Check the imported client's allowed redirect URIs: the checked-in realm export does not include this callback by default. The `dev` website link is `http://localhost:4200`, which also needs adjustment for access from an Android emulator or physical device.
+
+Changes are stored in SQLite and queued for synchronization. When authenticated, the app attempts synchronization on relevant events and periodically while running. Check the sync status in Settings before signing out or switching accounts: **sign-out and account changes clear locally cached projects, time entries, and pending changes**, so unsynchronized work can be lost.
+
+## Analyze, test, and build
+
+```bash
+flutter analyze
+flutter test
+flutter build apk
+flutter build appbundle
+flutter build ios --release --no-codesign
 ```
-flutter build ipa --dart-define=REVENUECAT_IOS_API_KEY=appl_xxx
-flutter build appbundle --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
+
+Use the platform's normal signing and provisioning process for distribution; a no-codesign iOS build is only a build check. Android debug builds need no release keystore. For a distributable Android release, follow [Flutter's Android deployment instructions](https://docs.flutter.dev/deployment/android) and create the ignored `android/key.properties` with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. An absolute `storeFile` path avoids ambiguity. Keep the keystore and passwords out of the repository. If this file is absent, the Gradle release configuration falls back to the **debug signing key**; that output is not suitable for a store release.
+
+For an iOS archive, configure a signing team and provisioning in Xcode and use `flutter build ipa`. Add the appropriate `--dart-define` options to every run or build that needs non-default configuration.
+
+## Localization and assets
+
+Translations are in `lib/l10n/app_en.arb` and `lib/l10n/app_de.arb`; English is the template in `l10n.yaml`. Update both languages as appropriate, then run `flutter gen-l10n`. Generated localization code is used by the app.
+
+Launcher icon sources and settings are in `pubspec.yaml`. After updating the source assets, regenerate the platform icons with:
+
+```bash
+dart run flutter_launcher_icons
 ```
 
-The defines combine with the other build variables. Both keys can be passed in
-one command — the app uses the key matching the running platform:
+## Billing and logging
 
-```
-flutter build appbundle \
-  --dart-define=ENVIRONMENT=production \
-  --dart-define=LOKI_ENDPOINT=https://your-loki-instance.com/loki/api/v1/push \
-  --dart-define=LOKI_BEARER_TOKEN=your_bearer_token_here \
-  --dart-define=REVENUECAT_ANDROID_API_KEY=goog_xxx
+Billing is optional and controlled by the server. When its public `/api/v1/billing/status` reports billing disabled, the mobile app does not configure RevenueCat. To test native subscriptions, enable billing on the server, configure the RevenueCat project, products and offering, and provide the corresponding **public** platform SDK key at build time:
+
+```bash
+flutter run --dart-define='REVENUECAT_IOS_API_KEY=<public-ios-key>'
+flutter run --dart-define='REVENUECAT_ANDROID_API_KEY=<public-android-key>'
 ```
 
-The keys are compiled into the binary; there is no runtime configuration.
+Use the matching define for `flutter build` as well. Missing keys do not prevent a build, but native purchase offerings are unavailable. The app expects the RevenueCat entitlement lookup key `timeasy_pro`; the server is configured with the corresponding internal entitlement ID. The Keycloak user ID is the RevenueCat App User ID across clients. See [server billing setup](../server/README.md#billing-optional).
 
-### Store requirements for testing
+In-app purchases and restore use StoreKit or Google Play Billing; the app must not link to external purchase or web subscription-management flows. Test actual transactions with the appropriate store sandbox/test accounts, configured products, and eligible test builds; Play Billing may require distribution through a Play testing track. A RevenueCat Test Store is a separate simulated option. A web purchase can unlock the same account when the shared entitlement is configured, but the mobile app does not link to its web management portal.
 
-- **Android:** Play Billing only works for builds distributed through Google
-  Play. Upload the AAB to an internal testing track, register as a license
-  tester and install the app from the Play Store. Sideloaded debug builds never
-  load subscription offers.
-- **iOS:** purchases run through StoreKit. Use a sandbox tester account on a
-  real device (App Store Connect → Users and Access → Sandbox → Testers); in
-  the simulator, test with a StoreKit configuration file in Xcode.
-- `purchases_flutter` requires iOS 13.0 (configured in `ios/Podfile`).
-
-The app uses the Keycloak user ID (JWT `sub`) as RevenueCat App User ID, so a
-subscription purchased on any platform — including Paddle on the web — applies
-to the same account. The server validates the `timeasy_pro` entitlement.
-
+Optional Loki logging uses the compile-time defines `LOKI_ENDPOINT` and `LOKI_BEARER_TOKEN`; without an endpoint, logs remain local. **Dart defines are embedded in the app and are not secret storage.** Never ship sensitive tokens or server-side RevenueCat secret keys in a client build, and do not commit credentials or signing material.
