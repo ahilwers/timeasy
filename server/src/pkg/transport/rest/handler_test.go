@@ -154,8 +154,12 @@ func (t *HandlerTest) initHandlers() {
 	subscriptionMiddleware := NewSubscriptionCheckMiddleware(subscription.NewNoopChecker())
 	billingHandler := NewBillingHandler(subscription.NewNoopChecker(), "")
 
+	// Rate limiting and trusted proxies are disabled in these tests so they
+	// cannot interfere with the assertion of specific HTTP status codes.
+	rateLimitMiddleware := NewNoopRateLimitMiddleware()
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	t.Router = SetupRouter(authMiddleware, subscriptionMiddleware, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler, billingHandler)
+	t.Router = SetupRouter(authMiddleware, subscriptionMiddleware, rateLimitMiddleware, nil, logger, t.TeamHandler, t.ProjectHandler, t.TimeEntryHandler, t.TimeEntryExportHandler, t.SyncHandler, t.WeeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler, billingHandler)
 }
 
 func AssertErrorMessageEquals(t *testing.T, responseBody []byte, expectedMessage string) {

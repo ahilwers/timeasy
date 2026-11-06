@@ -45,6 +45,13 @@ services:
       # - TIMEASY_REVENUECAT_WEB_API_KEY=
       # - TIMEASY_REVENUECAT_PROJECT_ID=
       # - TIMEASY_REVENUECAT_ENTITLEMENT_ID=
+      # Rate limiting is enabled by default (300 req/min per client IP, burst 100).
+      # Set the trusted proxy CIDR(s) when running behind a reverse proxy so
+      # per-client limits use the X-Forwarded-For address.
+      # - TIMEASY_RATE_LIMIT_ENABLED=true
+      # - TIMEASY_RATE_LIMIT_REQUESTS_PER_MINUTE=300
+      # - TIMEASY_RATE_LIMIT_BURST=100
+      # - TIMEASY_RATE_LIMIT_TRUSTED_PROXIES=10.0.0.0/8
     networks:
       - timeasy
 

@@ -106,6 +106,22 @@ func main() {
 	subscriptionMiddleware := rest.NewSubscriptionCheckMiddleware(subscriptionChecker)
 	billingHandler := rest.NewBillingHandler(subscriptionChecker, configuration.RevenueCatWebAPIKey)
 
+	// Setup IP-based rate limiting. Limits apply per client IP and per
+	// server instance; self-hosted instances can disable it entirely.
+	var rateLimitMiddleware rest.RateLimitMiddleware
+	if configuration.RateLimitEnabled {
+		rateLimitMiddleware = rest.NewRateLimitMiddleware(
+			configuration.RateLimitRequestsPerMinute,
+			configuration.RateLimitBurst)
+		slog.Info("Rate limiting enabled",
+			"requests_per_minute", configuration.RateLimitRequestsPerMinute,
+			"burst", configuration.RateLimitBurst,
+			"trusted_proxies", configuration.RateLimitTrustedProxies)
+	} else {
+		rateLimitMiddleware = rest.NewNoopRateLimitMiddleware()
+		slog.Info("Rate limiting disabled")
+	}
+
 	changelogRepository := postgresql.NewPostgreSQLChangelogRepository(databaseService.Database.DB)
 
 	teamRepository := postgresql.NewPostgreSQLTeamRepository(databaseService.Database.DB)
@@ -187,7 +203,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	router := rest.SetupRouter(authMiddleware, subscriptionMiddleware, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler, billingHandler)
+	router := rest.SetupRouter(authMiddleware, subscriptionMiddleware, rateLimitMiddleware, configuration.RateLimitTrustedProxies, logger, teamHandler, projectHandler, timeEntryHandler, timeEntryExportHandler, syncHandler, weeklyStatisticsHandler, externalIntegrationHandler, userExternalAccountHandler, billingHandler)
 
 	go func() {
 		slog.Info("Starting HTTP server", "port", configuration.ServerPort)

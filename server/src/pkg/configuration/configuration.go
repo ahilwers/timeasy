@@ -32,6 +32,10 @@ type Configuration struct {
 	RevenueCatEntitlementID     string   // RevenueCat entitlement ID (entl...) that grants access
 	SubscriptionCacheTTLMinutes int      // Minutes a subscription check result is cached
 	SubscriptionAllowlist       []string // Keycloak user IDs with full access without a subscription (owner/testers)
+	RateLimitEnabled            bool     // Whether IP-based rate limiting is active
+	RateLimitRequestsPerMinute  int      // Sustained requests per minute allowed per client IP
+	RateLimitBurst              int      // Short-term spike above the sustained rate (token bucket size)
+	RateLimitTrustedProxies     []string // CIDRs of reverse proxies trusted to set X-Forwarded-For
 }
 
 func GetConfiguration() (Configuration, error) {
@@ -58,6 +62,10 @@ func GetConfiguration() (Configuration, error) {
 		revenueCatEntitlementID = fs.String("revenuecat-entitlement-id", "", "RevenueCat entitlement ID (entl...) required when billing is enabled")
 		subscriptionCacheTTL    = fs.String("subscription-cache-ttl-minutes", "15", "Minutes a subscription check result is cached")
 		subscriptionAllowlist   = fs.String("subscription-allowlist", "", "Comma-separated Keycloak user IDs that get full access without a subscription (owner/testers)")
+		rateLimitEnabled        = fs.String("rate-limit-enabled", "true", "Enable IP-based rate limiting (true/false)")
+		rateLimitPerMinute      = fs.String("rate-limit-requests-per-minute", "300", "Sustained requests per minute allowed per client IP")
+		rateLimitBurst          = fs.String("rate-limit-burst", "100", "Short-term spike above the sustained rate (token bucket size)")
+		rateLimitTrustedProxies = fs.String("rate-limit-trusted-proxies", "0.0.0.0/0,::/0", "Comma-separated CIDRs of reverse proxies trusted to set X-Forwarded-For")
 
 		_ = fs.String("config", "", "config file (optional)")
 	)
@@ -133,7 +141,43 @@ func GetConfiguration() (Configuration, error) {
 	configuration.SubscriptionCacheTTLMinutes = subscriptionCacheTTLMinutes
 	configuration.SubscriptionAllowlist = parseAllowlist(*subscriptionAllowlist)
 
+	rateLimitEnabledValue, err := strconv.ParseBool(*rateLimitEnabled)
+	if err != nil {
+		return configuration, fmt.Errorf("invalid rate limit enabled flag: %w", err)
+	}
+	configuration.RateLimitEnabled = rateLimitEnabledValue
+
+	rateLimitPerMinuteValue, err := strconv.Atoi(*rateLimitPerMinute)
+	if err != nil {
+		return configuration, fmt.Errorf("invalid rate limit requests per minute: %w", err)
+	}
+	configuration.RateLimitRequestsPerMinute = rateLimitPerMinuteValue
+
+	rateLimitBurstValue, err := strconv.Atoi(*rateLimitBurst)
+	if err != nil {
+		return configuration, fmt.Errorf("invalid rate limit burst: %w", err)
+	}
+	configuration.RateLimitBurst = rateLimitBurstValue
+	if configuration.RateLimitEnabled {
+		if err := validateRateLimitConfiguration(configuration); err != nil {
+			return configuration, err
+		}
+	}
+	configuration.RateLimitTrustedProxies = parseCIDRList(*rateLimitTrustedProxies)
+
 	return configuration, nil
+}
+
+// validateRateLimitConfiguration ensures the limiter receives sane values
+// when rate limiting is enabled.
+func validateRateLimitConfiguration(configuration Configuration) error {
+	if configuration.RateLimitRequestsPerMinute <= 0 {
+		return fmt.Errorf("rate-limit-requests-per-minute must be greater than zero when rate limiting is enabled")
+	}
+	if configuration.RateLimitBurst <= 0 {
+		return fmt.Errorf("rate-limit-burst must be greater than zero when rate limiting is enabled")
+	}
+	return nil
 }
 
 // validateRevenueCatConfiguration ensures all identifiers needed for v2
@@ -155,6 +199,18 @@ func validateRevenueCatConfiguration(configuration Configuration) error {
 // parseAllowlist splits a comma-separated list of user IDs, trimming
 // whitespace and dropping empty entries.
 func parseAllowlist(raw string) []string {
+	return parseCommaSeparated(raw)
+}
+
+// parseCIDRList splits a comma-separated list of CIDRs or IPs, trimming
+// whitespace and dropping empty entries.
+func parseCIDRList(raw string) []string {
+	return parseCommaSeparated(raw)
+}
+
+// parseCommaSeparated splits a comma-separated string, trimming whitespace
+// and dropping empty entries.
+func parseCommaSeparated(raw string) []string {
 	result := make([]string, 0, 4)
 	for _, part := range strings.Split(raw, ",") {
 		if trimmed := strings.TrimSpace(part); trimmed != "" {

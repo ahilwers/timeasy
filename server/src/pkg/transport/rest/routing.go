@@ -7,16 +7,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(authMiddleware AuthMiddleware, subscriptionMiddleware SubscriptionMiddleware, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler, billingHandler *BillingHandler) *gin.Engine {
+func SetupRouter(authMiddleware AuthMiddleware, subscriptionMiddleware SubscriptionMiddleware, rateLimitMiddleware RateLimitMiddleware, trustedProxies []string, logger *slog.Logger, teamHandler TeamHandler, projectHandler ProjectHandler, timeEntryHandler TimeEntryHandler, timeEntryExportHandler TimeEntryExportHandler, syncHandler SyncHandler, weeklyStatisticsHandler WeeklyStatisticsHandler, externalIntegrationHandler ExternalIntegrationHandler, userExternalAccountHandler UserExternalAccountHandler, billingHandler *BillingHandler) *gin.Engine {
 	// Set Gin to release mode to disable debug logging
 	gin.SetMode(gin.ReleaseMode)
 
 	// Create router without default middleware
 	router := gin.New()
 
+	// Configure which reverse proxies may set X-Forwarded-For. ClientIP()
+	// (used for request logging and rate limiting) only follows the
+	// X-Forwarded-For header when the direct peer is a trusted proxy.
+	if err := router.SetTrustedProxies(trustedProxies); err != nil {
+		slog.Warn("Failed to set trusted proxies, falling back to Gin defaults", "error", err)
+	}
+
 	router.Use(SlogMiddleware(logger))
 	router.Use(SlogRecoveryMiddleware(logger))
 	router.Use(corsMiddleware())
+	// Rate limiting runs after CORS so browser preflight requests are not
+	// throttled, and after logging so rejected requests show up in the logs.
+	// It protects every route, including the public billing status endpoint.
+	router.Use(rateLimitMiddleware.HandlerFunc())
 
 	// Billing endpoints. These are deliberately NOT behind the subscription
 	// check middleware: a user without an active subscription must still be
