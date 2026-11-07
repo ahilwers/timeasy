@@ -719,6 +719,8 @@ function decodeHtmlEntities(htmlStr){
     </#if>
     <#if xKeycloakify.pageId == "terms.ftl" || termsAcceptanceRequired?? && termsAcceptanceRequired>
         <@addToXKeycloakifyMessagesIfMessageKey str="termsText" />
+        <#-- Expose the realm override used by the checkbox label to Keycloakify. -->
+        <@addToXKeycloakifyMessagesIfMessageKey str="acceptTerms" />
     </#if>
     <#if requiredActions?? && requiredActions?is_enumerable>
         <#list requiredActions as requiredAction>
@@ -735,7 +737,9 @@ function decodeHtmlEntities(htmlStr){
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="icon" type="image/png" sizes="32x32" href="">
+        <link rel="stylesheet" href="${xKeycloakify.resourcesPath}/css/registration-legal-links.css">
       <script type="module" crossorigin="" src="${xKeycloakify.resourcesPath}/dist/assets/index-Kjc2dqvG.js"></script>
+      <script defer src="${xKeycloakify.resourcesPath}/js/registration-legal-links.js"></script>
     </head>
 
     <body>

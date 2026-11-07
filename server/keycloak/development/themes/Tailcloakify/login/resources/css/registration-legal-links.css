@@ -1,0 +1,26 @@
+#kc-register-form div:has(> #termsAccepted) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+#termsAccepted {
+  flex: 0 0 1rem;
+  width: 1rem;
+  height: 1rem;
+  margin: 0.2rem 0 0;
+}
+
+label[for="termsAccepted"] {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+}
+
+label[for="termsAccepted"] a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}

@@ -30,3 +30,5 @@ docker compose -f server/keycloak/development/docker-compose.yaml down
 ## Theme
 
 The Compose file mounts [`themes/`](themes/) into Keycloak. It includes the [Tailcloakify](https://github.com/ALMiG-Kompressoren-GmbH/tailcloakify) login theme. Check theme compatibility when changing the Keycloak image version.
+
+The registration templates forward the `acceptTerms` realm translation override to Keycloakify, so the checkbox label can be configured under **Realm settings → Localization → Realm overrides** for each language. The accompanying `registration-legal-links.js` opens links to the German and English timeasy terms and privacy policy in a new tab to preserve form input. Preserve these additions when replacing the bundled theme.
