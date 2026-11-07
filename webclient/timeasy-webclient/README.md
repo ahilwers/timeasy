@@ -36,6 +36,10 @@ npm run build
 
 Unit tests use Angular's Vitest runner; `npm test` without the watch option runs in watch mode. The default build is optimized for production and outputs to `dist/timeasy-webclient/`. The included `Dockerfile` builds the client and serves it with nginx; `nginx.conf` falls back to `index.html` for application routes. Other static hosting must also support client-side route fallback. The image embeds the production API and auth URLs, even though the web billing key is obtained at runtime.
 
+### Temporary security override
+
+`package.json` overrides transitive `minimatch` v10 with `^11.0.5` to fix [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249). The current ESLint, `@eslint/config-array`, and typescript-eslint releases still require v10. These lint-only consumers use the retained `Minimatch` constructor, `match()` method, `pattern` property, and `minimatch()` function, not the APIs removed in v11 (such as `makeRe()` and `AST`). Node requirements remain compatible with this project's Node 24 baseline. Remove the override once upstream dependency ranges accept a patched release; rerun lint, tests, and build when updating it.
+
 ## End-to-end tests
 
 Playwright tests in `e2e/` start the Angular development server automatically. Install Chromium once, then run:
