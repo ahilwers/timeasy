@@ -2,6 +2,8 @@ import {provideRouter, Routes} from '@angular/router';
 import {canActivateAuth} from './guards/auth.guard';
 
 const routes: Routes = [
+  { path: 'register', canActivate: [canActivateAuth], data: { authAction: 'register' }, children: [] },
+  { path: 'login', canActivate: [canActivateAuth], data: { authAction: 'login' }, children: [] },
   { path: 'forbidden', loadComponent: () => import('./components/forbidden/forbidden.component').then(m => m.ForbiddenComponent) },
   // Old paywall route kept as a redirect so existing bookmarks/links keep working
   { path: 'no-license', redirectTo: '/upgrade' },

@@ -11,6 +11,23 @@ const isAccessAllowed = async (
     const { authenticated, grantedRoles } = authData;
     const accessAllowed = authenticated;
 
+    const authAction = route.data['authAction'];
+    if (authAction) {
+        if (authenticated) {
+            return inject(Router).parseUrl('/');
+        }
+        const keycloak = inject(Keycloak);
+        const requestedLocale = route.queryParamMap.get('locale');
+        const locale = requestedLocale === 'de' || requestedLocale === 'en' ? requestedLocale : undefined;
+        const options = { redirectUri: `${window.location.origin}/`, locale };
+        if (authAction === 'register') {
+            await keycloak.register(options);
+        } else {
+            await keycloak.login(options);
+        }
+        return false;
+    }
+
     if (!authenticated) {
         const keycloak = inject(Keycloak);
         const redirectUrl = `${window.location.origin}/${route.url}`;
