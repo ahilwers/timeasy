@@ -323,6 +323,7 @@
         }
       ],
       "timeasy-server": [],
+      "licensemanager": [],
       "timeasy-webclient": [],
       "security-admin-console": [],
       "svelte-app": [],
@@ -453,7 +454,14 @@
     "totpAppGoogleName",
     "totpAppMicrosoftAuthenticatorName"
   ],
-  "localizationTexts": {},
+  "localizationTexts": {
+    "de": {
+      "acceptTerms": "Ich stimme den <a href=\"https://timeasy.org/de/terms\" target=\"_blank\" rel=\"noopener\">Nutzungsbedingungen</a> zu und bestätige, dass ich die <a href=\"https://timeasy.org/de/privacy\" target=\"_blank\" rel=\"noopener\">Datenschutzerklärung</a> zur Kenntnis genommen habe."
+    },
+    "en": {
+      "acceptTerms": "I agree to the <a href=\"https://timeasy.org/en/terms\" target=\"_blank\" rel=\"noopener\">Terms of Use</a> and acknowledge that I have read the <a href=\"https://timeasy.org/en/privacy\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>."
+    }
+  },
   "webAuthnPolicyRpEntityName": "keycloak",
   "webAuthnPolicySignatureAlgorithms": [
     "ES256"
@@ -480,6 +488,30 @@
   "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
   "webAuthnPolicyPasswordlessAcceptableAaguids": [],
   "webAuthnPolicyPasswordlessExtraOrigins": [],
+  "users": [
+    {
+      "id": "fba472be-3cad-4d34-a6d4-1758981cdf04",
+      "username": "service-account-licensemanager",
+      "emailVerified": false,
+      "createdTimestamp": 1768731705539,
+      "enabled": true,
+      "totp": false,
+      "serviceAccountClientId": "licensemanager",
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": [
+        "default-roles-keycloak-demo"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "manage-users"
+        ]
+      },
+      "notBefore": 0,
+      "groups": []
+    }
+  ],
   "scopeMappings": [
     {
       "clientScope": "offline_access",
@@ -549,14 +581,16 @@
       "id": "1d0f2bdf-9334-4554-af7d-5498775773fb",
       "clientId": "account-console",
       "name": "${client_account-console}",
+      "description": "",
       "rootUrl": "${authBaseUrl}",
-      "baseUrl": "/realms/keycloak-demo/account/",
+      "adminUrl": "",
+      "baseUrl": "/realms/timeasy/account/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "/realms/keycloak-demo/account/*"
+        "/realms/timeasy/account/*"
       ],
       "webOrigins": [],
       "notBefore": 0,
@@ -571,8 +605,13 @@
       "protocol": "openid-connect",
       "attributes": {
         "realm_client": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
         "post.logout.redirect.uris": "+",
-        "pkce.code.challenge.method": "S256"
+        "oauth2.device.authorization.grant.enabled": "false",
+        "display.on.consent.screen": "false",
+        "pkce.code.challenge.method": "S256",
+        "backchannel.logout.revoke.offline.tokens": "false"
       },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
@@ -674,6 +713,108 @@
         "web-origins",
         "profile",
         "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "id": "97ffa488-bad6-44e7-9acc-b78d04610c30",
+      "clientId": "licensemanager",
+      "name": "Service Account for License Manager",
+      "description": "",
+      "rootUrl": "http://localhost:8080",
+      "adminUrl": "http://localhost:8080",
+      "baseUrl": "",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "**********",
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "realm_client": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "client.secret.creation.time": "1768731705",
+        "backchannel.logout.session.required": "true",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "id": "e9290eb0-031b-4e7f-be88-ff58b212173c",
+          "name": "Client ID",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "client_id",
+            "id.token.claim": "true",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "client_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "id": "ecf98620-bd34-46aa-8583-ff5ffe61de47",
+          "name": "Client Host",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "clientHost",
+            "id.token.claim": "true",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clientHost",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "id": "9f5dbdf5-3cf0-4c43-aa09-4c58bee7b8dd",
+          "name": "Client IP Address",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "clientAddress",
+            "id.token.claim": "true",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clientAddress",
+            "jsonType.label": "String"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
         "email"
       ],
       "optionalClientScopes": [
@@ -893,12 +1034,14 @@
       "protocol": "openid-connect",
       "attributes": {
         "client.secret.creation.time": "1736588612",
+        "client.introspection.response.allow.jwt.claim.enabled": "false",
         "post.logout.redirect.uris": "+",
         "oauth2.device.authorization.grant.enabled": "false",
         "backchannel.logout.revoke.offline.tokens": "false",
         "use.refresh.tokens": "true",
         "realm_client": "false",
         "oidc.ciba.grant.enabled": "false",
+        "client.use.lightweight.access.token.enabled": "false",
         "backchannel.logout.session.required": "true",
         "client_credentials.use_refresh_token": "false",
         "tls.client.certificate.bound.access.tokens": "false",
@@ -938,6 +1081,7 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
+        "org.timeasy.app://callback",
         "http://localhost:4000/"
       ],
       "webOrigins": [
@@ -956,7 +1100,7 @@
       "attributes": {
         "access.token.lifespan": "2592000",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
-        "post.logout.redirect.uris": "http://localhost:4000/",
+        "post.logout.redirect.uris": "http://localhost:4000/##org.timeasy.app://callback",
         "oauth2.device.authorization.grant.enabled": "false",
         "backchannel.logout.revoke.offline.tokens": "false",
         "use.refresh.tokens": "true",
@@ -1005,12 +1149,17 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
+        "http://localhost:8380",
+        "http://localhost:8280",
+        "http://localhost:8280/*",
         "http://localhost:4200/*",
+        "http://localhost:8380/*",
         "http://localhost/*",
         "http://localhost:4200"
       ],
       "webOrigins": [
-        "",
+        "http://localhost:8380",
+        "http://localhost:8280",
         "http://localhost",
         "http://localhost:4200"
       ],
@@ -1028,7 +1177,7 @@
         "realm_client": "false",
         "oidc.ciba.grant.enabled": "false",
         "backchannel.logout.session.required": "true",
-        "post.logout.redirect.uris": "http://localhost:4200##http://localhost:4200/*##http://localhost/*",
+        "post.logout.redirect.uris": "http://localhost:4200##http://localhost:4200/*##http://localhost/*##http://localhost:8380##http://localhost:8380/*",
         "oauth2.device.authorization.grant.enabled": "false",
         "display.on.consent.screen": "false",
         "backchannel.logout.revoke.offline.tokens": "false"
@@ -1626,6 +1775,10 @@
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
   "smtpServer": {},
+  "loginTheme": "Tailcloakify",
+  "accountTheme": "",
+  "adminTheme": "",
+  "emailTheme": "",
   "eventsEnabled": false,
   "eventsListeners": [
     "jboss-logging"
@@ -1633,7 +1786,31 @@
   "enabledEventTypes": [],
   "adminEventsEnabled": false,
   "adminEventsDetailsEnabled": false,
-  "identityProviders": [],
+  "identityProviders": [
+    {
+      "alias": "github",
+      "displayName": "",
+      "internalId": "37a5314e-190b-46e7-a384-e502861e03b3",
+      "providerId": "github",
+      "enabled": false,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "hideOnLogin": false,
+      "config": {
+        "acceptsPromptNoneForwardFromClient": "false",
+        "clientId": "Ov23liu2ZrEzK8mIZLlN",
+        "disableUserInfo": "false",
+        "filteredByClaim": "false",
+        "syncMode": "LEGACY",
+        "clientSecret": "**********",
+        "caseSensitiveOriginalUsername": "false"
+      }
+    }
+  ],
   "identityProviderMappers": [],
   "components": {
     "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy": [
@@ -2336,6 +2513,67 @@
           "userSetupAllowed": false
         }
       ]
+    },
+    {
+      "id": "247a6658-5e64-4284-8cdc-2d22d4329267",
+      "alias": "timeasy-registration",
+      "description": "registration flow",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-page-form",
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": true,
+          "flowAlias": "timeasy-registration registration form",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "id": "199cc9d7-16ee-45c9-8f57-47b20401a7b4",
+      "alias": "timeasy-registration registration form",
+      "description": "registration form",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-user-creation",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-password-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 50,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-recaptcha-action",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 60,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-terms-and-conditions",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 61,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
     }
   ],
   "authenticatorConfig": [
@@ -2368,7 +2606,7 @@
       "alias": "TERMS_AND_CONDITIONS",
       "name": "Terms and Conditions",
       "providerId": "TERMS_AND_CONDITIONS",
-      "enabled": false,
+      "enabled": true,
       "defaultAction": false,
       "priority": 20,
       "config": {}
@@ -2429,7 +2667,7 @@
     }
   ],
   "browserFlow": "browser",
-  "registrationFlow": "registration",
+  "registrationFlow": "timeasy-registration",
   "directGrantFlow": "direct grant",
   "resetCredentialsFlow": "reset credentials",
   "clientAuthenticationFlow": "clients",
@@ -2449,6 +2687,7 @@
     "parRequestUriLifespan": "60",
     "clientSessionMaxLifespan": "0",
     "frontendUrl": "",
+    "organizationsEnabled": "false",
     "acr.loa.map": "{}"
   },
   "keycloakVersion": "26.0.7",
