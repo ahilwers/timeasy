@@ -23,6 +23,14 @@ Tests require Docker: the test helper starts disposable PostgreSQL containers. `
 
 The server applies embedded [golang-migrate](https://github.com/golang-migrate/migrate) migrations automatically at startup. The account needs schema permissions; back up before upgrading. For creating migrations, see the [migrate CLI instructions](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate).
 
+### Docker dependency security notes
+
+As of 2026-11-07, the Docker CLI dependency is pinned to at least `v29.2.0`, which fixes GHSA-p436-gjf2-799p and uses the split Moby API/client modules instead of importing the legacy Docker Engine module.
+
+`github.com/docker/docker v28.5.2+incompatible` remains in the module graph and `go.sum` through `golang-migrate`'s upstream tests (`database/postgres.test` → `github.com/dhui/dktest`). It is not imported by the server or our tests; verify with `go list -deps -test ./...`. Do not manually delete its checksums: `go mod tidy` retains them for that upstream test dependency.
+
+Dependabot alerts [#256](https://github.com/ahilwers/timeasy/security/dependabot/256), [#257](https://github.com/ahilwers/timeasy/security/dependabot/257), [#258](https://github.com/ahilwers/timeasy/security/dependabot/258), and [#259](https://github.com/ahilwers/timeasy/security/dependabot/259) concern Docker Engine code, with no patched release of the legacy `github.com/docker/docker` module. Removing its direct requirement from our `go.mod` does not patch the upstream dependency or the host daemon. Track upstream migration away from this module and keep the Docker daemon used for development/tests updated independently. These alerts have not been dismissed.
+
 ## Server configuration
 
 Settings can be supplied as `TIMEASY_*` environment variables, command-line flags or a [local config file](#local-config-file). The Compose example overrides some development-oriented defaults:
