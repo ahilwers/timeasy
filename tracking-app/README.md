@@ -70,6 +70,9 @@ flutter run --dart-define='REVENUECAT_ANDROID_API_KEY=<public-android-key>'
 
 Use the matching define for `flutter build` as well. Missing keys do not prevent a build, but native purchase offerings are unavailable. The app expects the RevenueCat entitlement lookup key `timeasy_pro`; the server is configured with the corresponding internal entitlement ID. The Keycloak user ID is the RevenueCat App User ID across clients. See [server billing setup](../server/README.md#billing-optional).
 
+> **Do not ship a Test Store key.** RevenueCat Test Store (simulated store) keys start with `test_` and are only meant for local/debug use. The iOS SDK deliberately **crashes on startup** when it is configured with one in a release build. Store builds must use the public App Store (`appl_...`) or Play Store (`goog_...`) key; the app refuses to configure RevenueCat in release mode if a `test_` key was compiled in and logs an error instead.
+
+
 In-app purchases and restore use StoreKit or Google Play Billing; the app must not link to external purchase or web subscription-management flows. Test actual transactions with the appropriate store sandbox/test accounts, configured products, and eligible test builds; Play Billing may require distribution through a Play testing track. A RevenueCat Test Store is a separate simulated option. A web purchase can unlock the same account when the shared entitlement is configured, but the mobile app does not link to its web management portal.
 
 Optional Loki logging uses the compile-time defines `LOKI_ENDPOINT` and `LOKI_BEARER_TOKEN`; without an endpoint, logs remain local. **Dart defines are embedded in the app and are not secret storage.** Never ship sensitive tokens or server-side RevenueCat secret keys in a client build, and do not commit credentials or signing material.

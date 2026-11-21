@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:timeasy/environment.dart';
@@ -112,6 +112,16 @@ class BillingService {
     final apiKey = _platformApiKey();
     if (apiKey.isEmpty) {
       AppLogger.w('RevenueCat API key missing for this platform');
+      return;
+    }
+    if (kReleaseMode && _isTestStoreApiKey(apiKey)) {
+      // RevenueCat's iOS SDK intentionally fatal-errors when a Test Store key
+      // ("test_...") is configured in a Release build, which would crash the
+      // app on startup. Skipping the configuration keeps the app usable: the
+      // server is the source of truth for subscription gating.
+      AppLogger.e('Refusing to configure RevenueCat with a Test Store API key '
+          'in a release build; build with the public App Store/Play Store key '
+          '(appl_.../goog_...) instead');
       return;
     }
     try {
@@ -447,4 +457,7 @@ class BillingService {
     }
     return '';
   }
+
+  /// RevenueCat Test Store (simulated store) keys all start with `test_`.
+  bool _isTestStoreApiKey(String apiKey) => apiKey.startsWith('test_');
 }
