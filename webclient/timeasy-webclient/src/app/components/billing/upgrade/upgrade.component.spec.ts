@@ -49,4 +49,17 @@ describe('UpgradeComponent', () => {
         expect(router.navigate).not.toHaveBeenCalled();
         expect(fixture.componentInstance.isLoading()).toBe(false);
     });
+
+    it('points to the iOS app instead of opening an unavailable web checkout', () => {
+        const { fixture } = setup(false);
+
+        fixture.detectChanges();
+
+        const notice = fixture.nativeElement.querySelector('.upgrade-notice');
+        const link = fixture.nativeElement.querySelector('.upgrade-store-link') as HTMLAnchorElement;
+        expect(notice).not.toBeNull();
+        expect(link.getAttribute('href')).toBe('https://apps.apple.com/app/id1620757668');
+        expect(link.getAttribute('target')).toBe('_blank');
+        expect(fixture.componentInstance.checkoutEnabled()).toBe(false);
+    });
 });

@@ -16,21 +16,27 @@
         <i class="pi pi-star"></i>
       </div>
       <p class="upgrade-message">{{ 'license.upgrade.message' | translate }}</p>
-      @if (errorKey(); as errKey) {
-      <p class="upgrade-error">{{ errKey | translate }}</p>
+      @if (checkoutUnavailable()) {
+      <div class="upgrade-notice">
+        <p class="upgrade-notice-text">{{ 'license.upgrade.iosOnly' | translate }}</p>
+        <a class="upgrade-store-link" [href]="storeUrl()" target="_blank" rel="noopener noreferrer">
+          <i class="pi pi-apple"></i>
+          <span>{{ 'license.upgrade.iosStoreLink' | translate }}</span>
+        </a>
+      </div>
       }
       <div class="upgrade-buttons">
         <p-button
           [label]="('license.upgrade.monthly' | translate) + (monthlyPrice() ? ' · ' + monthlyPrice() : '')"
           (onClick)="startCheckout('monthly')"
           [loading]="purchasingInterval() === 'monthly'"
-          [disabled]="purchasingInterval() !== null"
+          [disabled]="!checkoutEnabled() || purchasingInterval() !== null"
           icon="pi pi-calendar"></p-button>
         <p-button
           [label]="('license.upgrade.annual' | translate) + (annualPrice() ? ' · ' + annualPrice() : '')"
           (onClick)="startCheckout('annual')"
           [loading]="purchasingInterval() === 'annual'"
-          [disabled]="purchasingInterval() !== null"
+          [disabled]="!checkoutEnabled() || purchasingInterval() !== null"
           icon="pi pi-star" severity="secondary"></p-button>
       </div>
       @if (purchasingInterval()) {
