@@ -241,7 +241,8 @@
             "annual": "Yearly",
             "openingCheckout": "Opening checkout...",
             "billingDisabled": "This timeasy instance does not use subscriptions.",
-            "checkoutError": "The checkout could not be opened. Please try again later."
+            "iosOnly": "The subscription is currently only available in the iOS app. Open timeasy in the App Store and subscribe there.",
+            "iosStoreLink": "Open timeasy in the App Store"
         },
         "success": {
             "title": "Thank you for subscribing!",

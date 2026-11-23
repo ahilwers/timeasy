@@ -241,7 +241,8 @@
             "annual": "Jährlich",
             "openingCheckout": "Checkout wird geöffnet...",
             "billingDisabled": "Diese timeasy-Instanz nutzt keine Abonnements.",
-            "checkoutError": "Der Checkout konnte nicht geöffnet werden. Bitte versuche es später erneut."
+            "iosOnly": "Das Abo ist derzeit nur in der iOS-App verfügbar. Öffne timeasy im App Store und schließe das Abo dort ab.",
+            "iosStoreLink": "timeasy im App Store öffnen"
         },
         "success": {
             "title": "Danke für dein Abo!",

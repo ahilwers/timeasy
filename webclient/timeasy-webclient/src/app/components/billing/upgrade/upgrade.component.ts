@@ -5,6 +5,7 @@ import {ButtonModule} from '@openng/optimus-ui/button';
 import {ProgressSpinnerModule} from '@openng/optimus-ui/progressspinner';
 import {catchError, forkJoin, of} from 'rxjs';
 import {BillingInterval, BillingService} from '../../../services/billing.service';
+import {WEB_CHECKOUT_ENABLED, appStoreUrl} from '../../../services/web-checkout-enabled';
 import {CardComponent} from '../../card/card.component';
 
 @Component({
@@ -25,7 +26,12 @@ export class UpgradeComponent implements OnInit {
   purchasingInterval = signal<BillingInterval | null>(null);
   monthlyPrice = signal<string | null>(null);
   annualPrice = signal<string | null>(null);
-  errorKey = signal<string | null>(null);
+
+  /** Whether the embedded Paddle checkout can be used at all. */
+  checkoutEnabled = signal(WEB_CHECKOUT_ENABLED);
+  /** Set when checkout is unavailable, either by config or because it failed. */
+  checkoutUnavailable = signal(!WEB_CHECKOUT_ENABLED);
+  storeUrl = computed(() => appStoreUrl(this.translateService.currentLang() ?? undefined));
 
   ngOnInit(): void {
     this.isLoading.set(true);
@@ -50,8 +56,11 @@ export class UpgradeComponent implements OnInit {
   }
 
   startCheckout(interval: BillingInterval): void {
+    if (!this.checkoutEnabled()) {
+      this.checkoutUnavailable.set(true);
+      return;
+    }
     this.purchasingInterval.set(interval);
-    this.errorKey.set(null);
     // Pass the active UI language so the checkout is localized (Paddle falls
     // back to its default for unsupported locales).
     this.billingService.purchase(interval, this.translateService.currentLang() ?? undefined).then(() => {
@@ -61,7 +70,10 @@ export class UpgradeComponent implements OnInit {
       if (this.billingService.isUserCancelled(error)) {
         return;
       }
-      this.errorKey.set('license.upgrade.checkoutError');
+      // Keep the real cause in the console (e.g. Paddle's
+      // `transaction_creation_blocked`) and tell the user where to subscribe.
+      console.error('Web checkout failed', error);
+      this.checkoutUnavailable.set(true);
     });
   }
 

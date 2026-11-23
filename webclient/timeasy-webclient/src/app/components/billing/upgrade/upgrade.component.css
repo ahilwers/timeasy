@@ -45,10 +45,34 @@
   min-width: 260px;
 }
 
-.upgrade-error {
-  font-size: 0.95rem;
-  color: var(--p-red-500, #ef4444);
+.upgrade-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   max-width: 420px;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--p-surface-100, #f3f4f6);
+}
+
+.upgrade-notice-text {
+  font-size: 0.95rem;
+  color: var(--p-text-color);
+  line-height: 1.5;
+}
+
+.upgrade-store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: var(--p-primary-color, #3b82f6);
+  text-decoration: none;
+}
+
+.upgrade-store-link:hover {
+  text-decoration: underline;
 }
 
 .upgrade-hint {
